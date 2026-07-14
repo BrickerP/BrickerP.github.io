@@ -1,22 +1,31 @@
-# PoE2 Build Lab
+# brickerp.github.io
 
-Static beginner-guide site for Path of Exile 2.
+Personal homepage for **Yupeng Lu** — AI Agent & Backend Platform Engineer.
 
-Live URL target: https://brickerp.github.io/
+## Structure
 
-## Launch checklist
+- `/` — personal homepage (`index.html` + `home.css`). The full-screen
+  animated backdrop is the **Beijing Infinite Loop** piece, embedded from
+  `/beijing-loop/?embed=1`.
+- `/beijing-loop/` — the standalone interactive generative-art app
+  (Vite + TypeScript + p5.js build output). Source lives in a separate project;
+  this directory holds the compiled `dist/`.
+- `/poe2/` — the earlier **PoE2 Build Lab** static site, kept and relocated
+  under a subpath. Its `sitegen.py`, `styles.css`, and `docs/` moved with it.
+- Root SEO/infra files stay at root: `robots.txt`, `sitemap.xml`, `ads.txt`,
+  the Google Search Console verification file, and `404.html`.
 
-- [x] Static pages
-- [x] SEO titles/descriptions
-- [x] `robots.txt` and `sitemap.xml`
-- [x] About / Contact / Privacy Policy
-- [x] Google Search Console URL-prefix property and verification
-- [x] AdSense publisher ID configured in site code
+## Deploy
 
-## AdSense status
+GitHub Pages, legacy build from `main` branch, root path. Push to `main` and
+Pages publishes `https://brickerp.github.io/`.
 
-AdSense publisher ID `pub-1111218417177666` is configured in the site code and `ads.txt`; actual ad serving still depends on Google site review and Auto ads status.
+## Updating the Beijing Loop backdrop
 
-## Operations
+Rebuild the app project with base `/beijing-loop/` and copy its `dist/` here:
 
-See `docs/OPERATIONS.md` for Search Console, sitemap, AdSense, and weekly content operations.
+```bash
+# in the beijing-loop project
+VITE_BASE=/beijing-loop/ npm run build
+cp -R dist/* /path/to/brickerp.github.io/beijing-loop/
+```

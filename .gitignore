@@ -1,4 +1,2 @@
-.omx/
+_verify/
 .DS_Store
-node_modules/
-dist/
