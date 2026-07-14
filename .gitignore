@@ -1,0 +1,9 @@
+node_modules
+dist
+*.local
+.DS_Store
+.vite
+# recorded previews / verification artefacts are generated, not source
+beijing-infinite-loop.webm
+docs/verify/
+docs/preview.webm

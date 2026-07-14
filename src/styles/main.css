@@ -1,0 +1,270 @@
+:root {
+  --page-bg: #080b0f;
+  --map-bg: #10161d;
+  --text-dim: #8d99a6;
+  --highlight: #f4d35e;
+  --loop: #f08a24;
+  --panel: rgba(12, 17, 23, 0.62);
+  --panel-border: rgba(214, 222, 232, 0.12);
+  --btn-size: 44px;
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--page-bg);
+  color: var(--text-dim);
+  font-family: ui-monospace, 'SF Mono', 'JetBrains Mono', 'Menlo', 'Consolas',
+    monospace;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+#app,
+canvas {
+  display: block;
+}
+
+canvas {
+  position: fixed;
+  inset: 0;
+  touch-action: none;
+}
+
+/* --- loading / error --------------------------------------------------- */
+.boot {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--text-dim);
+  letter-spacing: 0.22em;
+  font-size: 12px;
+  text-transform: uppercase;
+  z-index: 20;
+}
+.boot.error {
+  color: #d64a3a;
+  padding: 24px;
+  text-align: center;
+  line-height: 1.7;
+}
+
+/* --- overlay UI -------------------------------------------------------- */
+.ui-root {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  user-select: none;
+}
+.ui-root button,
+.ui-root .ui-status,
+.ui-root .ui-debug {
+  pointer-events: auto;
+}
+
+.ui-topright {
+  position: absolute;
+  top: calc(14px + var(--safe-t));
+  right: calc(14px + var(--safe-r));
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ui-btn {
+  width: var(--btn-size);
+  height: var(--btn-size);
+  min-width: var(--btn-size);
+  min-height: var(--btn-size);
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--panel-border);
+  background: var(--panel);
+  color: #c4ccd6;
+  border-radius: 10px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: color 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+.ui-btn:hover {
+  color: #fff;
+  border-color: rgba(214, 222, 232, 0.3);
+}
+.ui-btn:focus-visible {
+  outline: 2px solid var(--highlight);
+  outline-offset: 2px;
+}
+.ui-btn.active {
+  color: var(--highlight);
+  border-color: rgba(244, 211, 94, 0.5);
+}
+.ui-btn[data-act='record'].active {
+  color: #ff5a4d;
+  border-color: rgba(255, 90, 77, 0.6);
+}
+
+.ui-seg {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.ui-seg .ui-btn.seg {
+  width: 40px;
+  height: 36px;
+  min-width: 40px;
+  min-height: 36px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  backdrop-filter: none;
+}
+.ui-seg .ui-btn.seg.active {
+  background: rgba(244, 211, 94, 0.12);
+}
+
+/* --- status (bottom-left) --------------------------------------------- */
+.ui-status {
+  position: absolute;
+  left: calc(16px + var(--safe-l));
+  bottom: calc(30px + var(--safe-b));
+  padding: 0;
+  max-width: 62vw;
+}
+.ui-title {
+  font-size: 13px;
+  letter-spacing: 0.28em;
+  color: #d6dee8;
+  font-weight: 600;
+}
+.ui-sub {
+  margin-top: 6px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--text-dim);
+}
+.ui-mode {
+  color: var(--highlight);
+}
+.ui-prog {
+  color: var(--loop);
+}
+.ui-progress {
+  margin-top: 8px;
+  width: 190px;
+  max-width: 52vw;
+  height: 2px;
+  background: rgba(214, 222, 232, 0.12);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.ui-progressbar {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--loop), var(--highlight));
+  transition: width 0.1s linear;
+}
+
+/* --- footer ------------------------------------------------------------ */
+.ui-footer {
+  position: absolute;
+  right: calc(14px + var(--safe-r));
+  bottom: calc(10px + var(--safe-b));
+  left: auto;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: rgba(141, 153, 166, 0.62);
+  max-width: 60vw;
+  text-align: right;
+  line-height: 1.5;
+}
+
+/* --- debug panel ------------------------------------------------------- */
+.ui-debug {
+  position: absolute;
+  top: calc(70px + var(--safe-t));
+  right: calc(14px + var(--safe-r));
+  padding: 10px 12px;
+  font-size: 11px;
+  line-height: 1.7;
+  color: #9fb0bd;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  min-width: 150px;
+}
+.ui-debug > div:first-child {
+  color: var(--highlight);
+  letter-spacing: 0.14em;
+  margin-bottom: 4px;
+}
+
+/* --- recording badge --------------------------------------------------- */
+.ui-rec {
+  position: absolute;
+  top: calc(14px + var(--safe-t));
+  left: calc(16px + var(--safe-l));
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: #ff5a4d;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.ui-rec::first-letter {
+  animation: blink 1s steps(2, start) infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+/* --- responsive -------------------------------------------------------- */
+@media (max-width: 560px) {
+  .ui-footer {
+    max-width: 90vw;
+    font-size: 9px;
+  }
+  .ui-status {
+    max-width: 70vw;
+  }
+  .ui-title {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+  }
+  /* keep only play + view modes prominent; record/fullscreen stay usable */
+  .ui-topright {
+    gap: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-progressbar {
+    transition: none;
+  }
+  .ui-rec::first-letter {
+    animation: none;
+  }
+}
