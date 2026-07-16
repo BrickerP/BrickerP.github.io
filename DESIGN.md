@@ -2,7 +2,7 @@
 
 ## Source of truth
 - Status: Active
-- Last refreshed: 2026-07-16
+- Last refreshed: 2026-07-17
 - Primary product surface: One full-viewport, first-person Beijing endless-drive artwork.
 - Evidence reviewed: `README.md`, `scripts/geometry-check.mjs`, `scripts/verify.mjs`, `scripts/seam-check.mjs`, `.github/workflows/deploy-pages.yml`, `src/main.ts`, `src/app/BeijingLoopApp.ts`, `src/rendering/BeijingDriveScene.ts`, `src/rendering/FirstPersonCameraRig.ts`, `src/rendering/drivePath.ts`, `src/rendering/theme.ts`, `src/ui/controls.ts`, `src/ui/recorder.ts`, `src/styles/main.css`, and current responsive Visual Ralph captures.
 - Superseded direction: Every overhead map, ring-road plan, recursive route diagram, `Infinite`/`Plan` mode switch, and dense line-field composition. None is a valid implementation or visual baseline.
@@ -16,7 +16,7 @@
 ## Product goals
 - Goals:
   - Deliver an unmistakably first-person Beijing journey from the opening frame.
-  - Tell one continuous 16-second visual passage through central-axis, hutong, waterfront, and overpass environments.
+  - Tell one continuous 32-second visual journey through eight environments: central axis, Qianmen/Dashilar, deep hutong, Bell & Drum Tower plaza, Shichahai waterfront, palace moat, Deshengmen ring road, and overpass return.
   - Make the scene feel rich through composition, silhouette, light, fog, and a few solid forms rather than through thousands of lines.
   - Return to the opening pose, lighting, geometry state, and atmosphere without a visible cut or speed change.
   - Remain legible, controllable, and calm on desktop and portrait mobile.
@@ -24,13 +24,13 @@
 - Success signals:
   - A five-second glance reads as “moving through Beijing,” never “looking at a map.”
   - The road corridor and horizon remain immediately legible at every phase.
-  - Each of the four passages has a distinct silhouette and material cue while sharing one palette and camera language.
+  - Each of the eight passages has a distinct silhouette and material cue while sharing one palette and camera language.
   - Start and endpoint frames meet the seam acceptance thresholds below.
   - Essential controls remain usable with keyboard, touch, screen reader, and reduced-motion preferences.
 
 ## Personas and jobs
 - Primary personas: Portfolio visitors, motion-design viewers, creative-coding peers, and maintainers tuning the authored world.
-- User jobs: Enter a short atmospheric Beijing journey, watch a seamless cycle, pause on a composed frame, enter fullscreen, and record one exact loop when browser support is available.
+- User jobs: Enter a short atmospheric Beijing journey, watch a seamless cycle, pause on a composed frame, enter fullscreen, and record one exact loop when browser support is available (a second press cancels without downloading).
 - Key contexts of use: Desktop portfolio, portrait phone, fullscreen ambient display, and a GitHub Pages landing experience.
 
 ## Information architecture
@@ -46,21 +46,25 @@
 - Forbidden UI: `Plan`, `Infinite`, overview, route selection, mini-map, compass, progress map, non-diegetic street-name labels, and any diagram of the loop. Physical signs authored inside the 3D streetscape remain valid Beijing identity cues.
 
 ## Experience sequence
-- Duration: Exactly 16 seconds per cycle.
-- Clock: One normalized phase, `phase = (elapsed % 16000) / 16000`, owns camera, scenery, light, fog, reflections, and all secondary motion.
+- Duration: Exactly 32 seconds per cycle.
+- Clock: One normalized phase, `phase = (elapsed % 32000) / 32000`, owns camera, scenery, light, fog, reflections, and all secondary motion.
 - Camera: Always first-person at human/vehicle eye height, aimed predominantly forward. It may rise or bank subtly with the road but never becomes aerial, third-person, orbital, or top-down.
 - Pace: Continuous and measured. No stop, teleport, whip pan, hard cut, reverse, or acceleration spike.
-- **0–4 seconds — Central axis:** A broad ceremonial avenue, strong symmetrical vanishing point, deep red gate/wall masses, disciplined tree or lamp rhythm, and distant roof silhouettes establish Beijing immediately.
-- **4–8 seconds — Hutong:** The corridor narrows into low grey-brick courtyard walls, tiled eaves, warm door/window pockets, occasional tree canopy, and close parallax. Detail remains solid and sparse; there is no mesh of alley lines.
-- **8–12 seconds — Waterfront:** The street opens beside dark blue water with a low stone parapet, soft bridge/lantern rhythm, restrained willow or reed silhouettes, and long horizontal reflections. Water supports depth without becoming a reflective light show.
-- **12–16 seconds — Overpass return:** Concrete columns, guardrails, and one sweeping overhead structure compress the view, then frame the re-emerging central-axis horizon. Occlusion, fog, and repeated structural rhythm hide the world-space wrap so the last frame resolves precisely into the first.
-- Transitions: Adjacent environments overlap through shared silhouettes, fog occlusion, walls, trees, bridge structures, or underpass darkness. Scene identity changes through staged reveal rather than cross-fading entire frames.
+- **0–4 seconds — Central axis:** A broad ceremonial avenue with a strong symmetrical vanishing point. The drive crosses the Zhengyangmen gate silhouette, then approaches a larger rostrum flanked by huabiao columns and white stone balustrades. Red wall masses and disciplined lamp rhythm establish Beijing immediately.
+- **4–8 seconds — Qianmen / Dashilar:** A folk commercial street: a wooden pailou archway spans the road, two-storey shopfronts carry hanging vertical sign boards, paired red lanterns and warm shop windows. A second, plainer archway closes the street.
+- **8–12 seconds — Deep hutong:** The corridor narrows into low grey-brick courtyard walls with tiled eaves. Courtyard gate bays carry lintels, recessed double doors and stone door piers; old locust trees lean their canopies over the lane; power poles sag long wires; a few windows glow. Detail remains solid and sparse.
+- **12–16 seconds — Bell & Drum Tower plaza:** Low grey shops open onto a forecourt where the Drum Tower's red mass rises close to the road with the taller grey Bell Tower offset behind it.
+- **16–20 seconds — Shichahai waterfront:** The street runs beside dark water behind a stone parapet: drooping willows, a humpback stone bridge across the water, lantern-lit bar fronts on the far bank, and a white dagoba floating above the roofline.
+- **20–24 seconds — Palace moat:** The same water body continues as the moat. A long crenellated red wall runs beside the road and the corner tower's multi-eave silhouette stands across the water.
+- **24–28 seconds — Deshengmen / Second Ring:** The road widens into ring-road language: guardrails, the Deshengmen-style arrow tower with ranked arrow windows, the overhead `二环 / SECOND RING` sign, and a restrained cluster of modern glass towers in the distance.
+- **28–32 seconds — Overpass return:** Concrete columns, guardrails, and one sweeping overhead structure compress the view, then frame the re-emerging central-axis horizon. Occlusion, fog, and repeated structural rhythm hide the world-space wrap so the last frame resolves precisely into the first.
+- Transitions: Adjacent environments overlap through shared silhouettes, fog occlusion, walls, trees, bridge structures, water continuity, or underpass darkness. Scene identity changes through staged reveal rather than cross-fading entire frames.
 
 ## Design principles
 - **Eye level or it fails:** Every compositional decision reinforces forward street-level travel.
 - **Beijing through sequence, not symbols pasted on top:** Axis, grey brick, tiled roofs, vermilion masses, water edges, and ring-road concrete create identity through spatial experience.
 - **Mass before line:** Use filled planes, extruded silhouettes, and large tonal blocks. Lines are limited to necessary edges, lane marks, and fine accents.
-- **One journey, one clock:** All motion derives from the same deterministic 16-second phase.
+- **One journey, one clock:** All motion derives from the same deterministic 32-second phase.
 - **Occlusion is the edit:** Geometry and atmosphere conceal transitions; there are no cuts between four separate scenes.
 - **Negative space preserves depth:** Sky, road, fog, and water are deliberate quiet fields, not empty areas to fill with detail.
 - **Interface yields to the world:** Controls remain discoverable and accessible but visually secondary.
@@ -103,11 +107,11 @@
 ## Components
 - Actual runtime boundaries:
   - `src/main.ts`: owns boot/error handling, browser-capability detection, global shortcuts, visibility/resizing, recording coordination, and the explicit QA hook boundary.
-  - `src/app/BeijingLoopApp.ts`: owns the deterministic 16-second clock, phase seeking, render lifecycle, playback state, and reduced-motion poster selection.
-  - `src/rendering/BeijingDriveScene.ts`: builds and updates the solid Beijing-inspired road, central-axis gate, hutong, waterfront, overpass, lamps, water, fog, and skyline.
+  - `src/app/BeijingLoopApp.ts`: owns the deterministic 32-second clock, phase seeking, render lifecycle, playback state, and reduced-motion poster selection.
+  - `src/rendering/BeijingDriveScene.ts`: builds and updates the solid Beijing-inspired road and the eight authored passages — axis gates, Dashilar shopfronts, hutong courtyards, Bell & Drum Towers, Shichahai bank, palace moat and corner tower, arrow tower and ring road, overpass — plus lamps, water, fog, and skyline.
   - `src/rendering/FirstPersonCameraRig.ts`: derives the driver-eye camera pose and aspect-aware lens from phase and viewport shape.
   - `src/rendering/drivePath.ts`: defines the closed authored spline, stable path frame, heading, and ribbon geometry helpers.
-  - `src/rendering/theme.ts`: owns the 16-second duration, driver-eye height, road dimensions, and renderer palette.
+  - `src/rendering/theme.ts`: owns the 32-second duration, driver-eye height, road dimensions, and renderer palette.
   - `src/ui/controls.ts`: owns the four public controls, private debug panel, capability-disabled states, and live announcements.
   - `src/ui/about.ts`: owns the personal-intro dialog overlay, expanders, focus restore, and Esc/backdrop close.
   - `src/content/profile.ts`: owns curated resume content for the personal intro.
@@ -120,7 +124,7 @@
 - Keyboard/focus behavior:
   - Every public action is a semantic button with visible `:focus-visible` treatment.
   - Space toggles play/pause only when focus is not on an interactive or editable control.
-  - `R` records one complete 16-second loop; `F` toggles fullscreen; `D` toggles private developer telemetry.
+  - `R` records one complete 32-second loop, or cancels an active recording without downloading; `F` toggles fullscreen; `D` toggles private developer telemetry.
   - Global shortcuts ignore focused interactive/editable targets so native activation never double-fires.
 - Contrast/readability: Text and control icons meet AA contrast over their backing surface. State is communicated through label, icon, and/or shape, never color alone.
 - Screen-reader semantics: The canvas has an accessible name and a concise linked description of the first-person Beijing sequence. Playback state is exposed through the play button's label and pressed state; recording status uses polite live announcements. Decorative canvas internals are not exposed as hundreds of meaningless nodes.
@@ -147,9 +151,9 @@
 - Loading: Show a centered, concise loading status over the blue-hour page palette; never expose a blank white canvas.
 - Empty: Not valid. A blank, overhead, or near-abstract line-only frame fails verification.
 - Error: Replace the loading status with a centered, readable WebGL/scene-start alert instead of leaving a blank canvas.
-- Success: The first-person world appears, the road and horizon are legible, playback state is visible, and supported browsers can record one 16-second cycle.
+- Success: The first-person world appears, the road and horizon are legible, playback state is visible, and supported browsers can record one 32-second cycle.
 - Paused: Freeze on the current deterministic frame without idle camera drift.
-- Recording: Disable ordinary playback controls, announce start/completion/failure, prevent duplicate starts, render from deterministic phase zero, and restore the prior play/pause state after capture.
+- Recording: Disable ordinary playback controls, announce start/completion/cancellation/failure, keep the record control active as a cancel action that discards the capture, render from deterministic phase zero, and restore the prior play/pause state after capture.
 - Disabled: Keep unsupported fullscreen or recording actions disabled with an accessible description of the missing capability; playback remains available.
 - Offline/slow network: Production uses bundled code and locally authored assets; it does not wait for map tiles, fonts, or runtime APIs.
 
@@ -177,18 +181,18 @@
 - Test/screenshot expectations: Geometry, typecheck, build, deterministic screenshot capture, responsive browser assertions, capability/keyboard/accessibility smoke tests, reduced-motion capture, and seam verification must pass before deployment. The GitHub Pages workflow runs browser and seam checks against the built preview before upload.
 
 ## Loop and seam acceptance criteria
-- Canonical duration: `16000ms`; there is no secondary camera, environment, or shader clock.
+- Canonical duration: `32000ms`; there is no secondary camera, environment, or shader clock.
 - Endpoint identity: Rendering phase `1` resolves through modulo to the exact state of phase `0` for camera transform, field of view, world transforms, visibility, materials, light, fog, water, and UI playback-independent visuals.
-- Path continuity: Camera position and forward tangent are continuous across the boundary. Speed, heading, pitch, roll, and their first derivatives have no perceptible step from `15.999s` to `0s`.
+- Path continuity: Camera position and forward tangent are continuous across the boundary. Speed, heading, pitch, roll, and their first derivatives have no perceptible step from `31.999s` to `0s`.
 - Transition continuity: The closed authored world requires no tile recycling. The overpass-return passage frames the re-emerging central-axis horizon, and no object pops into view at the seam.
 - Reproducibility: Seeking directly to any phase yields the same image as naturally playing to that phase from zero.
-- Automated endpoint check: At 900×640 and DPR 1, native-size deterministic captures at `0ms` and `16000ms` must have zero differing RGBA channels, zero maximum delta, and zero mean absolute difference.
-- Motion continuity check: Sample 129 frames at 0.125-second intervals, reject flat frames, and bound difference spikes with `p95 / median < 4.5`, `max / median < 8`, `seam / median < 3.5`, and a first-versus-seam adjacent-frame ratio below 4. Responsive composition is verified separately at all supported viewports.
-- Loop recording: Export begins at phase zero, contains exactly one 16-second cycle, and ends without appending a duplicate terminal frame.
+- Automated endpoint check: At 900×640 and DPR 1, native-size deterministic captures at `0ms` and `32000ms` must have zero differing RGBA channels, zero maximum delta, and zero mean absolute difference.
+- Motion continuity check: Sample 257 frames at 0.125-second intervals, reject flat frames, and bound difference spikes with `p95 / median < 4.5`, `max / median < 8`, `seam / median < 3.5`, and a first-versus-seam adjacent-frame ratio below 4. Responsive composition is verified separately at all supported viewports.
+- Loop recording: Export begins at phase zero, contains exactly one 32-second cycle, and ends without appending a duplicate terminal frame.
 
 ## Visual acceptance criteria
 - Opening frame is first-person and street-level; no reviewer can reasonably classify it as an overhead map.
-- All four passages—central axis, hutong, waterfront, and overpass—are distinguishable in sampled frames without titles explaining them.
+- All eight passages—central axis, Qianmen/Dashilar, hutong, Bell & Drum plaza, Shichahai, palace moat, ring road, and overpass—are distinguishable in sampled frames without titles explaining them.
 - The scene uses filled geometry and tonal mass; dense crossing lines, map rings, recursive route outlines, and wireframe clutter are absent.
 - Beijing blue hour dominates; vermilion and amber remain selective accents.
 - Road, horizon, and forward direction stay legible in every sampled frame, including 320×568 portrait.

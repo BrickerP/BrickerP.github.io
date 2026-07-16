@@ -1,9 +1,11 @@
 # BEIJING / 北京 — ENDLESS SECOND RING
 
 A seamless **first-person night drive** through an imagined Beijing. The camera
-travels at driver-eye height beneath flyovers and lamps, past grey-brick streets,
-red walls, water and a distant skyline, then returns to the same frame every
-sixteen seconds.
+travels at driver-eye height through eight authored passages — the ceremonial
+central axis, Qianmen's Dashilar shopping street, a deep courtyard hutong, the
+Bell & Drum Tower plaza, the Shichahai waterfront, the palace moat with its
+corner tower, the Deshengmen stretch of the Second Ring, and an overpass return
+— then arrives back at the same frame every thirty-two seconds.
 
 > **Artistic composition, not for navigation.** This is not a driving aid, road
 > simulation or reconstruction of real streets. The road and city are
@@ -12,7 +14,7 @@ sixteen seconds.
 
 - **Stack:** Vite · TypeScript · Three.js · plain CSS
 - **View:** one first-person drive, with no cockpit or alternate camera mode
-- **Loop:** deterministic 16-second closed journey
+- **Loop:** deterministic 32-second closed journey across eight Beijing passages
 - **Recording:** one complete loop exported as WebM when the browser supports it
 
 ## Quick start
@@ -35,16 +37,17 @@ npm run preview
 | Action | UI | Keyboard |
 | --- | --- | --- |
 | Play / pause | Top-right play control | `Space` |
-| Record one 16-second loop | Top-right record control | `R` |
+| Record one 32-second loop / cancel without download | Top-right record control | `R` |
 | Enter / exit fullscreen | Top-right fullscreen control | `F` |
 | Private developer telemetry | No public control | `D` |
 
-Only play/pause, record and fullscreen are public controls. They are semantic
-buttons with visible keyboard focus, pressed state and at least a 44×44px
-target. `D` toggles a private telemetry panel for maintainers; it is not a
-fourth toolbar action. Global shortcuts ignore buttons, links and editable
-content so native keyboard activation never fires twice. On narrow screens the
-three-button toolbar stays at the top-right inside the safe area.
+Play/pause, record, fullscreen and the personal intro are the four public
+controls. They are semantic buttons with visible keyboard focus, pressed state
+and at least a 44×44px target. Pressing record again while a capture is running
+cancels it without downloading. `D` toggles a private telemetry panel for
+maintainers; it is not a toolbar action. Global shortcuts ignore buttons, links
+and editable content so native keyboard activation never fires twice. On narrow
+screens the toolbar stays at the top-right inside the safe area.
 
 ## Experience contract
 
@@ -54,33 +57,42 @@ The composition is built around a single uninterrupted viewpoint:
 - forward motion on a closed procedural spline;
 - no vehicle model or cockpit blocking the view;
 - no speedometer, compass, navigation overlay or game HUD;
-- calm editorial type and three controls kept outside the visual focus;
+- calm editorial type and a compact toolbar kept outside the visual focus;
 - Beijing suggested through material, rhythm and silhouette rather than literal
   geographic reconstruction.
+
+Each 4-second passage carries one strong identity anchor rather than scattered
+props: the Zhengyangmen and rostrum gates with huabiao columns, the Dashilar
+pailou with hanging shop signs and lanterns, courtyard gates and leaning locust
+trees in the hutong, the Drum and Bell Tower pair, a humpback stone bridge with
+willows and a distant white dagoba over the water, the moat's red wall and
+corner tower, the Deshengmen arrow tower against restrained modern glass, and
+finally the concrete overpass that folds the journey back into its first frame.
 
 The city palette combines a deep blue-black sky and asphalt with grey brick,
 dark red walls, restrained vermilion, warm amber lamps, stone lane markings and
 occasional dark water. Lighting is cinematic but graphic: legibility and a clear
 vanishing point take priority over decorative line density.
 
-## Why the 16-second loop closes
+## Why the 32-second loop closes
 
 The runtime derives the full scene from one normalized phase:
 
 ```text
-phase = (elapsed mod 16) / 16
+phase = (elapsed mod 32) / 32
 ```
 
 The camera position is sampled from a closed spline at `phase`; its direction is
 derived from the same path. Roadside architecture, lamp and water luminance,
-and the small camera bob are deterministic functions of that clock. At sixteen
-seconds, phase returns to zero, so camera and animated scene state return to
-their starting values together rather than relying on accumulated frame-to-frame
-motion.
+and the small camera bob are deterministic functions of that clock. At
+thirty-two seconds, phase returns to zero, so camera and animated scene state
+return to their starting values together rather than relying on accumulated
+frame-to-frame motion.
 
 Recording pauses ordinary playback, seeks to the cycle origin, and lets the
-capture clock address canonical scene frames directly. It exports one 16-second
-period and then restores the previous play/pause state.
+capture clock address canonical scene frames directly. It exports one 32-second
+period and then restores the previous play/pause state. Pressing the record
+control again cancels the capture and discards it.
 
 ## Reduced motion
 
@@ -94,12 +106,12 @@ an explicit user action.
 ```text
 src/
   main.ts                     browser lifecycle, shortcuts, a11y and recording
-  app/BeijingLoopApp.ts       deterministic 16s clock and render orchestration
+  app/BeijingLoopApp.ts       deterministic 32s clock and render orchestration
   rendering/
-    BeijingDriveScene.ts      procedural road, city, lamps and atmosphere
+    BeijingDriveScene.ts      procedural road, eight passages, lamps, atmosphere
     FirstPersonCameraRig.ts   phase-derived driver-eye camera pose
     drivePath.ts              closed spline and road-ribbon geometry helpers
-    theme.ts                  16s timing, palette and scene constants
+    theme.ts                  32s timing, palette and scene constants
   ui/
     controls.ts               semantic play, record and fullscreen controls
     recorder.ts               exact-cycle canvas MediaRecorder export

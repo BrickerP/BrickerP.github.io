@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 
 const URL = process.env.URL || 'http://127.0.0.1:5173/';
-const LOOP_SECONDS = 16;
+const LOOP_SECONDS = 32;
 const SAMPLE_STEP = 0.125;
 const SAMPLE_COUNT = Math.round(LOOP_SECONDS / SAMPLE_STEP);
-const REDUCED_POSTER_PHASE = 0.1;
+const REDUCED_POSTER_PHASE = 0.03;
 
 async function launchBrowser() {
   if (process.env.PW_CHANNEL) return chromium.launch({ channel: process.env.PW_CHANNEL });
@@ -171,7 +171,11 @@ for (let sample = 0; sample <= SAMPLE_COUNT; sample += 1) {
 }
 
 const endpointDifference = meanAbsoluteDifference(frames[0], frames.at(-1));
-assert.equal(endpointDifference, 0, `16s sampled endpoint mismatch: MAD=${endpointDifference}`);
+assert.equal(
+  endpointDifference,
+  0,
+  `${LOOP_SECONDS}s sampled endpoint mismatch: MAD=${endpointDifference}`,
+);
 assert.ok(nativeStart && nativeEndpoint, 'native endpoint comparison was not captured');
 assert.equal(nativeEndpoint.width, nativeStart.width, 'native endpoint width');
 assert.equal(nativeEndpoint.height, nativeStart.height, 'native endpoint height');
@@ -212,14 +216,17 @@ assert.ok(
   `motion speed changes at seam: first=${firstAdjacent}, seam=${seamAdjacent}`,
 );
 
-await seek(page, 4);
+await seek(page, LOOP_SECONDS / 4);
 const quarter = await page.evaluate(() => window.__BEIJING_LOOP_TEST__.readState());
 assert.ok(Math.abs(quarter.phase - 0.25) < 1e-10, `phase slope mismatch: ${quarter.phase}`);
 assert.ok(Math.abs(quarter.progress - 0.25) < 1e-10, `path period mismatch: ${quarter.progress}`);
-await seek(page, 16);
+await seek(page, LOOP_SECONDS);
 const wrapped = await page.evaluate(() => window.__BEIJING_LOOP_TEST__.readState());
-assert.ok(Math.abs(wrapped.phase) < 1e-10, `16s phase does not wrap: ${wrapped.phase}`);
-assert.ok(Math.abs(wrapped.progress) < 1e-10, `16s progress does not wrap: ${wrapped.progress}`);
+assert.ok(Math.abs(wrapped.phase) < 1e-10, `${LOOP_SECONDS}s phase does not wrap: ${wrapped.phase}`);
+assert.ok(
+  Math.abs(wrapped.progress) < 1e-10,
+  `${LOOP_SECONDS}s progress does not wrap: ${wrapped.progress}`,
+);
 await page.close();
 
 const reducedPage = await browser.newPage({ viewport: { width: 900, height: 640 }, deviceScaleFactor: 1 });

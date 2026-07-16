@@ -4,7 +4,8 @@ import { chromium } from 'playwright';
 
 const URL = process.env.URL || 'http://127.0.0.1:5173/';
 const OUT = 'docs/verify';
-const REDUCED_POSTER_PHASE = 0.1;
+const LOOP_SECONDS = 32;
+const REDUCED_POSTER_PHASE = 0.03;
 mkdirSync(OUT, { recursive: true });
 
 const EBML_ID = 0x1a45dfa3;
@@ -246,9 +247,13 @@ const viewports = [
 
 const passages = [
   { name: 'central-axis', seconds: 0 },
-  { name: 'hutong', seconds: 4 },
-  { name: 'waterfront', seconds: 8 },
-  { name: 'overpass', seconds: 12 },
+  { name: 'qianmen', seconds: 4 },
+  { name: 'hutong', seconds: 8 },
+  { name: 'bell-drum', seconds: 12 },
+  { name: 'shichahai', seconds: 16 },
+  { name: 'palace-moat', seconds: 20 },
+  { name: 'ring-road', seconds: 24 },
+  { name: 'overpass', seconds: 28 },
 ];
 
 const SMALL_TEXT_MIN_CONTRAST = 4.5;
@@ -676,7 +681,7 @@ for (const viewport of viewports) {
     const state = await page.evaluate(() => window.__BEIJING_LOOP_TEST__.readState());
     assert.ok(state && [state.progress, state.phase, state.angle].every(Number.isFinite));
     assert.ok(
-      Math.abs(state.phase - passage.seconds / 16) < 1e-10,
+      Math.abs(state.phase - passage.seconds / LOOP_SECONDS) < 1e-10,
       `${viewport.name}/${passage.name}: phase mismatch ${state.phase}`,
     );
     await page.screenshot({ path: `${OUT}/${viewport.name}-${passage.name}.png` });
@@ -1292,7 +1297,7 @@ await falseSuccessContext.addInitScript(() => {
     value: () => nativeNow() + clockOffset,
   });
   window.__BEIJING_ADVANCE_RECORDER_CLOCK__ = () => {
-    clockOffset += 17_000;
+    clockOffset += 33_000;
   };
 
   const nativeStop = MediaStreamTrack.prototype.stop;
@@ -1521,9 +1526,9 @@ assert.equal(
 reports['recorder-runtime-error'] = { trackStopped: true, playbackRestored: true };
 await recorderErrorContext.close();
 
-// Real 16-second capture regression. A 1.2-second main-thread stall must not
+// Real 32-second capture regression. A 1.2-second main-thread stall must not
 // shorten the scene traversal: the next frame catches up from wall time, the
-// final non-duplicate frame is 959/60s, and the UI returns to the exact seam.
+// final non-duplicate frame is 1919/60s, and the UI returns to the exact seam.
 const recordingContext = await browser.newContext({
   viewport: { width: 900, height: 640 },
   deviceScaleFactor: 1,
@@ -1561,7 +1566,7 @@ assert.equal(
   false,
   'recording fixture starts paused',
 );
-const recordingDownloadPromise = recordingPage.waitForEvent('download', { timeout: 22_000 });
+const recordingDownloadPromise = recordingPage.waitForEvent('download', { timeout: 45_000 });
 await recordingPage.locator('[data-act="record"]').click();
 await recordingPage.waitForFunction(
   () => window.__BEIJING_LOOP_TEST__.readRecording().status === 'recording',
@@ -1590,7 +1595,12 @@ assert.deepEqual(
 );
 assert.equal(await recordingPage.locator('.ui-rec').isVisible(), true, 'record badge visible');
 assert.equal(await recordingPage.locator('[data-act="play"]').isDisabled(), true, 'play locked during capture');
-assert.equal(await recordingPage.locator('[data-act="record"]').isDisabled(), true, 'record locked during capture');
+assert.equal(await recordingPage.locator('[data-act="record"]').isDisabled(), false, 'record stays available to cancel');
+assert.equal(
+  await recordingPage.locator('[data-act="record"]').getAttribute('aria-label'),
+  'Cancel recording',
+  'record control offers cancel while active',
+);
 assert.equal(await recordingPage.locator('[data-act="about"]').isDisabled(), true, 'about locked during capture');
 
 await recordingPage.locator('body').click({ position: { x: 450, y: 500 } });
@@ -1634,14 +1644,14 @@ const postStall = await recordingPage.evaluate(() => ({
 assert.ok(postStall.recording.elapsedSeconds > 1.9, 'recording wall clock did not include the stall');
 assert.ok(postStall.recording.sceneSeconds > 1.85, 'scene clock did not catch up after the stall');
 assert.ok(
-  Math.abs(postStall.state.phase * 16 - postStall.recording.sceneSeconds) < 1e-10,
+  Math.abs(postStall.state.phase * LOOP_SECONDS - postStall.recording.sceneSeconds) < 1e-10,
   'recording scene phase diverged from its authoritative frame time',
 );
 
 await recordingPage.waitForFunction(
   () => window.__BEIJING_LOOP_TEST__.readRecording().status === 'complete',
   undefined,
-  { timeout: 22_000 },
+  { timeout: 45_000 },
 );
 await recordingPage.waitForTimeout(80);
 const completedRecording = await recordingPage.evaluate(() => ({
@@ -1658,13 +1668,13 @@ const recordingResult = completedRecording.recording.result;
 assert.ok(recordingResult, 'recording completion result missing');
 assert.equal(recordingResult.status, 'complete', 'recording result status');
 assert.ok(
-  recordingResult.elapsedSeconds >= 16 && recordingResult.elapsedSeconds < 17,
+  recordingResult.elapsedSeconds >= 32 && recordingResult.elapsedSeconds < 33,
   `recording duration is unreasonable: ${recordingResult.elapsedSeconds}`,
 );
-assert.equal(recordingResult.totalFrames, 960, 'recording frame budget');
-assert.equal(recordingResult.finalFrameIndex, 959, 'recording final non-duplicate frame');
+assert.equal(recordingResult.totalFrames, 1920, 'recording frame budget');
+assert.equal(recordingResult.finalFrameIndex, 1919, 'recording final non-duplicate frame');
 assert.ok(
-  Math.abs(recordingResult.finalSceneSeconds - 959 / 60) < 1e-10,
+  Math.abs(recordingResult.finalSceneSeconds - 1919 / 60) < 1e-10,
   `recording final scene time: ${recordingResult.finalSceneSeconds}`,
 );
 assert.ok(recordingResult.blobSize > 0, 'recording blob is empty');
@@ -1690,7 +1700,7 @@ assert.ok(
   completedRecording.capturePerformance.visibleLampLightCount > 0,
   'capture material mode did not restore point lights',
 );
-assert.match(completedRecording.live, /recording complete.*16-second WebM/i, 'completion announced');
+assert.match(completedRecording.live, /recording complete.*32-second WebM/i, 'completion announced');
 assert.equal(await recordingPage.locator('.ui-rec').isVisible(), false, 'record badge clears');
 assert.equal(await recordingPage.locator('[data-act="play"]').isDisabled(), false, 'play unlocks');
 assert.equal(await recordingPage.locator('[data-act="record"]').isDisabled(), false, 'record unlocks');
@@ -1730,7 +1740,7 @@ assert.equal(
 );
 const webmTimeline = parseWebmTimeline(recordingBytes);
 assert.ok(
-  webmTimeline.lastTimestampSeconds >= 15.9 && webmTimeline.lastTimestampSeconds <= 16.3,
+  webmTimeline.lastTimestampSeconds >= 31.9 && webmTimeline.lastTimestampSeconds <= 32.3,
   `downloaded WebM ends at ${webmTimeline.lastTimestampSeconds.toFixed(3)}s instead of one loop`,
 );
 assert.ok(
@@ -1752,6 +1762,56 @@ reports['recording-stall'] = {
   downloadedWebm: webmTimeline,
 };
 await recordingContext.close();
+
+const cancelContext = await browser.newContext({
+  viewport: { width: 900, height: 640 },
+  deviceScaleFactor: 1,
+  acceptDownloads: true,
+});
+const cancelPage = await cancelContext.newPage();
+attachRuntimeDiagnostics(cancelPage, 'recording-cancel', runtimeErrors);
+await waitForExperience(cancelPage);
+let cancelDownloaded = false;
+cancelPage.on('download', () => {
+  cancelDownloaded = true;
+});
+await cancelPage.locator('[data-act="record"]').click();
+await cancelPage.waitForFunction(
+  () => window.__BEIJING_LOOP_TEST__.readRecording().status === 'recording',
+);
+await cancelPage.waitForTimeout(400);
+await cancelPage.locator('[data-act="record"]').click();
+await cancelPage.waitForFunction(
+  () => window.__BEIJING_LOOP_TEST__.readRecording().status === 'cancelled',
+);
+const cancelledRecording = await cancelPage.evaluate(() => ({
+  recording: window.__BEIJING_LOOP_TEST__.readRecording(),
+  live: document.querySelector('[data-ui-live]')?.textContent ?? '',
+}));
+assert.equal(cancelledRecording.recording.active, false, 'cancelled recording left recorder active');
+assert.equal(cancelledRecording.recording.status, 'cancelled', 'cancelled recording status');
+assert.ok(
+  (cancelledRecording.recording.result?.elapsedSeconds ?? 0) < 32,
+  'cancelled recording ran a full loop before stopping',
+);
+assert.match(
+  cancelledRecording.live,
+  /recording cancelled.*no video was downloaded/i,
+  'cancel is announced',
+);
+assert.equal(cancelDownloaded, false, 'cancel must not download a WebM');
+assert.equal(await cancelPage.locator('.ui-rec').isVisible(), false, 'cancel clears record badge');
+assert.equal(
+  await cancelPage.locator('[data-act="record"]').getAttribute('aria-label'),
+  'Record one complete loop',
+  'cancel restores record label',
+);
+reports['recording-cancel'] = {
+  status: cancelledRecording.recording.status,
+  elapsedSeconds: cancelledRecording.recording.result?.elapsedSeconds ?? 0,
+  downloaded: cancelDownloaded,
+};
+await cancelContext.close();
 
 const reducedContext = await browser.newContext({
   viewport: { width: 390, height: 844 },

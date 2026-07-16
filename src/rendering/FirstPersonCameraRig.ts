@@ -4,7 +4,7 @@ import { samplePathFrame, wrapProgress } from './drivePath';
 
 /**
  * The authored path uses compact composition units. Scaling its centreline
- * into scene metres keeps one 16 second lap near urban-road speed while road
+ * into scene metres keeps one 32 second lap near urban-road speed while road
  * widths, props and the camera retain human-scale dimensions.
  */
 export const DRIVE_PATH_SCALE = 0.19;
@@ -12,9 +12,11 @@ export const DRIVE_EYE_HEIGHT = DRIVE.cameraHeight;
 
 const LANDSCAPE_FOV = 58;
 const PORTRAIT_FOV = 72;
-const LANDSCAPE_AHEAD_PHASE = 0.052;
-const PORTRAIT_AHEAD_PHASE = 0.064;
-const BOB_CYCLES = 8;
+// Normalized path fractions: the loop is twice as long as the original 16s
+// circuit, so half the phase keeps the same look-ahead distance in metres.
+const LANDSCAPE_AHEAD_PHASE = 0.026;
+const PORTRAIT_AHEAD_PHASE = 0.032;
+const BOB_CYCLES = 16;
 const BOB_HEIGHT = 0.012;
 
 /** Pure phase-derived first-person camera for the closed authored drive path. */

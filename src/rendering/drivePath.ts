@@ -6,28 +6,29 @@ import {
 } from 'three';
 
 /**
- * A locally-authored, closed street circuit in abstract city units. The curve
- * is intentionally broad and self-contained: it suggests a tour around central
- * Beijing without claiming geographic accuracy or loading map data.
+ * A locally-authored, closed street circuit in abstract city units. The loop
+ * reads as a Second-Ring-style rounded rectangle: long ceremonial straights,
+ * softly squared corners, and a gentle authored sway so the drive never feels
+ * like a perfect oval. It suggests a tour around central Beijing without
+ * claiming geographic accuracy or loading map data.
  */
-const CONTROL_POINTS = [
-  [0, -214],
-  [78, -208],
-  [154, -178],
-  [205, -116],
-  [228, -30],
-  [221, 66],
-  [188, 151],
-  [126, 211],
-  [38, 241],
-  [-60, 230],
-  [-143, 190],
-  [-201, 121],
-  [-227, 37],
-  [-217, -53],
-  [-176, -136],
-  [-104, -190],
-].map(([x, z]) => new Vector3(x, 0, z));
+const CONTROL_POINT_COUNT = 28;
+const RING_HALF_WIDTH = 505;
+const RING_HALF_HEIGHT = 370;
+const RING_SQUARENESS = 2.6;
+
+const CONTROL_POINTS = Array.from({ length: CONTROL_POINT_COUNT }, (_, index) => {
+  const angle = (index / CONTROL_POINT_COUNT) * Math.PI * 2;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  const rounded =
+    (Math.abs(cos) / RING_HALF_WIDTH) ** RING_SQUARENESS +
+    (Math.abs(sin) / RING_HALF_HEIGHT) ** RING_SQUARENESS;
+  const sway =
+    1 + 0.024 * Math.sin(angle * 3 + 0.9) + 0.014 * Math.sin(angle * 5 + 2.2);
+  const radius = rounded ** (-1 / RING_SQUARENESS) * sway;
+  return new Vector3(radius * cos, 0, radius * sin);
+});
 
 export const DRIVE_PATH = new CatmullRomCurve3(
   CONTROL_POINTS,
@@ -35,6 +36,8 @@ export const DRIVE_PATH = new CatmullRomCurve3(
   'catmullrom',
   0.18,
 );
+// The doubled circuit needs a denser arc-length table to keep speed constant.
+DRIVE_PATH.arcLengthDivisions = 640;
 
 export interface PathFrame {
   point: Vector3;

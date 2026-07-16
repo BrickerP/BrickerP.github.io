@@ -111,7 +111,7 @@ export class Controls {
         <span class="rec-time" aria-hidden="true">0.0s</span>
       </div>
 
-      <p class="sr-only" id="record-capability">Records and downloads one 16-second WebM loop.</p>
+      <p class="sr-only" id="record-capability">Records and downloads one 32-second WebM loop. Press again to cancel without downloading.</p>
       <p class="sr-only" id="fullscreen-capability">Expands the drive to fill the screen.</p>
       <p class="sr-only" data-ui-live role="status" aria-live="polite" aria-atomic="true"></p>
     `;
@@ -180,7 +180,7 @@ export class Controls {
   setCapabilities(capabilities: ControlCapabilities): void {
     this.capabilities = capabilities;
     this.recordDescription.textContent = capabilities.recording
-      ? 'Records and downloads one complete 16-second WebM loop.'
+      ? 'Records and downloads one complete 32-second WebM loop. Press again to cancel without downloading.'
       : 'Recording is unavailable because this browser cannot capture the canvas as WebM video.';
     this.fullscreenDescription.textContent = capabilities.fullscreen
       ? 'Expands the drive to fill the screen.'
@@ -214,11 +214,16 @@ export class Controls {
     this.recordBtn.setAttribute(
       'aria-label',
       active
-        ? 'Recording one complete loop'
+        ? 'Cancel recording'
         : this.capabilities.recording
           ? 'Record one complete loop'
           : 'Recording unavailable in this browser',
     );
+    this.recordBtn.title = active
+      ? 'Cancel recording (R)'
+      : this.capabilities.recording
+        ? 'Record one complete loop (R)'
+        : 'Recording unavailable: canvas capture is not supported';
     this.syncDisabledState();
   }
 
@@ -234,7 +239,8 @@ export class Controls {
     this.playBtn.disabled = this.recording;
     this.playBtn.setAttribute('aria-disabled', String(this.recording));
 
-    const recordingDisabled = this.recording || !this.capabilities.recording;
+    // Stay clickable while recording so a second press can cancel without download.
+    const recordingDisabled = !this.capabilities.recording;
     this.recordBtn.disabled = recordingDisabled;
     this.recordBtn.setAttribute('aria-disabled', String(recordingDisabled));
     if (!this.recording) {

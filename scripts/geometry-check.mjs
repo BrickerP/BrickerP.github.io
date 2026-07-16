@@ -194,13 +194,17 @@ assert.doesNotMatch(
   'runtime scene uses non-deterministic crypto randomness',
 );
 assert.match(combinedSource, /central[\s_-]*axis/i, 'scene config is missing the central-axis passage');
+assert.match(combinedSource, /qianmen|dashilar/i, 'scene config is missing the Qianmen passage');
 assert.match(combinedSource, /hutong/i, 'scene config is missing the hutong passage');
-assert.match(combinedSource, /water(front)?/i, 'scene config is missing the waterfront passage');
+assert.match(combinedSource, /bell|drum/i, 'scene config is missing the Bell & Drum Tower passage');
+assert.match(combinedSource, /water(front)?|shichahai/i, 'scene config is missing the waterfront passage');
+assert.match(combinedSource, /moat|corner\s*tower/i, 'scene config is missing the palace-moat passage');
+assert.match(combinedSource, /ring\s*road|arrow\s*tower|deshengmen/i, 'scene config is missing the ring-road passage');
 assert.match(combinedSource, /overpass|flyover/i, 'scene config is missing the overpass passage');
 assert.match(
   combinedSource,
-  /(?:16_?000|LOOP_SECONDS\s*=\s*16|duration\s*:\s*16)/,
-  'scene config is missing the canonical 16-second duration',
+  /(?:32_?000|LOOP_SECONDS\s*=\s*32|duration\s*:\s*32)/,
+  'scene config is missing the canonical 32-second duration',
 );
 
 console.log('=== FIRST-PERSON GEOMETRY CHECK ===');
@@ -217,8 +221,17 @@ console.log(
       tangentEndpointDelta: vectorDelta(tangents[0], tangents.at(-1)),
       ribbonVertices: ribbonSnapshot.position.length / 3,
       ribbonTriangles: ribbonSnapshot.index.length / 3,
-      passages: ['central-axis', 'hutong', 'waterfront', 'overpass'],
-      loopSeconds: 16,
+      passages: [
+        'central-axis',
+        'qianmen',
+        'hutong',
+        'bell-drum',
+        'shichahai',
+        'palace-moat',
+        'ring-road',
+        'overpass',
+      ],
+      loopSeconds: 32,
     },
     null,
     2,

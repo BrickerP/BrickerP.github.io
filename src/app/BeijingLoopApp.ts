@@ -27,7 +27,8 @@ export interface AppState {
 }
 
 const MAX_DT = 1 / 20;
-const REDUCED_MOTION_POSTER_PHASE = 0.1;
+// Poster frame: red walls with the Zhengyangmen gate towering just ahead.
+const REDUCED_MOTION_POSTER_PHASE = 0.03;
 const CAPTURE_WIDTH = 320;
 const CAPTURE_HEIGHT = 180;
 

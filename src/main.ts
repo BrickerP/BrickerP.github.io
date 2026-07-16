@@ -145,7 +145,7 @@ function main(): void {
       if (about.isOpen) return;
       toggleFullscreen();
     },
-    onRecord: () => startRecording(),
+    onRecord: () => toggleRecording(),
     onAbout: () => toggleAbout(),
   });
   controls.setCapabilities(capabilities);
@@ -186,6 +186,19 @@ function main(): void {
     app.update(dt);
     controls.syncDebug(app.state);
     if (app.state.playing) requestFrame();
+  }
+
+  function toggleRecording(): void {
+    if (recorder.active) {
+      cancelRecording();
+      return;
+    }
+    startRecording();
+  }
+
+  function cancelRecording(): void {
+    if (!recorder.active) return;
+    recorder.stop('cancelled');
   }
 
   function startRecording(): void {
@@ -282,7 +295,9 @@ function main(): void {
     lastTime = performance.now();
 
     if (result.status === 'complete') {
-      controls.announce('Recording complete. The 16-second WebM loop is ready.');
+      controls.announce('Recording complete. The 32-second WebM loop is ready.');
+    } else if (result.status === 'cancelled') {
+      controls.announce('Recording cancelled. No video was downloaded.');
     } else if (result.status === 'failed') {
       controls.announce(
         result.error
@@ -355,7 +370,7 @@ function main(): void {
         break;
       case 'r':
       case 'R':
-        startRecording();
+        toggleRecording();
         break;
     }
   });
