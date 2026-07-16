@@ -1132,6 +1132,7 @@ await tickFailureContext.close();
 const falseSuccessContext = await browser.newContext({
   viewport: { width: 800, height: 600 },
   deviceScaleFactor: 1,
+  acceptDownloads: true,
 });
 await falseSuccessContext.addInitScript(() => {
   window.__BEIJING_TRACK_STOPS__ = 0;
@@ -1143,7 +1144,7 @@ await falseSuccessContext.addInitScript(() => {
     value: () => nativeNow() + clockOffset,
   });
   window.__BEIJING_ADVANCE_RECORDER_CLOCK__ = () => {
-    clockOffset = 17_000;
+    clockOffset += 17_000;
   };
 
   const nativeStop = MediaStreamTrack.prototype.stop;
@@ -1179,7 +1180,18 @@ await falseSuccessContext.addInitScript(() => {
       }
     }
 
-    requestData() {}
+    requestData() {
+      if (this.attempt !== 3 || this.drainStopScheduled) return;
+      this.drainStopScheduled = true;
+      setTimeout(() => {
+        if (this.state !== 'recording') return;
+        this.ondataavailable?.({
+          data: new Blob(['truncated-drain-data'], { type: 'video/webm' }),
+        });
+        this.state = 'inactive';
+        this.onstop?.(new Event('stop'));
+      }, 0);
+    }
 
     stop() {
       this.state = 'inactive';
@@ -1193,6 +1205,10 @@ await falseSuccessContext.addInitScript(() => {
   });
 });
 const falseSuccessPage = await falseSuccessContext.newPage();
+let falseSuccessDownloads = 0;
+falseSuccessPage.on('download', () => {
+  falseSuccessDownloads += 1;
+});
 attachRuntimeDiagnostics(falseSuccessPage, 'recorder-false-success', runtimeErrors);
 await waitForExperience(falseSuccessPage);
 
@@ -1244,11 +1260,50 @@ assert.equal(
 );
 assert.ok(emptyCompletion.trackStops >= 2, 'false-success attempts leaked capture tracks');
 assert.doesNotMatch(emptyCompletion.live, /recording complete/i, 'empty recording announced success');
+
+// Even after the terminal frame is rendered, completion is not committed until
+// our own post-drain stop call. A recorder that emits non-empty partial data and
+// stops by itself inside the drain window must still fail without downloading.
+await falseSuccessPage.locator('[data-act="record"]').click();
+await falseSuccessPage.evaluate(() => window.__BEIJING_ADVANCE_RECORDER_CLOCK__());
+await falseSuccessPage.waitForFunction(
+  () => window.__BEIJING_LOOP_TEST__.readRecording().status === 'failed',
+);
+await falseSuccessPage.waitForTimeout(40);
+const drainWindowStop = await falseSuccessPage.evaluate(() => ({
+  recording: window.__BEIJING_LOOP_TEST__.readRecording(),
+  trackStops: window.__BEIJING_TRACK_STOPS__,
+  live: document.querySelector('[data-ui-live]')?.textContent ?? '',
+}));
+assert.match(
+  drainWindowStop.recording.result?.error ?? '',
+  /stopped.*unexpectedly/i,
+  'drain-window unexpected stop evidence',
+);
+assert.ok(
+  drainWindowStop.recording.result?.blobSize > 0,
+  'drain-window fixture did not produce non-empty partial data',
+);
+assert.equal(
+  drainWindowStop.recording.result?.tracksStopped,
+  drainWindowStop.recording.result?.trackCount,
+  'drain-window unexpected stop leaked a track',
+);
+assert.ok(drainWindowStop.trackStops >= 3, 'drain-window attempt leaked its capture track');
+assert.equal(falseSuccessDownloads, 0, 'an incomplete drain-window recording was downloaded');
+assert.doesNotMatch(
+  drainWindowStop.live,
+  /recording complete/i,
+  'drain-window unexpected stop announced success',
+);
 reports['recorder-false-success'] = {
   unexpectedStopFailed: true,
   emptyCompletionFailed: true,
+  drainWindowStopFailed: true,
+  drainWindowPartialBlobSize: drainWindowStop.recording.result?.blobSize,
+  downloads: falseSuccessDownloads,
   explicitWebmMime: true,
-  trackStops: emptyCompletion.trackStops,
+  trackStops: drainWindowStop.trackStops,
 };
 await falseSuccessContext.close();
 
@@ -1324,6 +1379,27 @@ const recordingContext = await browser.newContext({
   deviceScaleFactor: 1,
   acceptDownloads: true,
 });
+await recordingContext.addInitScript(() => {
+  window.__BEIJING_TERMINAL_FRAME_REQUESTS__ = 0;
+  window.__BEIJING_CAPTURE_STREAM_RATES__ = [];
+  const nativeCaptureStream = HTMLCanvasElement.prototype.captureStream;
+  HTMLCanvasElement.prototype.captureStream = function (...args) {
+    window.__BEIJING_CAPTURE_STREAM_RATES__.push(args[0]);
+    const stream = nativeCaptureStream.apply(this, args);
+    for (const track of stream.getVideoTracks()) {
+      if (typeof track.requestFrame !== 'function') continue;
+      const nativeRequestFrame = track.requestFrame.bind(track);
+      Object.defineProperty(track, 'requestFrame', {
+        configurable: true,
+        value: () => {
+          window.__BEIJING_TERMINAL_FRAME_REQUESTS__ += 1;
+          nativeRequestFrame();
+        },
+      });
+    }
+    return stream;
+  };
+});
 const recordingPage = await recordingContext.newPage();
 attachRuntimeDiagnostics(recordingPage, 'recording-stall', runtimeErrors);
 await waitForExperience(recordingPage);
@@ -1387,6 +1463,8 @@ const completedRecording = await recordingPage.evaluate(() => ({
   recording: window.__BEIJING_LOOP_TEST__.readRecording(),
   state: window.__BEIJING_LOOP_TEST__.readState(),
   live: document.querySelector('[data-ui-live]')?.textContent ?? '',
+  terminalFrameRequests: window.__BEIJING_TERMINAL_FRAME_REQUESTS__,
+  captureStreamRates: window.__BEIJING_CAPTURE_STREAM_RATES__,
 }));
 const recordingResult = completedRecording.recording.result;
 assert.ok(recordingResult, 'recording completion result missing');
@@ -1414,6 +1492,16 @@ assert.match(completedRecording.live, /recording complete.*16-second WebM/i, 'co
 assert.equal(await recordingPage.locator('.ui-rec').isVisible(), false, 'record badge clears');
 assert.equal(await recordingPage.locator('[data-act="play"]').isDisabled(), false, 'play unlocks');
 assert.equal(await recordingPage.locator('[data-act="record"]').isDisabled(), false, 'record unlocks');
+assert.deepEqual(
+  completedRecording.captureStreamRates,
+  [60],
+  'recording must use one automatic 60fps capture stream',
+);
+assert.equal(
+  completedRecording.terminalFrameRequests,
+  1,
+  'only the terminal frame may use manual requestFrame capture',
+);
 const recordingDownload = await recordingDownloadPromise;
 assert.equal(
   recordingDownload.suggestedFilename(),
@@ -1446,6 +1534,8 @@ reports['recording-stall'] = {
   trackCount: recordingResult.trackCount,
   restoredPhase: completedRecording.state.phase,
   combinedOverlaySafe: ['desktop-900', 'mobile-320'],
+  terminalFrameRequests: completedRecording.terminalFrameRequests,
+  captureStreamRates: completedRecording.captureStreamRates,
   downloadedWebm: webmTimeline,
 };
 await recordingContext.close();

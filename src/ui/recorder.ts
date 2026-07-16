@@ -36,6 +36,11 @@ const WEBM_MIME_CANDIDATES = [
   'video/webm',
 ] as const;
 
+// `MediaRecorder.stop()` may overtake the canvas capture / video encoder on
+// software-rendered CI. Keep the already-rendered terminal frame unchanged
+// while the encoder drains; this does not add another scene frame.
+const COMPLETE_ENCODER_DRAIN_MS = 180;
+
 /** Records one deterministic street circuit as a WebM download. */
 export class LoopRecorder {
   private recorder: MediaRecorder | null = null;
@@ -43,6 +48,8 @@ export class LoopRecorder {
   private chunks: Blob[] = [];
   private startTime = 0;
   private raf = 0;
+  private flushTimer = 0;
+  private completionPending = false;
   private mime = 'video/webm';
   private requestedStatus: StopStatus | null = null;
   private failureMessage: string | undefined;
@@ -118,6 +125,7 @@ export class LoopRecorder {
     this.recorder = recorder;
     this.chunks = [];
     this.requestedStatus = null;
+    this.completionPending = false;
     this.failureMessage = undefined;
     this.onDone = onDone;
     this.lastTick = frameTick(0, 0);
@@ -165,6 +173,9 @@ export class LoopRecorder {
   stop(status: StopStatus = 'cancelled'): void {
     cancelAnimationFrame(this.raf);
     this.raf = 0;
+    clearTimeout(this.flushTimer);
+    this.flushTimer = 0;
+    this.completionPending = false;
     if (!this.recorder) return;
 
     if (this.requestedStatus !== 'failed') this.requestedStatus = status;
@@ -202,19 +213,34 @@ export class LoopRecorder {
     }
 
     if (elapsedSeconds >= DRIVE.duration) {
-      this.requestedStatus = 'complete';
-      try {
-        this.recorder?.requestData();
-      } catch {
-        // `stop()` still flushes the final data chunk on conforming implementations.
-      }
-      // Hold the final non-duplicate frame for one paint before stopping. The UI
-      // restores the exact seam only after MediaRecorder has emitted `stop`.
-      this.raf = requestAnimationFrame(() => this.stop('complete'));
+      // Reaching the terminal frame is not yet proof of a completed recording.
+      // Keep requestedStatus unset until our own post-drain stop call; an
+      // unsolicited `stop` event during this window must finalize as failed.
+      this.completionPending = true;
+      // Automatic captureStream(60) sampling remains authoritative throughout
+      // the lap. Request only this final, non-duplicate frame explicitly so a
+      // slow compositor cannot leave it behind when recording stops.
+      requestTerminalFrame(this.stream);
+      // Cross one paint boundary before asking MediaRecorder to flush. Then keep
+      // the canvas unchanged for a short encoder-drain window before stopping.
+      this.raf = requestAnimationFrame(() => this.flushCompleteRecording());
       return;
     }
 
     this.raf = requestAnimationFrame(() => this.tick(onTick));
+  }
+
+  private flushCompleteRecording(): void {
+    this.raf = 0;
+    if (!this.recorder || !this.completionPending) return;
+
+    requestRecorderData(this.recorder);
+    this.flushTimer = window.setTimeout(() => {
+      this.flushTimer = 0;
+      if (!this.recorder || !this.completionPending) return;
+      requestRecorderData(this.recorder);
+      this.stop('complete');
+    }, COMPLETE_ENCODER_DRAIN_MS);
   }
 
   private finalize(): void {
@@ -222,6 +248,9 @@ export class LoopRecorder {
     this.finalized = true;
     cancelAnimationFrame(this.raf);
     this.raf = 0;
+    clearTimeout(this.flushTimer);
+    this.flushTimer = 0;
+    this.completionPending = false;
 
     const elapsedSeconds = Math.max(0, (performance.now() - this.startTime) / 1000);
     const blob = new Blob(this.chunks, { type: this.mime.split(';')[0] });
@@ -268,6 +297,9 @@ export class LoopRecorder {
   private abortStart(error: string): { started: false; error: string } {
     cancelAnimationFrame(this.raf);
     this.raf = 0;
+    clearTimeout(this.flushTimer);
+    this.flushTimer = 0;
+    this.completionPending = false;
     const recorder = this.recorder;
     if (recorder) {
       recorder.ondataavailable = null;
@@ -288,6 +320,25 @@ export class LoopRecorder {
     this.failureMessage = undefined;
     this.finalized = true;
     return { started: false, error };
+  }
+}
+
+function requestTerminalFrame(stream: MediaStream | null): void {
+  const track = stream?.getVideoTracks()[0] as
+    | (MediaStreamTrack & { requestFrame?: () => void })
+    | undefined;
+  try {
+    track?.requestFrame?.();
+  } catch {
+    // The following paint and recorder flush remain the compatibility path.
+  }
+}
+
+function requestRecorderData(recorder: MediaRecorder): void {
+  try {
+    if (recorder.state !== 'inactive') recorder.requestData();
+  } catch {
+    // `stop()` still flushes the final data chunk on conforming implementations.
   }
 }
 
