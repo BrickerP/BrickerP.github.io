@@ -1,15 +1,30 @@
-import p5 from 'p5';
 import './styles/main.css';
-import { loadBeijingMap } from './data/mapLoader';
 import { BeijingLoopApp, type AppState } from './app/BeijingLoopApp';
 import { Controls } from './ui/controls';
-import { LoopRecorder } from './ui/recorder';
-import type { ViewMode } from './rendering/theme';
+import {
+  LoopRecorder,
+  RECORDING_FRAME_COUNT,
+  type RecordingResult,
+  type RecordingTick,
+} from './ui/recorder';
+
+interface RecordingTelemetry {
+  active: boolean;
+  status: 'idle' | 'recording' | RecordingResult['status'];
+  elapsedSeconds: number;
+  sceneSeconds: number;
+  frameIndex: number;
+  totalFrames: number;
+  previousPlaying: boolean;
+  error?: string;
+  result?: RecordingResult;
+}
 
 interface BeijingLoopTestHook {
   seek(seconds: number): void;
-  setMode(mode: ViewMode): void;
   readState(): AppState;
+  startRecording(): void;
+  readRecording(): RecordingTelemetry;
   redraw(): void;
 }
 
@@ -19,15 +34,20 @@ declare global {
   }
 }
 
-const mount = document.getElementById('app')!;
+const mount = requireMount('app');
 
-// boot message while data + p5 initialise
+function requireMount(id: string): HTMLElement {
+  const element = document.getElementById(id);
+  if (!element) throw new Error(`Missing #${id} mount`);
+  return element;
+}
+
 const boot = document.createElement('div');
 boot.className = 'boot';
 boot.setAttribute('role', 'status');
 boot.setAttribute('aria-live', 'polite');
 boot.setAttribute('aria-atomic', 'true');
-boot.textContent = 'Beijing Infinite Loop — loading';
+boot.textContent = 'Beijing endless drive — preparing the road';
 mount.appendChild(boot);
 
 function showBootError(message: string): void {
@@ -38,24 +58,23 @@ function showBootError(message: string): void {
   boot.textContent = message;
 }
 
-const prefersReduced =
-  window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-
-/** Detect WebGL support up front so we can show a message instead of a blank canvas. */
 function webglAvailable(): boolean {
   try {
-    const c = document.createElement('canvas');
-    return !!(
-      c.getContext('webgl2') ||
-      c.getContext('webgl') ||
-      c.getContext('experimental-webgl')
-    );
+    const canvas = document.createElement('canvas');
+    return Boolean(canvas.getContext('webgl2'));
   } catch {
     return false;
   }
 }
 
-async function main(): Promise<void> {
+function fullscreenAvailable(): boolean {
+  return (
+    typeof document.documentElement.requestFullscreen === 'function' &&
+    typeof document.exitFullscreen === 'function'
+  );
+}
+
+function main(): void {
   if (!webglAvailable()) {
     showBootError(
       'This visualization needs WebGL, which is unavailable or disabled in this browser. ' +
@@ -64,94 +83,217 @@ async function main(): Promise<void> {
     return;
   }
 
-  let map;
+  const reducedMotion =
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+
+  let app: BeijingLoopApp;
   try {
-    map = await loadBeijingMap();
-  } catch (err) {
+    app = new BeijingLoopApp(mount, reducedMotion);
+  } catch (error) {
     showBootError(
-      'Could not load map data. Try running `npm run gen:map`, then reload. ' +
-        (err instanceof Error ? err.message : ''),
+      'The first-person scene could not start. Try reloading with hardware acceleration enabled. ' +
+        (error instanceof Error ? error.message : ''),
     );
     return;
   }
 
-  const app = new BeijingLoopApp(map, prefersReduced);
+  const canvas = app.canvas;
+  canvas.setAttribute('role', 'img');
+  canvas.setAttribute(
+    'aria-label',
+    'A seamless first-person night drive through an imagined Beijing',
+  );
+  canvas.setAttribute('aria-describedby', 'artwork-description');
+  boot.remove();
+
   const recorder = new LoopRecorder();
-  let controls: Controls;
-  let lastT = performance.now();
-  let hidden = document.hidden;
-  let canvasEl: HTMLCanvasElement | null = null;
-
-  // p5 in instance mode so nothing leaks onto window and TS stays happy.
-  const sketch = (p: p5) => {
-    p.setup = () => {
-      const c = p.createCanvas(window.innerWidth, window.innerHeight, p.WEBGL);
-      canvasEl = (c as unknown as { elt: HTMLCanvasElement }).elt;
-      canvasEl.setAttribute('role', 'img');
-      canvasEl.setAttribute('aria-label', 'Beijing second-ring infinite study');
-      canvasEl.setAttribute('aria-describedby', 'artwork-description');
-      const density = Math.min(window.devicePixelRatio || 1, 2);
-      p.pixelDensity(prefersReduced ? 1 : density);
-      p.setAttributes('antialias', true);
-      app.applyPerspective(p);
-      boot.remove();
-    };
-
-    p.draw = () => {
-      const now = performance.now();
-      let dt = (now - lastT) / 1000;
-      lastT = now;
-      // guard against huge dt right after the tab becomes visible again
-      if (dt > 0.1) dt = 1 / 60;
-
-      app.state.fps = p.frameRate();
-      app.update(p, dt);
-      controls?.syncDebug(app.state);
-    };
-
-    p.windowResized = () => {
-      p.resizeCanvas(window.innerWidth, window.innerHeight);
-      const density = Math.min(window.devicePixelRatio || 1, 2);
-      p.pixelDensity(prefersReduced ? 1 : density);
-      app.applyPerspective(p);
-    };
+  let frameRequest = 0;
+  let lastTime = performance.now();
+  let recordingPreviousPlaying = false;
+  let unloading = false;
+  let recordingTelemetry: RecordingTelemetry = {
+    active: false,
+    status: 'idle',
+    elapsedSeconds: 0,
+    sceneSeconds: 0,
+    frameIndex: 0,
+    totalFrames: RECORDING_FRAME_COUNT,
+    previousPlaying: false,
+  };
+  const capabilities = {
+    recording: recorder.isSupported(canvas),
+    fullscreen: fullscreenAvailable(),
   };
 
-  const instance = new p5(sketch, mount);
-
-  // --- UI wiring --------------------------------------------------------
-  const cb = {
-    onTogglePlay: () => app.togglePlay(),
-    onSetMode: (m: ViewMode) => app.setMode(m),
+  const controls = new Controls(mount, {
+    onTogglePlay: () => {
+      if (recorder.active) return;
+      app.togglePlay();
+      app.render();
+      controls.sync(app.state);
+      if (app.state.playing) requestFrame();
+    },
     onToggleFullscreen: () => toggleFullscreen(),
-    onToggleDebug: () => app.toggleDebug(),
     onRecord: () => startRecording(),
-  };
-  controls = new Controls(mount, cb);
+  });
+  controls.setCapabilities(capabilities);
   controls.sync(app.state);
-  app.onStateChange((s) => controls.sync(s));
+  app.onStateChange((state) => controls.sync(state));
+
+  function requestFrame(): void {
+    if (frameRequest === 0 && !document.hidden && !recorder.active) {
+      frameRequest = requestAnimationFrame(drawFrame);
+    }
+  }
+
+  function drawFrame(now: number): void {
+    frameRequest = 0;
+    if (recorder.active) return;
+    let dt = (now - lastTime) / 1000;
+    lastTime = now;
+    if (dt > 0.1) dt = 1 / 60;
+    app.update(dt);
+    controls.syncDebug(app.state);
+    if (app.state.playing) requestFrame();
+  }
 
   function startRecording(): void {
-    if (!canvasEl || recorder.active) return;
-    // reset the sim to phase 0 so the clip is a clean, seamless cycle
+    if (recorder.active) return;
+    if (!capabilities.recording) {
+      controls.announce(
+        'Recording is unavailable because this browser cannot capture WebM video.',
+      );
+      return;
+    }
+
+    recordingPreviousPlaying = app.state.playing;
+    recordingTelemetry = {
+      active: true,
+      status: 'recording',
+      elapsedSeconds: 0,
+      sceneSeconds: 0,
+      frameIndex: 0,
+      totalFrames: RECORDING_FRAME_COUNT,
+      previousPlaying: recordingPreviousPlaying,
+    };
+
+    cancelAnimationFrame(frameRequest);
+    frameRequest = 0;
+    app.setPlaying(false);
+    app.setDeterministicCapture(true);
     app.seekToCycleStart();
-    app.setPlaying(true);
-    const ok = recorder.start(
-      canvasEl,
-      (s) => controls.setRecording(true, s),
-      () => controls.setRecording(false),
+
+    const startResult = recorder.start(
+      canvas,
+      (tick) => updateRecordingFrame(tick),
+      (result) => finishRecording(result),
     );
-    if (!ok) {
-      alert('Recording is not supported in this browser.');
+    if (!startResult.started) {
+      recordingTelemetry = {
+        ...recordingTelemetry,
+        active: false,
+        status: 'failed',
+        error: startResult.error,
+      };
+      controls.setRecording(false);
+      app.setDeterministicCapture(false);
+      app.seekToCycleStart();
+      app.setPlaying(recordingPreviousPlaying);
+      app.render();
+      controls.announce(
+        `Recording could not start: ${startResult.error} No video was created.`,
+      );
+      lastTime = performance.now();
+      if (app.state.playing) requestFrame();
       return;
     }
     controls.setRecording(true, 0);
   }
 
-  // --- keyboard ---------------------------------------------------------
-  window.addEventListener('keydown', (e) => {
-    if (e.metaKey || e.ctrlKey || e.altKey) return;
-    const target = e.target;
+  function updateRecordingFrame(tick: RecordingTick): void {
+    // The recording wall clock maps directly to a canonical 60fps frame index.
+    // Ordinary `update(dt)` never runs during capture, so stalls cannot shorten
+    // the travelled loop or double-advance the camera.
+    app.seek(tick.sceneSeconds);
+    recordingTelemetry = {
+      ...recordingTelemetry,
+      active: true,
+      status: 'recording',
+      elapsedSeconds: tick.elapsedSeconds,
+      sceneSeconds: tick.sceneSeconds,
+      frameIndex: tick.frameIndex,
+      totalFrames: tick.totalFrames,
+    };
+    controls.setRecording(true, tick.elapsedSeconds);
+    controls.syncDebug(app.state);
+  }
+
+  function finishRecording(result: RecordingResult): void {
+    recordingTelemetry = {
+      ...recordingTelemetry,
+      active: false,
+      status: result.status,
+      elapsedSeconds: result.elapsedSeconds,
+      sceneSeconds: result.finalSceneSeconds,
+      frameIndex: result.finalFrameIndex,
+      totalFrames: result.totalFrames,
+      result: { ...result },
+    };
+    if (unloading) return;
+
+    controls.setRecording(false);
+    app.setDeterministicCapture(false);
+    app.seekToCycleStart();
+    app.setPlaying(recordingPreviousPlaying);
+    app.render();
+    controls.sync(app.state);
+    lastTime = performance.now();
+
+    if (result.status === 'complete') {
+      controls.announce('Recording complete. The 16-second WebM loop is ready.');
+    } else if (result.status === 'failed') {
+      controls.announce(
+        result.error
+          ? `Recording failed: ${result.error}`
+          : 'Recording failed. No complete video was created.',
+      );
+    }
+    if (app.state.playing) requestFrame();
+  }
+
+  function toggleFullscreen(): void {
+    if (!capabilities.fullscreen) {
+      controls.announce('Fullscreen is unavailable in this browser.');
+      return;
+    }
+    if (!document.fullscreenElement) {
+      document.documentElement
+        .requestFullscreen?.()
+        .catch((error) => {
+          console.warn('Could not enter fullscreen:', error);
+          controls.announce('Could not enter fullscreen. The browser denied the request.');
+        });
+    } else {
+      document
+        .exitFullscreen?.()
+        .catch((error) => {
+          console.warn('Could not exit fullscreen:', error);
+          controls.announce('Could not exit fullscreen. The browser denied the request.');
+        });
+    }
+  }
+
+  window.addEventListener('resize', () => {
+    app.resize(
+      window.innerWidth,
+      window.innerHeight,
+      window.devicePixelRatio || 1,
+    );
+  });
+
+  window.addEventListener('keydown', (event) => {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    const target = event.target;
     if (
       target instanceof HTMLElement &&
       (target.isContentEditable ||
@@ -159,19 +301,14 @@ async function main(): Promise<void> {
     ) {
       return;
     }
-    switch (e.key) {
+
+    switch (event.key) {
       case ' ':
-        e.preventDefault();
+        event.preventDefault();
+        if (recorder.active) break;
         app.togglePlay();
-        break;
-      case '1':
-        app.setMode('fractal');
-        break;
-      case '2':
-        app.setMode('overview');
-        break;
-      case '3':
-        app.setMode('fractal');
+        app.render();
+        if (app.state.playing) requestFrame();
         break;
       case 'f':
       case 'F':
@@ -180,6 +317,8 @@ async function main(): Promise<void> {
       case 'd':
       case 'D':
         app.toggleDebug();
+        controls.sync(app.state);
+        controls.syncDebug(app.state);
         break;
       case 'r':
       case 'R':
@@ -188,46 +327,53 @@ async function main(): Promise<void> {
     }
   });
 
-  // --- visibility: pause the loop when the tab is hidden ----------------
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
-      hidden = true;
-      instance.noLoop();
-    } else if (hidden) {
-      hidden = false;
-      lastT = performance.now(); // avoid a huge dt on resume
-      instance.loop();
+      cancelAnimationFrame(frameRequest);
+      frameRequest = 0;
+    } else {
+      lastTime = performance.now();
+      app.render();
+      if (app.state.playing) requestFrame();
     }
   });
 
-  function toggleFullscreen(): void {
-    if (!document.fullscreenElement) {
-      document.documentElement
-        .requestFullscreen?.()
-        .catch((error) => console.warn('Could not enter fullscreen:', error));
-    } else {
-      document
-        .exitFullscreen?.()
-        .catch((error) => console.warn('Could not exit fullscreen:', error));
-    }
-  }
-
-  if (import.meta.env.DEV) {
+  const qaEnabled =
+    import.meta.env.DEV || new URLSearchParams(window.location.search).get('qa') === '1';
+  if (qaEnabled) {
     window.__BEIJING_LOOP_TEST__ = {
       seek(seconds: number) {
+        if (recorder.active) return;
         app.setPlaying(false);
         app.seek(seconds);
-        lastT = performance.now();
-        instance.redraw();
-      },
-      setMode(mode: ViewMode) {
-        app.setMode(mode);
-        instance.redraw();
+        lastTime = performance.now();
+        controls.sync(app.state);
+        controls.syncDebug(app.state);
       },
       readState: () => ({ ...app.state }),
-      redraw: () => instance.redraw(),
+      startRecording: () => startRecording(),
+      readRecording: () => ({
+        ...recordingTelemetry,
+        ...(recordingTelemetry.result
+          ? { result: { ...recordingTelemetry.result } }
+          : {}),
+      }),
+      redraw: () => app.render(),
     };
   }
+
+  window.addEventListener(
+    'beforeunload',
+    () => {
+      unloading = true;
+      cancelAnimationFrame(frameRequest);
+      recorder.stop();
+      app.dispose();
+    },
+    { once: true },
+  );
+
+  if (app.state.playing) requestFrame();
 }
 
-void main();
+main();

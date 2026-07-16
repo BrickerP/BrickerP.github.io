@@ -1,22 +1,40 @@
-import type { AppState } from '../app/BeijingLoopApp';
-import type { ViewMode } from '../rendering/theme';
+/** The small state surface needed by the cinematic HUD. */
+export interface ControlState {
+  playing: boolean;
+  debug?: boolean;
+  fps?: number;
+  progress?: number;
+  phase?: number;
+}
 
 export interface UICallbacks {
   onTogglePlay(): void;
-  onSetMode(mode: ViewMode): void;
   onToggleFullscreen(): void;
-  onToggleDebug(): void;
   onRecord(): void;
 }
 
-/** Builds the small semantic control layer around the full-screen artwork. */
+export interface ControlCapabilities {
+  recording: boolean;
+  fullscreen: boolean;
+}
+
+/** Builds the restrained control layer over the full-screen first-person drive. */
 export class Controls {
   private readonly root: HTMLElement;
   private playBtn!: HTMLButtonElement;
   private recordBtn!: HTMLButtonElement;
-  private modeLabel!: HTMLElement;
+  private fullscreenBtn!: HTMLButtonElement;
   private debugPanel!: HTMLElement;
-  private modeBtns = new Map<ViewMode, HTMLButtonElement>();
+  private debugFps!: HTMLElement;
+  private debugProgress!: HTMLElement;
+  private debugPhase!: HTMLElement;
+  private recordingStatus!: HTMLElement;
+  private recordingTime!: HTMLElement;
+  private recordDescription!: HTMLElement;
+  private fullscreenDescription!: HTMLElement;
+  private liveRegion!: HTMLElement;
+  private capabilities: ControlCapabilities = { recording: true, fullscreen: true };
+  private recording = false;
 
   constructor(mount: HTMLElement, private readonly callbacks: UICallbacks) {
     this.root = document.createElement('div');
@@ -28,69 +46,84 @@ export class Controls {
 
   private template(): string {
     return `
-      <header class="ui-brand">
-        <div class="ui-eyebrow">BEIJING <span>/ 北京</span></div>
-        <div class="ui-title">SECOND RING</div>
-        <div class="ui-sub"><span class="ui-mode">INFINITE</span> · INFINITE STUDY</div>
+      <header class="ui-brand" aria-labelledby="experience-title">
+        <p class="ui-eyebrow">BEIJING <span>/ 北京</span></p>
+        <h1 class="ui-title" id="experience-title">ENDLESS SECOND RING</h1>
+        <p class="ui-sub">ARTISTIC NIGHT DRIVE</p>
       </header>
 
-      <div class="ui-actions" role="toolbar" aria-label="Playback and export controls">
-        <button class="ui-btn ui-icon-btn" data-act="play" aria-label="Pause animation" aria-pressed="true" title="Pause animation (Space)">
-          ${ICON.pause}
-        </button>
-        <button class="ui-btn ui-icon-btn" data-act="record" aria-label="Record one 12-second loop" aria-pressed="false" title="Record loop (R)">
-          ${ICON.record}
-        </button>
-        <button class="ui-btn ui-icon-btn" data-act="fs" aria-label="Toggle fullscreen" title="Fullscreen (F)">
-          ${ICON.fullscreen}
-        </button>
+      <div class="ui-actions" role="toolbar" aria-label="Playback and capture controls">
+        <button
+          class="ui-btn ui-icon-btn"
+          data-act="play"
+          type="button"
+          aria-label="Pause the drive"
+          aria-pressed="true"
+          aria-keyshortcuts="Space"
+          title="Pause the drive (Space)"
+        >${ICON.pause}</button>
+        <button
+          class="ui-btn ui-icon-btn"
+          data-act="record"
+          type="button"
+          aria-label="Record one complete loop"
+          aria-pressed="false"
+          aria-keyshortcuts="R"
+          aria-describedby="record-capability"
+          title="Record one complete loop (R)"
+        >${ICON.record}</button>
+        <button
+          class="ui-btn ui-icon-btn"
+          data-act="fs"
+          type="button"
+          aria-label="Enter fullscreen"
+          aria-pressed="false"
+          aria-keyshortcuts="F"
+          aria-describedby="fullscreen-capability"
+          title="Enter fullscreen (F)"
+        >${ICON.fullscreen}</button>
       </div>
 
-      <nav class="ui-dock" aria-label="View mode">
-        <button class="ui-btn ui-mode-btn" data-mode="fractal" aria-label="Infinite view" aria-pressed="true">
-          ${ICON.infinite}<span>INFINITE</span>
-        </button>
-        <button class="ui-btn ui-mode-btn" data-mode="overview" aria-label="Plan view" aria-pressed="false">
-          ${ICON.plan}<span>PLAN</span>
-        </button>
-      </nav>
-
-      <div class="ui-footer" aria-label="Artistic study. Not for navigation. No third-party map tiles.">
-        ARTISTIC STUDY · NOT FOR NAVIGATION
-      </div>
+      <p class="ui-footer">ARTISTIC COMPOSITION <span aria-hidden="true">·</span> NOT FOR NAVIGATION</p>
 
       <div class="ui-debug" hidden>
-        <div>DEBUG · PRESS D</div>
+        <div>DRIVE TELEMETRY · D</div>
         <div data-dbg="fps">fps: –</div>
         <div data-dbg="progress">progress: –</div>
-        <div data-dbg="angle">angle: –</div>
-        <div data-dbg="phase">phase: –</div>
-        <div data-dbg="mode">mode: –</div>
+        <div data-dbg="phase">cycle: –</div>
       </div>
 
-      <div class="ui-rec" role="status" aria-live="polite" hidden>
-        <span aria-hidden="true">●</span> REC <span class="rec-time">0.0s</span>
+      <div class="ui-rec" role="status" aria-live="polite" aria-atomic="true" hidden>
+        <span class="rec-dot" aria-hidden="true"></span>
+        <span>REC</span>
+        <span class="rec-time" aria-hidden="true">0.0s</span>
       </div>
+
+      <p class="sr-only" id="record-capability">Records and downloads one 16-second WebM loop.</p>
+      <p class="sr-only" id="fullscreen-capability">Expands the drive to fill the screen.</p>
+      <p class="sr-only" data-ui-live role="status" aria-live="polite" aria-atomic="true"></p>
     `;
   }
 
   private wire(): void {
     this.playBtn = this.query('[data-act="play"]');
     this.recordBtn = this.query('[data-act="record"]');
-    this.modeLabel = this.query('.ui-mode');
+    this.fullscreenBtn = this.query('[data-act="fs"]');
     this.debugPanel = this.query('.ui-debug');
+    this.debugFps = this.query('[data-dbg="fps"]');
+    this.debugProgress = this.query('[data-dbg="progress"]');
+    this.debugPhase = this.query('[data-dbg="phase"]');
+    this.recordingStatus = this.query('.ui-rec');
+    this.recordingTime = this.query('.rec-time');
+    this.recordDescription = this.query('#record-capability');
+    this.fullscreenDescription = this.query('#fullscreen-capability');
+    this.liveRegion = this.query('[data-ui-live]');
 
     this.playBtn.addEventListener('click', () => this.callbacks.onTogglePlay());
     this.recordBtn.addEventListener('click', () => this.callbacks.onRecord());
-    this.query('[data-act="fs"]').addEventListener('click', () =>
-      this.callbacks.onToggleFullscreen(),
-    );
-
-    for (const mode of ['fractal', 'overview'] as const) {
-      const button = this.query<HTMLButtonElement>(`[data-mode="${mode}"]`);
-      this.modeBtns.set(mode, button);
-      button.addEventListener('click', () => this.callbacks.onSetMode(mode));
-    }
+    this.fullscreenBtn.addEventListener('click', () => this.callbacks.onToggleFullscreen());
+    document.addEventListener('fullscreenchange', () => this.syncFullscreen());
+    this.syncFullscreen();
   }
 
   private query<T extends HTMLElement = HTMLElement>(selector: string): T {
@@ -99,54 +132,111 @@ export class Controls {
     return element as T;
   }
 
-  sync(state: AppState): void {
+  sync(state: ControlState): void {
     this.playBtn.innerHTML = state.playing ? ICON.pause : ICON.play;
     this.playBtn.setAttribute('aria-pressed', String(state.playing));
-    this.playBtn.setAttribute('aria-label', state.playing ? 'Pause animation' : 'Play animation');
-    this.playBtn.title = `${state.playing ? 'Pause' : 'Play'} animation (Space)`;
-
-    const publicMode = state.mode;
-    for (const [mode, button] of this.modeBtns) {
-      const active = mode === publicMode;
-      button.classList.toggle('active', active);
-      button.setAttribute('aria-pressed', String(active));
-    }
-    this.modeLabel.textContent = publicMode === 'fractal' ? 'INFINITE' : 'PLAN';
+    this.playBtn.setAttribute('aria-label', state.playing ? 'Pause the drive' : 'Resume the drive');
+    this.playBtn.title = `${state.playing ? 'Pause' : 'Resume'} the drive (Space)`;
     this.debugPanel.hidden = !state.debug;
   }
 
-  syncDebug(state: AppState): void {
+  syncDebug(state: ControlState): void {
     if (this.debugPanel.hidden) return;
-    this.setDebug('fps', `fps: ${state.fps.toFixed(0)}`);
-    this.setDebug('progress', `progress: ${state.progress.toFixed(4)}`);
-    this.setDebug('angle', `angle: ${((state.angle * 180) / Math.PI).toFixed(1)}°`);
-    this.setDebug('phase', `phase: ${state.phase.toFixed(4)}`);
-    this.setDebug('mode', `mode: ${state.mode}`);
+    this.debugFps.textContent = `fps: ${format(state.fps, 0)}`;
+    this.debugProgress.textContent = `progress: ${format(state.progress, 4)}`;
+    this.debugPhase.textContent = `cycle: ${format(state.phase, 4)}`;
   }
 
-  private setDebug(key: string, text: string): void {
-    this.query(`[data-dbg="${key}"]`).textContent = text;
+  setCapabilities(capabilities: ControlCapabilities): void {
+    this.capabilities = capabilities;
+    this.recordDescription.textContent = capabilities.recording
+      ? 'Records and downloads one complete 16-second WebM loop.'
+      : 'Recording is unavailable because this browser cannot capture the canvas as WebM video.';
+    this.fullscreenDescription.textContent = capabilities.fullscreen
+      ? 'Expands the drive to fill the screen.'
+      : 'Fullscreen is unavailable in this browser.';
+    this.syncDisabledState();
+    this.syncFullscreen();
+  }
+
+  private syncFullscreen(): void {
+    if (!this.capabilities.fullscreen) {
+      this.fullscreenBtn.setAttribute('aria-pressed', 'false');
+      this.fullscreenBtn.setAttribute('aria-label', 'Fullscreen unavailable in this browser');
+      this.fullscreenBtn.title = 'Fullscreen unavailable in this browser';
+      return;
+    }
+    const active = Boolean(document.fullscreenElement);
+    this.fullscreenBtn.setAttribute('aria-pressed', String(active));
+    this.fullscreenBtn.setAttribute('aria-label', active ? 'Exit fullscreen' : 'Enter fullscreen');
+    this.fullscreenBtn.title = `${active ? 'Exit' : 'Enter'} fullscreen (F)`;
   }
 
   setRecording(active: boolean, seconds = 0): void {
-    const recording = this.query('.ui-rec');
-    recording.hidden = !active;
+    if (active) this.recordingTime.textContent = `${seconds.toFixed(1)}s`;
+    if (this.recording === active) return;
+
+    this.recording = active;
+    this.root.classList.toggle('is-recording', active);
+    this.recordingStatus.hidden = !active;
     this.recordBtn.classList.toggle('recording', active);
     this.recordBtn.setAttribute('aria-pressed', String(active));
-    if (active) this.query('.rec-time').textContent = `${seconds.toFixed(1)}s`;
+    this.recordBtn.setAttribute(
+      'aria-label',
+      active
+        ? 'Recording one complete loop'
+        : this.capabilities.recording
+          ? 'Record one complete loop'
+          : 'Recording unavailable in this browser',
+    );
+    this.syncDisabledState();
+  }
+
+  announce(message: string): void {
+    // Clearing first ensures repeated recording attempts are announced again.
+    this.liveRegion.textContent = '';
+    requestAnimationFrame(() => {
+      this.liveRegion.textContent = message;
+    });
+  }
+
+  private syncDisabledState(): void {
+    this.playBtn.disabled = this.recording;
+    this.playBtn.setAttribute('aria-disabled', String(this.recording));
+
+    const recordingDisabled = this.recording || !this.capabilities.recording;
+    this.recordBtn.disabled = recordingDisabled;
+    this.recordBtn.setAttribute('aria-disabled', String(recordingDisabled));
+    if (!this.recording) {
+      this.recordBtn.setAttribute(
+        'aria-label',
+        this.capabilities.recording
+          ? 'Record one complete loop'
+          : 'Recording unavailable in this browser',
+      );
+      this.recordBtn.title = this.capabilities.recording
+        ? 'Record one complete loop (R)'
+        : 'Recording unavailable: canvas capture is not supported';
+    }
+
+    this.fullscreenBtn.disabled = !this.capabilities.fullscreen;
+    this.fullscreenBtn.setAttribute(
+      'aria-disabled',
+      String(!this.capabilities.fullscreen),
+    );
   }
 }
 
+function format(value: number | undefined, digits: number): string {
+  return Number.isFinite(value) ? value!.toFixed(digits) : '–';
+}
+
 const ICON = {
-  play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>',
+  play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 5.6v12.8L18.8 12 8.5 5.6Z" fill="currentColor"/></svg>',
   pause:
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor"/></svg>',
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.25 5.5h3.5v13h-3.5zM13.25 5.5h3.5v13h-3.5z" fill="currentColor"/></svg>',
   record:
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5.5" fill="currentColor"/></svg>',
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5.25" fill="currentColor"/></svg>',
   fullscreen:
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-  infinite:
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.4 8.3c-2.4 0-4.1 1.6-4.1 3.7s1.7 3.7 4.1 3.7c3.7 0 5.6-7.4 9.2-7.4 2.4 0 4.1 1.6 4.1 3.7s-1.7 3.7-4.1 3.7c-3.7 0-5.5-7.4-9.2-7.4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
-  plan:
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="8.3" y="7.3" width="7.4" height="9.4" rx="2.4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>',
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 9V4.5H9M19.5 9V4.5H15M4.5 15v4.5H9M19.5 15v4.5H15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"/></svg>',
 } as const;

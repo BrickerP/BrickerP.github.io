@@ -39,6 +39,35 @@ jobs:
         env:
           VITE_BASE: /
 
+      - name: Install QA browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify production artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/beijing-preview.log 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then
+              break
+            fi
+            if ! kill -0 "$preview_pid" 2>/dev/null; then
+              cat /tmp/beijing-preview.log
+              exit 1
+            fi
+            if [[ "$attempt" == 30 ]]; then
+              cat /tmp/beijing-preview.log
+              exit 1
+            fi
+            sleep 1
+          done
+
+          URL='http://127.0.0.1:4173/?qa=1' EXPECT_PRODUCTION=1 npm run verify:browser
+          URL='http://127.0.0.1:4173/?qa=1' npm run verify:seam
+
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:

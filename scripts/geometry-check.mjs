@@ -1,281 +1,227 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { existsSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs';
+import { dirname, extname, join } from 'node:path';
+import { pathToFileURL, fileURLToPath } from 'node:url';
+import ts from 'typescript';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const DATA = join(ROOT, 'public', 'data');
-const GENERATOR = join(ROOT, 'scripts', 'generate-map.mjs');
-const FILES = [
-  'beijing-boundary.geojson',
-  'beijing-roads.geojson',
-  'beijing-water.geojson',
-  'beijing-mountains.geojson',
-  'beijing-loop.geojson',
-];
+const DRIVE_PATH_SOURCE = join(ROOT, 'src', 'rendering', 'drivePath.ts');
+const TEMP_MODULE = join(ROOT, 'scripts', `.geometry-check-drive-path-${process.pid}.mjs`);
 const EPSILON = 1e-8;
 
-const readOutputs = () =>
-  new Map(FILES.map((name) => [name, readFileSync(join(DATA, name))]));
-const hash = (buffer) => createHash('sha256').update(buffer).digest('hex');
-const generate = () =>
-  execFileSync(process.execPath, [GENERATOR], {
-    cwd: ROOT,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-  }).trim();
-
-const checkedIn = readOutputs();
-const generatorLog = generate();
-const first = readOutputs();
-generate();
-const second = readOutputs();
-for (const name of FILES) {
-  assert.deepEqual(first.get(name), checkedIn.get(name), `${name} is stale; run npm run gen:map`);
-  assert.deepEqual(second.get(name), first.get(name), `${name} is not deterministic`);
+function sourceFiles(directory) {
+  assert.ok(existsSync(directory), `required source directory is missing: ${directory}`);
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) return sourceFiles(path);
+    return extname(entry.name) === '.ts' ? [path] : [];
+  });
 }
 
-function pathsOf(feature) {
-  const { type, coordinates } = feature.geometry;
-  if (type === 'LineString') return [coordinates];
-  if (type === 'MultiLineString' || type === 'Polygon') return coordinates;
-  assert.fail(`unsupported geometry type: ${String(type)}`);
+function transpileDrivePath() {
+  const source = readFileSync(DRIVE_PATH_SOURCE, 'utf8');
+  const output = ts.transpileModule(source, {
+    compilerOptions: {
+      target: ts.ScriptTarget.ES2022,
+      module: ts.ModuleKind.ESNext,
+      moduleResolution: ts.ModuleResolutionKind.Bundler,
+      isolatedModules: true,
+    },
+    fileName: DRIVE_PATH_SOURCE,
+    reportDiagnostics: true,
+  });
+  const errors = (output.diagnostics ?? []).filter(
+    (diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error,
+  );
+  assert.deepEqual(errors, [], `drivePath.ts transpile errors: ${JSON.stringify(errors)}`);
+  writeFileSync(TEMP_MODULE, output.outputText);
 }
 
-function samePoint(left, right) {
-  return Math.abs(left[0] - right[0]) < EPSILON && Math.abs(left[1] - right[1]) < EPSILON;
+function vectorDelta(left, right) {
+  return Math.hypot(left.x - right.x, left.y - right.y, left.z - right.z);
 }
 
-function segmentsOf(feature) {
-  const output = [];
-  for (const [pathIndex, points] of pathsOf(feature).entries()) {
-    const closes =
-      feature.geometry.type === 'Polygon' ||
-      feature.properties?.closed === true ||
-      feature.properties?.kind === 'ring';
-    for (let index = 1; index < points.length; index += 1) {
-      output.push({ a: points[index - 1], b: points[index], pathIndex, index: index - 1 });
-    }
-    if (closes && !samePoint(points[0], points.at(-1))) {
-      output.push({ a: points.at(-1), b: points[0], pathIndex, index: points.length - 1 });
-    }
-  }
-  return output;
+function finiteVector(vector, label) {
+  assert.ok(
+    vector && [vector.x, vector.y, vector.z].every(Number.isFinite),
+    `${label}: expected a finite Vector3`,
+  );
 }
 
-function pointKey(point) {
-  return `${point[0]},${point[1]}`;
-}
-
-function segmentKey({ a, b }) {
-  const forward = `${pointKey(a)}>${pointKey(b)}`;
-  const reverse = `${pointKey(b)}>${pointKey(a)}`;
-  return forward < reverse ? forward : reverse;
+function median(values) {
+  const ordered = [...values].sort((left, right) => left - right);
+  return ordered[Math.floor(ordered.length / 2)];
 }
 
 function orient(a, b, c) {
-  return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+  return (b.x - a.x) * (c.z - a.z) - (b.z - a.z) * (c.x - a.x);
 }
 
-function between(value, left, right) {
-  return value >= Math.min(left, right) - EPSILON && value <= Math.max(left, right) + EPSILON;
-}
-
-function onSegment(point, a, b) {
+function properIntersection(a, b, c, d) {
+  const abC = orient(a, b, c);
+  const abD = orient(a, b, d);
+  const cdA = orient(c, d, a);
+  const cdB = orient(c, d, b);
   return (
-    Math.abs(orient(a, b, point)) < EPSILON &&
-    between(point[0], a[0], b[0]) &&
-    between(point[1], a[1], b[1])
+    ((abC > EPSILON && abD < -EPSILON) || (abC < -EPSILON && abD > EPSILON)) &&
+    ((cdA > EPSILON && cdB < -EPSILON) || (cdA < -EPSILON && cdB > EPSILON))
   );
 }
 
-function intersectionKind(left, right) {
-  const { a, b } = left;
-  const { a: c, b: d } = right;
-  if (
-    Math.max(a[0], b[0]) < Math.min(c[0], d[0]) - EPSILON ||
-    Math.max(c[0], d[0]) < Math.min(a[0], b[0]) - EPSILON ||
-    Math.max(a[1], b[1]) < Math.min(c[1], d[1]) - EPSILON ||
-    Math.max(c[1], d[1]) < Math.min(a[1], b[1]) - EPSILON
-  ) {
-    return 'none';
-  }
-
-  const o1 = orient(a, b, c);
-  const o2 = orient(a, b, d);
-  const o3 = orient(c, d, a);
-  const o4 = orient(c, d, b);
-  if (
-    ((o1 > EPSILON && o2 < -EPSILON) || (o1 < -EPSILON && o2 > EPSILON)) &&
-    ((o3 > EPSILON && o4 < -EPSILON) || (o3 < -EPSILON && o4 > EPSILON))
-  ) {
-    return 'cross';
-  }
-
-  const touches = [a, b, c, d].filter(
-    (point, index) => (index < 2 ? onSegment(point, c, d) : onSegment(point, a, b)),
-  );
-  if (touches.length === 0) return 'none';
-  const unique = new Set(touches.map(pointKey));
-  if (
-    unique.size === 1 &&
-    [...unique].every(
-      (key) =>
-        (key === pointKey(a) || key === pointKey(b)) &&
-        (key === pointKey(c) || key === pointKey(d)),
-    )
-  ) {
-    return 'shared-endpoint';
-  }
-  return 'touch-or-overlap';
-}
-
-function validateFeature(feature, label) {
-  assert.equal(feature.type, 'Feature', `${label}: expected Feature`);
-  assert.equal(typeof feature.properties?.kind, 'string', `${label}: missing kind`);
-  const seenSegments = new Set();
-  for (const [pathIndex, points] of pathsOf(feature).entries()) {
-    assert.ok(points.length >= 2, `${label} path ${pathIndex}: too few points`);
-    for (const [pointIndex, point] of points.entries()) {
-      assert.ok(
-        Array.isArray(point) && point.length === 2 && point.every(Number.isFinite),
-        `${label} path ${pathIndex} point ${pointIndex}: invalid coordinate`,
-      );
-      if (pointIndex > 0) {
-        assert.ok(
-          !samePoint(point, points[pointIndex - 1]),
-          `${label} path ${pathIndex}: zero-length segment at ${pointIndex - 1}`,
-        );
-      }
-    }
-  }
-  for (const segment of segmentsOf(feature)) {
-    const key = segmentKey(segment);
-    assert.ok(!seenSegments.has(key), `${label}: duplicate segment ${key}`);
-    seenSegments.add(key);
-  }
-}
-
-function assertNoSelfIntersections(feature, label) {
-  const segments = segmentsOf(feature);
-  for (let left = 0; left < segments.length; left += 1) {
-    for (let right = left + 1; right < segments.length; right += 1) {
-      const a = segments[left];
-      const b = segments[right];
+function assertNoPathCrossings(samples) {
+  const segmentCount = samples.length - 1;
+  for (let left = 0; left < segmentCount; left += 1) {
+    for (let right = left + 1; right < segmentCount; right += 1) {
       const adjacent =
-        a.pathIndex === b.pathIndex &&
-        (Math.abs(a.index - b.index) === 1 ||
-          (left === 0 && right === segments.length - 1));
+        Math.abs(left - right) <= 1 || (left === 0 && right === segmentCount - 1);
       if (adjacent) continue;
       assert.equal(
-        intersectionKind(a, b),
-        'none',
-        `${label}: self-intersection between segments ${left} and ${right}`,
+        properIntersection(
+          samples[left],
+          samples[left + 1],
+          samples[right],
+          samples[right + 1],
+        ),
+        false,
+        `drive path crosses itself at sampled segments ${left} and ${right}`,
       );
     }
   }
 }
 
-const collections = new Map(
-  FILES.map((name) => [name, JSON.parse(readFileSync(join(DATA, name), 'utf8'))]),
-);
-for (const [name, collection] of collections) {
-  assert.equal(collection.type, 'FeatureCollection', `${name}: expected FeatureCollection`);
-  for (const [index, feature] of collection.features.entries()) {
-    validateFeature(feature, `${name} feature ${index}`);
-  }
+function geometrySnapshot(geometry) {
+  const position = geometry.getAttribute('position');
+  const uv = geometry.getAttribute('uv');
+  const index = geometry.getIndex();
+  assert.ok(position && uv && index, 'road ribbon must expose position, uv, and index buffers');
+  return {
+    position: Array.from(position.array),
+    uv: Array.from(uv.array),
+    index: Array.from(index.array),
+  };
 }
 
-const roads = collections.get('beijing-roads.geojson');
-const loopCollection = collections.get('beijing-loop.geojson');
-const roadPoints = roads.features.reduce(
-  (sum, feature) => sum + pathsOf(feature).flat().length,
-  0,
+transpileDrivePath();
+let drive;
+try {
+  drive = await import(`${pathToFileURL(TEMP_MODULE).href}?run=${Date.now()}`);
+} finally {
+  unlinkSync(TEMP_MODULE);
+}
+
+assert.ok(drive.DRIVE_PATH, 'drivePath.ts must export DRIVE_PATH');
+assert.equal(drive.DRIVE_PATH.closed, true, 'first-person drive path must be closed');
+assert.equal(typeof drive.samplePathFrame, 'function', 'missing samplePathFrame export');
+assert.equal(typeof drive.createPathRibbon, 'function', 'missing createPathRibbon export');
+assert.equal(typeof drive.wrapProgress, 'function', 'missing wrapProgress export');
+assert.equal(drive.wrapProgress(0), 0, 'zero progress');
+assert.equal(drive.wrapProgress(1), 0, 'unit progress wraps to zero');
+assert.equal(drive.wrapProgress(-0.25), 0.75, 'negative progress wraps forward');
+
+const sampleCount = 512;
+const samples = [];
+const tangents = [];
+for (let index = 0; index <= sampleCount; index += 1) {
+  const progress = index / sampleCount;
+  const frame = drive.samplePathFrame(progress);
+  finiteVector(frame.point, `path sample ${index} point`);
+  finiteVector(frame.tangent, `path sample ${index} tangent`);
+  finiteVector(frame.normal, `path sample ${index} normal`);
+  assert.ok(Math.abs(frame.point.y) < EPSILON, `path sample ${index}: path must stay horizontal`);
+  assert.ok(
+    Math.abs(frame.tangent.length() - 1) < 1e-6,
+    `path sample ${index}: tangent is not normalized`,
+  );
+  assert.ok(
+    Math.abs(frame.normal.length() - 1) < 1e-6,
+    `path sample ${index}: normal is not normalized`,
+  );
+  assert.ok(
+    Math.abs(frame.tangent.dot(frame.normal)) < 1e-6,
+    `path sample ${index}: path frame is not orthogonal`,
+  );
+  samples.push(frame.point.clone());
+  tangents.push(frame.tangent.clone());
+}
+
+assert.ok(vectorDelta(samples[0], samples.at(-1)) < EPSILON, 'drive path endpoint mismatch');
+assert.ok(vectorDelta(tangents[0], tangents.at(-1)) < EPSILON, 'drive tangent endpoint mismatch');
+
+const segmentLengths = samples.slice(1).map((point, index) => point.distanceTo(samples[index]));
+assert.ok(segmentLengths.every((length) => Number.isFinite(length) && length > EPSILON));
+const pathLength = segmentLengths.reduce((sum, length) => sum + length, 0);
+assert.ok(pathLength > 500 && pathLength < 5000, `implausible drive path length: ${pathLength}`);
+assert.ok(
+  Math.max(...segmentLengths) / median(segmentLengths) < 1.25,
+  'arc-length sampling has an abrupt speed step',
 );
-assert.ok(roads.features.length <= 28, `road feature budget exceeded: ${roads.features.length}`);
-assert.ok(roadPoints <= 500, `road point budget exceeded: ${roadPoints}`);
-assert.equal(roads.features.filter((feature) => feature.properties.kind === 'radial').length, 4);
-assert.equal(roads.features.filter((feature) => feature.properties.kind === 'axis').length, 3);
-assert.equal(roads.features.filter((feature) => feature.properties.plate === true).length, 12);
-assert.equal(loopCollection.features.length, 1, 'expected one vehicle loop');
-const loopFeature = loopCollection.features[0];
-assert.equal(loopFeature.geometry.type, 'LineString', 'canonical loop must be a LineString');
-const canonicalLoopCoordinates = pathsOf(loopFeature)[0];
-const ring2Features = roads.features.filter(
-  (feature) => feature.properties.kind === 'ring' && feature.properties.ring === 2,
-);
-assert.equal(ring2Features.length, 1, 'expected exactly one ring 2 road feature');
-const ring2Feature = ring2Features[0];
-assert.equal(ring2Feature.geometry.type, 'LineString', 'ring 2 must be a LineString');
-const ring2Coordinates = pathsOf(ring2Feature)[0];
+assertNoPathCrossings(samples);
+
+const repeatedSamples = [];
+for (let index = 0; index <= sampleCount; index += 1) {
+  const frame = drive.samplePathFrame(index / sampleCount);
+  repeatedSamples.push([frame.point.x, frame.point.y, frame.point.z]);
+}
 assert.deepEqual(
-  ring2Coordinates.at(-1),
-  ring2Coordinates[0],
-  'ring 2 must be explicitly closed by a duplicated endpoint',
+  repeatedSamples,
+  samples.map((point) => [point.x, point.y, point.z]),
+  'drive path sampling is not deterministic',
 );
-assert.deepEqual(
-  ring2Coordinates.slice(0, -1),
-  canonicalLoopCoordinates,
-  'ring 2 coordinates must exactly match the canonical vehicle loop',
-);
-const loopMatchesRing2 = true;
-assertNoSelfIntersections(loopFeature, 'vehicle loop');
-for (const [index, ring] of roads.features
-  .filter((feature) => feature.properties.kind === 'ring')
-  .entries()) {
-  assertNoSelfIntersections(ring, `ring ${index}`);
-}
 
-const indexedRoads = roads.features.map((feature, index) => ({
-  feature,
-  index,
-  kind: feature.properties.kind,
-  segments: segmentsOf(feature),
-}));
-let totalIntersections = 0;
-let streetIntersections = 0;
-const intersectionRecords = [];
-for (let left = 0; left < indexedRoads.length; left += 1) {
-  for (let right = left + 1; right < indexedRoads.length; right += 1) {
-    const a = indexedRoads[left];
-    const b = indexedRoads[right];
-    for (const leftSegment of a.segments) {
-      for (const rightSegment of b.segments) {
-        const kind = intersectionKind(leftSegment, rightSegment);
-        if (kind === 'none' || kind === 'shared-endpoint') continue;
-        totalIntersections += 1;
-        intersectionRecords.push({ left: a.index, right: b.index, kinds: [a.kind, b.kind], kind });
-        if (a.kind === 'street' && b.kind === 'street') streetIntersections += 1;
-      }
-    }
-  }
-}
-assert.equal(
-  streetIntersections,
-  0,
-  `street×street intersections: ${JSON.stringify(intersectionRecords.filter((record) => record.kinds.every((kind) => kind === 'street')))}`,
-);
-assert.ok(totalIntersections <= 8, `unintentional road intersections: ${totalIntersections}`);
+const ribbonOptions = { centerScale: 0.19, segments: 96 };
+const ribbonA = drive.createPathRibbon(-9, 9, 0, ribbonOptions);
+const ribbonB = drive.createPathRibbon(-9, 9, 0, ribbonOptions);
+const ribbonSnapshot = geometrySnapshot(ribbonA);
+assert.deepEqual(geometrySnapshot(ribbonB), ribbonSnapshot, 'road ribbon is not deterministic');
+assert.ok(ribbonSnapshot.position.every(Number.isFinite), 'road ribbon contains non-finite positions');
+assert.ok(ribbonSnapshot.uv.every(Number.isFinite), 'road ribbon contains non-finite UVs');
+assert.ok(ribbonSnapshot.index.every(Number.isInteger), 'road ribbon contains invalid indices');
+assert.equal(ribbonSnapshot.position.length, (96 + 1) * 2 * 3, 'road ribbon vertex budget');
+assert.equal(ribbonSnapshot.index.length, 96 * 6, 'road ribbon index budget');
+ribbonA.dispose();
+ribbonB.dispose();
 
-console.log('=== GEOMETRY CHECK ===');
+const runtimeSources = [
+  join(ROOT, 'src', 'main.ts'),
+  ...sourceFiles(join(ROOT, 'src', 'app')),
+  ...sourceFiles(join(ROOT, 'src', 'rendering')),
+];
+const combinedSource = runtimeSources.map((path) => readFileSync(path, 'utf8')).join('\n');
+assert.doesNotMatch(combinedSource, /\bMath\.random\s*\(/, 'runtime scene uses unseeded Math.random');
+assert.doesNotMatch(
+  combinedSource,
+  /\bcrypto\.getRandomValues\s*\(/,
+  'runtime scene uses non-deterministic crypto randomness',
+);
+assert.match(combinedSource, /central[\s_-]*axis/i, 'scene config is missing the central-axis passage');
+assert.match(combinedSource, /hutong/i, 'scene config is missing the hutong passage');
+assert.match(combinedSource, /water(front)?/i, 'scene config is missing the waterfront passage');
+assert.match(combinedSource, /overpass|flyover/i, 'scene config is missing the overpass passage');
+assert.match(
+  combinedSource,
+  /(?:16_?000|LOOP_SECONDS\s*=\s*16|duration\s*:\s*16)/,
+  'scene config is missing the canonical 16-second duration',
+);
+
+console.log('=== FIRST-PERSON GEOMETRY CHECK ===');
 console.log(
   JSON.stringify(
     {
       deterministic: true,
-      generatorLog,
-      hashes: Object.fromEntries(FILES.map((name) => [name, hash(first.get(name))])),
-      roadFeatures: roads.features.length,
-      roadPoints,
-      totalIntersections,
-      streetIntersections,
-      loopPoints: canonicalLoopCoordinates.length,
-      loopMatchesRing2,
+      closed: drive.DRIVE_PATH.closed,
+      pathSamples: samples.length,
+      pathLength,
+      medianSegmentLength: median(segmentLengths),
+      maxSegmentLength: Math.max(...segmentLengths),
+      endpointDelta: vectorDelta(samples[0], samples.at(-1)),
+      tangentEndpointDelta: vectorDelta(tangents[0], tangents.at(-1)),
+      ribbonVertices: ribbonSnapshot.position.length / 3,
+      ribbonTriangles: ribbonSnapshot.index.length / 3,
+      passages: ['central-axis', 'hutong', 'waterfront', 'overpass'],
+      loopSeconds: 16,
     },
     null,
     2,
   ),
 );
-console.log('loopMatchesRing2:true');
-console.log('GEOMETRY OK');
+console.log('FIRST-PERSON GEOMETRY OK');

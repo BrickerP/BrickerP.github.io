@@ -1,13 +1,15 @@
 :root {
-  --page-bg: #08090b;
-  --land: #111519;
-  --panel: rgba(11, 13, 14, 0.88);
-  --panel-border: rgba(231, 224, 212, 0.14);
-  --text: #e7e0d4;
-  --text-dim: #8b918e;
-  --loop: #f29a38;
-  --highlight: #ffd080;
-  --danger: #ef6b5d;
+  --sky: #070b12;
+  --asphalt: #0d1115;
+  --glass: rgba(7, 11, 18, 0.68);
+  --glass-strong: rgba(7, 11, 18, 0.88);
+  --line: rgba(236, 229, 216, 0.14);
+  --text: #ece5d8;
+  --dim: #8e9698;
+  --vermilion: #d65f48;
+  --amber: #d99a45;
+  --lamp: #f2c071;
+  --record: #e85d4a;
   --control: 48px;
   --safe-t: env(safe-area-inset-top, 0px);
   --safe-r: env(safe-area-inset-right, 0px);
@@ -25,9 +27,9 @@ body {
   height: 100%;
   margin: 0;
   overflow: hidden;
-  background: var(--page-bg);
+  background: var(--sky);
   color: var(--text);
-  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: Inter, "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -57,16 +59,19 @@ canvas {
   display: grid;
   place-items: center;
   padding: 24px;
-  color: var(--text-dim);
-  font: 600 11px/1.6 ui-monospace, "SFMono-Regular", Menlo, monospace;
-  letter-spacing: 0.22em;
+  background:
+    radial-gradient(circle at 50% 62%, rgba(180, 71, 53, 0.09), transparent 34%),
+    var(--sky);
+  color: var(--dim);
+  font: 600 10px/1.6 ui-monospace, "SFMono-Regular", Menlo, monospace;
+  letter-spacing: 0.24em;
   text-align: center;
   text-transform: uppercase;
 }
 
 .boot.error {
-  color: var(--danger);
-  letter-spacing: 0.05em;
+  color: #ef8877;
+  letter-spacing: 0.04em;
   text-transform: none;
 }
 
@@ -74,8 +79,28 @@ canvas {
   position: fixed;
   inset: 0;
   z-index: 10;
+  overflow: hidden;
   pointer-events: none;
   user-select: none;
+}
+
+.ui-root::before,
+.ui-root::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  pointer-events: none;
+}
+
+.ui-root::before {
+  background:
+    linear-gradient(180deg, rgba(3, 5, 8, 0.72) 0, rgba(3, 5, 8, 0) 24%),
+    linear-gradient(0deg, rgba(3, 5, 8, 0.54) 0, rgba(3, 5, 8, 0) 18%);
+}
+
+.ui-root::after {
+  box-shadow: inset 0 0 12vw rgba(0, 0, 0, 0.56);
 }
 
 .ui-root button,
@@ -85,77 +110,107 @@ canvas {
 
 .ui-brand {
   position: absolute;
-  top: calc(24px + var(--safe-t));
-  left: calc(26px + var(--safe-l));
-  max-width: min(300px, 52vw);
+  top: calc(25px + var(--safe-t));
+  left: calc(30px + var(--safe-l));
+  max-width: min(490px, 54vw);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.78);
+}
+
+.ui-eyebrow,
+.ui-title,
+.ui-sub,
+.ui-footer,
+.ui-rec,
+.ui-debug {
+  margin: 0;
 }
 
 .ui-eyebrow,
 .ui-sub,
 .ui-footer,
-.ui-mode-btn,
 .ui-rec,
 .ui-debug {
   font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 .ui-eyebrow {
-  color: var(--loop);
+  color: var(--vermilion);
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.25em;
 }
 
 .ui-eyebrow span {
-  color: var(--text-dim);
+  color: rgba(236, 229, 216, 0.62);
   font-weight: 500;
 }
 
 .ui-title {
-  margin-top: 8px;
+  margin-top: 9px;
   color: var(--text);
-  font-size: clamp(19px, 2vw, 28px);
-  font-weight: 560;
-  letter-spacing: 0.04em;
+  font-size: clamp(20px, 2.15vw, 32px);
+  font-weight: 520;
+  letter-spacing: 0.055em;
+  line-height: 1.05;
 }
 
 .ui-sub {
-  margin-top: 7px;
-  color: var(--text-dim);
+  margin-top: 9px;
+  color: rgba(236, 229, 216, 0.52);
   font-size: 9px;
-  letter-spacing: 0.14em;
-}
-
-.ui-mode {
-  color: var(--highlight);
+  letter-spacing: 0.16em;
+  line-height: 1.5;
 }
 
 .ui-actions {
   position: absolute;
   top: calc(18px + var(--safe-t));
-  right: calc(18px + var(--safe-r));
+  right: calc(20px + var(--safe-r));
   display: flex;
-  gap: 6px;
-  padding: 5px;
-  border: 1px solid var(--panel-border);
-  border-radius: 16px;
-  background: var(--panel);
+  gap: 3px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--glass);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(18px) saturate(115%);
+  -webkit-backdrop-filter: blur(18px) saturate(115%);
 }
 
 .ui-btn {
-  min-width: var(--control);
-  min-height: var(--control);
+  display: grid;
+  width: var(--control);
+  min-width: 44px;
+  height: var(--control);
+  min-height: 44px;
+  place-items: center;
+  padding: 0;
   border: 0;
-  border-radius: 11px;
+  border-radius: 10px;
   background: transparent;
-  color: #b8bfbc;
+  color: rgba(236, 229, 216, 0.7);
   cursor: pointer;
-  transition: color 150ms ease, background 150ms ease, transform 150ms ease;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 150ms ease, background-color 150ms ease, transform 150ms ease;
 }
 
 .ui-btn:hover {
+  background: rgba(236, 229, 216, 0.08);
   color: var(--text);
-  background: rgba(231, 224, 212, 0.07);
+}
+
+.ui-btn:disabled {
+  background: transparent;
+  color: rgba(236, 229, 216, 0.28);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.ui-btn.recording:disabled {
+  background: rgba(232, 93, 74, 0.12);
+  color: var(--record);
+  cursor: progress;
 }
 
 .ui-btn:active {
@@ -163,15 +218,8 @@ canvas {
 }
 
 .ui-btn:focus-visible {
-  outline: 2px solid var(--highlight);
+  outline: 2px solid var(--lamp);
   outline-offset: 2px;
-}
-
-.ui-icon-btn {
-  width: var(--control);
-  height: var(--control);
-  display: grid;
-  place-items: center;
 }
 
 .ui-icon-btn svg {
@@ -180,92 +228,67 @@ canvas {
 }
 
 .ui-icon-btn.recording {
-  color: var(--danger);
-  background: rgba(239, 107, 93, 0.12);
-}
-
-.ui-dock {
-  position: absolute;
-  right: 50%;
-  bottom: calc(18px + var(--safe-b));
-  display: flex;
-  gap: 5px;
-  width: max-content;
-  max-width: calc(100vw - 32px - var(--safe-l) - var(--safe-r));
-  padding: 5px;
-  border: 1px solid var(--panel-border);
-  border-radius: 16px;
-  background: var(--panel);
-  transform: translateX(50%);
-  pointer-events: auto;
-}
-
-.ui-mode-btn {
-  height: var(--control);
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 0 15px;
-  color: var(--text-dim);
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0.12em;
-}
-
-.ui-mode-btn svg {
-  width: 20px;
-  height: 20px;
-}
-
-.ui-mode-btn.active {
-  color: var(--highlight);
-  background: rgba(242, 154, 56, 0.12);
+  background: rgba(232, 93, 74, 0.12);
+  color: var(--record);
 }
 
 .ui-footer {
   position: absolute;
-  right: calc(22px + var(--safe-r));
-  bottom: calc(23px + var(--safe-b));
-  color: rgba(139, 145, 142, 0.65);
+  right: calc(25px + var(--safe-r));
+  bottom: calc(27px + var(--safe-b));
+  color: rgba(236, 229, 216, 0.56);
   font-size: 8px;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.13em;
 }
 
 .ui-debug {
   position: absolute;
-  top: calc(86px + var(--safe-t));
-  right: calc(18px + var(--safe-r));
-  min-width: 164px;
+  top: calc(82px + var(--safe-t));
+  right: calc(20px + var(--safe-r));
+  min-width: 170px;
   padding: 12px 14px;
-  border: 1px solid var(--panel-border);
-  border-radius: 12px;
-  background: var(--panel);
-  color: var(--text-dim);
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--glass-strong);
+  color: var(--dim);
   font-size: 10px;
   line-height: 1.75;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
 .ui-debug > div:first-child {
   margin-bottom: 4px;
-  color: var(--highlight);
+  color: var(--amber);
   letter-spacing: 0.12em;
 }
 
 .ui-rec {
   position: absolute;
-  top: calc(88px + var(--safe-t));
-  right: calc(20px + var(--safe-r));
+  top: calc(85px + var(--safe-t));
+  right: calc(24px + var(--safe-r));
   display: flex;
   align-items: center;
   gap: 7px;
-  color: var(--danger);
-  font-size: 10px;
-  letter-spacing: 0.14em;
+  color: var(--record);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.72);
 }
 
-[hidden],
-.ui-rec[hidden],
-.ui-debug[hidden] {
+.ui-root.is-recording .ui-debug {
+  top: calc(112px + var(--safe-t));
+}
+
+.rec-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 9px currentColor;
+}
+
+[hidden] {
   display: none !important;
 }
 
@@ -282,46 +305,42 @@ canvas {
 }
 
 @media (max-width: 700px) {
+  :root {
+    --control: 44px;
+  }
+
   .ui-brand {
-    top: calc(17px + var(--safe-t));
-    left: calc(16px + var(--safe-l));
-    max-width: 155px;
+    top: calc(18px + var(--safe-t));
+    left: calc(17px + var(--safe-l));
+    max-width: calc(100vw - 184px - var(--safe-l) - var(--safe-r));
+  }
+
+  .ui-eyebrow {
+    font-size: 9px;
   }
 
   .ui-title {
-    margin-top: 6px;
-    font-size: 17px;
+    margin-top: 7px;
+    font-size: clamp(15px, 4.6vw, 19px);
+    line-height: 1.12;
   }
 
   .ui-sub {
-    max-width: 145px;
-    font-size: 8px;
-    line-height: 1.55;
+    margin-top: 7px;
+    font-size: 7px;
+    letter-spacing: 0.12em;
   }
 
   .ui-actions {
     top: calc(12px + var(--safe-t));
-    right: calc(12px + var(--safe-r));
-    gap: 2px;
+    right: calc(11px + var(--safe-r));
+    gap: 0;
     padding: 3px;
-    border-radius: 14px;
-  }
-
-  .ui-btn {
-    --control: 44px;
-  }
-
-  .ui-dock {
-    bottom: calc(14px + var(--safe-b));
-  }
-
-  .ui-mode-btn {
-    min-width: 132px;
-    justify-content: center;
-    padding: 0 12px;
+    border-radius: 12px;
   }
 
   .ui-footer {
+    position: fixed;
     width: 1px;
     height: 1px;
     padding: 0;
@@ -332,32 +351,47 @@ canvas {
   }
 
   .ui-rec {
-    top: calc(72px + var(--safe-t));
-    right: calc(16px + var(--safe-r));
+    top: calc(70px + var(--safe-t));
+    right: calc(15px + var(--safe-r));
   }
 
   .ui-debug {
-    top: calc(78px + var(--safe-t));
-    right: calc(12px + var(--safe-r));
+    top: calc(96px + var(--safe-t));
+    right: calc(11px + var(--safe-r));
+  }
+
+  .ui-root.is-recording .ui-debug {
+    top: calc(98px + var(--safe-t));
   }
 }
 
-@media (max-width: 374px) {
-  .ui-debug {
-    top: calc(96px + var(--safe-t));
+@media (max-width: 390px) {
+  .ui-sub {
+    display: none;
   }
+}
 
-  .ui-mode-btn {
-    min-width: 124px;
-  }
-
-  .ui-mode-btn span {
-    font-size: 9px;
+@media (pointer: coarse) {
+  .ui-btn {
+    min-width: 48px;
+    min-height: 48px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .ui-btn {
     transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .ui-actions,
+  .ui-debug {
+    border: 1px solid CanvasText;
+    background: Canvas;
+  }
+
+  .ui-btn:focus-visible {
+    outline-color: Highlight;
   }
 }
