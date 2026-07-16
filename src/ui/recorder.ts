@@ -31,8 +31,8 @@ export type RecordingStartResult =
 type StopStatus = RecordingResult['status'];
 
 const WEBM_MIME_CANDIDATES = [
-  'video/webm;codecs=vp9',
   'video/webm;codecs=vp8',
+  'video/webm;codecs=vp9',
   'video/webm',
 ] as const;
 
@@ -99,7 +99,7 @@ export class LoopRecorder {
       stream = canvas.captureStream(RECORDING_FPS);
       const mime = pickMime();
       recorder = new MediaRecorder(stream, {
-        videoBitsPerSecond: 7_000_000,
+        videoBitsPerSecond: 2_000_000,
         ...(mime ? { mimeType: mime } : {}),
       });
       const recorderMime =

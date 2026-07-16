@@ -25,6 +25,8 @@ export interface AppState {
 
 const MAX_DT = 1 / 20;
 const REDUCED_MOTION_POSTER_PHASE = 0.1;
+const CAPTURE_WIDTH = 320;
+const CAPTURE_HEIGHT = 180;
 
 /** Owns the deterministic clock and the Three.js render lifecycle. */
 export class BeijingLoopApp {
@@ -37,6 +39,9 @@ export class BeijingLoopApp {
   private readonly pathFrame = samplePathFrame(0);
   private clock = 0;
   private deterministicCapture = false;
+  private viewportWidth = 1;
+  private viewportHeight = 1;
+  private devicePixelRatio = 1;
   private onState?: (state: AppState) => void;
 
   constructor(
@@ -104,6 +109,8 @@ export class BeijingLoopApp {
   setDeterministicCapture(active: boolean): void {
     if (this.deterministicCapture === active) return;
     this.deterministicCapture = active;
+    this.city.setCapturePerformanceMode(active);
+    this.applyRenderSize();
     this.render();
   }
 
@@ -124,14 +131,27 @@ export class BeijingLoopApp {
   }
 
   resize(width: number, height: number, devicePixelRatio: number): void {
-    const safeWidth = Math.max(1, Math.floor(width));
-    const safeHeight = Math.max(1, Math.floor(height));
-    const mobile = safeWidth < 720;
-    const maxRatio = this.state.reducedMotion ? 1 : mobile ? 1.35 : 1.8;
-    this.renderer.setPixelRatio(Math.min(Math.max(1, devicePixelRatio), maxRatio));
-    this.renderer.setSize(safeWidth, safeHeight, false);
-    this.cameraRig.resize(safeWidth / safeHeight);
+    this.viewportWidth = Math.max(1, Math.floor(width));
+    this.viewportHeight = Math.max(1, Math.floor(height));
+    this.devicePixelRatio = Math.max(1, devicePixelRatio);
+    this.applyRenderSize();
     this.render();
+  }
+
+  private applyRenderSize(): void {
+    if (this.deterministicCapture) {
+      // Keep the capture track fixed-size while responsive UI tests resize the
+      // viewport. A small 16:9 buffer sustains real-time software rendering.
+      this.renderer.setPixelRatio(1);
+      this.renderer.setSize(CAPTURE_WIDTH, CAPTURE_HEIGHT, false);
+      this.cameraRig.resize(CAPTURE_WIDTH / CAPTURE_HEIGHT);
+      return;
+    }
+    const mobile = this.viewportWidth < 720;
+    const maxRatio = this.state.reducedMotion ? 1 : mobile ? 1.35 : 1.8;
+    this.renderer.setPixelRatio(Math.min(this.devicePixelRatio, maxRatio));
+    this.renderer.setSize(this.viewportWidth, this.viewportHeight, false);
+    this.cameraRig.resize(this.viewportWidth / this.viewportHeight);
   }
 
   update(dt: number): void {

@@ -359,11 +359,14 @@ async function smallTextContrastReport(page, label) {
 }
 
 async function launchBrowser() {
-  if (process.env.PW_CHANNEL) return chromium.launch({ channel: process.env.PW_CHANNEL });
+  const args = process.env.SOFTWARE_WEBGL === '1'
+    ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']
+    : [];
+  if (process.env.PW_CHANNEL) return chromium.launch({ channel: process.env.PW_CHANNEL, args });
   try {
-    return await chromium.launch();
+    return await chromium.launch({ args });
   } catch {
-    return chromium.launch({ channel: 'chrome' });
+    return chromium.launch({ channel: 'chrome', args });
   }
 }
 
@@ -796,14 +799,18 @@ assert.match(
 );
 await unsupportedPage.locator('body').click({ position: { x: 400, y: 420 } });
 await unsupportedPage.keyboard.press('r');
-await unsupportedPage.waitForTimeout(40);
+await unsupportedPage.waitForFunction(
+  () => /recording is unavailable/i.test(document.querySelector('[data-ui-live]')?.textContent ?? ''),
+);
 assert.match(
   (await unsupportedPage.locator('[data-ui-live]').textContent()) ?? '',
   /recording is unavailable/i,
   'keyboard recording failure is announced',
 );
 await unsupportedPage.keyboard.press('f');
-await unsupportedPage.waitForTimeout(40);
+await unsupportedPage.waitForFunction(
+  () => /fullscreen is unavailable/i.test(document.querySelector('[data-ui-live]')?.textContent ?? ''),
+);
 assert.match(
   (await unsupportedPage.locator('[data-ui-live]').textContent()) ?? '',
   /fullscreen is unavailable/i,
@@ -1245,12 +1252,12 @@ assert.match(
 assert.equal(emptyCompletion.recording.result?.blobSize, 0, 'empty completion blob');
 assert.equal(
   emptyCompletion.options[0].mimeType,
-  'video/webm;codecs=vp9',
+  'video/webm;codecs=vp8',
   'supported WebM MIME is passed explicitly',
 );
 assert.equal(
   emptyCompletion.options[1].mimeType,
-  'video/webm;codecs=vp9',
+  'video/webm;codecs=vp8',
   'WebM MIME remains explicit on retry',
 );
 assert.equal(
@@ -1353,7 +1360,9 @@ await recorderErrorPage.locator('[data-act="record"]').click();
 await recorderErrorPage.waitForFunction(
   () => window.__BEIJING_LOOP_TEST__.readRecording().status === 'failed',
 );
-await recorderErrorPage.waitForTimeout(40);
+await recorderErrorPage.waitForFunction(
+  () => /recording failed/i.test(document.querySelector('[data-ui-live]')?.textContent ?? ''),
+);
 assert.ok(
   (await recorderErrorPage.evaluate(() => window.__BEIJING_TRACK_STOPS__)) >= 1,
   'MediaRecorder error leaked the canvas capture track',
@@ -1382,9 +1391,11 @@ const recordingContext = await browser.newContext({
 await recordingContext.addInitScript(() => {
   window.__BEIJING_TERMINAL_FRAME_REQUESTS__ = 0;
   window.__BEIJING_CAPTURE_STREAM_RATES__ = [];
+  window.__BEIJING_CAPTURE_STREAM_SIZES__ = [];
   const nativeCaptureStream = HTMLCanvasElement.prototype.captureStream;
   HTMLCanvasElement.prototype.captureStream = function (...args) {
     window.__BEIJING_CAPTURE_STREAM_RATES__.push(args[0]);
+    window.__BEIJING_CAPTURE_STREAM_SIZES__.push([this.width, this.height]);
     const stream = nativeCaptureStream.apply(this, args);
     for (const track of stream.getVideoTracks()) {
       if (typeof track.requestFrame !== 'function') continue;
@@ -1414,6 +1425,11 @@ await recordingPage.locator('[data-act="record"]').click();
 await recordingPage.waitForFunction(
   () => window.__BEIJING_LOOP_TEST__.readRecording().status === 'recording',
 );
+assert.deepEqual(
+  await recordingPage.locator('canvas').evaluate((canvas) => [canvas.width, canvas.height]),
+  [320, 180],
+  'recording starts with the fixed software-safe backing size',
+);
 assert.equal(await recordingPage.locator('.ui-rec').isVisible(), true, 'record badge visible');
 assert.equal(await recordingPage.locator('[data-act="play"]').isDisabled(), true, 'play locked during capture');
 assert.equal(await recordingPage.locator('[data-act="record"]').isDisabled(), true, 'record locked during capture');
@@ -1425,6 +1441,11 @@ const recordingDebugBoxes = await visibleOverlayBoxes(recordingPage);
 assertOverlaySafety(recordingDebugBoxes, { width: 900, height: 640 }, 'recording/debug');
 await recordingPage.setViewportSize({ width: 320, height: 568 });
 await recordingPage.waitForTimeout(60);
+assert.deepEqual(
+  await recordingPage.locator('canvas').evaluate((canvas) => [canvas.width, canvas.height]),
+  [320, 180],
+  'mobile viewport resize changed the active capture track dimensions',
+);
 const recordingMobileDebugBoxes = await visibleOverlayBoxes(recordingPage);
 assertOverlaySafety(
   recordingMobileDebugBoxes,
@@ -1433,6 +1454,11 @@ assertOverlaySafety(
 );
 await recordingPage.setViewportSize({ width: 900, height: 640 });
 await recordingPage.waitForTimeout(60);
+assert.deepEqual(
+  await recordingPage.locator('canvas').evaluate((canvas) => [canvas.width, canvas.height]),
+  [320, 180],
+  'desktop viewport restore changed the active capture track dimensions',
+);
 
 await recordingPage.waitForTimeout(900);
 await recordingPage.evaluate(() => {
@@ -1465,6 +1491,8 @@ const completedRecording = await recordingPage.evaluate(() => ({
   live: document.querySelector('[data-ui-live]')?.textContent ?? '',
   terminalFrameRequests: window.__BEIJING_TERMINAL_FRAME_REQUESTS__,
   captureStreamRates: window.__BEIJING_CAPTURE_STREAM_RATES__,
+  captureStreamSizes: window.__BEIJING_CAPTURE_STREAM_SIZES__,
+  canvasSize: [document.querySelector('canvas')?.width, document.querySelector('canvas')?.height],
 }));
 const recordingResult = completedRecording.recording.result;
 assert.ok(recordingResult, 'recording completion result missing');
@@ -1496,6 +1524,16 @@ assert.deepEqual(
   completedRecording.captureStreamRates,
   [60],
   'recording must use one automatic 60fps capture stream',
+);
+assert.deepEqual(
+  completedRecording.captureStreamSizes,
+  [[320, 180]],
+  'recording stream was not created from the fixed software-safe backing size',
+);
+assert.deepEqual(
+  completedRecording.canvasSize,
+  [900, 640],
+  'renderer backing size was not restored after recording',
 );
 assert.equal(
   completedRecording.terminalFrameRequests,
@@ -1536,6 +1574,7 @@ reports['recording-stall'] = {
   combinedOverlaySafe: ['desktop-900', 'mobile-320'],
   terminalFrameRequests: completedRecording.terminalFrameRequests,
   captureStreamRates: completedRecording.captureStreamRates,
+  captureStreamSizes: completedRecording.captureStreamSizes,
   downloadedWebm: webmTimeline,
 };
 await recordingContext.close();

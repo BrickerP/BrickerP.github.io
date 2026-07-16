@@ -142,6 +142,11 @@ export class BeijingDriveScene {
     }
   }
 
+  /** Avoid software-renderer stalls while preserving the authored geometry. */
+  setCapturePerformanceMode(active: boolean): void {
+    for (const entry of this.lampLights) entry.light.visible = !active;
+  }
+
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
