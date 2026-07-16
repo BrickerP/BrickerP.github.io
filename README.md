@@ -1,195 +1,183 @@
 # Beijing Infinite Loop / 北京无限环线
 
-A quiet, generative-art tracer of Beijing's ring roads and central axis. A single
-vehicle drives forever around an artistic **2nd-ring** loop while a smooth 3D
-camera follows it, and the whole city recursively zooms into itself in a
-seamless **infinite-loop** fractal — built to sit on a personal GitHub Pages
-site and to export a clean looping clip for a GitHub profile README.
+A quiet generative study of **one ring, one axis, and one seamless breath**.
+A single route marker completes an artistic Beijing second-ring loop while the
+orange route recursively scales into itself over a still paper-cut city plate.
 
-> **Artistic visualization, not for navigation.** The geometry is an authored
-> abstraction of Beijing (rings, central axis, water, mountains), *not* survey
-> data and *not* derived from any commercial map. See [Data & licensing](#data--licensing).
+> **Artistic visualization, not for navigation.** Every coordinate is an
+> authored abstract “city unit,” not survey data. No commercial map tiles,
+> scraped coordinates, runtime APIs, or third-party map services are used.
 
-Inspired by the "Osaka Loop Line Tracer" p5.js sketch, re-imagined for Beijing
-with an explicit **vector** path (no PNG pixel-colour navigation), arc-length
-sampling, frame-rate-independent camera damping, and a mathematically seamless
-recursive zoom.
+The project intentionally rejects literal street density. Beijing is evoked
+through twelve courtyard plates, four gate marks, a broken central axis, eight
+outer arcs, one lake, and six north-west ridge contours. The context is rendered
+once; only the second-ring motif recurs.
 
-- **Stack:** Vite · TypeScript · p5.js (WebGL) · plain CSS. No React.
-- **Views:** Follow · Overview · Fractal.
-- **Runs fully offline** once built — no runtime API calls.
-
----
+- **Stack:** Vite · TypeScript · p5.js WebGL · plain CSS
+- **Public views:** Infinite · Plan
+- **Runtime:** Fully offline after build
+- **Recording:** One exact 12-second seamless WebM cycle
 
 ## Quick start
 
 ```bash
 npm install
-npm run gen:map   # regenerate the artistic GeoJSON into public/data (also runs in build)
-npm run dev       # http://localhost:5173/
+npm run dev
+# http://localhost:5173/
 ```
 
-Build & preview the production bundle:
+Production build:
 
 ```bash
-npm run build     # gen:map -> tsc --noEmit -> vite build  (outputs dist/)
+npm run build
 npm run preview
 ```
 
----
+`npm run build` regenerates the deterministic GeoJSON, typechecks the project,
+and creates `dist/`.
 
 ## Controls
 
-| Action           | Mouse / Touch                    | Key     |
-| ---------------- | -------------------------------- | ------- |
-| Play / pause     | ▶︎/⏸ button (top-right)          | `Space` |
-| Follow view      | segmented control                | `1`     |
-| Overview view    | segmented control                | `2`     |
-| Fractal view     | segmented control                | `3`     |
-| Fullscreen       | ⛶ button                          | `F`     |
-| Debug overlay    | —                                | `D`     |
-| Record 12s loop  | ● button                          | `R`     |
+| Action | UI | Keyboard |
+| --- | --- | --- |
+| Play / pause | Top-right button | `Space` |
+| Infinite view | Bottom dock | `1` or `3` |
+| Plan view | Bottom dock | `2` |
+| Record one cycle | Top-right dot | `R` |
+| Fullscreen | Top-right corners | `F` |
+| Debug overlay | Hidden utility | `D` |
 
-Debug (off by default) shows FPS, loop progress, vehicle angle, fractal phase
-and the current mode, plus the loop control points and car centre in 3D.
+All public controls are semantic buttons with visible focus, pressed state, and
+at least a 44×44px target. Global shortcuts ignore focused controls and editable
+content, preventing native button activation from firing twice.
 
-## The three views
+## The visual system
 
-- **Follow** — chase camera behind and above the car, à la the Osaka original,
-  with room ahead to see the road coming.
-- **Overview** — top-down, north-up framing of the whole artistic city; the car
-  keeps looping the 2nd ring.
-- **Fractal** *(default)* — the city recursively zooms into itself around a
-  fixed anchor near the central-axis midpoint. This is the centrepiece.
+### Infinite
 
-### Why the fractal loop is seamless
+The default hero view keeps a fixed north-up camera and static city context.
+Nested copies of the orange route scale around the central anchor. Faint copies
+bridge the seam; one route marker remains dominant and crossfades only when two
+adjacent scales share the transition.
 
-Let `phase = (elapsed mod duration) / duration ∈ [0, 1)` (duration = 12s). A map
-copy at integer depth `k` is drawn at world scale `S^(phase + k)` where `S` is
-the fixed ratio between adjacent recursion layers. As `phase` runs 0→1, every
-copy's log-scale slides up by exactly 1, so at `phase = 1` the *set* of copies
-on screen is identical to `phase = 0` — only their integer labels shift by one.
+### Plan
 
-Each copy's opacity is a **cubic B-spline** of its log-scale. The cubic B-spline
-is a *partition of unity* (`Σ_k B(L+k) = 1` for all `L`), so the total on-screen
-opacity is constant and the rendered frame is a continuous, periodic function of
-`phase`. The result: no flash, black frame, or jump at the wrap. The vehicle is
-drawn on **every** visible copy at that copy's scale from one continuous clock,
-so it is self-similar too and never snaps back to the route start.
+A full-city inspection view shows the paper-cut municipal plate, courtyard
+masses, outer arcs, lake, gate marks, internal axis, and northern ridges. It is
+not a geographic plan and contains no POIs or navigational information.
 
-Line widths are specified in **screen pixels** and divided by pixels-per-unit,
-so roads never balloon into thick blocks as a layer scales up.
+## Why the 12-second cycle is seamless
+
+Let `phase = (elapsed mod 12) / 12`. A loop copy at integer depth `k` is drawn at
+scale `S^(phase + k)`, where `S = 2.45`. When phase wraps from 1 to 0, the set of
+copies is unchanged after shifting the integer depth labels. Each copy’s opacity
+is a continuous cubic B-spline-derived function, so the transition has no frame
+jump.
+
+The route marker uses the same 12-second clock and completes exactly one lap per
+cycle. The city context and camera are static in Infinite mode. Consequently the
+entire exported frame—not only the abstract scale set—returns to the same state
+at 12 seconds.
+
+`scripts/seam-check.mjs` validates 121 deterministic samples, checks every frame
+is nonblank, bounds adjacent-frame difference spikes, and compares exact 0s and
+12s endpoints.
+
+## Sparse geometry contract
+
+`scripts/generate-map.mjs` emits the same GeoJSON filenames and `FeatureKind`
+boundary used by the renderer, but keeps a strict visual budget:
+
+- at most **28 road features** and **500 road points**;
+- exactly **12** closed courtyard plates;
+- exactly **4** gate marks;
+- exactly **8** broken outer arcs;
+- exactly **3** internal axis segments;
+- **1** lake and **6** north-west ridges;
+- **0** street×street intersections;
+- a single non-self-intersecting vehicle loop.
+
+The generator fails if its feature contract changes. `scripts/geometry-check.mjs`
+also regenerates twice, verifies byte-identical output, validates finite and
+nonduplicate segments, checks self-intersections, and enforces the budgets.
 
 ## Architecture
 
-```
+```text
 src/
-  main.ts                     p5 bootstrap, keyboard, visibility, fullscreen, recorder wiring
-  app/BeijingLoopApp.ts       orchestrator: sim clock, per-frame update + render pipeline
+  main.ts                     p5 bootstrap, a11y semantics, shortcuts, test hook
+  app/BeijingLoopApp.ts       single 12s clock and render orchestration
   rendering/
-    MapRenderer.ts            boundary, rings, axis, radials, streets, water, mountains (LOD)
-    VehicleRenderer.ts        chamfered box + heading wedge + headlights + sensor whiskers
-    FractalRenderer.ts        nested-layer stack + seamless B-spline opacity window
-    CameraController.ts       3 view modes, exp-damped, aspect-aware perspective
-    theme.ts                  palette + fractal constants
+    MapRenderer.ts            one static sparse context layer
+    FractalRenderer.ts        seamless recursive loop-layer scales/opacities
+    VehicleRenderer.ts        minimal ivory route marker
+    CameraController.ts       fixed Infinite + framed Plan cameras
+    theme.ts                  shared palette and fractal constants
   path/
-    pathSampler.ts            Catmull-Rom + arc-length sampling: getPointAt/Tangent/Length/wrap
-    loopPath.ts               build loop from GeoJSON control points (+ fallback)
-    distanceToPath.ts         spatial-grid nearest-distance for the sensors
-    geometry.ts               vec math, angle interpolation, frame-rate-independent damping
+    pathSampler.ts            Catmull-Rom + arc-length loop sampling
+    loopPath.ts               GeoJSON loop control points + fallback
+    distanceToPath.ts         debug sensor distance field
+    geometry.ts               vector math and frame-rate-independent damping
   data/
-    mapLoader.ts              fetch + parse all GeoJSON ONCE (base-URL aware)
-    mapTypes.ts               shared types
+    mapLoader.ts              one-time local GeoJSON loading and parsing
+    mapTypes.ts               shared feature/data types
   ui/
-    controls.ts               top-right controls, status, debug panel (icons inline, a11y)
-    recorder.ts               captureStream + MediaRecorder -> beijing-infinite-loop.webm
-  styles/main.css             restrained overlay UI, safe-area + reduced-motion aware
-public/data/*.geojson         generated artistic geometry (see below)
-scripts/generate-map.mjs      deterministic generator for the GeoJSON
-scripts/verify.mjs            Playwright screenshots + canvas pixel checks (dev-only)
+    controls.ts               semantic overlay controls and debug/record states
+    recorder.ts               exact-cycle canvas MediaRecorder export
+  styles/main.css             tokens, responsive dock, focus and hidden states
+public/data/*.geojson         deterministic authored output
+scripts/
+  generate-map.mjs            sparse artistic composition generator
+  geometry-check.mjs          deterministic/topology/feature-budget gate
+  verify.mjs                  browser, layout, a11y and runtime assertions
+  seam-check.mjs              121-frame periodicity and nonblank gate
 ```
 
-### Path & sensors (no pixel-colour navigation)
+## Accessibility and resilience
 
-The original Osaka sketch steers by sampling orange pixels in a PNG. This
-project instead uses an explicit **closed vector path**
-(`public/data/beijing-loop.geojson`, a `LineString`): control points →
-Catmull-Rom spline → dense polyline with a cumulative arc-length table.
-`PathSampler` exposes `getPointAt`, `getTangentAt`, `getAngleAt`, `getLength`
-and `wrapProgress`; `progress ∈ [0,1)` wraps seamlessly and motion is constant
-speed regardless of control-point spacing. Speed is `deltaTime`-based.
+- Persistent pause control satisfying long-running motion requirements.
+- `prefers-reduced-motion` freezes recursive scaling and slows the route marker.
+- Canvas exposes a concise accessible name and linked text description.
+- Exactly one public mode reports `aria-pressed="true"`.
+- Recording/debug elements use authoritative hidden-state CSS.
+- All supported mobile/desktop layouts are checked for overflow and overlay
+  collisions.
+- WebGL and local-data failures show readable recovery messages.
+- The draw loop stops while the document is hidden; elapsed time is clamped on
+  resume.
+- Pixel density is capped at 2 and reduced to 1 under reduced motion.
 
-The Osaka **left/right sensor** visual language is kept: two forward whiskers
-whose tips glow yellow near the line. "Nearness" comes from
-`distanceToPath(point)`, backed by a uniform **spatial grid** over the
-pre-sampled loop segments — the sensors never brute-force the raw map geometry.
+## Verification
 
-## Performance & resilience
+Static checks:
 
-- `pixelDensity` capped at 2 (1 under reduced-motion).
-- GeoJSON is parsed once; geometry and the arc-length table are cached at init.
-- The p5 draw loop is **paused** when the tab is hidden, and `deltaTime` is
-  clamped on resume so a long-backgrounded tab can't jump the simulation.
-- `prefers-reduced-motion`: the fractal zoom freezes to a static full
-  composition and the car crawls (low-frequency position updates only).
-- Reduced allocations per frame; LOD hides streets/mountains on tiny layers.
-
-## Responsive
-
-Tested at 1440×900, 1280×720, 390×844, 360×800 (portrait) via
-`scripts/verify.mjs`. Overview fits the whole city; Follow never hides the car
-behind UI; Fractal never shows a blank canvas; buttons keep a ≥44×44px touch
-target and respect `env(safe-area-inset-*)`.
-
-## Data & licensing
-
-**All map geometry is authored procedurally** by
-`scripts/generate-map.mjs` — a deterministic (seeded) generator that draws an
-*abstract* Beijing: an irregular municipal silhouette leaning toward the NW
-mountains, five concentric ring roads (the 2nd ring is the orange vehicle
-loop), a near-vertical central axis, a few radial spokes, a faint inner street
-grid, low-key rivers/lakes, and hatched mountain texture in the north-west.
-
-Coordinates are abstract **"city units"** (`x` = east, `y` = north, origin near
-the central-axis midpoint), **not** longitude/latitude and **not** a precise
-survey. No OpenStreetMap data, and **no** Baidu / AutoNavi (Amap) / Tencent map
-tiles, screenshots, or scraped content are used — so there is nothing to
-attribute to a third party and nothing fetched at runtime. If you later swap in
-real OSM-derived GeoJSON, add the required `© OpenStreetMap contributors`
-attribution here and in the on-screen footer.
-
-Project code and the authored composition are released under the **MIT License**.
-
-## Deploy to GitHub Pages
-
-A workflow at `.github/workflows/deploy.yml` builds and deploys `dist/` on every
-push to `main`.
-
-1. Push this repo to GitHub.
-2. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
-3. Push to `main`; the site publishes at
-   `https://USERNAME.github.io/REPOSITORY/`.
-
-`vite.config.ts` uses a **relative base** (`./`) for local builds, and the
-workflow overrides it with `VITE_BASE=/REPOSITORY/` so assets resolve correctly
-under the project subpath. No code changes needed for your repo name.
-
-### Embed in your profile README
-
-Replace `USERNAME` / `REPOSITORY` with your values:
-
-```markdown
-[![Beijing Infinite Loop](./docs/preview.gif)](https://USERNAME.github.io/REPOSITORY/)
+```bash
+npm run verify           # deterministic geometry + TypeScript
+npm run build            # regenerate + typecheck + production bundle
 ```
 
-## Record & export a looping preview
+Browser and seam checks require a running dev server. The scripts use the
+bundled Playwright browser when available and otherwise support installed Chrome:
 
-Press **`R`** (or the ● button). Recording resets the simulation to `phase = 0`,
-captures exactly one 12-second cycle via `canvas.captureStream()` +
-`MediaRecorder`, and downloads **`beijing-infinite-loop.webm`**.
+```bash
+npm run dev -- --host 127.0.0.1
 
-GitHub READMEs don't embed WebM inline reliably, so convert to a looping GIF
-with ffmpeg:
+PW_CHANNEL=chrome URL=http://127.0.0.1:5173/ npm run verify:browser
+PW_CHANNEL=chrome URL=http://127.0.0.1:5173/ npm run verify:seam
+```
+
+Browser verification covers 1440×900, 1280×720, 390×844, and 360×800. It
+asserts canvas semantics, control names/targets, hidden states, selected mode,
+no overlay collisions or overflow, nonblank/low-density artwork, loop presence,
+pause stability, focused-key behavior, debug behavior, recording state, console
+errors, failed requests, and refreshed screenshots under `docs/verify/`.
+
+## Record and export
+
+Press `R` or the record button. Recording seeks to cycle start and exports one
+12-second `beijing-infinite-loop.webm` file.
+
+For a GitHub README GIF:
 
 ```bash
 ffmpeg -i beijing-infinite-loop.webm \
@@ -197,16 +185,25 @@ ffmpeg -i beijing-infinite-loop.webm \
   -loop 0 docs/preview.gif
 ```
 
-For a smaller file, drop to `fps=18,scale=720:-1`. Put the result at
-`docs/preview.gif` to match the embed snippet above. (An MP4 also works if you
-host the site; GIF is the safest for a profile README.)
+## Deploy to GitHub Pages
 
-## Attribution & limits
+`.github/workflows/deploy-pages.yml` builds and deploys `dist/` to the root user
+site at <https://brickerp.github.io/>. The workflow sets `VITE_BASE=/` so built
+assets and local data resolve from the GitHub Pages root.
 
-- Osaka Loop Line Tracer — conceptual inspiration only; no code or assets reused.
-- This is a **visualization**, not a map: distances, shapes and counts are
-  stylised. Do not use it to navigate.
-- The WebM recorder depends on browser `MediaRecorder`/`captureStream` support
-  (Chromium/Firefox fine; some Safari versions limited).
-- The JS bundle is ~1 MB (mostly p5.js); acceptable for a single-canvas art
-  piece but noted by Vite's chunk-size warning.
+1. Push the repository to GitHub.
+2. Select **Settings → Pages → Build and deployment → GitHub Actions**.
+3. Push `main`; the workflow publishes the production build.
+
+## Data, licensing, and limits
+
+Coordinates are abstract planar units (`x` east, `y` north), not longitude or
+latitude. The composition is not suitable for navigation, distance measurement,
+or geographic analysis. If real OSM-derived data is introduced later, the
+required `© OpenStreetMap contributors` attribution must be added both on screen
+and here.
+
+Project code and the authored composition are released under the MIT License.
+The WebM recorder depends on browser `MediaRecorder` and `canvas.captureStream`
+support. The main JavaScript bundle remains relatively large because p5.js is
+bundled for a single-canvas WebGL artwork.

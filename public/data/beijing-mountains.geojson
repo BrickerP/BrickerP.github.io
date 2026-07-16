@@ -1,1 +1,201 @@
-{"type":"FeatureCollection","properties":{"crs":"artistic-planar","note":"Abstract city units (x=east, y=north). Artistic visualization, not geographic survey data."},"features":[{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[5.955,363.118],[93.828,363.562]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[104.284,340.885],[151.752,337.604]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-117.077,417.386],[-42.405,430.828]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[63.158,518.224],[114.58,527.361]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[216.373,311.188],[284.254,292.029]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-199.565,346.795],[-160.969,338.86]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-249.448,345.231],[-190.371,342.302]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[18.633,419.197],[105.63,410.716]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-238.405,502.573],[-201.829,506.688]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[98.614,389.974],[177.008,362.821]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[306.437,257.688],[367.602,262.007]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[158.872,371.835],[233.589,377.723]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[263.981,298.647],[346.313,328.258]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-281.7,376.725],[-205.526,359.778]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[262.761,421.596],[331.542,407.052]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[175.154,491.013],[251.562,502.251]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-270.855,478.376],[-188.483,473.886]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[230.712,503.017],[272.343,511.542]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[266.137,405.63],[343.356,411.052]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-51.011,518.3],[-17.709,514.42]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[113.161,476.098],[155.252,473.786]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[101.867,365.168],[143.341,370.912]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[31.891,290.229],[97.357,314.05]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-167.347,446.953],[-82.445,455.138]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-316.861,477.32],[-266.557,486.181]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-334.204,474.285],[-254.176,495.033]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[125.975,385.859],[159.305,394.311]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-62.068,466.096],[17.157,486.934]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[295.994,316.895],[329.84,316.664]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-32.287,495.906],[43.991,491.722]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-117.779,310.406],[-44.435,335.177]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-271.317,385.658],[-206.607,386.063]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[94.493,328.819],[135.839,318.748]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[245.155,302.847],[287.061,289.385]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[22.876,319.807],[58.706,326.535]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-296.025,537.196],[-243.822,523.96]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-36.55,365.86],[9.565,356.064]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-51.99,469.415],[-8.795,457.677]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-292.46,517.542],[-231.679,515.42]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[26.872,447.351],[78.655,432.513]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-20.04,369.526],[41.4,349.551]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[298.398,409.544],[337.15,415.02]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[113.226,331.96],[184.892,320.205]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-207.542,431.266],[-165.803,436.189]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[291.913,270.662],[365.399,254.391]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-299.48,389.816],[-247.16,400.935]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-251.672,512.256],[-215.124,503.212]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-83.164,518.833],[5.53,511.152]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-55.017,354.732],[32.572,343.011]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[207.758,399.606],[297.428,403.841]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[164.303,329.361],[230.647,336.117]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[53.758,290.989],[131.153,297.43]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[2.352,330.575],[47.353,332.132]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[179.715,453.341],[247.913,468.352]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-17.347,329.74],[61.234,339.929]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-128.253,343.755],[-63.866,326.143]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-284.739,371.571],[-231.822,382.22]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-55.986,356.296],[-9.032,354.563]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[40.031,496.873],[113.275,495.436]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-312.425,501.558],[-254.241,494.883]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-215.08,455.345],[-130.275,478.736]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-116.712,402.388],[-53.731,393.59]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[56.039,484.787],[117.132,472.64]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-86.601,440.691],[-4.763,439.691]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[170.458,467.302],[215.965,483.622]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[245.996,288.051],[307.284,294.478]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-219.285,415.312],[-164.742,416.282]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-147.478,524.598],[-79.051,513.854]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-236.162,440.813],[-163.338,454.364]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-302.057,405.201],[-249.923,421.799]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[26.552,382.571],[82.656,376.604]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[81.52,422.483],[132.865,427.423]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-148.608,440.317],[-102.269,438.556]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[32.378,344.71],[114.418,349.439]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-124.806,414.322],[-84.004,414.929]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-166.81,439.355],[-109.185,418.829]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-13.699,332.913],[35.725,341.224]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-47.257,410.82],[-6.276,402.691]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-99.303,466.044],[-46.184,453.036]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[43.486,509.578],[86.083,497.833]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-139.266,303.213],[-71.802,298.003]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-287.791,384.903],[-254.101,388.97]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[276.142,395.847],[342.054,376.388]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-27.822,279.463],[59.85,291.58]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-17.741,532.879],[28.609,525.126]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[262.211,233.771],[312.02,246.166]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[180.198,447.976],[246.014,450.693]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-270.121,372.756],[-204.77,354.052]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[278.577,255.828],[310.471,265.588]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-63.752,512.207],[17.56,485.349]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-187.529,549.5],[-134.467,535.263]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-146.14,303.632],[-79.013,324.695]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-74.093,501.306],[-6.329,494.642]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-107.963,448.892],[-34.941,449.755]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[-152.89,350.367],[-89.185,357.809]]}},{"type":"Feature","properties":{"kind":"mountain"},"geometry":{"type":"LineString","coordinates":[[261.392,488.384],[335.481,474.814]]}}]}
+{
+  "type": "FeatureCollection",
+  "properties": {
+    "crs": "artistic-planar",
+    "note": "Hand-authored abstract city units; artistic visualization, not geographic survey data."
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "mountain",
+        "name": "Northern ridge 1"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -350,
+            264
+          ],
+          [
+            -326,
+            286
+          ],
+          [
+            -300,
+            274
+          ],
+          [
+            -276,
+            302
+          ],
+          [
+            -248,
+            292
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "mountain",
+        "name": "Northern ridge 2"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -326,
+            304
+          ],
+          [
+            -300,
+            326
+          ],
+          [
+            -274,
+            314
+          ],
+          [
+            -248,
+            340
+          ],
+          [
+            -218,
+            330
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "mountain",
+        "name": "Northern ridge 3"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -288,
+            346
+          ],
+          [
+            -260,
+            368
+          ],
+          [
+            -232,
+            354
+          ],
+          [
+            -204,
+            378
+          ],
+          [
+            -174,
+            366
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "mountain",
+        "name": "Northern ridge 4"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -216,
+            296
+          ],
+          [
+            -190,
+            316
+          ],
+          [
+            -164,
+            306
+          ],
+          [
+            -138,
+            330
+          ],
+          [
+            -110,
+            320
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "mountain",
+        "name": "Northern ridge 5"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -156,
+            350
+          ],
+          [
+            -130,
+            368
+          ],
+          [
+            -106,
+            358
+          ],
+          [
+            -82,
+            376
+          ],
+          [
+            -56,
+            368
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "mountain",
+        "name": "Northern ridge 6"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -92,
+            300
+          ],
+          [
+            -68,
+            318
+          ],
+          [
+            -44,
+            310
+          ],
+          [
+            -20,
+            326
+          ],
+          [
+            4,
+            318
+          ]
+        ]
+      }
+    }
+  ]
+}

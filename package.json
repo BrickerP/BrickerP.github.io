@@ -1,7 +1,7 @@
 {
   "name": "beijing-infinite-loop",
   "version": "1.0.0",
-  "description": "Beijing Infinite Loop — an interactive generative-art tracer of Beijing's ring roads and central axis, with an infinitely zooming fractal loop.",
+  "description": "Beijing Infinite Loop — a sparse generative study of one ring, one axis and one seamless recursive breath.",
   "type": "module",
   "license": "MIT",
   "scripts": {
@@ -9,7 +9,11 @@
     "build": "npm run gen:map && tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "gen:map": "node scripts/generate-map.mjs"
+    "gen:map": "node scripts/generate-map.mjs",
+    "verify": "npm run verify:geometry && npm run typecheck",
+    "verify:geometry": "node scripts/geometry-check.mjs",
+    "verify:browser": "node scripts/verify.mjs",
+    "verify:seam": "node scripts/seam-check.mjs"
   },
   "dependencies": {
     "p5": "^1.11.10"

@@ -9,7 +9,7 @@ import { MapRenderer, type LayerParams } from '../rendering/MapRenderer';
 import { VehicleRenderer, type VehicleView, type SensorState } from '../rendering/VehicleRenderer';
 import { FractalRenderer } from '../rendering/FractalRenderer';
 import { CameraController } from '../rendering/CameraController';
-import { RGB, type ViewMode } from '../rendering/theme';
+import { FRACTAL, RGB, type ViewMode } from '../rendering/theme';
 
 export interface AppState {
   mode: ViewMode;
@@ -22,12 +22,13 @@ export interface AppState {
   angle: number;
 }
 
-const LOOP_SECONDS = 26; // seconds for the car to complete one lap
+// One lap per exported fractal cycle keeps the full frame periodic at 12s.
+const LOOP_SECONDS = FRACTAL.duration;
 const MAX_DT = 1 / 20; // clamp dt so a backgrounded tab can't jump the sim
 
 /**
  * The orchestrator: owns state, the fixed simulation clock, and the per-frame
- * update → render pipeline for all three view modes. Deliberately thin — the
+ * update → render pipeline for both public view modes. Deliberately thin — the
  * heavy lifting lives in the path, data and rendering modules.
  */
 export class BeijingLoopApp {
@@ -103,6 +104,12 @@ export class BeijingLoopApp {
     this.clock = 0;
   }
 
+  /** Deterministic visual-test hook; normal playback still advances by dt. */
+  seek(seconds: number): void {
+    const duration = FRACTAL.duration;
+    this.clock = ((seconds % duration) + duration) % duration;
+  }
+
   worldRadius(): number {
     const b = this.map.bounds;
     return Math.hypot(b.maxX - b.minX, b.maxY - b.minY) / 2;
@@ -158,8 +165,6 @@ export class BeijingLoopApp {
     const right: SensorState = { pos: rightPos, onLine: onLine(rightPos) };
 
     // ---- camera --------------------------------------------------------
-    const carWorld: Vec2 = { x: carPos.x, y: -carPos.y };
-    const carForward: Vec2 = { x: tan.x, y: -tan.y };
     const b = this.map.bounds;
     const mapCenterWorld: Vec2 = {
       x: (b.minX + b.maxX) / 2,
@@ -169,14 +174,11 @@ export class BeijingLoopApp {
       p,
       this.state.mode,
       {
-        carWorld,
-        carForward,
         anchorWorld: { x: this.anchor.x, y: -this.anchor.y },
         mapCenterWorld,
         worldRadius: this.worldRadius(),
       },
       clamped,
-      this.clock,
     );
     const pxPerUnit = this.camera.pxPerUnit(p);
 
@@ -194,14 +196,18 @@ export class BeijingLoopApp {
   ): void {
     p.background(RGB.pageBg[0], RGB.pageBg[1], RGB.pageBg[2]);
 
-    // Flat-graphic look: no scene lights, so the map renders at its exact
-    // palette colours (boundary #D6DEE8, dark land fills). The vehicle reads
-    // as 3D via its stacked-box bevel, warm headlights and forward wedge —
-    // not via speculars/bloom, which we deliberately avoid.
+    // Flat-graphic look: no scene lights, speculars, bloom or model shading.
     p.noStroke();
 
-    // map layers (fractal stack, or a single base layer)
-    const layers: LayerParams[] =
+    // Context is always rendered exactly once. Only the orange loop motif is
+    // recursive in Fractal mode, so faint echoes never multiply line detail.
+    const [contextLayer] = this.fractalR.baseLayers(this.anchor, pxPerUnit);
+    this.mapR.draw(p, {
+      ...contextLayer,
+      alpha: this.state.mode === 'fractal' ? 0.72 : 1,
+    });
+
+    const loopLayers: LayerParams[] =
       this.state.mode === 'fractal'
         ? this.fractalR.fractalLayers(phase, this.anchor, pxPerUnit)
         : this.fractalR.baseLayers(this.anchor, pxPerUnit);
@@ -210,21 +216,23 @@ export class BeijingLoopApp {
     const view: VehicleView = {
       pos: car.pos,
       angle,
-      left: car.left,
-      right: car.right,
     };
 
-    // Back-to-front: for each nested copy draw map → loop → the car ON that
-    // copy. Because every copy is self-similar (scale S apart) and shares the
-    // same clock, the composite — car included — is continuous at the wrap:
-    // the car on copy k lands exactly where the car on copy k+1 was.
-    for (const L of layers) {
-      this.mapR.draw(p, L);
+    for (const L of loopLayers) {
       this.drawLoop(p, L, progress);
+    }
+
+    const weights = loopLayers.map((layer) => Math.max(0, layer.alpha - 0.1));
+    const weightTotal = weights.reduce((sum, value) => sum + value, 0) || 1;
+    for (const [index, L] of loopLayers.entries()) {
+      const vehicleAlpha =
+        this.state.mode === 'fractal'
+          ? Math.min(L.alpha, (weights[index] / weightTotal) * 1.15)
+          : 1;
       this.vehicleR.draw(p, view, {
         anchor: L.anchor,
         worldScale: L.worldScale,
-        alpha: L.alpha,
+        alpha: vehicleAlpha,
       });
     }
 
@@ -239,7 +247,7 @@ export class BeijingLoopApp {
     p.push();
     p.noFill();
     p.stroke(RGB.loop[0], RGB.loop[1], RGB.loop[2], 235 * a);
-    p.strokeWeight(2.6 / L.pxPerUnit);
+    p.strokeWeight(3.2 / L.pxPerUnit);
     p.beginShape();
     for (const pt of pts) {
       const wx = L.anchor.x + (pt.x - L.anchor.x) * L.worldScale;
@@ -254,13 +262,13 @@ export class BeijingLoopApp {
     );
     p.endShape();
 
-    // faint travelling highlight trailing the car along the loop
-    const glowN = 24;
-    p.stroke(RGB.highlight[0], RGB.highlight[1], RGB.highlight[2], 150 * a);
-    p.strokeWeight(3.4 / L.pxPerUnit);
+    // A short warm trail marks direction without becoming a glow effect.
+    const glowN = 16;
+    p.stroke(RGB.highlight[0], RGB.highlight[1], RGB.highlight[2], 100 * a);
+    p.strokeWeight(3.3 / L.pxPerUnit);
     p.beginShape();
     for (let i = 0; i < glowN; i++) {
-      const t = this.sampler.wrapProgress(progress - (i / glowN) * 0.05);
+      const t = this.sampler.wrapProgress(progress - (i / glowN) * 0.035);
       const pt = this.sampler.getPointAt(t);
       const wx = L.anchor.x + (pt.x - L.anchor.x) * L.worldScale;
       const wy = L.anchor.y + (pt.y - L.anchor.y) * L.worldScale;
@@ -291,7 +299,12 @@ export class BeijingLoopApp {
     p.translate(car.pos.x, -car.pos.y, 3);
     p.sphere(3 * unitsPerPx, 6, 5);
     p.pop();
+
+    // Sensor whiskers are diagnostic geometry only.
+    p.stroke(RGB.highlight[0], RGB.highlight[1], RGB.highlight[2], 175);
+    p.strokeWeight(unitsPerPx);
+    p.line(car.pos.x, -car.pos.y, 2, car.left.pos.x, -car.left.pos.y, 2);
+    p.line(car.pos.x, -car.pos.y, 2, car.right.pos.x, -car.right.pos.y, 2);
     p.pop();
   }
 }
-

@@ -9,23 +9,16 @@ export interface UICallbacks {
   onRecord(): void;
 }
 
-/**
- * Builds the restrained overlay UI: top-right icon controls (play/pause, the
- * three view modes, fullscreen), a bottom-left status readout, a small
- * "artistic visualization" + attribution footer, and a debug panel toggled
- * with D. Every button has an aria-label + title and a >=44px touch target.
- */
+/** Builds the small semantic control layer around the full-screen artwork. */
 export class Controls {
   private readonly root: HTMLElement;
   private playBtn!: HTMLButtonElement;
-  private modeBtns = new Map<ViewMode, HTMLButtonElement>();
-  private statusMode!: HTMLElement;
-  private statusProgress!: HTMLElement;
-  private progressBar!: HTMLElement;
-  private debugPanel!: HTMLElement;
   private recordBtn!: HTMLButtonElement;
+  private modeLabel!: HTMLElement;
+  private debugPanel!: HTMLElement;
+  private modeBtns = new Map<ViewMode, HTMLButtonElement>();
 
-  constructor(mount: HTMLElement, private readonly cb: UICallbacks) {
+  constructor(mount: HTMLElement, private readonly callbacks: UICallbacks) {
     this.root = document.createElement('div');
     this.root.className = 'ui-root';
     this.root.innerHTML = this.template();
@@ -35,116 +28,125 @@ export class Controls {
 
   private template(): string {
     return `
-      <div class="ui-topright" role="toolbar" aria-label="View controls">
-        <button class="ui-btn" data-act="play" aria-label="Play or pause" title="Play / Pause (Space)">
+      <header class="ui-brand">
+        <div class="ui-eyebrow">BEIJING <span>/ 北京</span></div>
+        <div class="ui-title">SECOND RING</div>
+        <div class="ui-sub"><span class="ui-mode">INFINITE</span> · INFINITE STUDY</div>
+      </header>
+
+      <div class="ui-actions" role="toolbar" aria-label="Playback and export controls">
+        <button class="ui-btn ui-icon-btn" data-act="play" aria-label="Pause animation" aria-pressed="true" title="Pause animation (Space)">
           ${ICON.pause}
         </button>
-        <div class="ui-seg" role="group" aria-label="Camera view mode">
-          <button class="ui-btn seg" data-mode="follow" aria-label="Follow view" title="Follow (1)">${ICON.follow}</button>
-          <button class="ui-btn seg" data-mode="overview" aria-label="Overview" title="Overview (2)">${ICON.overview}</button>
-          <button class="ui-btn seg" data-mode="fractal" aria-label="Fractal zoom view" title="Fractal (3)">${ICON.fractal}</button>
-        </div>
-        <button class="ui-btn" data-act="record" aria-label="Record a 12-second loop clip" title="Record 12s loop (WebM)">${ICON.record}</button>
-        <button class="ui-btn" data-act="fs" aria-label="Toggle fullscreen" title="Fullscreen (F)">${ICON.fullscreen}</button>
+        <button class="ui-btn ui-icon-btn" data-act="record" aria-label="Record one 12-second loop" aria-pressed="false" title="Record loop (R)">
+          ${ICON.record}
+        </button>
+        <button class="ui-btn ui-icon-btn" data-act="fs" aria-label="Toggle fullscreen" title="Fullscreen (F)">
+          ${ICON.fullscreen}
+        </button>
       </div>
 
-      <div class="ui-status" aria-hidden="false">
-        <div class="ui-title">BEIJING INFINITE LOOP</div>
-        <div class="ui-sub"><span class="ui-mode">FRACTAL</span> · 2nd&nbsp;ring&nbsp;<span class="ui-prog">0%</span></div>
-        <div class="ui-progress"><span class="ui-progressbar"></span></div>
-      </div>
+      <nav class="ui-dock" aria-label="View mode">
+        <button class="ui-btn ui-mode-btn" data-mode="fractal" aria-label="Infinite view" aria-pressed="true">
+          ${ICON.infinite}<span>INFINITE</span>
+        </button>
+        <button class="ui-btn ui-mode-btn" data-mode="overview" aria-label="Plan view" aria-pressed="false">
+          ${ICON.plan}<span>PLAN</span>
+        </button>
+      </nav>
 
-      <div class="ui-footer">Artistic visualization, not for navigation. · Composition © this project · No third-party map tiles.</div>
+      <div class="ui-footer" aria-label="Artistic study. Not for navigation. No third-party map tiles.">
+        ARTISTIC STUDY · NOT FOR NAVIGATION
+      </div>
 
       <div class="ui-debug" hidden>
-        <div>DEBUG (press D)</div>
-        <div class="dbg-line" data-dbg="fps">fps: –</div>
-        <div class="dbg-line" data-dbg="progress">progress: –</div>
-        <div class="dbg-line" data-dbg="angle">angle: –</div>
-        <div class="dbg-line" data-dbg="phase">phase: –</div>
-        <div class="dbg-line" data-dbg="mode">mode: –</div>
+        <div>DEBUG · PRESS D</div>
+        <div data-dbg="fps">fps: –</div>
+        <div data-dbg="progress">progress: –</div>
+        <div data-dbg="angle">angle: –</div>
+        <div data-dbg="phase">phase: –</div>
+        <div data-dbg="mode">mode: –</div>
       </div>
 
-      <div class="ui-rec" hidden>● REC <span class="rec-time">0.0s</span></div>
+      <div class="ui-rec" role="status" aria-live="polite" hidden>
+        <span aria-hidden="true">●</span> REC <span class="rec-time">0.0s</span>
+      </div>
     `;
   }
 
   private wire(): void {
-    this.playBtn = this.q('[data-act="play"]');
-    this.recordBtn = this.q('[data-act="record"]');
-    this.statusMode = this.q('.ui-mode');
-    this.statusProgress = this.q('.ui-prog');
-    this.progressBar = this.q('.ui-progressbar');
-    this.debugPanel = this.q('.ui-debug');
+    this.playBtn = this.query('[data-act="play"]');
+    this.recordBtn = this.query('[data-act="record"]');
+    this.modeLabel = this.query('.ui-mode');
+    this.debugPanel = this.query('.ui-debug');
 
-    this.playBtn.addEventListener('click', () => this.cb.onTogglePlay());
-    this.recordBtn.addEventListener('click', () => this.cb.onRecord());
-    this.q('[data-act="fs"]').addEventListener('click', () => this.cb.onToggleFullscreen());
+    this.playBtn.addEventListener('click', () => this.callbacks.onTogglePlay());
+    this.recordBtn.addEventListener('click', () => this.callbacks.onRecord());
+    this.query('[data-act="fs"]').addEventListener('click', () =>
+      this.callbacks.onToggleFullscreen(),
+    );
 
-    for (const mode of ['follow', 'overview', 'fractal'] as ViewMode[]) {
-      const btn = this.q(`[data-mode="${mode}"]`) as HTMLButtonElement;
-      this.modeBtns.set(mode, btn);
-      btn.addEventListener('click', () => this.cb.onSetMode(mode));
+    for (const mode of ['fractal', 'overview'] as const) {
+      const button = this.query<HTMLButtonElement>(`[data-mode="${mode}"]`);
+      this.modeBtns.set(mode, button);
+      button.addEventListener('click', () => this.callbacks.onSetMode(mode));
     }
   }
 
-  private q<T extends HTMLElement = HTMLElement>(sel: string): T {
-    const el = this.root.querySelector(sel);
-    if (!el) throw new Error(`missing UI element ${sel}`);
-    return el as T;
+  private query<T extends HTMLElement = HTMLElement>(selector: string): T {
+    const element = this.root.querySelector(selector);
+    if (!element) throw new Error(`missing UI element ${selector}`);
+    return element as T;
   }
 
-  /** Reflect app state into the DOM (called on every state change). */
-  sync(s: AppState): void {
-    this.playBtn.innerHTML = s.playing ? ICON.pause : ICON.play;
-    this.playBtn.setAttribute('aria-pressed', String(s.playing));
-    for (const [mode, btn] of this.modeBtns) {
-      btn.classList.toggle('active', s.mode === mode);
-      btn.setAttribute('aria-pressed', String(s.mode === mode));
+  sync(state: AppState): void {
+    this.playBtn.innerHTML = state.playing ? ICON.pause : ICON.play;
+    this.playBtn.setAttribute('aria-pressed', String(state.playing));
+    this.playBtn.setAttribute('aria-label', state.playing ? 'Pause animation' : 'Play animation');
+    this.playBtn.title = `${state.playing ? 'Pause' : 'Play'} animation (Space)`;
+
+    const publicMode = state.mode;
+    for (const [mode, button] of this.modeBtns) {
+      const active = mode === publicMode;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
     }
-    this.statusMode.textContent = s.mode.toUpperCase();
-    const pct = Math.round(s.progress * 100);
-    this.statusProgress.textContent = `${pct}%`;
-    this.progressBar.style.width = `${pct}%`;
-    this.debugPanel.hidden = !s.debug;
+    this.modeLabel.textContent = publicMode === 'fractal' ? 'INFINITE' : 'PLAN';
+    this.debugPanel.hidden = !state.debug;
   }
 
-  /** Per-frame debug values (only meaningful while debug panel is visible). */
-  syncDebug(s: AppState): void {
+  syncDebug(state: AppState): void {
     if (this.debugPanel.hidden) return;
-    this.setDbg('fps', `fps: ${s.fps.toFixed(0)}`);
-    this.setDbg('progress', `progress: ${s.progress.toFixed(4)}`);
-    this.setDbg('angle', `angle: ${((s.angle * 180) / Math.PI).toFixed(1)}°`);
-    this.setDbg('phase', `phase: ${s.phase.toFixed(4)}`);
-    this.setDbg('mode', `mode: ${s.mode}`);
+    this.setDebug('fps', `fps: ${state.fps.toFixed(0)}`);
+    this.setDebug('progress', `progress: ${state.progress.toFixed(4)}`);
+    this.setDebug('angle', `angle: ${((state.angle * 180) / Math.PI).toFixed(1)}°`);
+    this.setDebug('phase', `phase: ${state.phase.toFixed(4)}`);
+    this.setDebug('mode', `mode: ${state.mode}`);
   }
 
-  private setDbg(key: string, text: string): void {
-    const el = this.root.querySelector(`[data-dbg="${key}"]`);
-    if (el) el.textContent = text;
+  private setDebug(key: string, text: string): void {
+    this.query(`[data-dbg="${key}"]`).textContent = text;
   }
 
   setRecording(active: boolean, seconds = 0): void {
-    const rec = this.q('.ui-rec');
-    rec.hidden = !active;
-    if (active) this.q('.rec-time').textContent = `${seconds.toFixed(1)}s`;
-    this.recordBtn.classList.toggle('active', active);
+    const recording = this.query('.ui-rec');
+    recording.hidden = !active;
+    this.recordBtn.classList.toggle('recording', active);
+    this.recordBtn.setAttribute('aria-pressed', String(active));
+    if (active) this.query('.rec-time').textContent = `${seconds.toFixed(1)}s`;
   }
 }
 
-// Minimal, crisp line icons (currentColor) — no external assets.
 const ICON = {
-  play: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>',
+  play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>',
   pause:
-    '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor"/></svg>',
-  follow:
-    '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3l7 16-7-4-7 4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
-  overview:
-    '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>',
-  fractal:
-    '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="7.5" y="7.5" width="9" height="9" rx="1" fill="none" stroke="currentColor" stroke-width="1.4"/><rect x="10.5" y="10.5" width="3" height="3" fill="currentColor"/></svg>',
-  fullscreen:
-    '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z" fill="currentColor"/></svg>',
   record:
-    '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="6" fill="currentColor"/></svg>',
-};
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5.5" fill="currentColor"/></svg>',
+  fullscreen:
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  infinite:
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.4 8.3c-2.4 0-4.1 1.6-4.1 3.7s1.7 3.7 4.1 3.7c3.7 0 5.6-7.4 9.2-7.4 2.4 0 4.1 1.6 4.1 3.7s-1.7 3.7-4.1 3.7c-3.7 0-5.5-7.4-9.2-7.4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  plan:
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="8.3" y="7.3" width="7.4" height="9.4" rx="2.4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>',
+} as const;

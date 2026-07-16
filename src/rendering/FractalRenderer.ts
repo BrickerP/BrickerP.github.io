@@ -3,97 +3,65 @@ import type { LayerParams } from './MapRenderer';
 import { FRACTAL } from './theme';
 
 /**
- * Produces the stack of nested map layers for the seamless infinite-zoom
- * "Fractal" mode.
+ * Produces a seamless stack for the orange loop motif only. The city context is
+ * rendered once by BeijingLoopApp, which prevents recursive copies from turning
+ * the quiet background into a mesh.
  *
- * Why the wrap is seamless (this is the heart of the project):
- *   phase = (elapsed % duration) / duration                    ∈ [0, 1)
- *   A copy at integer depth k has log-scale  L = phase + k  and world scale
- *   S^L  (S = layerScale). As phase runs 0→1 every copy's L slides up by 1,
- *   so at phase=1 the SET of (scale, role) pairs on screen is identical to
- *   phase=0 — only the integer labels shift by one.
- *
- *   Each copy's opacity is a CUBIC B-SPLINE of L. The cubic B-spline is a
- *   partition of unity: Σ_k B(L + k) = 1 for every L. Therefore the total
- *   opacity is constant, and because the geometry set is identical at phase 0
- *   and 1, the rendered frame is a continuous, periodic function of phase —
- *   no flash, black frame, or jump at the wrap. Its support has width 4, so
- *   3–4 nested copies are always visible at once (spec: "≥3 layers").
- *
- * The vehicle is drawn ON every visible copy (see the app) at that copy's
- * scale, from one continuous clock. The stack is thus fully self-similar, so
- * the car — like the map — lands exactly on its next-copy position at the
- * wrap and never jumps back to the route start.
+ * `phase + k` is invariant as a set when phase wraps from 1 back to 0 and k is
+ * shifted by one. Every scale and opacity is therefore periodic at the seam.
  */
 export class FractalRenderer {
-  private readonly S = FRACTAL.layerScale;
   private readonly depths = [-2, -1, 0, 1, 2];
 
-  /** Cycle phase in [0,1) from elapsed seconds. */
   phase(elapsed: number): number {
-    const d = FRACTAL.duration;
-    return (((elapsed % d) + d) % d) / d;
+    const duration = FRACTAL.duration;
+    return (((elapsed % duration) + duration) % duration) / duration;
   }
 
-  /**
-   * Nested layers for Fractal mode, ordered back-to-front (largest world
-   * scale first) so smaller inner copies paint on top toward the anchor.
-   */
   fractalLayers(phase: number, anchor: Vec2, pxPerUnit: number): LayerParams[] {
     const layers: LayerParams[] = [];
-    // the copy whose log-scale is closest to 0 is the dominant one; only it
-    // paints the solid land fill, so offset copies don't ghost the silhouette.
-    let domK = this.depths[0];
-    let domDist = Infinity;
-    for (const k of this.depths) {
-      const d = Math.abs(phase + k);
-      if (d < domDist) {
-        domDist = d;
-        domK = k;
-      }
-    }
-    for (const k of this.depths) {
-      const L = phase + k;
-      const alpha = bspline3(L);
-      if (alpha <= 0.004) continue;
-      const worldScale = Math.pow(this.S, L);
-      const detail = smoothstep(0.45, 1.7, worldScale);
+    for (const depth of this.depths) {
+      const logScale = phase + depth;
+      const rawAlpha = bspline3(logScale);
+      if (rawAlpha <= 0.003) continue;
+
+      // Compress faint echoes while keeping the function continuous. At most
+      // two copies read strongly; the remaining copy is a quiet seam bridge.
+      const normalized = rawAlpha / (2 / 3);
+      const alpha = Math.min(1, Math.pow(normalized, 1.55) * 0.96);
+      if (alpha <= 0.012) continue;
+
       layers.push({
-        worldScale,
+        worldScale: Math.pow(FRACTAL.layerScale, logScale),
         alpha,
-        detail,
+        detail: smoothstep(0.08, 0.42, alpha),
         pxPerUnit,
         anchor,
-        drawFill: k === domK,
+        drawFill: false,
       });
     }
-    layers.sort((a, b) => b.worldScale - a.worldScale);
+    layers.sort((left, right) => right.worldScale - left.worldScale);
     return layers;
   }
 
-  /** Single opaque full-detail layer for Follow / Overview modes. */
   baseLayers(anchor: Vec2, pxPerUnit: number): LayerParams[] {
     return [{ worldScale: 1, alpha: 1, detail: 1, pxPerUnit, anchor, drawFill: true }];
   }
 }
 
-/**
- * Cubic B-spline basis centred at 0 — a partition of unity under unit shifts,
- * which is exactly what makes the summed opacity (and the whole composite)
- * continuous across the phase 1→0 wrap. Peak 2/3 at L=0, 1/6 at |L|=1, 0 at
- * |L|≥2.
- */
-function bspline3(L: number): number {
-  const t = Math.abs(L);
-  if (t < 1) return 2 / 3 - t * t + (t * t * t) / 2;
-  if (t < 2) {
-    const u = 2 - t;
-    return (u * u * u) / 6;
+function bspline3(value: number): number {
+  const distance = Math.abs(value);
+  if (distance < 1) {
+    return 2 / 3 - distance * distance + (distance * distance * distance) / 2;
+  }
+  if (distance < 2) {
+    const remainder = 2 - distance;
+    return (remainder * remainder * remainder) / 6;
   }
   return 0;
 }
 
-function smoothstep(edge0: number, edge1: number, x: number): number {
-  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+function smoothstep(edge0: number, edge1: number, value: number): number {
+  const t = Math.max(0, Math.min(1, (value - edge0) / (edge1 - edge0)));
   return t * t * (3 - 2 * t);
 }

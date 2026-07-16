@@ -3,174 +3,141 @@ import type { BeijingMap, MapPolyline } from '../data/mapTypes';
 import type { Vec2 } from '../path/geometry';
 import { RGB } from './theme';
 
-/** One nested copy of the map in the fractal stack (or the single base map). */
+/** Placement and opacity for one rendered map or loop layer. */
 export interface LayerParams {
-  /** apparent scale of this copy about the anchor (1 = base size). */
   worldScale: number;
-  /** 0..1 opacity multiplier for this layer. */
   alpha: number;
-  /** 0..1 level of detail (streets/mountains fade in as this rises). */
   detail: number;
-  /** pixels per world unit at the focal plane (for screen-stable widths). */
   pxPerUnit: number;
-  /** world-space anchor the scaling pivots around. */
   anchor: Vec2;
-  /** draw the soft filled land/core beneath the lines. */
   drawFill: boolean;
 }
 
 /**
- * Draws the artistic Beijing map (boundary, rings, axis, radials, streets,
- * water, mountains) as line art on the z=0 ground plane. All geometry is
- * pre-parsed; nothing here allocates per frame beyond p5's own vertex calls.
- *
- * Line widths are specified in screen pixels and converted to world units via
- * `pxPerUnit * worldScale`, so roads stay a stable thickness on screen no
- * matter how far the fractal zoom has scaled a given layer.
+ * Draws the static Beijing context once: a soft city plate, courtyard masses,
+ * broken outer arcs, gate marks, one lake and six northern ridges. The recursive
+ * motion is intentionally owned by the orange loop, not by this context.
  */
 export class MapRenderer {
   constructor(private readonly map: BeijingMap) {}
 
-  /**
-   * Draw one map layer. Point positions are scaled about `anchor` by
-   * `worldScale`; stroke weights are given in SCREEN PIXELS and divided by
-   * `pxPerUnit` (constant at the focal plane) — never multiplied by
-   * worldScale — so lines stay a stable thickness on screen at any zoom.
-   */
-  draw(p: p5, L: LayerParams): void {
-    const a = L.alpha;
-    if (a <= 0.003) return;
+  draw(p: p5, layer: LayerParams): void {
+    const alpha = layer.alpha;
+    if (alpha <= 0.003) return;
 
-    // soft land + core fills sit lowest
-    if (L.drawFill) {
-      this.fills(p, L, a);
-    }
+    if (layer.drawFill) this.drawLand(p, layer, alpha);
 
-    // water (rivers thin, lakes filled) — low-key but present
-    for (const pl of this.map.water) {
-      if (pl.kind === 'lake') {
-        this.poly(p, L, pl, null, [...RGB.water, 130 * a], true);
-      } else {
-        this.line(p, L, pl, RGB.water, 1.4, 0.72 * a);
-      }
-    }
-
-    // mountains — hatch texture, fades in with detail
-    if (L.detail > 0.18) {
-      const ma = a * smooth(L.detail, 0.18, 0.5) * 0.72;
-      for (const pl of this.map.mountains) this.line(p, L, pl, RGB.mountain, 1.0, ma);
-    }
-
-    // roads: streets (LOD-gated) -> radials -> rings -> axis, faint to bold
-    for (const pl of this.map.roads) {
-      switch (pl.kind) {
-        case 'street': {
-          if (L.detail <= 0.28) break;
-          this.line(p, L, pl, RGB.road, 0.8, a * smooth(L.detail, 0.28, 0.6) * 0.66);
+    for (const polyline of this.map.roads) {
+      switch (polyline.kind) {
+        case 'street':
+          if (polyline.closed) {
+            this.polygon(p, layer, polyline, [...RGB.district, 188 * alpha], 0.3);
+          } else {
+            this.line(p, layer, polyline, RGB.road, 1.05, 0.3 * alpha);
+          }
           break;
-        }
         case 'radial':
-          this.line(p, L, pl, RGB.road, 1.3, a * 0.85);
-          break;
-        case 'ring':
-          if (pl.ring === 2) break; // 2nd ring is the orange loop, drawn separately
-          this.line(p, L, pl, RGB.road, 1.7, a * 0.95);
+          this.line(p, layer, polyline, RGB.road, 1.35, 0.5 * alpha);
           break;
         case 'axis':
-          this.line(p, L, pl, RGB.axis, 2.4, a);
+          this.line(p, layer, polyline, RGB.axis, 1.65, 0.7 * alpha);
+          break;
+        case 'ring':
+          // Ring 2 is sampled and drawn as the orange hero route by the app.
+          if (polyline.ring !== 2) {
+            this.line(p, layer, polyline, RGB.road, 1.05, 0.28 * alpha);
+          }
           break;
         default:
-          this.line(p, L, pl, RGB.road, 1.2, a * 0.8);
+          break;
       }
     }
 
-    // municipal boundary — the brightest, calmest line
-    for (const pl of this.map.boundary) {
-      if (pl.kind === 'boundary') this.line(p, L, pl, RGB.boundary, 2.2, a);
+    for (const polyline of this.map.water) {
+      if (polyline.kind === 'lake') {
+        this.polygon(p, layer, polyline, [...RGB.water, 120 * alpha], 0.45);
+      } else {
+        this.line(p, layer, polyline, RGB.water, 1.15, 0.5 * alpha);
+      }
+    }
+
+    for (const polyline of this.map.mountains) {
+      this.line(p, layer, polyline, RGB.mountain, 0.95, 0.4 * alpha);
+    }
+
+    // The municipal edge is deliberately recessive; the loop owns contrast.
+    for (const polyline of this.map.boundary) {
+      if (polyline.kind === 'boundary') {
+        this.line(p, layer, polyline, RGB.boundary, 0.9, 0.22 * alpha);
+      }
     }
   }
 
-  private fills(p: p5, L: LayerParams, a: number): void {
-    for (const pl of this.map.boundary) {
-      if (pl.kind === 'boundary') this.poly(p, L, pl, null, [22, 30, 40, 210 * a], true);
-    }
-    for (const pl of this.map.boundary) {
-      if (pl.kind === 'core') this.poly(p, L, pl, null, [26, 36, 47, 150 * a], true);
+  private drawLand(p: p5, layer: LayerParams, alpha: number): void {
+    for (const polyline of this.map.boundary) {
+      if (polyline.kind === 'boundary') {
+        this.polygon(p, layer, polyline, [...RGB.mapBg, 214 * alpha], -0.3);
+      } else if (polyline.kind === 'core') {
+        this.polygon(p, layer, polyline, [...RGB.district, 82 * alpha], 0);
+      }
     }
   }
 
-  /** Transform a city-unit point into world space for layer L. */
-  private tx(L: LayerParams, pt: Vec2): [number, number] {
+  private transform(layer: LayerParams, point: Vec2): [number, number] {
     return [
-      L.anchor.x + (pt.x - L.anchor.x) * L.worldScale,
-      L.anchor.y + (pt.y - L.anchor.y) * L.worldScale,
+      layer.anchor.x + (point.x - layer.anchor.x) * layer.worldScale,
+      layer.anchor.y + (point.y - layer.anchor.y) * layer.worldScale,
     ];
   }
 
-  /**
-   * @param color RGB triple
-   * @param px    stroke weight in SCREEN pixels
-   * @param alpha 0..1 opacity (scaled to 0..255 internally)
-   */
   private line(
     p: p5,
-    L: LayerParams,
-    pl: MapPolyline,
+    layer: LayerParams,
+    polyline: MapPolyline,
     color: readonly [number, number, number],
-    px: number,
+    pixels: number,
     alpha: number,
   ): void {
-    if (alpha <= 0.002 || pl.points.length < 2) return;
+    if (alpha <= 0.002 || polyline.points.length < 2) return;
     p.noFill();
-    p.stroke(color[0], color[1], color[2], clampAlpha(alpha * 255));
-    p.strokeWeight(px / L.pxPerUnit);
+    p.stroke(color[0], color[1], color[2], clamp255(alpha * 255));
+    p.strokeWeight(pixels / layer.pxPerUnit);
     p.beginShape();
-    for (const pt of pl.points) {
-      const [wx, wy] = this.tx(L, pt);
-      p.vertex(wx, -wy, LINE_Z);
+    for (const point of polyline.points) {
+      const [x, y] = this.transform(layer, point);
+      p.vertex(x, -y, LINE_Z);
     }
-    if (pl.closed) {
-      const [wx, wy] = this.tx(L, pl.points[0]);
-      p.vertex(wx, -wy, LINE_Z);
+    if (polyline.closed && !samePoint(polyline.points[0], polyline.points.at(-1)!)) {
+      const [x, y] = this.transform(layer, polyline.points[0]);
+      p.vertex(x, -y, LINE_Z);
     }
     p.endShape();
   }
 
-  private poly(
+  private polygon(
     p: p5,
-    L: LayerParams,
-    pl: MapPolyline,
-    stroke: readonly [number, number, number] | null,
+    layer: LayerParams,
+    polyline: MapPolyline,
     fill: readonly [number, number, number, number],
-    filled: boolean,
+    z: number,
   ): void {
-    if (pl.points.length < 3) return;
-    if (filled) p.fill(fill[0], fill[1], fill[2], clampAlpha(fill[3]));
-    else p.noFill();
-    if (stroke) p.stroke(stroke[0], stroke[1], stroke[2]);
-    else p.noStroke();
+    if (polyline.points.length < 3) return;
+    p.noStroke();
+    p.fill(fill[0], fill[1], fill[2], clamp255(fill[3]));
     p.beginShape();
-    for (const pt of pl.points) {
-      const [wx, wy] = this.tx(L, pt);
-      p.vertex(wx, -wy, FILL_Z);
+    for (const point of polyline.points) {
+      const [x, y] = this.transform(layer, point);
+      p.vertex(x, -y, z);
     }
     p.endShape(p.CLOSE);
   }
 }
 
-const LINE_Z = 0.6; // lift lines slightly above fills to avoid z-fighting
-const FILL_Z = 0;
-
-function clampAlpha(a: number): number {
-  return a < 0 ? 0 : a > 255 ? 255 : a;
+const LINE_Z = 0.7;
+function clamp255(value: number): number {
+  return value < 0 ? 0 : value > 255 ? 255 : value;
 }
 
-/** Smoothstep from edge0..edge1. */
-function smooth(x: number, edge0: number, edge1: number): number {
-  const t = clamp01((x - edge0) / (edge1 - edge0));
-  return t * t * (3 - 2 * t);
+function samePoint(a: Vec2, b: Vec2): boolean {
+  return a.x === b.x && a.y === b.y;
 }
-function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v;
-}
-
