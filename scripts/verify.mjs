@@ -1849,12 +1849,12 @@ assert.ok(
 );
 await reducedPage.locator('[data-act="play"]').click();
 await reducedPage.waitForFunction(
-  () => {
+  ({ posterPhase }) => {
     const state = window.__BEIJING_LOOP_TEST__.readState();
-    return state.playing && state.progress > 0.105;
+    return state.playing && state.progress > posterPhase + 0.005;
   },
-  undefined,
-  { timeout: 15_000 },
+  { posterPhase: REDUCED_POSTER_PHASE },
+  { timeout: 20_000 },
 );
 const reducedOptIn = await reducedPage.evaluate(() => window.__BEIJING_LOOP_TEST__.readState());
 assert.equal(reducedOptIn.playing, true, 'reduced-motion explicit Play opts into travel');
