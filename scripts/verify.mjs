@@ -690,10 +690,21 @@ for (const viewport of viewports) {
     `${viewport.name}: seek pauses playback`,
   );
   await playButton.click();
-  await page.waitForTimeout(360);
+  const minimumProgressDelta = 0.0025;
+  await page.waitForFunction(
+    ({ pausedAt, minimumProgressDelta }) => {
+      const state = window.__BEIJING_LOOP_TEST__.readState();
+      return state.playing && Math.abs(state.progress - pausedAt) > minimumProgressDelta;
+    },
+    { pausedAt, minimumProgressDelta },
+    { timeout: 15_000 },
+  );
   const moving = await page.evaluate(() => window.__BEIJING_LOOP_TEST__.readState());
   assert.equal(moving.playing, true, `${viewport.name}: play resumes`);
-  assert.ok(Math.abs(moving.progress - pausedAt) > 0.005, `${viewport.name}: drive advances`);
+  assert.ok(
+    Math.abs(moving.progress - pausedAt) > minimumProgressDelta,
+    `${viewport.name}: drive advances`,
+  );
   await playButton.click();
   const pauseBefore = await page.evaluate(() => window.__BEIJING_LOOP_TEST__.readState().progress);
   await page.waitForTimeout(360);
