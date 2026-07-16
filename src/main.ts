@@ -1,5 +1,6 @@
 import './styles/main.css';
 import { BeijingLoopApp, type AppState } from './app/BeijingLoopApp';
+import { AboutPanel } from './ui/about';
 import { Controls } from './ui/controls';
 import {
   LoopRecorder,
@@ -128,20 +129,47 @@ function main(): void {
     fullscreen: fullscreenAvailable(),
   };
 
+  const about = new AboutPanel(mount, {
+    onClose: () => closeAbout(),
+  });
+
   const controls = new Controls(mount, {
     onTogglePlay: () => {
-      if (recorder.active) return;
+      if (recorder.active || about.isOpen) return;
       app.togglePlay();
       app.render();
       controls.sync(app.state);
       if (app.state.playing) requestFrame();
     },
-    onToggleFullscreen: () => toggleFullscreen(),
+    onToggleFullscreen: () => {
+      if (about.isOpen) return;
+      toggleFullscreen();
+    },
     onRecord: () => startRecording(),
+    onAbout: () => toggleAbout(),
   });
   controls.setCapabilities(capabilities);
   controls.sync(app.state);
   app.onStateChange((state) => controls.sync(state));
+
+  function openAbout(): void {
+    if (recorder.active || about.isOpen) return;
+    about.open(controls.aboutControl());
+    controls.setAboutOpen(true);
+    controls.announce('Personal intro opened.');
+  }
+
+  function closeAbout(): void {
+    if (!about.isOpen) return;
+    about.close();
+    controls.setAboutOpen(false);
+    controls.announce('Personal intro closed.');
+  }
+
+  function toggleAbout(): void {
+    if (about.isOpen) closeAbout();
+    else openAbout();
+  }
 
   function requestFrame(): void {
     if (frameRequest === 0 && !document.hidden && !recorder.active) {
@@ -162,6 +190,7 @@ function main(): void {
 
   function startRecording(): void {
     if (recorder.active) return;
+    if (about.isOpen) closeAbout();
     if (!capabilities.recording) {
       controls.announce(
         'Recording is unavailable because this browser cannot capture WebM video.',
@@ -296,6 +325,7 @@ function main(): void {
 
   window.addEventListener('keydown', (event) => {
     if (event.metaKey || event.ctrlKey || event.altKey) return;
+    if (about.isOpen) return;
     const target = event.target;
     if (
       target instanceof HTMLElement &&

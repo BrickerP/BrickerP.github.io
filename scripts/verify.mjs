@@ -603,11 +603,11 @@ for (const viewport of viewports) {
   assert.doesNotMatch(bodyText, /\bPLAN(?: VIEW)?\b/i, `${viewport.name}: Plan copy leaked into UI`);
 
   const buttons = page.getByRole('button');
-  assert.equal(await buttons.count(), 3, `${viewport.name}: exactly three public controls`);
-  for (const action of ['play', 'record', 'fs']) {
+  assert.equal(await buttons.count(), 4, `${viewport.name}: exactly four public controls`);
+  for (const action of ['play', 'record', 'fs', 'about']) {
     assert.equal(await page.locator(`[data-act="${action}"]`).count(), 1, `${viewport.name}: ${action} control`);
   }
-  for (let index = 0; index < 3; index += 1) {
+  for (let index = 0; index < 4; index += 1) {
     const button = buttons.nth(index);
     assert.ok((await button.getAttribute('aria-label'))?.trim(), `${viewport.name}: button ${index} name`);
     const box = await button.boundingBox();
@@ -628,8 +628,19 @@ for (const viewport of viewports) {
     /fullscreen/i,
     `${viewport.name}: fullscreen control name`,
   );
+  assert.match(
+    (await page.locator('[data-act="about"]').getAttribute('aria-label')) ?? '',
+    /personal intro|about/i,
+    `${viewport.name}: about control name`,
+  );
   assert.equal(await page.locator('[data-act="record"]').isDisabled(), false, `${viewport.name}: record supported`);
   assert.equal(await page.locator('[data-act="fs"]').isDisabled(), false, `${viewport.name}: fullscreen supported`);
+  assert.equal(await page.locator('[data-act="about"]').isDisabled(), false, `${viewport.name}: about supported`);
+  assert.equal(
+    await page.locator('.about-root').isVisible(),
+    false,
+    `${viewport.name}: about panel hidden by default`,
+  );
 
   const layout = await page.evaluate(() => ({
     viewportWidth: innerWidth,
@@ -746,6 +757,114 @@ for (const viewport of viewports) {
     warmSignal,
   };
   await context.close();
+}
+
+// Personal intro overlay: curated dialog over the continuing drive.
+for (const aboutViewport of [
+  { name: 'about-desktop', width: 1280, height: 720, mobile: false },
+  { name: 'about-mobile', width: 390, height: 844, mobile: true },
+]) {
+  const aboutContext = await browser.newContext({
+    viewport: { width: aboutViewport.width, height: aboutViewport.height },
+    deviceScaleFactor: 1,
+    isMobile: Boolean(aboutViewport.mobile),
+    hasTouch: Boolean(aboutViewport.mobile),
+  });
+  const aboutPage = await aboutContext.newPage();
+  attachRuntimeDiagnostics(aboutPage, aboutViewport.name, runtimeErrors);
+  await waitForExperience(aboutPage);
+
+  const aboutButton = aboutPage.locator('[data-act="about"]');
+  await aboutButton.focus();
+  await aboutButton.click();
+  await aboutPage.waitForSelector('.about-root.is-visible .about-panel', { state: 'visible' });
+  await aboutPage.waitForFunction(() => {
+    const panel = document.querySelector('.about-panel');
+    if (!(panel instanceof HTMLElement)) return false;
+    const style = getComputedStyle(panel);
+    return Number(style.opacity) > 0.95 && panel.getBoundingClientRect().left >= -0.5;
+  });
+  assert.equal(
+    await aboutPage.locator('.about-panel').getAttribute('role'),
+    'dialog',
+    `${aboutViewport.name}: about dialog role`,
+  );
+  assert.equal(
+    await aboutPage.locator('.about-panel').getAttribute('aria-modal'),
+    'true',
+    `${aboutViewport.name}: about dialog is modal`,
+  );
+  assert.match(
+    ((await aboutPage.locator('#about-name').textContent()) ?? '').trim(),
+    /Yupeng Lu/i,
+    `${aboutViewport.name}: about name`,
+  );
+  assert.match(
+    ((await aboutPage.locator('.about-role').textContent()) ?? '').trim(),
+    /AI Agent Engineer/i,
+    `${aboutViewport.name}: about role`,
+  );
+  assert.equal(
+    await aboutPage.evaluate(() => document.body.classList.contains('is-about-open')),
+    true,
+    `${aboutViewport.name}: about open body class`,
+  );
+
+  const playingBefore = await aboutPage.evaluate(
+    () => window.__BEIJING_LOOP_TEST__.readState().playing,
+  );
+  await aboutPage.keyboard.press(' ');
+  assert.equal(
+    await aboutPage.evaluate(() => window.__BEIJING_LOOP_TEST__.readState().playing),
+    playingBefore,
+    `${aboutViewport.name}: Space ignored while about is open`,
+  );
+
+  const detailList = aboutPage.locator('[data-detail-list="cookiy"]');
+  assert.equal(await detailList.isVisible(), false, `${aboutViewport.name}: details collapsed`);
+  const expandCookiy = aboutPage.locator('[data-expand="cookiy"]');
+  await expandCookiy.scrollIntoViewIfNeeded();
+  await expandCookiy.click();
+  assert.equal(await detailList.isVisible(), true, `${aboutViewport.name}: details expanded`);
+  assert.ok(
+    (await detailList.locator('li').count()) >= 3,
+    `${aboutViewport.name}: expanded experience reveals additional bullets`,
+  );
+
+  const aboutLayout = await aboutPage.evaluate(() => ({
+    viewportWidth: innerWidth,
+    viewportHeight: innerHeight,
+    scrollWidth: document.documentElement.scrollWidth,
+    panelLeft: document.querySelector('.about-panel')?.getBoundingClientRect().left ?? -1,
+    panelWidth: document.querySelector('.about-panel')?.getBoundingClientRect().width ?? 0,
+  }));
+  assert.ok(
+    aboutLayout.scrollWidth <= aboutLayout.viewportWidth + 1,
+    `${aboutViewport.name}: horizontal overflow while about open`,
+  );
+  assert.ok(aboutLayout.panelWidth > 0, `${aboutViewport.name}: about panel has width`);
+  assert.ok(aboutLayout.panelLeft >= -0.5, `${aboutViewport.name}: about panel leaves left edge`);
+
+  await aboutPage.keyboard.press('Escape');
+  await aboutPage.waitForFunction(() => !document.body.classList.contains('is-about-open'));
+  await aboutPage.waitForSelector('.about-root[hidden]', { state: 'attached' });
+  assert.equal(
+    await aboutPage.locator('.about-root').isVisible(),
+    false,
+    `${aboutViewport.name}: Escape closes about`,
+  );
+  assert.equal(
+    await aboutPage.evaluate(() => document.activeElement?.getAttribute('data-act') === 'about'),
+    true,
+    `${aboutViewport.name}: focus returns to about control`,
+  );
+
+  reports[aboutViewport.name] = {
+    opened: true,
+    expanded: true,
+    closedByEscape: true,
+  };
+  await aboutContext.close();
 }
 
 // Capability degradation must be explicit and accessible rather than a reset,
@@ -1472,6 +1591,7 @@ assert.deepEqual(
 assert.equal(await recordingPage.locator('.ui-rec').isVisible(), true, 'record badge visible');
 assert.equal(await recordingPage.locator('[data-act="play"]').isDisabled(), true, 'play locked during capture');
 assert.equal(await recordingPage.locator('[data-act="record"]').isDisabled(), true, 'record locked during capture');
+assert.equal(await recordingPage.locator('[data-act="about"]').isDisabled(), true, 'about locked during capture');
 
 await recordingPage.locator('body').click({ position: { x: 450, y: 500 } });
 await recordingPage.keyboard.press('d');

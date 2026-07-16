@@ -41,7 +41,7 @@
   2. Atmosphere, lighting, water reflections, and restrained motion cues.
   3. Compact brand/title and playback actions.
   4. Short artistic/non-navigation description for assistive technology.
-- Public controls: Exactly three—play/pause, record one loop, and enter/exit fullscreen. Recording and fullscreen are progressive enhancements; unsupported actions remain disabled with an accessible explanation.
+- Public controls: Exactly four—play/pause, record one loop, enter/exit fullscreen, and open/close the personal intro. Recording and fullscreen are progressive enhancements; unsupported actions remain disabled with an accessible explanation. The personal intro is a progressive overlay over the continuing drive, not a separate route.
 - Developer-only state: `D` toggles private telemetry for maintainers. It is not a public toolbar action and must never appear as navigation or collide with the title, toolbar, or recording status.
 - Forbidden UI: `Plan`, `Infinite`, overview, route selection, mini-map, compass, progress map, non-diegetic street-name labels, and any diagram of the loop. Physical signs authored inside the 3D streetscape remain valid Beijing identity cues.
 
@@ -108,9 +108,11 @@
   - `src/rendering/FirstPersonCameraRig.ts`: derives the driver-eye camera pose and aspect-aware lens from phase and viewport shape.
   - `src/rendering/drivePath.ts`: defines the closed authored spline, stable path frame, heading, and ribbon geometry helpers.
   - `src/rendering/theme.ts`: owns the 16-second duration, driver-eye height, road dimensions, and renderer palette.
-  - `src/ui/controls.ts`: owns the three public controls, private debug panel, capability-disabled states, and live announcements.
+  - `src/ui/controls.ts`: owns the four public controls, private debug panel, capability-disabled states, and live announcements.
+  - `src/ui/about.ts`: owns the personal-intro dialog overlay, expanders, focus restore, and Esc/backdrop close.
+  - `src/content/profile.ts`: owns curated resume content for the personal intro.
   - `src/ui/recorder.ts`: owns the `MediaRecorder`/canvas stream lifecycle and one-cycle deterministic capture.
-- Variants and states: Playing, paused, reduced-motion poster, recording inactive/active, fullscreen, loading, WebGL unavailable, and private developer debug.
+- Variants and states: Playing, paused, reduced-motion poster, recording inactive/active, about open/closed, fullscreen, loading, WebGL unavailable, and private developer debug.
 - Token/component ownership: One renderer palette and motion-duration source; DOM CSS tokens reuse the same blue-hour, vermilion, amber, and neutral vocabulary rather than forming a competing design system.
 
 ## Accessibility
@@ -154,9 +156,9 @@
 ## Content voice
 - Tone: Calm, cinematic, factual, and compact.
 - Preferred title: `BEIJING / 北京` with the product label `ENDLESS SECOND RING`.
-- Terminology: `PLAY`, `PAUSE`, `FULLSCREEN`, `RECORD LOOP`, and `ARTISTIC COMPOSITION · NOT FOR NAVIGATION`.
+- Terminology: `PLAY`, `PAUSE`, `FULLSCREEN`, `RECORD LOOP`, `PERSONAL INTRO` / `ABOUT`, and `ARTISTIC COMPOSITION · NOT FOR NAVIGATION`.
 - Forbidden terminology: `PLAN`, `MAP`, `ROUTE`, `OVERVIEW`, `SECOND RING VIEW`, `INFINITE MAP`, or language implying real driving directions.
-- Microcopy rules: Icon-only actions require accessible names and titles; errors use direct recovery language; do not add explanatory paragraphs over the active scene.
+- Microcopy rules: Icon-only actions require accessible names and titles; errors use direct recovery language; do not pile explanatory paragraphs onto the closed drive HUD. Long-form personal copy belongs only inside the About overlay, where the default view stays curated and additional bullets expand on demand.
 
 ## Implementation constraints
 - Framework/styling system: Vite, TypeScript, Three.js, and plain CSS. No UI framework, map SDK, tile service, downloaded font, or runtime data service is part of the product.

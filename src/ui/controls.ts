@@ -11,6 +11,7 @@ export interface UICallbacks {
   onTogglePlay(): void;
   onToggleFullscreen(): void;
   onRecord(): void;
+  onAbout(): void;
 }
 
 export interface ControlCapabilities {
@@ -24,6 +25,7 @@ export class Controls {
   private playBtn!: HTMLButtonElement;
   private recordBtn!: HTMLButtonElement;
   private fullscreenBtn!: HTMLButtonElement;
+  private aboutBtn!: HTMLButtonElement;
   private debugPanel!: HTMLElement;
   private debugFps!: HTMLElement;
   private debugProgress!: HTMLElement;
@@ -35,6 +37,7 @@ export class Controls {
   private liveRegion!: HTMLElement;
   private capabilities: ControlCapabilities = { recording: true, fullscreen: true };
   private recording = false;
+  private aboutOpen = false;
 
   constructor(mount: HTMLElement, private readonly callbacks: UICallbacks) {
     this.root = document.createElement('div');
@@ -52,7 +55,7 @@ export class Controls {
         <p class="ui-sub">ARTISTIC NIGHT DRIVE</p>
       </header>
 
-      <div class="ui-actions" role="toolbar" aria-label="Playback and capture controls">
+      <div class="ui-actions" role="toolbar" aria-label="Playback, capture, and personal intro controls">
         <button
           class="ui-btn ui-icon-btn"
           data-act="play"
@@ -82,6 +85,15 @@ export class Controls {
           aria-describedby="fullscreen-capability"
           title="Enter fullscreen (F)"
         >${ICON.fullscreen}</button>
+        <button
+          class="ui-btn ui-icon-btn"
+          data-act="about"
+          type="button"
+          aria-label="Open personal intro"
+          aria-pressed="false"
+          aria-haspopup="dialog"
+          title="Open personal intro"
+        >${ICON.about}</button>
       </div>
 
       <p class="ui-footer">ARTISTIC COMPOSITION <span aria-hidden="true">·</span> NOT FOR NAVIGATION</p>
@@ -109,6 +121,7 @@ export class Controls {
     this.playBtn = this.query('[data-act="play"]');
     this.recordBtn = this.query('[data-act="record"]');
     this.fullscreenBtn = this.query('[data-act="fs"]');
+    this.aboutBtn = this.query('[data-act="about"]');
     this.debugPanel = this.query('.ui-debug');
     this.debugFps = this.query('[data-dbg="fps"]');
     this.debugProgress = this.query('[data-dbg="progress"]');
@@ -122,8 +135,25 @@ export class Controls {
     this.playBtn.addEventListener('click', () => this.callbacks.onTogglePlay());
     this.recordBtn.addEventListener('click', () => this.callbacks.onRecord());
     this.fullscreenBtn.addEventListener('click', () => this.callbacks.onToggleFullscreen());
+    this.aboutBtn.addEventListener('click', () => this.callbacks.onAbout());
     document.addEventListener('fullscreenchange', () => this.syncFullscreen());
     this.syncFullscreen();
+  }
+
+  /** Returns the About control for focus restore after the panel closes. */
+  aboutControl(): HTMLButtonElement {
+    return this.aboutBtn;
+  }
+
+  setAboutOpen(open: boolean): void {
+    this.aboutOpen = open;
+    this.aboutBtn.setAttribute('aria-pressed', String(open));
+    this.aboutBtn.setAttribute(
+      'aria-label',
+      open ? 'Close personal intro' : 'Open personal intro',
+    );
+    this.aboutBtn.title = open ? 'Close personal intro' : 'Open personal intro';
+    this.syncDisabledState();
   }
 
   private query<T extends HTMLElement = HTMLElement>(selector: string): T {
@@ -224,6 +254,13 @@ export class Controls {
       'aria-disabled',
       String(!this.capabilities.fullscreen),
     );
+
+    this.aboutBtn.disabled = this.recording;
+    this.aboutBtn.setAttribute('aria-disabled', String(this.recording));
+    if (this.recording && !this.aboutOpen) {
+      this.aboutBtn.setAttribute('aria-label', 'Personal intro unavailable while recording');
+      this.aboutBtn.title = 'Personal intro unavailable while recording';
+    }
   }
 }
 
@@ -239,4 +276,6 @@ const ICON = {
     '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="5.25" fill="currentColor"/></svg>',
   fullscreen:
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 9V4.5H9M19.5 9V4.5H15M4.5 15v4.5H9M19.5 15v4.5H15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square"/></svg>',
+  about:
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.1" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5.8 19.2c1.3-3.1 3.5-4.6 6.2-4.6s4.9 1.5 6.2 4.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
 } as const;

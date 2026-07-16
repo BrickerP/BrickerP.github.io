@@ -312,7 +312,7 @@ canvas {
   .ui-brand {
     top: calc(18px + var(--safe-t));
     left: calc(17px + var(--safe-l));
-    max-width: calc(100vw - 184px - var(--safe-l) - var(--safe-r));
+    max-width: calc(100vw - 228px - var(--safe-l) - var(--safe-r));
   }
 
   .ui-eyebrow {
@@ -386,12 +386,339 @@ canvas {
 
 @media (forced-colors: active) {
   .ui-actions,
-  .ui-debug {
+  .ui-debug,
+  .about-panel {
     border: 1px solid CanvasText;
     background: Canvas;
   }
 
-  .ui-btn:focus-visible {
+  .ui-btn:focus-visible,
+  .about-expand:focus-visible {
     outline-color: Highlight;
+  }
+}
+
+/* Personal intro overlay — glass sheet over the continuing drive. */
+.about-root {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+}
+
+.about-root.is-visible {
+  pointer-events: auto;
+}
+
+.about-backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(3, 5, 8, 0.78) 0%, rgba(3, 5, 8, 0.42) 42%, rgba(3, 5, 8, 0.12) 72%, transparent 100%),
+    linear-gradient(180deg, rgba(3, 5, 8, 0.55) 0%, transparent 28%, transparent 72%, rgba(3, 5, 8, 0.4) 100%);
+  opacity: 0;
+  transition: opacity 240ms ease;
+}
+
+.about-root.is-visible .about-backdrop {
+  opacity: 1;
+}
+
+.about-panel {
+  position: absolute;
+  top: calc(12px + var(--safe-t));
+  bottom: calc(12px + var(--safe-b));
+  left: calc(16px + var(--safe-l));
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(520px, calc(100vw - 32px - var(--safe-l) - var(--safe-r)));
+  max-width: min(520px, 92vw);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(7, 11, 18, 0.82);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(22px) saturate(120%);
+  -webkit-backdrop-filter: blur(22px) saturate(120%);
+  opacity: 0;
+  transform: translateX(-18px);
+  transition: opacity 240ms ease, transform 260ms ease;
+  pointer-events: auto;
+  outline: none;
+}
+
+.about-root.is-visible .about-panel {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.about-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 22px 22px 14px;
+  border-bottom: 1px solid rgba(236, 229, 216, 0.08);
+}
+
+.about-identity {
+  min-width: 0;
+}
+
+.about-eyebrow,
+.about-section-title,
+.about-role-meta,
+.about-status,
+.about-link-detail {
+  margin: 0;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.about-eyebrow,
+.about-section-title {
+  color: var(--vermilion);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.about-name,
+.about-role,
+.about-summary,
+.about-role-title,
+.about-role-org,
+.about-edu-school,
+.about-edu-detail,
+.about-focus,
+.about-list,
+.about-elsewhere,
+.about-education {
+  margin: 0;
+}
+
+.about-name {
+  margin-top: 8px;
+  color: var(--text);
+  font-size: clamp(24px, 3.2vw, 34px);
+  font-weight: 520;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+
+.about-role {
+  margin-top: 8px;
+  color: rgba(236, 229, 216, 0.88);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.about-status {
+  margin-top: 8px;
+  color: rgba(236, 229, 216, 0.52);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.about-close {
+  flex: 0 0 auto;
+  pointer-events: auto;
+}
+
+.about-scroll {
+  flex: 1 1 auto;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 18px 22px calc(28px + var(--safe-b));
+  -webkit-overflow-scrolling: touch;
+}
+
+.about-summary {
+  color: rgba(236, 229, 216, 0.78);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.about-section {
+  margin-top: 28px;
+}
+
+.about-section-title {
+  margin-bottom: 12px;
+}
+
+.about-list,
+.about-education,
+.about-elsewhere {
+  padding: 0;
+  list-style: none;
+}
+
+.about-list > li,
+.about-education > li,
+.about-elsewhere > li {
+  position: relative;
+  margin: 0 0 10px;
+  padding-left: 14px;
+  color: rgba(236, 229, 216, 0.78);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.about-list > li::before,
+.about-education > li::before,
+.about-elsewhere > li::before {
+  position: absolute;
+  top: 0.55em;
+  left: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(214, 95, 72, 0.9);
+  content: "";
+}
+
+.about-role-block + .about-role-block {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(236, 229, 216, 0.08);
+}
+
+.about-role-title {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 560;
+}
+
+.about-role-org {
+  margin-top: 4px;
+  color: rgba(236, 229, 216, 0.88);
+  font-size: 13px;
+}
+
+.about-role-meta {
+  margin: 6px 0 12px;
+  color: rgba(236, 229, 216, 0.48);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.about-details {
+  margin-top: 8px;
+}
+
+.about-expand {
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--lamp);
+  font: 600 11px/1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.about-expand:hover {
+  color: var(--text);
+}
+
+.about-expand:focus-visible {
+  outline: 2px solid var(--lamp);
+  outline-offset: 3px;
+}
+
+.about-edu-school {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 560;
+}
+
+.about-edu-detail {
+  margin-top: 4px;
+  color: rgba(236, 229, 216, 0.68);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.about-focus {
+  color: rgba(236, 229, 216, 0.78);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.about-elsewhere a {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.about-elsewhere a:hover .about-link-label {
+  color: var(--lamp);
+}
+
+.about-elsewhere a:focus-visible {
+  outline: 2px solid var(--lamp);
+  outline-offset: 3px;
+}
+
+.about-link-label {
+  color: var(--text);
+  font-weight: 560;
+}
+
+.about-link-detail {
+  color: rgba(236, 229, 216, 0.48);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+body.is-about-open {
+  overflow: hidden;
+}
+
+body.is-about-open .ui-brand,
+body.is-about-open .ui-footer {
+  opacity: 0.28;
+}
+
+@media (max-width: 700px) {
+  .about-panel {
+    top: calc(8px + var(--safe-t));
+    right: calc(8px + var(--safe-r));
+    bottom: calc(8px + var(--safe-b));
+    left: calc(8px + var(--safe-l));
+    width: auto;
+    max-width: none;
+    border-radius: 14px;
+  }
+
+  .about-backdrop {
+    background: rgba(3, 5, 8, 0.72);
+  }
+
+  .about-header,
+  .about-scroll {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .about-name {
+    font-size: clamp(22px, 7vw, 28px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-backdrop,
+  .about-panel {
+    transition: none;
+  }
+
+  .about-panel {
+    transform: none;
   }
 }
