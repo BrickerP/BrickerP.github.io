@@ -35,6 +35,13 @@ import { DRIVE, PALETTE } from './theme';
 
 const TAU = Math.PI * 2;
 
+export interface CapturePerformanceState {
+  active: boolean;
+  proxiedMeshCount: number;
+  cachedProxyMaterialCount: number;
+  visibleLampLightCount: number;
+}
+
 function hash01(index: number, salt = 0): number {
   const value = Math.sin(index * 91.173 + salt * 47.77) * 43758.5453;
   return value - Math.floor(value);
@@ -88,6 +95,15 @@ export class BeijingDriveScene {
   private readonly waterMaterial: MeshStandardMaterial;
   private readonly lampMaterial: MeshStandardMaterial;
   private readonly keyLight: DirectionalLight;
+  private readonly captureMaterialProxies = new Map<
+    MeshStandardMaterial,
+    MeshBasicMaterial
+  >();
+  private readonly captureOriginalMaterials = new Map<
+    Mesh,
+    Material | Material[]
+  >();
+  private capturePerformanceMode = false;
   private disposed = false;
 
   constructor() {
@@ -140,16 +156,64 @@ export class BeijingDriveScene {
       entry.light.intensity =
         0.72 + 0.08 * Math.cos((progress + entry.phase) * TAU);
     }
+    if (this.capturePerformanceMode) {
+      for (const [source, proxy] of this.captureMaterialProxies) {
+        this.applyCaptureColor(source, proxy);
+      }
+    }
   }
 
   /** Avoid software-renderer stalls while preserving the authored geometry. */
   setCapturePerformanceMode(active: boolean): void {
+    if (this.capturePerformanceMode === active) return;
+    this.capturePerformanceMode = active;
     for (const entry of this.lampLights) entry.light.visible = !active;
+
+    if (active) {
+      try {
+        this.root.traverse((object) => {
+          if (!(object instanceof Mesh)) return;
+          const original = object.material;
+          const proxy = Array.isArray(original)
+            ? original.map((material) => this.captureProxy(material))
+            : this.captureProxy(original);
+          if (proxy === original) return;
+          if (
+            Array.isArray(original) &&
+            Array.isArray(proxy) &&
+            proxy.every((material, index) => material === original[index])
+          ) {
+            return;
+          }
+          this.captureOriginalMaterials.set(object, original);
+          object.material = proxy;
+        });
+      } catch (error) {
+        this.restoreCaptureMaterials();
+        this.capturePerformanceMode = false;
+        for (const entry of this.lampLights) entry.light.visible = true;
+        throw error;
+      }
+      return;
+    }
+
+    this.restoreCaptureMaterials();
+  }
+
+  /** QA evidence that capture-only simplifications are active and reversible. */
+  readCapturePerformanceState(): CapturePerformanceState {
+    return {
+      active: this.capturePerformanceMode,
+      proxiedMeshCount: this.captureOriginalMaterials.size,
+      cachedProxyMaterialCount: this.captureMaterialProxies.size,
+      visibleLampLightCount: this.lampLights.filter(({ light }) => light.visible).length,
+    };
   }
 
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.setCapturePerformanceMode(false);
     for (const texture of this.textures) texture.dispose();
     for (const material of this.materials) material.dispose();
     for (const geometry of this.geometries) geometry.dispose();
@@ -704,5 +768,69 @@ export class BeijingDriveScene {
   private trackMaterial<T extends Material>(material: T): T {
     this.materials.add(material);
     return material;
+  }
+
+  private captureProxy(material: Material): Material {
+    if (!(material instanceof MeshStandardMaterial)) return material;
+    const cached = this.captureMaterialProxies.get(material);
+    if (cached) return cached;
+
+    const proxy = this.trackMaterial(
+      new MeshBasicMaterial({
+        color: material.color,
+        map: material.map,
+        alphaMap: material.alphaMap,
+        side: material.side,
+        fog: material.fog,
+        transparent: material.transparent,
+        opacity: material.opacity,
+        alphaTest: material.alphaTest,
+        depthTest: material.depthTest,
+        depthWrite: material.depthWrite,
+        depthFunc: material.depthFunc,
+        colorWrite: material.colorWrite,
+        blending: material.blending,
+        blendSrc: material.blendSrc,
+        blendDst: material.blendDst,
+        blendEquation: material.blendEquation,
+        blendSrcAlpha: material.blendSrcAlpha,
+        blendDstAlpha: material.blendDstAlpha,
+        blendEquationAlpha: material.blendEquationAlpha,
+        premultipliedAlpha: material.premultipliedAlpha,
+        dithering: material.dithering,
+        polygonOffset: material.polygonOffset,
+        polygonOffsetFactor: material.polygonOffsetFactor,
+        polygonOffsetUnits: material.polygonOffsetUnits,
+        toneMapped: material.toneMapped,
+        vertexColors: material.vertexColors,
+        wireframe: material.wireframe,
+      }),
+    );
+    proxy.name = material.name ? `${material.name} capture proxy` : 'capture proxy';
+    proxy.visible = material.visible;
+    this.applyCaptureColor(material, proxy);
+    this.captureMaterialProxies.set(material, proxy);
+    return proxy;
+  }
+
+  private applyCaptureColor(
+    source: MeshStandardMaterial,
+    proxy: MeshBasicMaterial,
+  ): void {
+    const emissiveWeight = Math.min(
+      1,
+      Math.max(0, source.emissiveIntensity * 0.42),
+    );
+    proxy.color.copy(source.color);
+    proxy.color.r = Math.min(1, proxy.color.r + source.emissive.r * emissiveWeight);
+    proxy.color.g = Math.min(1, proxy.color.g + source.emissive.g * emissiveWeight);
+    proxy.color.b = Math.min(1, proxy.color.b + source.emissive.b * emissiveWeight);
+  }
+
+  private restoreCaptureMaterials(): void {
+    for (const [mesh, material] of this.captureOriginalMaterials) {
+      mesh.material = material;
+    }
+    this.captureOriginalMaterials.clear();
   }
 }

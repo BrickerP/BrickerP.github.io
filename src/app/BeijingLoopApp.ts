@@ -4,7 +4,10 @@ import {
   SRGBColorSpace,
   WebGLRenderer,
 } from 'three';
-import { BeijingDriveScene } from '../rendering/BeijingDriveScene';
+import {
+  BeijingDriveScene,
+  type CapturePerformanceState,
+} from '../rendering/BeijingDriveScene';
 import { FirstPersonCameraRig } from '../rendering/FirstPersonCameraRig';
 import {
   pathHeading,
@@ -112,6 +115,10 @@ export class BeijingLoopApp {
     this.city.setCapturePerformanceMode(active);
     this.applyRenderSize();
     this.render();
+  }
+
+  readCapturePerformanceState(): CapturePerformanceState {
+    return this.city.readCapturePerformanceState();
   }
 
   toggleDebug(): void {

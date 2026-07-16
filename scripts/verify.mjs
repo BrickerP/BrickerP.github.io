@@ -1040,14 +1040,25 @@ assert.equal(
 );
 await constructorFailurePage.locator('[data-act="record"]').click();
 await constructorFailurePage.waitForTimeout(80);
-const constructorFailureRecording = await constructorFailurePage.evaluate(() =>
-  window.__BEIJING_LOOP_TEST__.readRecording(),
-);
-assert.equal(constructorFailureRecording.status, 'failed', 'constructor failure status');
+const constructorFailureRecording = await constructorFailurePage.evaluate(() => ({
+  recording: window.__BEIJING_LOOP_TEST__.readRecording(),
+  capturePerformance: window.__BEIJING_LOOP_TEST__.readCapturePerformance(),
+}));
+assert.equal(constructorFailureRecording.recording.status, 'failed', 'constructor failure status');
 assert.match(
-  constructorFailureRecording.error ?? '',
+  constructorFailureRecording.recording.error ?? '',
   /intentional MediaRecorder constructor failure/i,
   'constructor failure evidence is retained',
+);
+assert.equal(
+  constructorFailureRecording.capturePerformance.active,
+  false,
+  'constructor failure left capture material mode active',
+);
+assert.equal(
+  constructorFailureRecording.capturePerformance.proxiedMeshCount,
+  0,
+  'constructor failure did not restore original mesh materials',
 );
 assert.ok(
   (await constructorFailurePage.evaluate(() => window.__BEIJING_TRACK_STOPS__)) >= 1,
@@ -1108,6 +1119,7 @@ await tickFailurePage.locator('[data-act="record"]').click();
 await tickFailurePage.waitForTimeout(100);
 const tickFailure = await tickFailurePage.evaluate(() => ({
   recording: window.__BEIJING_LOOP_TEST__.readRecording(),
+  capturePerformance: window.__BEIJING_LOOP_TEST__.readCapturePerformance(),
   trackStops: window.__BEIJING_TRACK_STOPS__,
   live: document.querySelector('[data-ui-live]')?.textContent ?? '',
 }));
@@ -1121,6 +1133,16 @@ assert.match(
 assert.ok(tickFailure.trackStops >= 1, 'initial tick failure leaked its capture track');
 assert.match(tickFailure.live, /recording could not start/i, 'initial tick failure announced');
 assert.equal(tickFailureDownloads, 0, 'initial tick failure created a download');
+assert.equal(
+  tickFailure.capturePerformance.active,
+  false,
+  'initial tick failure left capture material mode active',
+);
+assert.equal(
+  tickFailure.capturePerformance.proxiedMeshCount,
+  0,
+  'initial tick failure did not restore original mesh materials',
+);
 assert.equal(
   await tickFailurePage.locator('[data-act="record"]').isDisabled(),
   false,
@@ -1425,6 +1447,23 @@ await recordingPage.locator('[data-act="record"]').click();
 await recordingPage.waitForFunction(
   () => window.__BEIJING_LOOP_TEST__.readRecording().status === 'recording',
 );
+const activeCapturePerformance = await recordingPage.evaluate(() =>
+  window.__BEIJING_LOOP_TEST__.readCapturePerformance(),
+);
+assert.equal(activeCapturePerformance.active, true, 'capture material mode is inactive');
+assert.ok(
+  activeCapturePerformance.proxiedMeshCount > 0,
+  'capture material mode did not replace any lit meshes',
+);
+assert.ok(
+  activeCapturePerformance.cachedProxyMaterialCount > 0,
+  'capture material mode did not cache basic material proxies',
+);
+assert.equal(
+  activeCapturePerformance.visibleLampLightCount,
+  0,
+  'capture material mode left point lights visible',
+);
 assert.deepEqual(
   await recordingPage.locator('canvas').evaluate((canvas) => [canvas.width, canvas.height]),
   [320, 180],
@@ -1492,6 +1531,7 @@ const completedRecording = await recordingPage.evaluate(() => ({
   terminalFrameRequests: window.__BEIJING_TERMINAL_FRAME_REQUESTS__,
   captureStreamRates: window.__BEIJING_CAPTURE_STREAM_RATES__,
   captureStreamSizes: window.__BEIJING_CAPTURE_STREAM_SIZES__,
+  capturePerformance: window.__BEIJING_LOOP_TEST__.readCapturePerformance(),
   canvasSize: [document.querySelector('canvas')?.width, document.querySelector('canvas')?.height],
 }));
 const recordingResult = completedRecording.recording.result;
@@ -1516,6 +1556,20 @@ assert.equal(
 );
 assert.equal(completedRecording.state.playing, false, 'recording restores previous paused state');
 assert.ok(Math.abs(completedRecording.state.phase) < 1e-10, 'recording returns to the exact seam');
+assert.equal(
+  completedRecording.capturePerformance.active,
+  false,
+  'capture material mode remained active after recording',
+);
+assert.equal(
+  completedRecording.capturePerformance.proxiedMeshCount,
+  0,
+  'capture material mode did not restore original mesh materials',
+);
+assert.ok(
+  completedRecording.capturePerformance.visibleLampLightCount > 0,
+  'capture material mode did not restore point lights',
+);
 assert.match(completedRecording.live, /recording complete.*16-second WebM/i, 'completion announced');
 assert.equal(await recordingPage.locator('.ui-rec').isVisible(), false, 'record badge clears');
 assert.equal(await recordingPage.locator('[data-act="play"]').isDisabled(), false, 'play unlocks');
