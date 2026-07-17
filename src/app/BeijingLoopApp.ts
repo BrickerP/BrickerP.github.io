@@ -27,8 +27,8 @@ export interface AppState {
 }
 
 const MAX_DT = 1 / 20;
-// Poster frame: plaza approach with the Tiananmen wall filling the horizon.
-const REDUCED_MOTION_POSTER_PHASE = 0.038;
+// Poster frame: after Zhengyangmen, Tiananmen ahead with sky still in frame.
+const REDUCED_MOTION_POSTER_PHASE = 0.028;
 const CAPTURE_WIDTH = 320;
 const CAPTURE_HEIGHT = 180;
 

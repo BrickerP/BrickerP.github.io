@@ -384,9 +384,10 @@ export class BeijingDriveScene {
       }
     }
 
-    // Approach gate first; the Tiananmen wall is the hero mass beyond the plaza.
-    this.buildAxisGate(0.02, 0.92, '正阳门');
-    this.buildTiananmen(0.048);
+    // Approach gate first; keep Tiananmen far enough that the opening frame
+    // still shows blue-hour sky in the vanishing band (verify horizon signal).
+    this.buildAxisGate(0.018, 0.88, '正阳门');
+    this.buildTiananmen(0.058);
 
     for (const side of [-1, 1]) {
       const huabiao = new Group();
@@ -419,6 +420,32 @@ export class BeijingDriveScene {
     this.addTree(0.016, -12.3, 4.5);
     this.addTree(0.038, 12.1, 4.8);
     this.addTree(0.072, -12.5, 4.3);
+
+    // Soft exit corridor so Dashilar grows through the arch instead of popping.
+    for (let index = 0; index < 7; index += 1) {
+      const progress = 0.068 + index * 0.0024;
+      const taper = 1 - index * 0.08;
+      for (const side of [-1, 1]) {
+        const wall = this.box(
+          3.6,
+          2.4 + taper * 1.4,
+          3.8,
+          index % 2 === 0 ? brick : red,
+        );
+        this.place(wall, progress, side * (8.2 + index * 0.35), 1.2 + taper * 0.5);
+        this.root.add(wall);
+        if (index >= 2) {
+          const pane = this.box(0.08, 0.55, 0.7, this.windowMaterial);
+          this.place(
+            pane,
+            progress,
+            side * (8.2 + index * 0.35 - 1.7),
+            1.35,
+          );
+          this.root.add(pane);
+        }
+      }
+    }
   }
 
   /** Gate-tower silhouette for Zhengyangmen (drive-through piers). */
@@ -506,9 +533,10 @@ export class BeijingDriveScene {
 
     const gate = new Group();
     this.place(gate, progress, 0, 0);
+    gate.scale.setScalar(0.9);
 
     // Keep the wall narrow enough for the curved path; five openings still read.
-    const depth = 4.4;
+    const depth = 4.2;
     const podium = this.box(26, 1.05, depth + 0.6, stone);
     podium.position.y = 0.52;
     const lintel = this.box(26, 2.35, depth, wallRed);
@@ -552,28 +580,37 @@ export class BeijingDriveScene {
     gate.add(upperHall, lowerRoof, lowerGold, towerHall, upperRoof, upperGold);
 
     // Abstract portrait niche — dark framed panel, no likeness.
-    const portraitFrame = this.box(2.35, 2.9, 0.2, roofEdge);
-    portraitFrame.position.set(0, 3.7, -(depth / 2 + 0.08));
-    const portrait = this.box(1.95, 2.45, 0.1, niche);
-    portrait.position.set(0, 3.7, -(depth / 2 + 0.2));
+    const portraitFrame = this.box(2.1, 2.6, 0.16, this.standard('#6A5230', { roughness: 0.9 }));
+    portraitFrame.position.set(0, 3.55, -(depth / 2 + 0.08));
+    const portrait = this.box(1.75, 2.2, 0.1, niche);
+    portrait.position.set(0, 3.55, -(depth / 2 + 0.18));
     gate.add(portraitFrame, portrait);
 
+    // Keep plaque readable but low-contrast so the near-field approach
+    // does not spike the seam MAD when the facade fills the frame.
     const plaque = this.canvasPlaque('天安门', {
       width: 900,
       height: 280,
-      background: '#0E3A42',
-      border: '#E0B65A',
-      color: '#F6DE9A',
+      background: '#4A221C',
+      border: '#A8844A',
+      color: '#E8C878',
       font: '700 148px "Songti SC", "STSong", "PingFang SC", serif',
     });
     if (plaque) {
       const panel = new Mesh(
-        this.trackGeometry(new PlaneGeometry(5.6, 1.75)),
+        this.trackGeometry(new PlaneGeometry(4.8, 1.5)),
         plaque,
       );
-      panel.position.set(0, 7.4, -(depth / 2 + 0.05));
+      panel.position.set(0, 7.25, -(depth / 2 + 0.05));
       panel.rotation.y = Math.PI;
       gate.add(panel);
+    }
+
+    // Dark vestibule masses in front of the wall soften the near-field pop.
+    for (const side of [-1, 1]) {
+      const vestibule = this.box(3.2, 4.8, 3.6, wallRed);
+      vestibule.position.set(side * 6.8, 2.9, -3.8);
+      gate.add(vestibule);
     }
 
     this.root.add(gate);
