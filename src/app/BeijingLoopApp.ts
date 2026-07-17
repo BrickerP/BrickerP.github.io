@@ -27,8 +27,8 @@ export interface AppState {
 }
 
 const MAX_DT = 1 / 20;
-// Poster frame: Tiananmen ahead with sky still in the vanishing band.
-const REDUCED_MOTION_POSTER_PHASE = 0.024;
+// Poster frame: Tiananmen facade ahead with sky still in the vanishing band.
+const REDUCED_MOTION_POSTER_PHASE = 0.4 / 48;
 const CAPTURE_WIDTH = 320;
 const CAPTURE_HEIGHT = 180;
 
