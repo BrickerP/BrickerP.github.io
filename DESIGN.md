@@ -51,7 +51,7 @@
 - Camera: Always first-person at human/vehicle eye height, aimed predominantly forward. It may rise or bank subtly with the road but never becomes aerial, third-person, orbital, or top-down.
 - Pace: Continuous and measured. No stop, teleport, whip pan, hard cut, reverse, or acceleration spike.
 - Surface craft: Unified mid-tier for all devices — seeded boot-once canvas atlases add brick/tile/bark/glass rhythm under flat-shaded masses. No desktop-only high tier; no photo-skin.
-- **0–4s — Central axis:** Zhengyangmen then a larger **天安门** plaque gate with huabiao columns and white balustrades.
+- **0–4s — Central axis:** Zhengyangmen gate tower, then a distinct **天安门** palace wall (five arches, double eaves, plaque) with huabiao columns and white balustrades.
 - **4–8s — Qianmen / Dashilar:** Pailou, hanging shop signs, lanterns, warm mullioned shopfronts.
 - **8–12s — Deep hutong:** Courtyard gates, door piers, bark-mapped locust canopy, poles and wires.
 - **12–16s — Nanluo / Wudaoying:** Denser commercial alley with 五道营 / 南锣鼓巷 signs and warm windows.

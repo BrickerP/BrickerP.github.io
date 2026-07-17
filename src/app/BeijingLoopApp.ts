@@ -27,8 +27,8 @@ export interface AppState {
 }
 
 const MAX_DT = 1 / 20;
-// Poster frame: red walls with the Zhengyangmen gate towering just ahead.
-const REDUCED_MOTION_POSTER_PHASE = 0.03;
+// Poster frame: plaza approach with the Tiananmen wall filling the horizon.
+const REDUCED_MOTION_POSTER_PHASE = 0.038;
 const CAPTURE_WIDTH = 320;
 const CAPTURE_HEIGHT = 180;
 

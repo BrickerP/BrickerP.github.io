@@ -5,7 +5,7 @@ import { chromium } from 'playwright';
 const URL = process.env.URL || 'http://127.0.0.1:5173/';
 const OUT = 'docs/verify';
 const LOOP_SECONDS = 48;
-const REDUCED_POSTER_PHASE = 0.03;
+const REDUCED_POSTER_PHASE = 0.038;
 mkdirSync(OUT, { recursive: true });
 
 const EBML_ID = 0x1a45dfa3;

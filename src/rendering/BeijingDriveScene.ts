@@ -84,8 +84,8 @@ function createPitchedRoofGeometry(): BufferGeometry {
  *
  * One 48-second circuit crosses twelve authored passages, each 1/12 of the
  * closed path:
- *   0.000–0.083  central axis — Zhengyangmen, Tiananmen rostrum plaque,
- *                huabiao columns and white balustrades
+ *   0.000–0.083  central axis — Zhengyangmen, then a five-arch Tiananmen
+ *                wall/rostrum with plaque, huabiao columns and balustrades
  *   0.083–0.167  Qianmen / Dashilar — pailou 大栅栏, shop signs, lanterns
  *   0.167–0.250  deep hutong — courtyard gates, locust trees, poles/wires,
  *                plaque 前门东河沿街
@@ -369,7 +369,7 @@ export class BeijingDriveScene {
     }
   }
 
-  /** 0.000–0.083 — ceremonial central axis with two gate silhouettes. */
+  /** 0.000–0.083 — Zhengyangmen, then a distinct Tiananmen wall/rostrum. */
   private buildCentralAxis(): void {
     const red = this.standard(PALETTE.wallRed, { roughness: 0.92 });
     const brick = this.textured('#5C6466', 'brick', { roughness: 1 });
@@ -384,43 +384,44 @@ export class BeijingDriveScene {
       }
     }
 
-    this.buildAxisGate(0.03, 1, '正阳门');
-    this.buildAxisGate(0.065, 1.24, '天安门');
+    // Approach gate first; the Tiananmen wall is the hero mass beyond the plaza.
+    this.buildAxisGate(0.02, 0.92, '正阳门');
+    this.buildTiananmen(0.048);
 
     for (const side of [-1, 1]) {
       const huabiao = new Group();
-      this.place(huabiao, 0.058, side * 7.7, 0);
-      const column = this.cylinder(0.24, 6.1, stone);
-      column.position.y = 3.05;
-      const capital = this.box(1.05, 0.2, 0.52, stone);
-      capital.position.y = 5.55;
+      this.place(huabiao, 0.036, side * 7.6, 0);
+      const column = this.cylinder(0.26, 6.4, stone);
+      column.position.y = 3.2;
+      const capital = this.box(1.15, 0.22, 0.55, stone);
+      capital.position.y = 5.85;
       const crown = new Mesh(this.unitSphere, stone);
-      crown.scale.set(0.34, 0.42, 0.34);
-      crown.position.y = 6.28;
+      crown.scale.set(0.36, 0.44, 0.36);
+      crown.position.y = 6.58;
       huabiao.add(column, capital, crown);
       this.root.add(huabiao);
     }
-    for (let index = 0; index < 12; index += 1) {
-      const progress = 0.048 + index * 0.0024;
+    for (let index = 0; index < 14; index += 1) {
+      const progress = 0.034 + index * 0.0017;
       for (const side of [-1, 1]) {
         const post = this.box(0.28, 1.05, 0.28, stone);
-        this.place(post, progress, side * 6.7, 0.55);
-        const rail = this.box(0.18, 0.16, 2.3, stone);
-        this.place(rail, progress, side * 6.7, 1.02);
+        this.place(post, progress, side * 7.1, 0.55);
+        const rail = this.box(0.18, 0.16, 1.7, stone);
+        this.place(rail, progress, side * 7.1, 1.02);
         this.root.add(post, rail);
       }
     }
 
-    for (const progress of [0.012, 0.035, 0.057, 0.078]) {
-      this.addLamp(progress, -6.6, progress === 0.035);
-      this.addLamp(progress, 6.6, progress === 0.057);
+    for (const progress of [0.01, 0.028, 0.042, 0.068]) {
+      this.addLamp(progress, -6.6, progress === 0.028);
+      this.addLamp(progress, 6.6, progress === 0.042);
     }
-    this.addTree(0.019, -12.3, 4.5);
-    this.addTree(0.041, 12.1, 4.8);
-    this.addTree(0.076, -12.5, 4.3);
+    this.addTree(0.016, -12.3, 4.5);
+    this.addTree(0.038, 12.1, 4.8);
+    this.addTree(0.072, -12.5, 4.3);
   }
 
-  /** Shared gate-tower silhouette for Zhengyangmen and the rostrum. */
+  /** Gate-tower silhouette for Zhengyangmen (drive-through piers). */
   private buildAxisGate(progress: number, scale: number, plaqueText?: string): void {
     const palaceRed = this.textured(PALETTE.palaceRed, 'brick', { roughness: 0.86 });
     const roof = this.textured(PALETTE.roof, 'tileRoof', { roughness: 1 });
@@ -487,6 +488,97 @@ export class BeijingDriveScene {
     this.root.add(gate);
   }
 
+  /**
+   * Tiananmen as a broad palace wall with five arch openings and a double-eave
+   * upper hall — deliberately unlike Zhengyangmen's drive-through gate tower.
+   */
+  private buildTiananmen(progress: number): void {
+    const palaceRed = this.textured(PALETTE.palaceRed, 'brick', { roughness: 0.86 });
+    const wallRed = this.textured(PALETTE.wallRed, 'brick', { roughness: 0.9 });
+    const roof = this.textured(PALETTE.roof, 'tileRoof', { roughness: 1 });
+    const roofEdge = this.standard(PALETTE.roofEdge, {
+      emissive: '#2A1B09',
+      emissiveIntensity: 0.18,
+      roughness: 0.85,
+    });
+    const stone = this.textured(PALETTE.stone, 'stoneGrain', { roughness: 0.96 });
+    const niche = this.standard('#1A1410', { roughness: 0.95 });
+
+    const gate = new Group();
+    this.place(gate, progress, 0, 0);
+
+    // Keep the wall narrow enough for the curved path; five openings still read.
+    const depth = 4.4;
+    const podium = this.box(26, 1.05, depth + 0.6, stone);
+    podium.position.y = 0.52;
+    const lintel = this.box(26, 2.35, depth, wallRed);
+    lintel.position.y = 5.45;
+    gate.add(podium, lintel);
+
+    const pierXs = [-10.6, -6.5, -2.55, 2.55, 6.5, 10.6];
+    for (const x of pierXs) {
+      const pier = this.box(2.15, 4.4, depth + 0.2, wallRed);
+      pier.position.set(x, 3.3, 0);
+      gate.add(pier);
+    }
+    for (const side of [-1, 1]) {
+      const wing = this.box(3.8, 5.3, depth, wallRed);
+      wing.position.set(side * 14.4, 3.75, 0);
+      gate.add(wing);
+    }
+
+    for (const x of [-8.55, -4.5, 0, 4.5, 8.55]) {
+      const archCap = this.box(x === 0 ? 4.4 : 3.2, 0.55, depth + 0.1, wallRed);
+      archCap.position.set(x, 5.0, 0);
+      gate.add(archCap);
+    }
+
+    const upperHall = this.box(24, 2.55, 4.2, palaceRed);
+    upperHall.position.y = 7.4;
+    const lowerRoof = new Mesh(this.unitPitchedRoof, roof);
+    lowerRoof.scale.set(6.4, 1.55, 26);
+    lowerRoof.rotation.y = Math.PI / 2;
+    lowerRoof.position.y = 8.65;
+    const lowerGold = this.box(26.5, 0.18, 6.6, roofEdge);
+    lowerGold.position.y = 8.68;
+    const towerHall = this.box(17.5, 1.7, 3.4, palaceRed);
+    towerHall.position.y = 10.25;
+    const upperRoof = new Mesh(this.unitPitchedRoof, roof);
+    upperRoof.scale.set(5.1, 1.2, 19.5);
+    upperRoof.rotation.y = Math.PI / 2;
+    upperRoof.position.y = 11.1;
+    const upperGold = this.box(20, 0.15, 5.4, roofEdge);
+    upperGold.position.y = 11.1;
+    gate.add(upperHall, lowerRoof, lowerGold, towerHall, upperRoof, upperGold);
+
+    // Abstract portrait niche — dark framed panel, no likeness.
+    const portraitFrame = this.box(2.35, 2.9, 0.2, roofEdge);
+    portraitFrame.position.set(0, 3.7, -(depth / 2 + 0.08));
+    const portrait = this.box(1.95, 2.45, 0.1, niche);
+    portrait.position.set(0, 3.7, -(depth / 2 + 0.2));
+    gate.add(portraitFrame, portrait);
+
+    const plaque = this.canvasPlaque('天安门', {
+      width: 900,
+      height: 280,
+      background: '#0E3A42',
+      border: '#E0B65A',
+      color: '#F6DE9A',
+      font: '700 148px "Songti SC", "STSong", "PingFang SC", serif',
+    });
+    if (plaque) {
+      const panel = new Mesh(
+        this.trackGeometry(new PlaneGeometry(5.6, 1.75)),
+        plaque,
+      );
+      panel.position.set(0, 7.4, -(depth / 2 + 0.05));
+      panel.rotation.y = Math.PI;
+      gate.add(panel);
+    }
+
+    this.root.add(gate);
+  }
+
   /** 0.083–0.167 — Qianmen / Dashilar shopping street. */
   private buildQianmenStreet(): void {
     const brick = this.textured('#5C6466', 'brick', { roughness: 1 });
@@ -545,7 +637,7 @@ export class BeijingDriveScene {
       }
     }
 
-    this.buildPailou(0.105, '大栅栏');
+    this.buildPailou(0.118, '大栅栏');
     this.buildPailou(0.159);
 
     this.addLamp(0.09, -6.5, true);
