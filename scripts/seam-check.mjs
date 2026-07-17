@@ -5,7 +5,7 @@ const URL = process.env.URL || 'http://127.0.0.1:5173/';
 const LOOP_SECONDS = 48;
 const SAMPLE_STEP = 0.125;
 const SAMPLE_COUNT = Math.round(LOOP_SECONDS / SAMPLE_STEP);
-const REDUCED_POSTER_PHASE = 0.028;
+const REDUCED_POSTER_PHASE = 0.024;
 
 async function launchBrowser() {
   if (process.env.PW_CHANNEL) return chromium.launch({ channel: process.env.PW_CHANNEL });
