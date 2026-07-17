@@ -137,6 +137,7 @@ function main(): void {
     onTogglePlay: () => {
       if (recorder.active || about.isOpen) return;
       app.togglePlay();
+      lastTime = performance.now();
       app.render();
       controls.sync(app.state);
       if (app.state.playing) requestFrame();
@@ -182,7 +183,10 @@ function main(): void {
     if (recorder.active) return;
     let dt = (now - lastTime) / 1000;
     lastTime = now;
-    if (dt > 0.1) dt = 1 / 60;
+    // Only discard true stalls (debugger / missed visibilitychange). Slow
+    // software-GL frames must keep real dt so progress still advances; the
+    // app clamps to MAX_DT so the path never jumps.
+    if (dt > 1) dt = 1 / 60;
     app.update(dt);
     controls.syncDebug(app.state);
     if (app.state.playing) requestFrame();
@@ -355,6 +359,7 @@ function main(): void {
         event.preventDefault();
         if (recorder.active) break;
         app.togglePlay();
+        lastTime = performance.now();
         app.render();
         if (app.state.playing) requestFrame();
         break;

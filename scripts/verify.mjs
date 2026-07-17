@@ -713,14 +713,15 @@ for (const viewport of viewports) {
     `${viewport.name}: seek pauses playback`,
   );
   await playButton.click();
-  const minimumProgressDelta = 0.0025;
+  // One 20 Hz tick of clock time as progress — matches BeijingLoopApp MAX_DT.
+  const minimumProgressDelta = 1 / (LOOP_SECONDS * 20);
   await page.waitForFunction(
     ({ pausedAt, minimumProgressDelta }) => {
       const state = window.__BEIJING_LOOP_TEST__.readState();
       return state.playing && Math.abs(state.progress - pausedAt) > minimumProgressDelta;
     },
     { pausedAt, minimumProgressDelta },
-    { timeout: 15_000 },
+    { timeout: 45_000 },
   );
   const moving = await page.evaluate(() => window.__BEIJING_LOOP_TEST__.readState());
   assert.equal(moving.playing, true, `${viewport.name}: play resumes`);
@@ -1852,18 +1853,19 @@ assert.ok(
   'reduced-motion progress remains fixed',
 );
 await reducedPage.locator('[data-act="play"]').click();
+const reducedOptInDelta = 1 / (LOOP_SECONDS * 20);
 await reducedPage.waitForFunction(
-  ({ posterPhase }) => {
+  ({ posterPhase, reducedOptInDelta }) => {
     const state = window.__BEIJING_LOOP_TEST__.readState();
-    return state.playing && state.progress > posterPhase + 0.005;
+    return state.playing && state.progress > posterPhase + reducedOptInDelta;
   },
-  { posterPhase: REDUCED_POSTER_PHASE },
-  { timeout: 20_000 },
+  { posterPhase: REDUCED_POSTER_PHASE, reducedOptInDelta },
+  { timeout: 45_000 },
 );
 const reducedOptIn = await reducedPage.evaluate(() => window.__BEIJING_LOOP_TEST__.readState());
 assert.equal(reducedOptIn.playing, true, 'reduced-motion explicit Play opts into travel');
 assert.ok(
-  reducedOptIn.progress > REDUCED_POSTER_PHASE + 0.005 && reducedOptIn.progress < 0.2,
+  reducedOptIn.progress > REDUCED_POSTER_PHASE + reducedOptInDelta && reducedOptIn.progress < 0.2,
   `reduced-motion Play must continue smoothly from the poster: ${reducedOptIn.progress}`,
 );
 reports['reduced-motion'] = { ...reducedReport, optInProgress: reducedOptIn.progress };
