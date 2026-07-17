@@ -1,11 +1,12 @@
 # BEIJING / 北京 — ENDLESS SECOND RING
 
 A seamless **first-person night drive** through an imagined Beijing. The camera
-travels at driver-eye height through eight authored passages — the ceremonial
-central axis, Qianmen's Dashilar shopping street, a deep courtyard hutong, the
-Bell & Drum Tower plaza, the Shichahai waterfront, the palace moat with its
-corner tower, the Deshengmen stretch of the Second Ring, and an overpass return
-— then arrives back at the same frame every thirty-two seconds.
+travels at driver-eye height through twelve authored passages — Tiananmen on the
+central axis, Qianmen's Dashilar, a deep courtyard hutong, Nanluo/Wudaoying, the
+Bell & Drum Towers, Yonghegong, Shichahai, the palace moat and corner tower, the
+Temple of Heaven, the Olympic Bird's Nest and Water Cube, Deshengmen with a CBD
+skyline, and an overpass return — then arrives back at the same frame every
+forty-eight seconds.
 
 > **Artistic composition, not for navigation.** This is not a driving aid, road
 > simulation or reconstruction of real streets. The road and city are
@@ -14,7 +15,7 @@ corner tower, the Deshengmen stretch of the Second Ring, and an overpass return
 
 - **Stack:** Vite · TypeScript · Three.js · plain CSS
 - **View:** one first-person drive, with no cockpit or alternate camera mode
-- **Loop:** deterministic 32-second closed journey across eight Beijing passages
+- **Loop:** deterministic 48-second closed journey across twelve Beijing passages
 - **Recording:** one complete loop exported as WebM when the browser supports it
 
 ## Quick start
@@ -37,7 +38,7 @@ npm run preview
 | Action | UI | Keyboard |
 | --- | --- | --- |
 | Play / pause | Top-right play control | `Space` |
-| Record one 32-second loop / cancel without download | Top-right record control | `R` |
+| Record one 48-second loop / cancel without download | Top-right record control | `R` |
 | Enter / exit fullscreen | Top-right fullscreen control | `F` |
 | Private developer telemetry | No public control | `D` |
 
@@ -62,35 +63,36 @@ The composition is built around a single uninterrupted viewpoint:
   geographic reconstruction.
 
 Each 4-second passage carries one strong identity anchor rather than scattered
-props: the Zhengyangmen and rostrum gates with huabiao columns, the Dashilar
-pailou with hanging shop signs and lanterns, courtyard gates and leaning locust
-trees in the hutong, the Drum and Bell Tower pair, a humpback stone bridge with
-willows and a distant white dagoba over the water, the moat's red wall and
-corner tower, the Deshengmen arrow tower against restrained modern glass, and
-finally the concrete overpass that folds the journey back into its first frame.
+props: Tiananmen and Zhengyangmen on the axis, the Dashilar pailou, hutong
+courtyard gates, Nanluo/Wudaoying signs, Drum and Bell Towers, Yonghegong's
+yellow eaves, Shichahai's bridge and dagoba, the moat corner tower, the Temple
+of Heaven's triple-eave hall, the Bird's Nest and Water Cube, Deshengmen against
+a CBD skyline with secondary finance-street plates, and the overpass that folds
+the journey back into its first frame. Mid-tier surface atlases add brick, tile,
+bark and glass rhythm under the same flat-shaded masses.
 
 The city palette combines a deep blue-black sky and asphalt with grey brick,
 dark red walls, restrained vermilion, warm amber lamps, stone lane markings and
 occasional dark water. Lighting is cinematic but graphic: legibility and a clear
 vanishing point take priority over decorative line density.
 
-## Why the 32-second loop closes
+## Why the 48-second loop closes
 
 The runtime derives the full scene from one normalized phase:
 
 ```text
-phase = (elapsed mod 32) / 32
+phase = (elapsed mod 48) / 48
 ```
 
 The camera position is sampled from a closed spline at `phase`; its direction is
 derived from the same path. Roadside architecture, lamp and water luminance,
 and the small camera bob are deterministic functions of that clock. At
-thirty-two seconds, phase returns to zero, so camera and animated scene state
+forty-eight seconds, phase returns to zero, so camera and animated scene state
 return to their starting values together rather than relying on accumulated
 frame-to-frame motion.
 
 Recording pauses ordinary playback, seeks to the cycle origin, and lets the
-capture clock address canonical scene frames directly. It exports one 32-second
+capture clock address canonical scene frames directly. It exports one 48-second
 period and then restores the previous play/pause state. Pressing the record
 control again cancels the capture and discards it.
 
@@ -106,12 +108,13 @@ an explicit user action.
 ```text
 src/
   main.ts                     browser lifecycle, shortcuts, a11y and recording
-  app/BeijingLoopApp.ts       deterministic 32s clock and render orchestration
+  app/BeijingLoopApp.ts       deterministic 48s clock and render orchestration
   rendering/
-    BeijingDriveScene.ts      procedural road, eight passages, lamps, atmosphere
+    BeijingDriveScene.ts      procedural road, twelve passages, lamps, atmosphere
+    surfaceTextures.ts        seeded mid-tier surface atlases
     FirstPersonCameraRig.ts   phase-derived driver-eye camera pose
     drivePath.ts              closed spline and road-ribbon geometry helpers
-    theme.ts                  32s timing, palette and scene constants
+    theme.ts                  48s timing, palette and scene constants
   ui/
     controls.ts               semantic play, record and fullscreen controls
     recorder.ts               exact-cycle canvas MediaRecorder export

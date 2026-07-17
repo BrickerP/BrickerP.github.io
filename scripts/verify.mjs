@@ -4,7 +4,7 @@ import { chromium } from 'playwright';
 
 const URL = process.env.URL || 'http://127.0.0.1:5173/';
 const OUT = 'docs/verify';
-const LOOP_SECONDS = 32;
+const LOOP_SECONDS = 48;
 const REDUCED_POSTER_PHASE = 0.03;
 mkdirSync(OUT, { recursive: true });
 
@@ -249,11 +249,15 @@ const passages = [
   { name: 'central-axis', seconds: 0 },
   { name: 'qianmen', seconds: 4 },
   { name: 'hutong', seconds: 8 },
-  { name: 'bell-drum', seconds: 12 },
-  { name: 'shichahai', seconds: 16 },
-  { name: 'palace-moat', seconds: 20 },
-  { name: 'ring-road', seconds: 24 },
-  { name: 'overpass', seconds: 28 },
+  { name: 'nanluo-wudaoying', seconds: 12 },
+  { name: 'bell-drum', seconds: 16 },
+  { name: 'yonghegong', seconds: 20 },
+  { name: 'shichahai', seconds: 24 },
+  { name: 'palace-moat', seconds: 28 },
+  { name: 'temple-of-heaven', seconds: 32 },
+  { name: 'olympic', seconds: 36 },
+  { name: 'ring-cbd', seconds: 40 },
+  { name: 'overpass', seconds: 44 },
 ];
 
 const SMALL_TEXT_MIN_CONTRAST = 4.5;
@@ -1297,7 +1301,7 @@ await falseSuccessContext.addInitScript(() => {
     value: () => nativeNow() + clockOffset,
   });
   window.__BEIJING_ADVANCE_RECORDER_CLOCK__ = () => {
-    clockOffset += 33_000;
+    clockOffset += 49_000;
   };
 
   const nativeStop = MediaStreamTrack.prototype.stop;
@@ -1526,9 +1530,9 @@ assert.equal(
 reports['recorder-runtime-error'] = { trackStopped: true, playbackRestored: true };
 await recorderErrorContext.close();
 
-// Real 32-second capture regression. A 1.2-second main-thread stall must not
+// Real 48-second capture regression. A 1.2-second main-thread stall must not
 // shorten the scene traversal: the next frame catches up from wall time, the
-// final non-duplicate frame is 1919/60s, and the UI returns to the exact seam.
+// final non-duplicate frame is 2879/60s, and the UI returns to the exact seam.
 const recordingContext = await browser.newContext({
   viewport: { width: 900, height: 640 },
   deviceScaleFactor: 1,
@@ -1566,7 +1570,7 @@ assert.equal(
   false,
   'recording fixture starts paused',
 );
-const recordingDownloadPromise = recordingPage.waitForEvent('download', { timeout: 45_000 });
+const recordingDownloadPromise = recordingPage.waitForEvent('download', { timeout: 70_000 });
 await recordingPage.locator('[data-act="record"]').click();
 await recordingPage.waitForFunction(
   () => window.__BEIJING_LOOP_TEST__.readRecording().status === 'recording',
@@ -1651,7 +1655,7 @@ assert.ok(
 await recordingPage.waitForFunction(
   () => window.__BEIJING_LOOP_TEST__.readRecording().status === 'complete',
   undefined,
-  { timeout: 45_000 },
+  { timeout: 70_000 },
 );
 await recordingPage.waitForTimeout(80);
 const completedRecording = await recordingPage.evaluate(() => ({
@@ -1668,13 +1672,13 @@ const recordingResult = completedRecording.recording.result;
 assert.ok(recordingResult, 'recording completion result missing');
 assert.equal(recordingResult.status, 'complete', 'recording result status');
 assert.ok(
-  recordingResult.elapsedSeconds >= 32 && recordingResult.elapsedSeconds < 33,
+  recordingResult.elapsedSeconds >= 48 && recordingResult.elapsedSeconds < 49,
   `recording duration is unreasonable: ${recordingResult.elapsedSeconds}`,
 );
-assert.equal(recordingResult.totalFrames, 1920, 'recording frame budget');
-assert.equal(recordingResult.finalFrameIndex, 1919, 'recording final non-duplicate frame');
+assert.equal(recordingResult.totalFrames, 2880, 'recording frame budget');
+assert.equal(recordingResult.finalFrameIndex, 2879, 'recording final non-duplicate frame');
 assert.ok(
-  Math.abs(recordingResult.finalSceneSeconds - 1919 / 60) < 1e-10,
+  Math.abs(recordingResult.finalSceneSeconds - 2879 / 60) < 1e-10,
   `recording final scene time: ${recordingResult.finalSceneSeconds}`,
 );
 assert.ok(recordingResult.blobSize > 0, 'recording blob is empty');
@@ -1700,7 +1704,7 @@ assert.ok(
   completedRecording.capturePerformance.visibleLampLightCount > 0,
   'capture material mode did not restore point lights',
 );
-assert.match(completedRecording.live, /recording complete.*32-second WebM/i, 'completion announced');
+assert.match(completedRecording.live, /recording complete.*48-second WebM/i, 'completion announced');
 assert.equal(await recordingPage.locator('.ui-rec').isVisible(), false, 'record badge clears');
 assert.equal(await recordingPage.locator('[data-act="play"]').isDisabled(), false, 'play unlocks');
 assert.equal(await recordingPage.locator('[data-act="record"]').isDisabled(), false, 'record unlocks');
@@ -1740,7 +1744,7 @@ assert.equal(
 );
 const webmTimeline = parseWebmTimeline(recordingBytes);
 assert.ok(
-  webmTimeline.lastTimestampSeconds >= 31.9 && webmTimeline.lastTimestampSeconds <= 32.3,
+  webmTimeline.lastTimestampSeconds >= 47.9 && webmTimeline.lastTimestampSeconds <= 48.3,
   `downloaded WebM ends at ${webmTimeline.lastTimestampSeconds.toFixed(3)}s instead of one loop`,
 );
 assert.ok(
@@ -1791,7 +1795,7 @@ const cancelledRecording = await cancelPage.evaluate(() => ({
 assert.equal(cancelledRecording.recording.active, false, 'cancelled recording left recorder active');
 assert.equal(cancelledRecording.recording.status, 'cancelled', 'cancelled recording status');
 assert.ok(
-  (cancelledRecording.recording.result?.elapsedSeconds ?? 0) < 32,
+  (cancelledRecording.recording.result?.elapsedSeconds ?? 0) < 48,
   'cancelled recording ran a full loop before stopping',
 );
 assert.match(

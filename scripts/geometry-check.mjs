@@ -196,15 +196,19 @@ assert.doesNotMatch(
 assert.match(combinedSource, /central[\s_-]*axis/i, 'scene config is missing the central-axis passage');
 assert.match(combinedSource, /qianmen|dashilar/i, 'scene config is missing the Qianmen passage');
 assert.match(combinedSource, /hutong/i, 'scene config is missing the hutong passage');
+assert.match(combinedSource, /nanluo|wudaoying/i, 'scene config is missing the Nanluo/Wudaoying passage');
 assert.match(combinedSource, /bell|drum/i, 'scene config is missing the Bell & Drum Tower passage');
+assert.match(combinedSource, /yonghe/i, 'scene config is missing the Yonghegong passage');
 assert.match(combinedSource, /water(front)?|shichahai/i, 'scene config is missing the waterfront passage');
 assert.match(combinedSource, /moat|corner\s*tower/i, 'scene config is missing the palace-moat passage');
-assert.match(combinedSource, /ring\s*road|arrow\s*tower|deshengmen/i, 'scene config is missing the ring-road passage');
+assert.match(combinedSource, /temple\s*of\s*heaven|祈年殿|qinian/i, 'scene config is missing the Temple of Heaven passage');
+assert.match(combinedSource, /olympic|bird'?s?\s*nest|water\s*cube|鸟巢|水立方/i, 'scene config is missing the Olympic passage');
+assert.match(combinedSource, /ring\s*road|arrow\s*tower|deshengmen|cbd|guomao/i, 'scene config is missing the ring-road/CBD passage');
 assert.match(combinedSource, /overpass|flyover/i, 'scene config is missing the overpass passage');
 assert.match(
   combinedSource,
-  /(?:32_?000|LOOP_SECONDS\s*=\s*32|duration\s*:\s*32)/,
-  'scene config is missing the canonical 32-second duration',
+  /(?:48_?000|LOOP_SECONDS\s*=\s*48|duration\s*:\s*48)/,
+  'scene config is missing the canonical 48-second duration',
 );
 
 console.log('=== FIRST-PERSON GEOMETRY CHECK ===');
@@ -225,13 +229,17 @@ console.log(
         'central-axis',
         'qianmen',
         'hutong',
+        'nanluo-wudaoying',
         'bell-drum',
+        'yonghegong',
         'shichahai',
         'palace-moat',
-        'ring-road',
+        'temple-of-heaven',
+        'olympic',
+        'ring-cbd',
         'overpass',
       ],
-      loopSeconds: 32,
+      loopSeconds: 48,
     },
     null,
     2,

@@ -19,7 +19,7 @@ export const PALETTE = {
 
 export const DRIVE = {
   /** Exact deterministic circuit period used by playback, seeking and export. */
-  duration: 32,
+  duration: 48,
   cameraHeight: 1.55,
   laneOffset: -1.72,
   roadHalfWidth: 4.2,

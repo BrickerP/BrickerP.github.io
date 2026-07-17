@@ -295,7 +295,7 @@ function main(): void {
     lastTime = performance.now();
 
     if (result.status === 'complete') {
-      controls.announce('Recording complete. The 32-second WebM loop is ready.');
+      controls.announce('Recording complete. The 48-second WebM loop is ready.');
     } else if (result.status === 'cancelled') {
       controls.announce('Recording cancelled. No video was downloaded.');
     } else if (result.status === 'failed') {

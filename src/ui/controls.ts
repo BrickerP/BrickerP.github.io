@@ -111,7 +111,7 @@ export class Controls {
         <span class="rec-time" aria-hidden="true">0.0s</span>
       </div>
 
-      <p class="sr-only" id="record-capability">Records and downloads one 32-second WebM loop. Press again to cancel without downloading.</p>
+      <p class="sr-only" id="record-capability">Records and downloads one 48-second WebM loop. Press again to cancel without downloading.</p>
       <p class="sr-only" id="fullscreen-capability">Expands the drive to fill the screen.</p>
       <p class="sr-only" data-ui-live role="status" aria-live="polite" aria-atomic="true"></p>
     `;
@@ -180,7 +180,7 @@ export class Controls {
   setCapabilities(capabilities: ControlCapabilities): void {
     this.capabilities = capabilities;
     this.recordDescription.textContent = capabilities.recording
-      ? 'Records and downloads one complete 32-second WebM loop. Press again to cancel without downloading.'
+      ? 'Records and downloads one complete 48-second WebM loop. Press again to cancel without downloading.'
       : 'Recording is unavailable because this browser cannot capture the canvas as WebM video.';
     this.fullscreenDescription.textContent = capabilities.fullscreen
       ? 'Expands the drive to fill the screen.'

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 
 const URL = process.env.URL || 'http://127.0.0.1:5173/';
-const LOOP_SECONDS = 32;
+const LOOP_SECONDS = 48;
 const SAMPLE_STEP = 0.125;
 const SAMPLE_COUNT = Math.round(LOOP_SECONDS / SAMPLE_STEP);
 const REDUCED_POSTER_PHASE = 0.03;
