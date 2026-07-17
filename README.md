@@ -1,12 +1,12 @@
 # BEIJING / 北京 — ENDLESS SECOND RING
 
 A seamless **first-person night drive** through an imagined Beijing. The camera
-travels at driver-eye height through twelve authored passages — Tiananmen on the
-central axis, Qianmen's Dashilar, a deep courtyard hutong, Nanluo/Wudaoying, the
-Bell & Drum Towers, Yonghegong, Shichahai, the palace moat and corner tower, the
-Temple of Heaven, the Olympic Bird's Nest and Water Cube, Deshengmen with a CBD
-skyline, and an overpass return — then arrives back at the same frame every
-forty-eight seconds.
+travels at driver-eye height through twelve authored passages in Second-Ring
+relative order — Tiananmen on the central axis, the palace moat, Shichahai with
+the white dagoba, Deshengmen, the Olympic skyline, Bell & Drum Towers,
+Nanluo/Wudaoying, Yonghegong, a CBD/finance skyline, the Temple of Heaven,
+Qianmen's Dashilar with hutong density, and an overpass return — then arrives
+back at the same frame every forty-eight seconds.
 
 > **Artistic composition, not for navigation.** This is not a driving aid, road
 > simulation or reconstruction of real streets. The road and city are
@@ -63,13 +63,13 @@ The composition is built around a single uninterrupted viewpoint:
   geographic reconstruction.
 
 Each 4-second passage carries one strong identity anchor rather than scattered
-props: Tiananmen and Zhengyangmen on the axis, the Dashilar pailou, hutong
-courtyard gates, Nanluo/Wudaoying signs, Drum and Bell Towers, Yonghegong's
-yellow eaves, Shichahai's bridge and dagoba, the moat corner tower, the Temple
-of Heaven's triple-eave hall, the Bird's Nest and Water Cube, Deshengmen against
-a CBD skyline with secondary finance-street plates, and the overpass that folds
-the journey back into its first frame. Mid-tier surface atlases add brick, tile,
-bark and glass rhythm under the same flat-shaded masses.
+props: Tiananmen and Zhengyangmen on the axis, the moat corner tower,
+Shichahai's bridge and white dagoba, Deshengmen with the 二环 gantry, the Bird's
+Nest and Water Cube, Drum and Bell Towers, Nanluo/Wudaoying signs, Yonghegong's
+yellow eaves, a CBD skyline with secondary finance-street plates, the Temple of
+Heaven's triple-eave hall, the Dashilar pailou with hutong courtyard gates, and
+the overpass that folds the journey back into its first frame. Mid-tier surface
+atlases add brick, tile, bark and glass rhythm under the same flat-shaded masses.
 
 The city palette combines a deep blue-black sky and asphalt with grey brick,
 dark red walls, restrained vermilion, warm amber lamps, stone lane markings and

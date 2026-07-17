@@ -16,7 +16,7 @@
 ## Product goals
 - Goals:
   - Deliver an unmistakably first-person Beijing journey from the opening frame.
-  - Tell one continuous 48-second visual journey through twelve environments: central axis (Tiananmen), Qianmen/Dashilar, deep hutong, Nanluo/Wudaoying, Bell & Drum Tower plaza, Yonghegong, Shichahai waterfront, palace moat, Temple of Heaven, Olympic (Bird's Nest/Water Cube), Deshengmen ring with CBD/finance skyline, and overpass return.
+  - Tell one continuous 48-second visual journey through twelve environments in Second-Ring relative order: central axis (Tiananmen), palace moat, Shichahai/white dagoba, Deshengmen, Olympic skyline, Bell & Drum, Nanluo/Wudaoying, Yonghegong, CBD/finance skyline, Temple of Heaven, Qianmen/Dashilar with hutong density, and overpass return.
   - Make the scene feel rich through composition, silhouette, light, fog, mid-tier surface rhythm under mass forms, and a few solid landmark anchors rather than photoreal skins or sticker props.
   - Return to the opening pose, lighting, geometry state, and atmosphere without a visible cut or speed change.
   - Remain legible, controllable, and calm on desktop and portrait mobile.
@@ -52,16 +52,16 @@
 - Pace: Continuous and measured. No stop, teleport, whip pan, hard cut, reverse, or acceleration spike.
 - Surface craft: Unified mid-tier for all devices — seeded boot-once canvas atlases add brick/tile/bark/glass rhythm under flat-shaded masses. No desktop-only high tier; no photo-skin.
 - **0–4s — Central axis:** Zhengyangmen gate tower, then a distinct **天安门** palace wall (five arches, double eaves, plaque) with huabiao columns and white balustrades.
-- **4–8s — Qianmen / Dashilar:** Pailou, hanging shop signs, lanterns, warm mullioned shopfronts.
-- **8–12s — Deep hutong:** Courtyard gates, door piers, bark-mapped locust canopy, poles and wires.
-- **12–16s — Nanluo / Wudaoying:** Denser commercial alley with 五道营 / 南锣鼓巷 signs and warm windows.
-- **16–20s — Bell & Drum Tower plaza:** Drum Tower near-field, Bell Tower offset behind.
-- **20–24s — Yonghegong:** Yellow multi-eave temple mass with 雍和宫 plaque.
-- **24–28s — Shichahai:** Willows, humpback bridge, lantern string, white dagoba across water.
-- **28–32s — Palace moat:** Long red wall and Forbidden City corner tower across the moat.
-- **32–36s — Temple of Heaven:** Triple-eave circular Hall of Prayer silhouette and cypress band.
-- **36–40s — Olympic:** Bird's Nest lattice shell and Water Cube blue panel mass.
-- **40–44s — Deshengmen / Second Ring + CBD:** Arrow tower and 二环 sign near-field; CBD tower cluster as skyline hero; Xidan/Financial Street as secondary glass plates.
+- **4–8s — Palace moat:** Long red wall and Forbidden City corner tower across the moat (north of the axis).
+- **8–12s — Shichahai:** Willows, humpback bridge, lantern string, bright **white** Beihai dagoba across water.
+- **12–16s — Deshengmen / Second Ring:** Arrow tower and 二环 gantry on the north ring.
+- **16–20s — Olympic:** Bird's Nest lattice shell and Water Cube as further-north skyline.
+- **20–24s — Bell & Drum Tower plaza:** Drum Tower near-field, Bell Tower offset behind.
+- **24–28s — Nanluo / Wudaoying:** Denser commercial alley with 五道营 / 南锣鼓巷 signs and warm windows.
+- **28–32s — Yonghegong:** Yellow multi-eave temple mass with 雍和宫 plaque.
+- **32–36s — CBD + finance skyline:** East CBD tower cluster as hero; Xidan/Financial Street as west secondary plates.
+- **36–40s — Temple of Heaven:** Triple-eave circular Hall of Prayer silhouette and cypress band (south return).
+- **40–44s — Qianmen / Dashilar + hutong:** Pailou, shop signs, lanterns, then courtyard gates and locust canopy south of the axis.
 - **44–48s — Overpass return:** Concrete compression that hides the seam and reopens the central-axis horizon.
 - Transitions: Adjacent environments overlap through shared silhouettes, fog occlusion, walls, trees, water continuity, or underpass darkness.
 
@@ -113,7 +113,7 @@
 - Actual runtime boundaries:
   - `src/main.ts`: owns boot/error handling, browser-capability detection, global shortcuts, visibility/resizing, recording coordination, and the explicit QA hook boundary.
   - `src/app/BeijingLoopApp.ts`: owns the deterministic 48-second clock, phase seeking, render lifecycle, playback state, and reduced-motion poster selection.
-  - `src/rendering/BeijingDriveScene.ts`: builds and updates the solid Beijing-inspired road and the twelve authored passages — Tiananmen axis, Dashilar, hutong, Nanluo/Wudaoying, Bell & Drum, Yonghegong, Shichahai, palace moat, Temple of Heaven, Olympic, Deshengmen/CBD ring, overpass — plus lamps, water, fog, and skyline.
+  - `src/rendering/BeijingDriveScene.ts`: builds and updates the solid Beijing-inspired road and the twelve authored passages in ring-relative order — Tiananmen axis, palace moat, Shichahai/dagoba, Deshengmen, Olympic, Bell & Drum, Nanluo/Wudaoying, Yonghegong, CBD/finance, Temple of Heaven, Qianmen/Dashilar+hutong, overpass — plus lamps, water, fog, and skyline.
   - `src/rendering/surfaceTextures.ts`: owns seeded boot-once mid-tier surface atlases (brick, tile, bark, glass, stone, asphalt, lattice, blue panel) reused across the scene.
   - `src/rendering/FirstPersonCameraRig.ts`: derives the driver-eye camera pose and aspect-aware lens from phase and viewport shape.
   - `src/rendering/drivePath.ts`: defines the closed authored spline, stable path frame, heading, and ribbon geometry helpers.

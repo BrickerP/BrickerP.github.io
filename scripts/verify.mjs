@@ -247,17 +247,17 @@ const viewports = [
 
 const passages = [
   { name: 'central-axis', seconds: 0.4 },
-  { name: 'qianmen', seconds: 4 },
-  { name: 'hutong', seconds: 8 },
-  { name: 'nanluo-wudaoying', seconds: 12 },
-  { name: 'bell-drum', seconds: 16 },
-  { name: 'yonghegong', seconds: 20 },
-  { name: 'shichahai', seconds: 24 },
-  { name: 'palace-moat', seconds: 28 },
-  { name: 'temple-of-heaven', seconds: 32 },
-  { name: 'olympic', seconds: 36 },
-  { name: 'ring-cbd', seconds: 40 },
-  { name: 'overpass', seconds: 44 },
+  { name: 'palace-moat', seconds: 6 },
+  { name: 'shichahai', seconds: 9 },
+  { name: 'deshengmen', seconds: 14 },
+  { name: 'olympic', seconds: 18 },
+  { name: 'bell-drum', seconds: 22 },
+  { name: 'nanluo-wudaoying', seconds: 26 },
+  { name: 'yonghegong', seconds: 30 },
+  { name: 'cbd-finance', seconds: 34 },
+  { name: 'temple-of-heaven', seconds: 37.2 },
+  { name: 'qianmen-hutong', seconds: 41.8 },
+  { name: 'overpass', seconds: 47 },
 ];
 
 const SMALL_TEXT_MIN_CONTRAST = 4.5;
