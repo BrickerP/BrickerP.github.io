@@ -112,7 +112,7 @@ The implementation uses Vite, TypeScript, Three.js, and plain CSS. It adds no ma
 - Seed all authored variation and perform no unseeded randomness after boot.
 - Keep real elapsed time, normalized scene phase, and capture timestamps separate. Derive visible animation from normalized phase, not accumulated frame deltas, screenshot timing, physics history, or temporal framebuffer feedback.
 - Direct seek and natural playback at the same phase must produce the same visible state.
-- Ordinary rendering stops while the page is hidden. Visibility restoration resets the elapsed-time baseline before requesting the next frame, preventing background catch-up or camera jumps.
+- Visible frame gaps up to and including `10s` preserve wall-clock playback; gaps above `10s` are treated as suspension and skipped, while hidden-tab restoration resets the elapsed-time baseline before requesting the next frame.
 - WebGL-capable evergreen browsers are the compatibility target. `MediaRecorder` plus `canvas.captureStream` and the Fullscreen API are optional capabilities.
 - Development exposes `window.__BEIJING_LOOP_TEST__`. Production exposes it only for explicit `?qa=1`; the normal production URL must not expose the hook.
 - Relative assets and the Vite base remain compatible with GitHub Pages at `https://brickerp.github.io/`.

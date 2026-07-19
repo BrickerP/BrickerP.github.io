@@ -39,6 +39,9 @@ declare global {
 }
 
 const mount = requireMount('app');
+// Preserve real time through visibly slow rendering, but do not catch up after
+// a debugger stop, system sleep, or another true suspension.
+const MAX_VISIBLE_FRAME_GAP_SECONDS = 10;
 
 function requireMount(id: string): HTMLElement {
   const element = document.getElementById(id);
@@ -181,11 +184,14 @@ function main(): void {
   function drawFrame(now: number): void {
     frameRequest = 0;
     if (recorder.active) return;
-    let dt = (now - lastTime) / 1000;
+    const elapsedSeconds = (now - lastTime) / 1000;
     lastTime = now;
-    // Only discard true stalls (debugger / missed visibilitychange). Ordinary
-    // slow software-GL frames keep their real dt so playback tracks wall time.
-    if (dt > 1) dt = 1 / 60;
+    const dt =
+      Number.isFinite(elapsedSeconds) &&
+      elapsedSeconds >= 0 &&
+      elapsedSeconds <= MAX_VISIBLE_FRAME_GAP_SECONDS
+        ? elapsedSeconds
+        : 0;
     app.update(dt);
     controls.syncDebug(app.state);
     if (app.state.playing) requestFrame();

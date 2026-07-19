@@ -593,101 +593,181 @@ async function runG003FocusedBrowserRegressions() {
   const focusedCase = process.env.G003_BROWSER_CASE ?? 'all';
   const focusedBrowser = await launchBrowser();
   try {
-  const runtimeErrors = [];
-  const lowFpsContext = await focusedBrowser.newContext({
-    viewport: { width: 900, height: 640 },
-    deviceScaleFactor: 1,
-  });
-  await lowFpsContext.addInitScript(() => {
-    let nextFrameId = 1;
-    const timers = new Map();
-    window.requestAnimationFrame = (callback) => {
-      const id = nextFrameId;
-      nextFrameId += 1;
-      const timer = setTimeout(() => {
-        timers.delete(id);
-        callback(performance.now());
-      }, 100);
-      timers.set(id, timer);
-      return id;
-    };
-    window.cancelAnimationFrame = (id) => {
-      const timer = timers.get(id);
-      if (timer !== undefined) clearTimeout(timer);
-      timers.delete(id);
-    };
-  });
-  const lowFpsPage = await lowFpsContext.newPage();
-  attachRuntimeDiagnostics(lowFpsPage, 'g003-low-fps', runtimeErrors);
-  await waitForExperience(lowFpsPage);
-  await seek(lowFpsPage, 0);
-  const wallStart = Date.now();
-  await lowFpsPage.locator('[data-act="play"]').click();
-  await lowFpsPage.waitForTimeout(2300);
-  const lowFpsState = await lowFpsPage.evaluate(() => window.__BEIJING_LOOP_TEST__.readState());
-  const wallSeconds = (Date.now() - wallStart) / 1000;
-  const sceneSeconds = lowFpsState.progress * LOOP_SECONDS;
-  if (focusedCase === 'all' || focusedCase === 'low-fps') {
-    const preservesWallClockCadence =
-      sceneSeconds >= wallSeconds * 0.75 && sceneSeconds <= wallSeconds * 1.25;
-    assert.ok(
-      preservesWallClockCadence,
-      `sustained 10fps playback lost the 48s wall-clock cadence: wall=${wallSeconds.toFixed(3)}s scene=${sceneSeconds.toFixed(3)}s`,
-    );
-  }
-
-  await seek(lowFpsPage, 10);
-  await lowFpsPage.locator('[data-act="play"]').click();
-  await lowFpsPage.waitForTimeout(250);
-  const beforeHidden = await lowFpsPage.evaluate(() => {
-    window.__G003_DOCUMENT_HIDDEN__ = true;
-    Object.defineProperty(document, 'hidden', {
-      configurable: true,
-      get: () => window.__G003_DOCUMENT_HIDDEN__,
+    const runtimeErrors = [];
+    const lowFpsContext = await focusedBrowser.newContext({
+      viewport: { width: 900, height: 640 },
+      deviceScaleFactor: 1,
+      reducedMotion: 'reduce',
     });
-    document.dispatchEvent(new Event('visibilitychange'));
-    return window.__BEIJING_LOOP_TEST__.readState().progress;
-  });
-  await lowFpsPage.waitForTimeout(1300);
-  await lowFpsPage.evaluate(() => {
-    window.__G003_DOCUMENT_HIDDEN__ = false;
-    document.dispatchEvent(new Event('visibilitychange'));
-  });
-  await lowFpsPage.waitForTimeout(160);
-  const afterVisible = await lowFpsPage.evaluate(() => window.__BEIJING_LOOP_TEST__.readState().progress);
-  const visibilityReturnAdvance = (afterVisible - beforeHidden) * LOOP_SECONDS;
-  if (focusedCase === 'all' || focusedCase === 'visibility') {
-    assert.ok(
-      visibilityReturnAdvance >= 0 && visibilityReturnAdvance < 0.25,
-      `visibility return advanced through the hidden gap: ${visibilityReturnAdvance.toFixed(3)}s`,
-    );
-  }
-  await lowFpsContext.close();
+    await lowFpsContext.addInitScript(() => {
+      let nextFrameId = 1;
+      let virtualNow = 0;
+      let documentHidden = false;
+      const callbacks = new Map();
 
-  const posterContext = await focusedBrowser.newContext({
-    viewport: { width: 390, height: 844 },
-    deviceScaleFactor: 1,
-    isMobile: true,
-    hasTouch: true,
-    reducedMotion: 'reduce',
-  });
-  const posterPage = await posterContext.newPage();
-  attachRuntimeDiagnostics(posterPage, 'g003-reduced-poster', runtimeErrors);
-  await waitForExperience(posterPage);
-  const posterReport = await canvasReport(posterPage);
-  if (focusedCase === 'all' || focusedCase === 'poster') {
-    assertFirstPersonFrame(posterReport, 'reduced-motion portrait poster');
-    const intentionallyFramed = posterReport.blackPct < 55;
-    assert.ok(
-      intentionallyFramed,
-      `reduced-motion portrait poster is predominantly black: ${posterReport.blackPct.toFixed(3)}%`,
-    );
-  }
-  await posterContext.close();
-  assert.deepEqual(runtimeErrors, [], `G003 runtime failures:\n${runtimeErrors.join('\n')}`);
-  console.log('=== G003 FOCUSED BROWSER REGRESSIONS ===');
-  console.log(JSON.stringify({ wallSeconds, sceneSeconds, visibilityReturnAdvance, posterReport }, null, 2));
-  console.log('G003 FOCUSED BROWSER OK');
+      Object.defineProperty(performance, 'now', {
+        configurable: true,
+        value: () => virtualNow,
+      });
+      Object.defineProperty(document, 'hidden', {
+        configurable: true,
+        get: () => documentHidden,
+      });
+      window.requestAnimationFrame = (callback) => {
+        const id = nextFrameId;
+        nextFrameId += 1;
+        callbacks.set(id, callback);
+        return id;
+      };
+      window.cancelAnimationFrame = (id) => callbacks.delete(id);
+      window.__G003_VIRTUAL_RAF__ = {
+        step(milliseconds) {
+          virtualNow += milliseconds;
+          const pending = [...callbacks.values()];
+          callbacks.clear();
+          for (const callback of pending) callback(virtualNow);
+          return pending.length;
+        },
+        advance(milliseconds) {
+          virtualNow += milliseconds;
+        },
+        setHidden(hidden) {
+          documentHidden = hidden;
+          document.dispatchEvent(new Event('visibilitychange'));
+        },
+      };
+    });
+    const lowFpsPage = await lowFpsContext.newPage();
+    attachRuntimeDiagnostics(lowFpsPage, 'g003-low-fps', runtimeErrors);
+    await waitForExperience(lowFpsPage);
+
+    const runVisibleFrame = async (milliseconds) => {
+      await seek(lowFpsPage, 0);
+      await lowFpsPage.locator('[data-act="play"]').click();
+      const before = await lowFpsPage.evaluate(
+        () => window.__BEIJING_LOOP_TEST__.readState().progress,
+      );
+      const callbackCount = await lowFpsPage.evaluate(
+        (elapsed) => window.__G003_VIRTUAL_RAF__.step(elapsed),
+        milliseconds,
+      );
+      const after = await lowFpsPage.evaluate(
+        () => window.__BEIJING_LOOP_TEST__.readState().progress,
+      );
+      return {
+        callbackCount,
+        sceneAdvance: ((after - before + 1) % 1) * LOOP_SECONDS,
+      };
+    };
+
+    const visible2500ms = await runVisibleFrame(2500);
+    const visible6000ms = await runVisibleFrame(6000);
+    const suspension12000ms = await runVisibleFrame(12000);
+    const postSuspension100ms = await lowFpsPage.evaluate(() => {
+      const before = window.__BEIJING_LOOP_TEST__.readState().progress;
+      const callbackCount = window.__G003_VIRTUAL_RAF__.step(100);
+      const after = window.__BEIJING_LOOP_TEST__.readState().progress;
+      return { before, after, callbackCount };
+    });
+    const postSuspensionAdvance =
+      ((postSuspension100ms.after - postSuspension100ms.before + 1) % 1) * LOOP_SECONDS;
+
+    await seek(lowFpsPage, 0);
+    await lowFpsPage.locator('[data-act="play"]').click();
+    const visibilityReturn = await lowFpsPage.evaluate(() => {
+      window.__G003_VIRTUAL_RAF__.setHidden(true);
+      const before = window.__BEIJING_LOOP_TEST__.readState().progress;
+      window.__G003_VIRTUAL_RAF__.advance(6000);
+      window.__G003_VIRTUAL_RAF__.setHidden(false);
+      const callbackCount = window.__G003_VIRTUAL_RAF__.step(100);
+      const after = window.__BEIJING_LOOP_TEST__.readState().progress;
+      return { before, after, callbackCount };
+    });
+    const visibilityReturnAdvance =
+      ((visibilityReturn.after - visibilityReturn.before + 1) % 1) * LOOP_SECONDS;
+    const cadenceReport = {
+      visible2500ms,
+      visible6000ms,
+      suspension12000ms,
+      postSuspension100ms: {
+        callbackCount: postSuspension100ms.callbackCount,
+        sceneAdvance: postSuspensionAdvance,
+      },
+      visibilityReturn100ms: {
+        callbackCount: visibilityReturn.callbackCount,
+        sceneAdvance: visibilityReturnAdvance,
+      },
+    };
+    console.log('=== G003 VIRTUAL RAF CADENCE ===');
+    console.log(JSON.stringify(cadenceReport, null, 2));
+
+    if (focusedCase === 'all' || focusedCase === 'low-fps') {
+      assert.equal(visible2500ms.callbackCount, 1, '2.5s case did not execute exactly one frame');
+      assert.ok(
+        Math.abs(visible2500ms.sceneAdvance - 2.5) < 0.001,
+        `visible 2.5s frame advanced ${visible2500ms.sceneAdvance.toFixed(3)}s`,
+      );
+      assert.equal(visible6000ms.callbackCount, 1, '6s case did not execute exactly one frame');
+      assert.ok(
+        Math.abs(visible6000ms.sceneAdvance - 6) < 0.001,
+        `visible 6s frame advanced ${visible6000ms.sceneAdvance.toFixed(3)}s`,
+      );
+      assert.equal(
+        suspension12000ms.callbackCount,
+        1,
+        '12s suspension case did not execute exactly one frame',
+      );
+      assert.ok(
+        suspension12000ms.sceneAdvance < 0.001,
+        `12s suspension advanced ${suspension12000ms.sceneAdvance.toFixed(3)}s`,
+      );
+      assert.equal(
+        postSuspension100ms.callbackCount,
+        1,
+        'post-suspension case did not execute exactly one frame',
+      );
+      assert.ok(
+        Math.abs(postSuspensionAdvance - 0.1) < 0.001,
+        `post-suspension 0.1s frame advanced ${postSuspensionAdvance.toFixed(3)}s`,
+      );
+    }
+    if (focusedCase === 'all' || focusedCase === 'visibility') {
+      assert.equal(
+        visibilityReturn.callbackCount,
+        1,
+        'visibility-return case did not execute exactly one frame',
+      );
+      assert.ok(
+        Math.abs(visibilityReturnAdvance - 0.1) < 0.001,
+        `visibility return 0.1s frame advanced ${visibilityReturnAdvance.toFixed(3)}s`,
+      );
+    }
+    await lowFpsContext.close();
+
+    const posterContext = await focusedBrowser.newContext({
+      viewport: { width: 390, height: 844 },
+      deviceScaleFactor: 1,
+      isMobile: true,
+      hasTouch: true,
+      reducedMotion: 'reduce',
+    });
+    const posterPage = await posterContext.newPage();
+    attachRuntimeDiagnostics(posterPage, 'g003-reduced-poster', runtimeErrors);
+    await waitForExperience(posterPage);
+    const posterReport = await canvasReport(posterPage);
+    if (focusedCase === 'all' || focusedCase === 'poster') {
+      assertFirstPersonFrame(posterReport, 'reduced-motion portrait poster');
+      const intentionallyFramed = posterReport.blackPct < 55;
+      assert.ok(
+        intentionallyFramed,
+        `reduced-motion portrait poster is predominantly black: ${posterReport.blackPct.toFixed(3)}%`,
+      );
+    }
+    await posterContext.close();
+    assert.deepEqual(runtimeErrors, [], `G003 runtime failures:\n${runtimeErrors.join('\n')}`);
+    console.log('=== G003 FOCUSED BROWSER REGRESSIONS ===');
+    console.log(JSON.stringify({ cadenceReport, posterReport }, null, 2));
+    console.log('G003 FOCUSED BROWSER OK');
   } finally {
     await focusedBrowser.close();
   }
