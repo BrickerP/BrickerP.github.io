@@ -144,9 +144,14 @@ after the production assets have been served.
 
 ## Verification
 
+The public identity shared by the in-app profile and `/about/` lives in
+`src/content/public-profile.json`. After editing it, run `npm run generate:about`;
+`npm run verify:static` rejects any committed generated-region drift.
+
 ```bash
-npm run verify       # deterministic geometry + TypeScript
+npm run verify       # static/CI contracts, render telemetry, geometry + TypeScript
 npm run build        # typecheck + production bundle
+npm run verify:dist  # metadata, redirects and binary assets in the exact dist
 ```
 
 When running the local development server, the repository's browser and seam
@@ -169,11 +174,16 @@ view or camera mode. For a local production check:
 npm run preview -- --host 127.0.0.1 --port 4173
 URL='http://127.0.0.1:4173/?qa=1' EXPECT_PRODUCTION=1 npm run verify:browser
 URL='http://127.0.0.1:4173/?qa=1' npm run verify:seam
+URL='http://127.0.0.1:4173/?qa=1' npm run verify:performance
+VERIFY_LAYOUT=1 URL='http://127.0.0.1:4173/' npm run verify:dist
 ```
 
-The GitHub Pages workflow runs these production browser and seam checks before
-uploading the bundle. A normal production URL without `?qa=1` does not install
-the test hook.
+The GitHub Pages workflow builds `dist` once, verifies its static routes and
+binary assets, then sends that same immutable artifact through parallel browser
+and seam lanes. Pull requests stop at the stable `Quality gate`; only verified
+non-PR runs create and deploy a Pages artifact. The hardware-sensitive full-loop
+performance budget remains a local release gate, and a normal production URL
+without `?qa=1` does not install the test hook.
 
 ## Deploy to GitHub Pages
 

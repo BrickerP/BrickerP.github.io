@@ -29,6 +29,7 @@ interface BeijingLoopTestHook {
   readCapturePerformance(): ReturnType<
     BeijingLoopApp['readCapturePerformanceState']
   >;
+  readRenderTelemetry(): ReturnType<BeijingLoopApp['readRenderTelemetry']>;
   redraw(): void;
 }
 
@@ -417,6 +418,7 @@ function main(): void {
           : {}),
       }),
       readCapturePerformance: () => app.readCapturePerformanceState(),
+      readRenderTelemetry: () => app.readRenderTelemetry(),
       redraw: () => app.render(),
     };
   }

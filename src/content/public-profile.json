@@ -1,0 +1,44 @@
+{
+  "name": "Yupeng Lu",
+  "role": "AI Agent Engineer",
+  "dateModified": "2026-07-19",
+  "status": "US Permanent Resident · No sponsorship required",
+  "summary": "Production agent systems: MCP/tool-use contracts, public API boundaries, CLI/skill distribution, evidence-bound report synthesis, voice runtimes, monetized workflows, and evidence-gated releases.",
+  "publicProof": [
+    {
+      "label": "User-research skill",
+      "detail": "Public end-to-end AI interview workflows for Claude, Codex, Cursor, and OpenClaw-style clients.",
+      "href": "https://github.com/cookiy-ai/user-research-skill"
+    },
+    {
+      "label": "TypeScript CLI",
+      "detail": "Public interviews, synthetic-user, survey, recruitment, playback, billing, and REST/MCP workflows.",
+      "href": "https://github.com/cookiy-ai/cookiy-cli"
+    },
+    {
+      "label": "MCP developer portal",
+      "detail": "One-command skill/MCP setup, Redoc/OpenAPI documentation, and public agent onboarding.",
+      "href": "https://cookiy.ai"
+    }
+  ],
+  "experienceNote": "Cookiy AI is the primary role; the Quant Trading Systems Venture is a concurrent engineering role.",
+  "focus": "MCP · tool-use contracts · OpenAPI / Zod · agent eval & release gates · evidence-bound synthesis · voice / realtime · auth & billing · TypeScript · Python · C++ · REST / SSE / WebSocket",
+  "primaryActions": [
+    { "linkId": "email", "label": "Email", "staticLabel": "Contact Yupeng", "style": "primary", "modalOrder": 1, "staticOrder": 1 },
+    { "linkId": "resume", "label": "Resume", "staticLabel": "Read resume", "style": "secondary", "modalOrder": 2, "staticOrder": 2 },
+    { "linkId": "github", "label": "GitHub", "staticLabel": "GitHub", "style": "secondary", "modalOrder": 4, "staticOrder": 3 },
+    { "linkId": "linkedin", "label": "LinkedIn", "staticLabel": "LinkedIn", "style": "secondary", "modalOrder": 3, "staticOrder": 4 }
+  ],
+  "elsewhere": [
+    { "id": "email", "label": "Email", "href": "mailto:yplmicro@gmail.com", "detail": "yplmicro@gmail.com" },
+    { "id": "linkedin", "label": "LinkedIn", "href": "https://www.linkedin.com/in/yupeng-lu-845a0b411", "detail": "Full profile" },
+    { "id": "public-work", "label": "Public work", "href": "https://github.com/cookiy-ai/user-research-skill", "detail": "Cookiy user-research skill" },
+    { "id": "cli", "label": "TypeScript CLI", "href": "https://github.com/cookiy-ai/cookiy-cli", "detail": "Cookiy CLI" },
+    { "id": "github", "label": "GitHub personal", "href": "https://github.com/BrickerP", "detail": "github.com/BrickerP" },
+    { "id": "resume", "label": "Resume PDF", "href": "/resume.pdf", "detail": "Download" }
+  ],
+  "identity": {
+    "emailLinkId": "email",
+    "sameAsLinkIds": ["github", "linkedin"]
+  }
+}

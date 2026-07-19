@@ -26,6 +26,12 @@ export interface AppState {
   angle: number;
 }
 
+export interface RenderTelemetry {
+  renderCount: number;
+  lastRenderTimestampMs: number;
+  phase: number;
+}
+
 // Poster frame: Tiananmen facade ahead with sky still in the vanishing band.
 const REDUCED_MOTION_POSTER_PHASE = 0.53 / 48;
 const CAPTURE_WIDTH = 320;
@@ -46,6 +52,11 @@ export class BeijingLoopApp {
   private viewportHeight = 1;
   private devicePixelRatio = 1;
   private onState?: (state: AppState) => void;
+  private readonly renderTelemetry: RenderTelemetry = {
+    renderCount: 0,
+    lastRenderTimestampMs: 0,
+    phase: 0,
+  };
 
   constructor(
     mount: HTMLElement,
@@ -121,6 +132,10 @@ export class BeijingLoopApp {
     return this.city.readCapturePerformanceState();
   }
 
+  readRenderTelemetry(): RenderTelemetry {
+    return { ...this.renderTelemetry };
+  }
+
   toggleDebug(): void {
     this.state.debug = !this.state.debug;
     this.emit();
@@ -191,6 +206,9 @@ export class BeijingLoopApp {
     this.city.update(phase);
     this.cameraRig.update(phase, this.state.reducedMotion);
     this.renderer.render(this.city.scene, this.cameraRig.camera);
+    this.renderTelemetry.renderCount += 1;
+    this.renderTelemetry.lastRenderTimestampMs = performance.now();
+    this.renderTelemetry.phase = phase;
   }
 
   dispose(): void {

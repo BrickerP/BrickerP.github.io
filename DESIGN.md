@@ -79,7 +79,9 @@ Adjacent passages overlap through shared silhouettes, fog occlusion, walls, tree
 
 - Public controls are exactly four: play/pause, record one loop, enter/exit fullscreen, and open/close personal intro.
 - Recording and fullscreen are progressive enhancements. Unsupported actions remain disabled with an accessible explanation and never block playback.
-- The personal intro is an overlay over the continuing drive, not a separate route.
+- The toolbar personal intro is a modal overlay over the continuing drive. The indexable `/about/` page is its static content counterpart for direct navigation, sharing, no-JavaScript access, and search discovery; it does not replace or alter the artwork runtime.
+- Both About surfaces present the same concise identity, concurrent-role explanation, public work evidence, and Email / Resume / LinkedIn / GitHub primary actions. Public proof must link to inspectable public URLs; an empty profile shell is not evidence.
+- The modal header prioritizes the four primary actions on mobile. Detailed experience stays progressively disclosed below them, and every link or expander exposes at least a `44×44` CSS-pixel target.
 - `D` toggles private maintainer telemetry. It is not a public toolbar action and must not collide with title, toolbar, or recording status.
 - Forbidden UI and terms: `Plan`, `Map`, `Route`, `Overview`, mini-map, compass, progress map, route selection, and non-diegetic street-name labels. Physical signs inside the 3D streetscape are valid.
 - Preferred visible text includes `BEIJING / 北京`, `ENDLESS SECOND RING`, `PLAY`, `PAUSE`, `FULLSCREEN`, `RECORD LOOP`, `PERSONAL INTRO` / `ABOUT`, and `ARTISTIC COMPOSITION · NOT FOR NAVIGATION`.
@@ -88,10 +90,12 @@ Adjacent passages overlap through shared silhouettes, fog occlusion, walls, tree
 
 - Target WCAG 2.2 AA where applicable to an experimental canvas artwork.
 - Every public action is a semantic button, has an accessible name, provides visible `:focus-visible` treatment, and exposes a target of at least `44×44` CSS pixels.
+- Every 10px secondary label in the About overlay has computed contrast of at least `4.5:1` against the composited panel background.
 - Space toggles playback only when focus is not inside an interactive/editable control. `R` starts or cancels recording, `F` toggles fullscreen, `D` toggles private telemetry, and `Escape` closes the intro. Global shortcuts must not double-fire native control activation.
 - The canvas has a concise accessible name and linked description. Playback state is exposed by label and pressed state; recording announcements use a polite live region.
 - `prefers-reduced-motion: reduce` starts on one authored static central-axis poster with no camera, parallax, water, fog, or light motion. Only an explicit Play opts the current session into motion.
 - Opening the intro, pausing, hiding the tab, losing capabilities, cancelling a recording, or completing a recording must preserve a coherent playback state and restore focus where applicable.
+- While the About dialog is open, every background branch from `.about-root` through `#app` to `body` becomes inert, including body-level descriptive content; no ancestor containing the dialog (`#app` or `body`) becomes inert. Closing restores every affected element's exact prior inert state before returning focus. Stale animation frames or close timers must never re-show or re-hide a newer dialog state.
 - Recording starts at phase zero, captures exactly one 48-second circuit, stops without a duplicate terminal frame, allows a second press to cancel without download, and restores the prior playback and render-size state.
 
 ## Runtime boundaries

@@ -183,7 +183,7 @@ assert.equal(nativeEndpoint.channels, nativeStart.channels, 'native endpoint cha
 assert.equal(
   nativeEndpoint.differingChannels,
   0,
-  `native 0s/16s endpoints differ in ${nativeEndpoint.differingChannels} RGBA channels`,
+  `native 0s/48s endpoints differ in ${nativeEndpoint.differingChannels} RGBA channels`,
 );
 assert.equal(nativeEndpoint.channelsOverTwo, 0, 'native endpoint has channels with delta > 2');
 assert.equal(nativeEndpoint.maxDelta, 0, `native endpoint max delta: ${nativeEndpoint.maxDelta}`);

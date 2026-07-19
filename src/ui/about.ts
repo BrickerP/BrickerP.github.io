@@ -13,6 +13,10 @@ export class AboutPanel {
   private openState = false;
   private returnFocus: HTMLElement | null = null;
   private readonly expanded = new Set<string>();
+  private showFrame = 0;
+  private closeTimer = 0;
+  private transitionEpoch = 0;
+  private inertSnapshot: Array<{ element: HTMLElement; inert: boolean }> = [];
 
   constructor(
     mount: HTMLElement,
@@ -59,12 +63,18 @@ export class AboutPanel {
 
   open(returnFocus?: HTMLElement | null): void {
     if (this.openState) return;
+    this.transitionEpoch += 1;
+    const epoch = this.transitionEpoch;
+    this.cancelPendingTransition();
     this.openState = true;
     this.returnFocus = returnFocus ?? (document.activeElement as HTMLElement | null);
     this.root.hidden = false;
+    this.inertBackground();
     document.body.classList.add('is-about-open');
     document.addEventListener('keydown', this.onKeyDown, true);
-    requestAnimationFrame(() => {
+    this.showFrame = requestAnimationFrame(() => {
+      this.showFrame = 0;
+      if (!this.openState || epoch !== this.transitionEpoch) return;
       this.root.classList.add('is-visible');
       this.dialog.focus();
     });
@@ -72,17 +82,22 @@ export class AboutPanel {
 
   close(): void {
     if (!this.openState) return;
+    this.transitionEpoch += 1;
+    const epoch = this.transitionEpoch;
+    this.cancelPendingTransition();
     this.openState = false;
     this.root.classList.remove('is-visible');
     document.body.classList.remove('is-about-open');
     document.removeEventListener('keydown', this.onKeyDown, true);
+    this.restoreBackgroundInert();
 
     const focusTarget = this.returnFocus;
     this.returnFocus = null;
-    focusTarget?.focus?.();
+    if (focusTarget?.isConnected) focusTarget.focus();
 
     const finish = () => {
-      if (this.openState) return;
+      this.closeTimer = 0;
+      if (this.openState || epoch !== this.transitionEpoch) return;
       this.root.hidden = true;
     };
 
@@ -91,7 +106,40 @@ export class AboutPanel {
       return;
     }
 
-    window.setTimeout(finish, 280);
+    this.closeTimer = window.setTimeout(finish, 280);
+  }
+
+  private cancelPendingTransition(): void {
+    if (this.showFrame !== 0) {
+      cancelAnimationFrame(this.showFrame);
+      this.showFrame = 0;
+    }
+    if (this.closeTimer !== 0) {
+      clearTimeout(this.closeTimer);
+      this.closeTimer = 0;
+    }
+  }
+
+  private inertBackground(): void {
+    const background: HTMLElement[] = [];
+    let dialogBranch: HTMLElement = this.root;
+    while (dialogBranch !== document.body) {
+      const parent = dialogBranch.parentElement;
+      if (!parent) break;
+      for (const sibling of parent.children) {
+        if (sibling instanceof HTMLElement && sibling !== dialogBranch) background.push(sibling);
+      }
+      dialogBranch = parent;
+    }
+    this.inertSnapshot = background.map((element) => ({ element, inert: element.inert }));
+    for (const { element } of this.inertSnapshot) element.inert = true;
+  }
+
+  private restoreBackgroundInert(): void {
+    for (const { element, inert } of this.inertSnapshot) {
+      if (element.isConnected) element.inert = inert;
+    }
+    this.inertSnapshot = [];
   }
 
   private toggleExpand(id: string, button: HTMLButtonElement): void {
@@ -141,7 +189,23 @@ export class AboutPanel {
 
   private template(): string {
     const proof = PROFILE.publicProof
-      .map((item) => `<li>${escapeHtml(item)}</li>`)
+      .map(
+        (item) => `
+          <li>
+            <a href="${escapeAttr(item.href)}" ${externalAttrs(item.href)}>
+              <span class="about-proof-label">${escapeHtml(item.label)}</span>
+              <span>${escapeHtml(item.detail)}</span>
+            </a>
+          </li>`,
+      )
+      .join('');
+    const primaryActions = [...PROFILE.primaryActions]
+      .sort((left, right) => left.modalOrder - right.modalOrder)
+      .map(({ linkId, label }) => {
+        const link = PROFILE.elsewhere.find((item) => item.id === linkId);
+        if (!link) throw new Error(`missing primary profile link ${linkId}`);
+        return `<a href="${escapeAttr(link.href)}" ${externalAttrs(link.href)}>${escapeHtml(label)}</a>`;
+      })
       .join('');
     const experience = PROFILE.experience.map((role) => this.roleMarkup(role)).join('');
     const education = PROFILE.education
@@ -181,6 +245,9 @@ export class AboutPanel {
             <h2 class="about-name" id="about-name">${escapeHtml(PROFILE.name)}</h2>
             <p class="about-role">${escapeHtml(PROFILE.role)}</p>
             <p class="about-status">${escapeHtml(PROFILE.status)}</p>
+            <nav class="about-primary-actions" aria-label="Primary contact links">
+              ${primaryActions}
+            </nav>
           </div>
           <button
             class="ui-btn ui-icon-btn about-close"
@@ -196,11 +263,12 @@ export class AboutPanel {
 
           <section class="about-section" aria-labelledby="about-proof-title">
             <h3 class="about-section-title" id="about-proof-title">Public proof</h3>
-            <ul class="about-list">${proof}</ul>
+            <ul class="about-list about-proof">${proof}</ul>
           </section>
 
           <section class="about-section" aria-labelledby="about-experience-title">
             <h3 class="about-section-title" id="about-experience-title">Experience</h3>
+            <p class="about-experience-note">${escapeHtml(PROFILE.experienceNote)}</p>
             <div class="about-experience">${experience}</div>
           </section>
 

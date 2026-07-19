@@ -5,6 +5,10 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import { chromium } from 'playwright';
+import {
+  analyzeProductRenderSamples,
+  evaluateProductRenderBudget,
+} from './performance-telemetry.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUTPUT = join(
@@ -31,6 +35,11 @@ const CASES = [
       p95MsMaximum: 33.4,
       over50MsRatioMaximum: 0.02,
       consecutiveOver50MsMaximum: 5,
+      productAchievedFpsMinimum: 55,
+      productMaxRenderGapMsMaximum: 250,
+      productPhaseTravelMinimum: 0.98,
+      productPhaseTravelMaximum: 1.02,
+      productWallClockCoverageRatioMinimum: 0.98,
     },
   },
   {
@@ -43,6 +52,11 @@ const CASES = [
       p95MsMaximum: 50,
       over50MsRatioMaximum: 0.02,
       consecutiveOver50MsMaximum: 5,
+      productAchievedFpsMinimum: 30,
+      productMaxRenderGapMsMaximum: 250,
+      productPhaseTravelMinimum: 0.98,
+      productPhaseTravelMaximum: 1.02,
+      productWallClockCoverageRatioMinimum: 0.98,
     },
   },
 ];
@@ -200,13 +214,23 @@ async function measureCase(browser, definition) {
       ({ durationMs }) =>
         new Promise((resolve) => {
           const timestamps = [];
+          const productRenderSamples = [];
           const begin = requestAnimationFrame((firstTimestamp) => {
             timestamps.push(firstTimestamp);
+            productRenderSamples.push({
+              observedAtMs: firstTimestamp,
+              ...window.__BEIJING_LOOP_TEST__.readRenderTelemetry(),
+            });
             const collect = (timestamp) => {
               timestamps.push(timestamp);
+              productRenderSamples.push({
+                observedAtMs: timestamp,
+                ...window.__BEIJING_LOOP_TEST__.readRenderTelemetry(),
+              });
               if (timestamp - firstTimestamp >= durationMs) {
                 resolve({
                   timestamps,
+                  productRenderSamples,
                   state: window.__BEIJING_LOOP_TEST__.readState(),
                   visibilityState: document.visibilityState,
                 });
@@ -224,7 +248,20 @@ async function measureCase(browser, definition) {
     assert.equal(sample.visibilityState, 'visible', `${definition.name}: page became hidden`);
     assert.equal(sample.state.playing, true, `${definition.name}: playback stopped during sampling`);
     const analysis = analyzeSample(sample);
-    const budgetResult = evaluateBudget(analysis.overall, definition.budget);
+    const productRendering = analyzeProductRenderSamples(
+      sample.productRenderSamples,
+      SAMPLE_MS,
+    );
+    const observerBudgetResult = evaluateBudget(analysis.overall, definition.budget);
+    const productBudgetResult = evaluateProductRenderBudget(
+      productRendering,
+      definition.budget,
+    );
+    const budgetResult = {
+      pass: observerBudgetResult.pass && productBudgetResult.pass,
+      observerRaf: observerBudgetResult.checks,
+      productRendering: productBudgetResult.checks,
+    };
     return {
       name: definition.name,
       viewport: definition.viewport,
@@ -233,6 +270,14 @@ async function measureCase(browser, definition) {
       requestedSampleDurationMs: SAMPLE_MS,
       frameCount: sample.timestamps.length,
       metrics: analysis.overall,
+      productRendering: {
+        ...productRendering,
+        productAchievedFps: round(productRendering.productAchievedFps),
+        maxRenderGapMs: round(productRendering.maxRenderGapMs),
+        phaseTravel: round(productRendering.phaseTravel, 6),
+        renderedWallClockMs: round(productRendering.renderedWallClockMs),
+        wallClockCoverageRatio: round(productRendering.wallClockCoverageRatio, 6),
+      },
       passageSegments: analysis.segments,
       passageBoundaryWindows: analysis.boundaries,
       budget: definition.budget,
@@ -248,16 +293,16 @@ let serverLog = '';
 const ownsServer = !process.env.URL;
 const startedAt = new Date().toISOString();
 const report = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   generatedAt: startedAt,
   targetUrl: TARGET_URL,
   methodology: {
-    clock: 'real requestAnimationFrame callback timestamps from the rendered page',
+    clock: 'real requestAnimationFrame timestamps cross-checked against completed BeijingLoopApp.render telemetry',
     warmupMs: WARMUP_MS,
     sampleDurationMs: SAMPLE_MS,
     passageDurationMs: 4_000,
     boundaryWindowMs: BOUNDARY_WINDOW_MS,
-    note: 'WebM block rate and the in-app smoothed FPS label are not used.',
+    note: 'Observer rAF cannot pass alone: product render count, render gaps, phase travel, and real-clock coverage must all pass.',
   },
   server: {
     ownership: ownsServer ? 'script-started-and-stopped' : 'external-URL',
@@ -303,7 +348,7 @@ try {
     const result = await measureCase(browser, definition);
     report.cases.push(result);
     console.log(
-      `${definition.name}: ${result.metrics.achievedFps} fps, median ${result.metrics.medianMs}ms, p95 ${result.metrics.p95Ms}ms`,
+      `${definition.name}: observer ${result.metrics.achievedFps} fps, product ${result.productRendering.productAchievedFps} fps, max product gap ${result.productRendering.maxRenderGapMs}ms`,
     );
   }
   report.pass = report.cases.every((entry) => entry.budgetResult.pass);
