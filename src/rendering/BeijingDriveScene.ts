@@ -502,8 +502,7 @@ export class BeijingDriveScene {
       upperGoldEdge,
     );
 
-    // Warm portal reveals separate this near gate from the dimmer inner gate
-    // and far rostrum without changing the authored gate mass.
+    // Warm portal reveals separate the near gate from the nested Tiananmen layer without adding point lights.
     for (const x of [-4.72, 4.72]) {
       const reveal = this.box(0.16, 3.6, 0.14, this.windowMaterial);
       reveal.position.set(x, 2.45, -2.48);
