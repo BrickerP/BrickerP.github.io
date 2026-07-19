@@ -526,6 +526,7 @@ async function waitForExperience(
           deadline,
           label,
         );
+        lastEvaluateCause = null;
         snapshotReturned = true;
       } catch (cause) {
         lastEvaluateCause = describeCause(cause);
@@ -605,6 +606,7 @@ assert.doesNotMatch(
 
 async function verifyStartupDeadlineContract() {
   const unhandledRejections = [];
+  const initialUnhandledListenerCount = process.listenerCount('unhandledRejection');
   const onUnhandledRejection = (reason) => unhandledRejections.push(describeCause(reason));
   process.on('unhandledRejection', onUnhandledRejection);
   try {
@@ -625,6 +627,24 @@ async function verifyStartupDeadlineContract() {
     await new Promise((resolve) => setImmediate(resolve));
     assert.equal(lateProbeResolved, true, 'deadline regression must exercise a late resolution');
     assert.deepEqual(unhandledRejections, [], 'late startup probes must not leak rejections');
+
+    let lateRejectionSettled = false;
+    const lateRejection = new Promise((_, reject) => {
+      setTimeout(() => {
+        lateRejectionSettled = true;
+        reject(new Error('late-probe-rejection'));
+      }, 25);
+    });
+    const rejectionDeadline = performance.now() + 5;
+    await assert.rejects(
+      () => settleBeforeDeadline(() => lateRejection, rejectionDeadline, 'rejection-regression'),
+      StartupDeadlineError,
+      'a probe rejecting after the remaining startup budget must time out first',
+    );
+    await assert.rejects(lateRejection, /late-probe-rejection/);
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(lateRejectionSettled, true, 'deadline regression must exercise a late rejection');
+    assert.deepEqual(unhandledRejections, [], 'late rejecting probes must remain handled');
 
     const expectedUrl = new globalThis.URL('https://example.test/loop/?qa=1');
     assert.doesNotThrow(
@@ -655,6 +675,11 @@ async function verifyStartupDeadlineContract() {
     );
   } finally {
     process.off('unhandledRejection', onUnhandledRejection);
+    assert.equal(
+      process.listenerCount('unhandledRejection'),
+      initialUnhandledListenerCount,
+      'deadline regression must restore unhandled-rejection listeners',
+    );
   }
 }
 
