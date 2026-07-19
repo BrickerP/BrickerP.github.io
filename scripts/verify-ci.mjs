@@ -22,6 +22,77 @@ assert.doesNotMatch(globalPermissions, /pages: write|id-token: write/, 'deployme
 for (const job of ['build', 'browser', 'seam', 'seam_macos', 'quality_gate', 'publish_pages_artifact', 'deploy']) {
   assert.match(workflow, new RegExp(`^  ${job}:`, 'm'), `workflow job missing: ${job}`);
 }
+
+function workflowJobBlock(source, jobName) {
+  const startPattern = new RegExp(`^  ${jobName}:[ \\t]*$`, 'm');
+  const startMatch = startPattern.exec(source);
+  assert.ok(startMatch, `workflow job missing: ${jobName}`);
+  const start = startMatch.index;
+  const remainder = source.slice(start + startMatch[0].length);
+  const nextJob = /^  [A-Za-z_][A-Za-z0-9_-]*:[ \t]*$/m.exec(remainder);
+  return source.slice(start, nextJob ? start + startMatch[0].length + nextJob.index : undefined);
+}
+
+function workflowStepBlock(jobBlock, stepName) {
+  const escapedName = stepName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const startPattern = new RegExp(`^      - name: ${escapedName}[ \\t]*$`, 'm');
+  const startMatch = startPattern.exec(jobBlock);
+  assert.ok(startMatch, `workflow step missing: ${stepName}`);
+  const start = startMatch.index;
+  const remainder = jobBlock.slice(start + startMatch[0].length);
+  const nextStep = /^      -(?:[ \t]+|$)/m.exec(remainder);
+  return jobBlock.slice(start, nextStep ? start + startMatch[0].length + nextStep.index : undefined);
+}
+
+function assertBrowserBudget(source) {
+  const browserJob = workflowJobBlock(source, 'browser');
+  const outerMinutes = Number(browserJob.match(/^    timeout-minutes:\s*(\d+)\s*$/m)?.[1]);
+  assert.equal(outerMinutes, 40, 'Browser QA needs a 40-minute bounded job budget');
+
+  const verifyStep = workflowStepBlock(browserJob, 'Verify browser behavior');
+  const boundedCommand = verifyStep.match(
+    /^          URL='http:\/\/127\.0\.0\.1:4173\/\?qa=1' EXPECT_PRODUCTION=1 timeout --signal=TERM --kill-after=30s (\d+)m npm run verify:browser 2>&1 \| tee \.omx\/handoff\/ci\/browser-verify\.log\s*$/m,
+  );
+  assert.ok(boundedCommand, 'Browser QA must wrap the production browser suite in its own bounded deadline');
+  const innerMinutes = Number(boundedCommand[1]);
+  assert.equal(innerMinutes, 35, 'the browser suite deadline must remain 35 minutes');
+  assert.ok(outerMinutes - innerMinutes >= 5, 'the job must reserve at least five minutes for setup and evidence upload');
+
+  assert.match(verifyStep, /run:\s*\|\s*\n\s+set -euo pipefail/, 'Browser QA must preserve pipeline failures');
+  assert.doesNotMatch(verifyStep, /continue-on-error:\s*true/, 'Browser QA must not ignore failures');
+  assert.doesNotMatch(verifyStep, /npm run verify:browser[^\n]*\|\|\s*true/, 'Browser QA must not swallow failures');
+  assert.doesNotMatch(verifyStep, /npm run verify:browser[^\n]*&\s*$/, 'Browser QA must not detach the required suite');
+
+  const uploadStep = workflowStepBlock(browserJob, 'Upload browser evidence');
+  assert.ok(browserJob.indexOf(uploadStep) > browserJob.indexOf(verifyStep), 'browser evidence upload must follow the bounded suite');
+  assert.match(
+    uploadStep,
+    /^        if: always\(\)[ \t]*$/m,
+    'browser evidence must upload even when the bounded suite fails',
+  );
+  return browserJob;
+}
+
+const browserJob = assertBrowserBudget(workflow);
+const browserVerifyStep = workflowStepBlock(browserJob, 'Verify browser behavior');
+const browserUploadStep = workflowStepBlock(browserJob, 'Upload browser evidence');
+const underscoreJobFixture = `${browserJob.replace(browserVerifyStep, '').replace(browserUploadStep, '')}\n  _shadow:\n    runs-on: ubuntu-latest\n    steps:\n${browserVerifyStep}${browserUploadStep}`;
+const uploadSiblingFixture = browserJob.replace(
+  browserUploadStep,
+  `${browserUploadStep.replace('if: always()', 'if: success()')}\n      - run: echo unrelated\n        if: always()`,
+);
+for (const [name, invalidWorkflow] of [
+  ['another job cannot supply the outer budget', `${browserJob.replace('timeout-minutes: 40', 'timeout-minutes: 30')}\n  seam:\n    timeout-minutes: 40`],
+  ['an underscore-prefixed job cannot supply the protected steps', underscoreJobFixture],
+  ['a deadline around the wrong command cannot satisfy the contract', browserJob.replace('npm run verify:browser', 'npm run verify:dist')],
+  ['an unbounded browser command cannot satisfy the contract', browserJob.replace('timeout --signal=TERM --kill-after=30s 35m ', '')],
+  ['a swallowed failure cannot satisfy the contract', browserJob.replace('npm run verify:browser', 'npm run verify:browser || true')],
+  ['an unnamed sibling step cannot supply pipefail', browserJob.replace('set -euo pipefail', 'set -eu').replace('      - name: Upload browser evidence', '      - run: |\n          set -euo pipefail\n      - name: Upload browser evidence')],
+  ['continue-on-error cannot weaken the required step', browserJob.replace('        shell: bash', '        continue-on-error: true\n        shell: bash')],
+  ['an unnamed sibling step cannot supply always', uploadSiblingFixture],
+]) {
+  assert.throws(() => assertBrowserBudget(invalidWorkflow), { name: 'AssertionError' }, name);
+}
 assert.match(workflow, /name: Quality gate/, 'aggregate check name must remain stable');
 assert.match(
   workflow,
