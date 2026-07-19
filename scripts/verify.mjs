@@ -5,7 +5,7 @@ import { chromium } from 'playwright';
 const URL = process.env.URL || 'http://127.0.0.1:5173/';
 const OUT = 'docs/verify';
 const LOOP_SECONDS = 48;
-const REDUCED_POSTER_PHASE = 0.4 / 48;
+const REDUCED_POSTER_PHASE = 0.53 / 48;
 mkdirSync(OUT, { recursive: true });
 
 const EBML_ID = 0x1a45dfa3;
@@ -414,6 +414,7 @@ async function canvasReport(page) {
     let vermilion = 0;
     let warm = 0;
     let bright = 0;
+    let black = 0;
     let opaque = 0;
     let lowerCentrePixels = 0;
     let road = 0;
@@ -436,6 +437,7 @@ async function canvasReport(page) {
         // separation than its source hex, so key this signal against blue.
         if (r > 150 && g > 105 && b > 65 && b < r * 0.92 && r > b * 1.08) warm += 1;
         if (luminance > 90) bright += 1;
+        if (luminance < 4) black += 1;
         if (a > 250) opaque += 1;
 
         const inLowerCentre =
@@ -472,6 +474,7 @@ async function canvasReport(page) {
       vermilionPct: (vermilion / pixels) * 100,
       warmPct: (warm / pixels) * 100,
       brightPct: (bright / pixels) * 100,
+      blackPct: (black / pixels) * 100,
       opaquePct: (opaque / pixels) * 100,
       roadPct: (road / Math.max(1, lowerCentrePixels)) * 100,
       horizonPct: (horizonSignal / Math.max(1, horizonPixels)) * 100,
@@ -572,6 +575,116 @@ function attachRuntimeDiagnostics(page, label, errors) {
     if (response.status() >= 400) errors.push(`[${label}] ${response.status()} ${response.url()}`);
   });
 }
+
+async function runG003FocusedBrowserRegressions() {
+  const focusedCase = process.env.G003_BROWSER_CASE ?? 'all';
+  const focusedBrowser = await launchBrowser();
+  try {
+  const runtimeErrors = [];
+  const lowFpsContext = await focusedBrowser.newContext({
+    viewport: { width: 900, height: 640 },
+    deviceScaleFactor: 1,
+  });
+  await lowFpsContext.addInitScript(() => {
+    let nextFrameId = 1;
+    const timers = new Map();
+    window.requestAnimationFrame = (callback) => {
+      const id = nextFrameId;
+      nextFrameId += 1;
+      const timer = setTimeout(() => {
+        timers.delete(id);
+        callback(performance.now());
+      }, 100);
+      timers.set(id, timer);
+      return id;
+    };
+    window.cancelAnimationFrame = (id) => {
+      const timer = timers.get(id);
+      if (timer !== undefined) clearTimeout(timer);
+      timers.delete(id);
+    };
+  });
+  const lowFpsPage = await lowFpsContext.newPage();
+  attachRuntimeDiagnostics(lowFpsPage, 'g003-low-fps', runtimeErrors);
+  await waitForExperience(lowFpsPage);
+  await seek(lowFpsPage, 0);
+  const wallStart = Date.now();
+  await lowFpsPage.locator('[data-act="play"]').click();
+  await lowFpsPage.waitForTimeout(2300);
+  const lowFpsState = await lowFpsPage.evaluate(() => window.__BEIJING_LOOP_TEST__.readState());
+  const wallSeconds = (Date.now() - wallStart) / 1000;
+  const sceneSeconds = lowFpsState.progress * LOOP_SECONDS;
+  if (focusedCase === 'all' || focusedCase === 'low-fps') {
+    const preservesWallClockCadence =
+      sceneSeconds >= wallSeconds * 0.75 && sceneSeconds <= wallSeconds * 1.25;
+    assert.ok(
+      preservesWallClockCadence,
+      `sustained 10fps playback lost the 48s wall-clock cadence: wall=${wallSeconds.toFixed(3)}s scene=${sceneSeconds.toFixed(3)}s`,
+    );
+  }
+
+  await seek(lowFpsPage, 10);
+  await lowFpsPage.locator('[data-act="play"]').click();
+  await lowFpsPage.waitForTimeout(250);
+  const beforeHidden = await lowFpsPage.evaluate(() => {
+    window.__G003_DOCUMENT_HIDDEN__ = true;
+    Object.defineProperty(document, 'hidden', {
+      configurable: true,
+      get: () => window.__G003_DOCUMENT_HIDDEN__,
+    });
+    document.dispatchEvent(new Event('visibilitychange'));
+    return window.__BEIJING_LOOP_TEST__.readState().progress;
+  });
+  await lowFpsPage.waitForTimeout(1300);
+  await lowFpsPage.evaluate(() => {
+    window.__G003_DOCUMENT_HIDDEN__ = false;
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await lowFpsPage.waitForTimeout(160);
+  const afterVisible = await lowFpsPage.evaluate(() => window.__BEIJING_LOOP_TEST__.readState().progress);
+  const visibilityReturnAdvance = (afterVisible - beforeHidden) * LOOP_SECONDS;
+  if (focusedCase === 'all' || focusedCase === 'visibility') {
+    assert.ok(
+      visibilityReturnAdvance >= 0 && visibilityReturnAdvance < 0.25,
+      `visibility return advanced through the hidden gap: ${visibilityReturnAdvance.toFixed(3)}s`,
+    );
+  }
+  await lowFpsContext.close();
+
+  const posterContext = await focusedBrowser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 1,
+    isMobile: true,
+    hasTouch: true,
+    reducedMotion: 'reduce',
+  });
+  const posterPage = await posterContext.newPage();
+  attachRuntimeDiagnostics(posterPage, 'g003-reduced-poster', runtimeErrors);
+  await waitForExperience(posterPage);
+  const posterReport = await canvasReport(posterPage);
+  if (focusedCase === 'all' || focusedCase === 'poster') {
+    assertFirstPersonFrame(posterReport, 'reduced-motion portrait poster');
+    const intentionallyFramed = posterReport.blackPct < 55;
+    assert.ok(
+      intentionallyFramed,
+      `reduced-motion portrait poster is predominantly black: ${posterReport.blackPct.toFixed(3)}%`,
+    );
+  }
+  await posterContext.close();
+  assert.deepEqual(runtimeErrors, [], `G003 runtime failures:\n${runtimeErrors.join('\n')}`);
+  console.log('=== G003 FOCUSED BROWSER REGRESSIONS ===');
+  console.log(JSON.stringify({ wallSeconds, sceneSeconds, visibilityReturnAdvance, posterReport }, null, 2));
+  console.log('G003 FOCUSED BROWSER OK');
+  } finally {
+    await focusedBrowser.close();
+  }
+}
+
+if (process.env.G003_FOCUSED === '1') {
+  await runG003FocusedBrowserRegressions();
+  process.exit(0);
+}
+await runG003FocusedBrowserRegressions();
 
 const browser = await launchBrowser();
 const reports = {};

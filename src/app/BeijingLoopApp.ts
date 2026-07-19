@@ -26,9 +26,8 @@ export interface AppState {
   angle: number;
 }
 
-const MAX_DT = 1 / 20;
 // Poster frame: Tiananmen facade ahead with sky still in the vanishing band.
-const REDUCED_MOTION_POSTER_PHASE = 0.4 / 48;
+const REDUCED_MOTION_POSTER_PHASE = 0.53 / 48;
 const CAPTURE_WIDTH = 320;
 const CAPTURE_HEIGHT = 180;
 
@@ -163,7 +162,7 @@ export class BeijingLoopApp {
   }
 
   update(dt: number): void {
-    const safeDt = Number.isFinite(dt) ? Math.min(Math.max(0, dt), MAX_DT) : 0;
+    const safeDt = Number.isFinite(dt) ? Math.max(0, dt) : 0;
     if (this.state.playing) {
       this.clock = (this.clock + safeDt) % DRIVE.duration;
     }

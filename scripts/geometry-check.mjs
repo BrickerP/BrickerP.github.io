@@ -1,13 +1,24 @@
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, extname, join } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
+import { Vector3 } from 'three';
 import ts from 'typescript';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DRIVE_PATH_SOURCE = join(ROOT, 'src', 'rendering', 'drivePath.ts');
 const TEMP_MODULE = join(ROOT, 'scripts', `.geometry-check-drive-path-${process.pid}.mjs`);
 const EPSILON = 1e-8;
+const G003_GEOMETRY_CASE = process.env.G003_GEOMETRY_CASE;
+const runsGeometryCase = (name) => !G003_GEOMETRY_CASE || G003_GEOMETRY_CASE === name;
 
 function sourceFiles(directory) {
   assert.ok(existsSync(directory), `required source directory is missing: ${directory}`);
@@ -35,6 +46,32 @@ function transpileDrivePath() {
   );
   assert.deepEqual(errors, [], `drivePath.ts transpile errors: ${JSON.stringify(errors)}`);
   writeFileSync(TEMP_MODULE, output.outputText);
+}
+
+function transpileCameraModules(directory) {
+  const modules = ['theme', 'drivePath', 'FirstPersonCameraRig'];
+  for (const name of modules) {
+    const sourcePath = join(ROOT, 'src', 'rendering', `${name}.ts`);
+    const output = ts.transpileModule(readFileSync(sourcePath, 'utf8'), {
+      compilerOptions: {
+        target: ts.ScriptTarget.ES2022,
+        module: ts.ModuleKind.ESNext,
+        moduleResolution: ts.ModuleResolutionKind.Bundler,
+        isolatedModules: true,
+      },
+      fileName: sourcePath,
+      reportDiagnostics: true,
+    });
+    const errors = (output.diagnostics ?? []).filter(
+      (diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error,
+    );
+    assert.deepEqual(errors, [], `${name}.ts transpile errors: ${JSON.stringify(errors)}`);
+    const linkedOutput = output.outputText.replace(
+      /from '(\.\/(?:theme|drivePath))'/g,
+      "from '$1.mjs'",
+    );
+    writeFileSync(join(directory, `${name}.mjs`), linkedOutput);
+  }
 }
 
 function vectorDelta(left, right) {
@@ -109,6 +146,17 @@ try {
   unlinkSync(TEMP_MODULE);
 }
 
+const cameraTempDirectory = mkdtempSync(join(ROOT, 'scripts', '.geometry-camera-check-'));
+let cameraModule;
+try {
+  transpileCameraModules(cameraTempDirectory);
+  cameraModule = await import(
+    `${pathToFileURL(join(cameraTempDirectory, 'FirstPersonCameraRig.mjs')).href}?run=${Date.now()}`
+  );
+} finally {
+  rmSync(cameraTempDirectory, { recursive: true, force: true });
+}
+
 assert.ok(drive.DRIVE_PATH, 'drivePath.ts must export DRIVE_PATH');
 assert.equal(drive.DRIVE_PATH.closed, true, 'first-person drive path must be closed');
 assert.equal(typeof drive.samplePathFrame, 'function', 'missing samplePathFrame export');
@@ -156,6 +204,82 @@ assert.ok(
   'arc-length sampling has an abrupt speed step',
 );
 assertNoPathCrossings(samples);
+
+assert.equal(
+  typeof cameraModule.FirstPersonCameraRig,
+  'function',
+  'missing FirstPersonCameraRig export',
+);
+
+function cameraSnapshot(aspect, phase) {
+  const rig = new cameraModule.FirstPersonCameraRig(aspect);
+  rig.update(phase, true);
+  const direction = rig.camera.getWorldDirection(new Vector3());
+  return {
+    fov: rig.camera.fov,
+    position: rig.camera.position.clone(),
+    direction,
+  };
+}
+
+const justPortrait = cameraSnapshot(0.999, 0.018);
+const justLandscape = cameraSnapshot(1.001, 0.018);
+if (runsGeometryCase('aspect-continuity')) {
+  assert.ok(
+    Math.abs(justPortrait.fov - justLandscape.fov) < 0.1,
+    `camera FOV jumps around square aspect: ${justPortrait.fov} -> ${justLandscape.fov}`,
+  );
+  assert.ok(
+    vectorDelta(justPortrait.position, justLandscape.position) < 0.05,
+    `camera position jumps around square aspect: delta=${vectorDelta(justPortrait.position, justLandscape.position)}`,
+  );
+  assert.ok(
+    vectorDelta(justPortrait.direction, justLandscape.direction) < 0.01,
+    `camera heading jumps around square aspect: delta=${vectorDelta(justPortrait.direction, justLandscape.direction)}`,
+  );
+}
+
+const resizedRig = new cameraModule.FirstPersonCameraRig(0.999);
+resizedRig.update(0.018, true);
+const beforeResize = {
+  fov: resizedRig.camera.fov,
+  position: resizedRig.camera.position.clone(),
+  direction: resizedRig.camera.getWorldDirection(new Vector3()),
+};
+resizedRig.resize(1.001);
+resizedRig.update(0.018, true);
+if (runsGeometryCase('dynamic-resize')) {
+  assert.ok(
+    Math.abs(resizedRig.camera.fov - beforeResize.fov) < 0.1,
+    `dynamic resize jumps camera FOV: ${beforeResize.fov} -> ${resizedRig.camera.fov}`,
+  );
+  assert.ok(
+    vectorDelta(resizedRig.camera.position, beforeResize.position) < 0.05,
+    `dynamic resize jumps camera position: delta=${vectorDelta(resizedRig.camera.position, beforeResize.position)}`,
+  );
+  assert.ok(
+    vectorDelta(
+      resizedRig.camera.getWorldDirection(new Vector3()),
+      beforeResize.direction,
+    ) < 0.01,
+    'dynamic resize jumps camera heading around square aspect',
+  );
+}
+
+if (runsGeometryCase('central-axis-clearance')) {
+  for (const aspect of [0.75, 0.999, 1.001]) {
+    for (const phase of [0.016, 0.018, 0.02, 0.056, 0.058, 0.06]) {
+      const snapshot = cameraSnapshot(aspect, phase);
+      const frame = drive.samplePathFrame(phase);
+      const centre = frame.point.clone().multiplyScalar(cameraModule.DRIVE_PATH_SCALE);
+      const lateralOffset = snapshot.position.clone().sub(centre).dot(frame.normal);
+      assert.ok(
+        Math.abs(lateralOffset) < 1.1,
+        `aspect ${aspect} camera leaves the clear central-axis arch corridor at phase ${phase}: lateral=${lateralOffset}`,
+      );
+    }
+  }
+}
 
 const repeatedSamples = [];
 for (let index = 0; index <= sampleCount; index += 1) {

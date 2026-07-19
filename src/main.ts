@@ -183,9 +183,8 @@ function main(): void {
     if (recorder.active) return;
     let dt = (now - lastTime) / 1000;
     lastTime = now;
-    // Only discard true stalls (debugger / missed visibilitychange). Slow
-    // software-GL frames must keep real dt so progress still advances; the
-    // app clamps to MAX_DT so the path never jumps.
+    // Only discard true stalls (debugger / missed visibilitychange). Ordinary
+    // slow software-GL frames keep their real dt so playback tracks wall time.
     if (dt > 1) dt = 1 / 60;
     app.update(dt);
     controls.syncDebug(app.state);

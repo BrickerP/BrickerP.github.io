@@ -16,8 +16,38 @@ const PORTRAIT_FOV = 72;
 // stay comparable to the earlier 16s / 32s drives.
 const LANDSCAPE_AHEAD_PHASE = 0.0175;
 const PORTRAIT_AHEAD_PHASE = 0.0215;
+const ASPECT_MIX_START = 0.75;
+const ASPECT_MIX_END = 1.25;
+const PORTRAIT_LANE_OFFSET = -0.72;
+const CLEARANCE_LANE_OFFSET = -0.72;
+const CLEARANCE_START_PHASE = 0.988;
+const CLEARANCE_FADE_PHASE = 0.02;
+const CLEARANCE_HOLD_PHASE = 0.06;
 const BOB_CYCLES = 24;
 const BOB_HEIGHT = 0.012;
+
+function smoothstep(edge0: number, edge1: number, value: number): number {
+  const normalized = Math.min(1, Math.max(0, (value - edge0) / (edge1 - edge0)));
+  return normalized * normalized * (3 - 2 * normalized);
+}
+
+function mix(start: number, end: number, amount: number): number {
+  return start + (end - start) * amount;
+}
+
+function centralAxisClearanceMix(progress: number): number {
+  const position = wrapProgress(progress - CLEARANCE_START_PHASE);
+  const fadeOutStart = CLEARANCE_FADE_PHASE + CLEARANCE_HOLD_PHASE;
+  return (
+    smoothstep(0, CLEARANCE_FADE_PHASE, position) *
+    (1 -
+      smoothstep(
+        fadeOutStart,
+        fadeOutStart + CLEARANCE_FADE_PHASE,
+        position,
+      ))
+  );
+}
 
 /** Pure phase-derived first-person camera for the closed authored drive path. */
 export class FirstPersonCameraRig {
@@ -61,10 +91,25 @@ export class FirstPersonCameraRig {
     const bob = reducedMotion
       ? 0
       : Math.sin(progress * Math.PI * 2 * BOB_CYCLES) * BOB_HEIGHT;
-    const portrait = this.aspect < 1;
-    const laneOffset = portrait ? -0.72 : DRIVE.laneOffset;
+    const aspectMix = this.aspectMix();
+    const baseLaneOffset = mix(
+      PORTRAIT_LANE_OFFSET,
+      DRIVE.laneOffset,
+      aspectMix,
+    );
+    const clearanceMix = centralAxisClearanceMix(progress);
+    const laneOffset = mix(
+      baseLaneOffset,
+      CLEARANCE_LANE_OFFSET,
+      clearanceMix,
+    );
+    const aheadPhase = mix(
+      PORTRAIT_AHEAD_PHASE,
+      LANDSCAPE_AHEAD_PHASE,
+      aspectMix,
+    );
     samplePathFrame(
-      progress + (portrait ? PORTRAIT_AHEAD_PHASE : LANDSCAPE_AHEAD_PHASE),
+      progress + aheadPhase,
       this.futureFrame,
     );
 
@@ -87,6 +132,10 @@ export class FirstPersonCameraRig {
   }
 
   private fovForAspect(aspect: number): number {
-    return aspect < 1 ? PORTRAIT_FOV : LANDSCAPE_FOV;
+    return mix(PORTRAIT_FOV, LANDSCAPE_FOV, this.aspectMix(aspect));
+  }
+
+  private aspectMix(aspect = this.aspect): number {
+    return smoothstep(ASPECT_MIX_START, ASPECT_MIX_END, aspect);
   }
 }
