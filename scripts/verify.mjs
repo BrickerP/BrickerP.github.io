@@ -224,7 +224,15 @@ function parseWebmTimeline(bytes) {
   const firstTimestampSeconds = timestamps[0] * secondsPerTick;
   const lastTimestampSeconds = timestamps.at(-1) * secondsPerTick;
   const timelineSeconds = lastTimestampSeconds - firstTimestampSeconds;
+  assert.ok(
+    Number.isFinite(timelineSeconds) && timelineSeconds > 0,
+    `WebM block timeline span must be finite and positive, received ${timelineSeconds}`,
+  );
   const averageFps = (blocks.length - 1) / timelineSeconds;
+  assert.ok(
+    Number.isFinite(averageFps),
+    `WebM block density must be finite, received ${averageFps}`,
+  );
   return {
     bytes: bytes.length,
     clusterCount,
@@ -2582,6 +2590,10 @@ assert.ok(
   recordingResult.maxRenderCallbackGapSeconds >= 1.2,
   `recorder did not observe the injected stall: ${recordingResult.maxRenderCallbackGapSeconds.toFixed(3)}s`,
 );
+assert.ok(
+  recordingResult.maxRenderCallbackGapSeconds <= 2.5,
+  `recorder render callback froze for ${recordingResult.maxRenderCallbackGapSeconds.toFixed(3)}s`,
+);
 assert.equal(completedRecording.state.playing, false, 'recording restores previous paused state');
 assert.ok(Math.abs(completedRecording.state.phase) < 1e-10, 'recording returns to the exact seam');
 assert.equal(
@@ -2638,8 +2650,22 @@ assert.equal(
 );
 const webmTimeline = parseWebmTimeline(recordingBytes);
 assert.ok(
+  webmTimeline.firstTimestampSeconds >= 0 && webmTimeline.firstTimestampSeconds <= 0.1,
+  `downloaded WebM begins at ${webmTimeline.firstTimestampSeconds.toFixed(3)}s instead of the loop seam`,
+);
+assert.ok(
   webmTimeline.lastTimestampSeconds >= 47.9 && webmTimeline.lastTimestampSeconds <= 48.3,
   `downloaded WebM ends at ${webmTimeline.lastTimestampSeconds.toFixed(3)}s instead of one loop`,
+);
+assert.ok(
+  webmTimeline.timelineSeconds >= 47.8 && webmTimeline.timelineSeconds <= 48.3,
+  `downloaded WebM spans ${webmTimeline.timelineSeconds.toFixed(3)}s instead of one loop`,
+);
+// Encoded block density is an artifact-health check, not renderer performance:
+// the recorder-owned rAF metric above is the independent render throughput gate.
+assert.ok(
+  webmTimeline.averageFps >= 18 && webmTimeline.averageFps <= 65,
+  `downloaded WebM block density ${webmTimeline.averageFps.toFixed(3)}fps is outside the healthy 18–65fps range`,
 );
 reports['recording-stall'] = {
   elapsedSeconds: recordingResult.elapsedSeconds,
