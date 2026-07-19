@@ -444,13 +444,14 @@ canvas {
   opacity: 0;
   transform: translateX(-18px);
   transition: opacity 240ms ease, transform 260ms ease;
-  pointer-events: auto;
+  pointer-events: none;
   outline: none;
 }
 
 .about-root.is-visible .about-panel {
   opacity: 1;
   transform: translateX(0);
+  pointer-events: auto;
 }
 
 .about-header {

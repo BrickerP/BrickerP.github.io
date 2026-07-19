@@ -386,6 +386,19 @@ async function waitForExperience(page) {
   await page.waitForTimeout(80);
 }
 
+async function waitForLiveMessage(page, regex, options = {}) {
+  const pattern = { source: regex.source, flags: regex.flags };
+  await page.waitForFunction(
+    ({ source, flags }) => {
+      const liveRegion = document.querySelector('[data-ui-live]');
+      return new RegExp(source, flags).test(liveRegion?.textContent ?? '');
+    },
+    pattern,
+    options,
+  );
+  return (await page.locator('[data-ui-live]').textContent()) ?? '';
+}
+
 async function seek(page, seconds) {
   await page.evaluate((time) => window.__BEIJING_LOOP_TEST__.seek(time), seconds);
   await page.waitForTimeout(20);
@@ -826,7 +839,8 @@ for (const viewport of viewports) {
     `${viewport.name}: seek pauses playback`,
   );
   await playButton.click();
-  // One 20 Hz tick of clock time as progress — matches BeijingLoopApp MAX_DT.
+  // Require more than one 20 Hz tick of loop progress so a single stale frame
+  // cannot satisfy the normal-playback assertion.
   const minimumProgressDelta = 1 / (LOOP_SECONDS * 20);
   await page.waitForFunction(
     ({ pausedAt, minimumProgressDelta }) => {
@@ -881,6 +895,332 @@ for (const viewport of viewports) {
   };
   await context.close();
 }
+
+// DPR 2 smoke matrix: verify the responsive CSS viewport and the renderer's
+// bounded backing-store ratio without repeating the 5 x 12 visual captures.
+const dpr2Reports = {};
+for (const viewport of viewports) {
+  const label = `${viewport.name}-dpr2`;
+  const context = await browser.newContext({
+    viewport: { width: viewport.width, height: viewport.height },
+    deviceScaleFactor: 2,
+    isMobile: Boolean(viewport.mobile),
+    hasTouch: Boolean(viewport.mobile),
+  });
+  const page = await context.newPage();
+  attachRuntimeDiagnostics(page, label, runtimeErrors);
+  await waitForExperience(page);
+
+  const smoke = await page.evaluate(() => {
+    const canvas = document.querySelector('canvas');
+    const state = window.__BEIJING_LOOP_TEST__?.readState();
+    const canvasRect = canvas?.getBoundingClientRect();
+    return {
+      hook: Boolean(window.__BEIJING_LOOP_TEST__),
+      state,
+      viewport: [innerWidth, innerHeight],
+      canvasCss: [canvasRect?.width ?? 0, canvasRect?.height ?? 0],
+      canvasBacking: [canvas?.width ?? 0, canvas?.height ?? 0],
+      brandVisible: Boolean(document.querySelector('.ui-brand')?.getClientRects().length),
+      toolbarVisible: Boolean(document.querySelector('.ui-actions')?.getClientRects().length),
+      controlCount: document.querySelectorAll('[data-act]').length,
+    };
+  });
+  const cappedRatio = viewport.mobile ? 1.35 : 1.8;
+  const expectedBacking = [viewport.width * cappedRatio, viewport.height * cappedRatio];
+  assert.equal(smoke.hook, true, `${label}: QA hook missing`);
+  assert.ok(
+    smoke.state && [smoke.state.progress, smoke.state.phase, smoke.state.angle].every(Number.isFinite),
+    `${label}: scene state is invalid`,
+  );
+  assert.deepEqual(smoke.viewport, [viewport.width, viewport.height], `${label}: CSS viewport`);
+  assert.deepEqual(smoke.canvasCss, [viewport.width, viewport.height], `${label}: canvas CSS size`);
+  assert.ok(
+    Math.abs(smoke.canvasBacking[0] - expectedBacking[0]) <= 1 &&
+      Math.abs(smoke.canvasBacking[1] - expectedBacking[1]) <= 1,
+    `${label}: canvas backing ${smoke.canvasBacking.join('x')} does not honor the ${cappedRatio} cap`,
+  );
+  assert.equal(smoke.brandVisible, true, `${label}: brand overlay hidden`);
+  assert.equal(smoke.toolbarVisible, true, `${label}: control overlay hidden`);
+  assert.equal(smoke.controlCount, 4, `${label}: expected four controls`);
+  dpr2Reports[label] = {
+    cssViewport: smoke.viewport,
+    canvasCss: smoke.canvasCss,
+    canvasBacking: smoke.canvasBacking,
+    cappedRatio,
+    controls: smoke.controlCount,
+  };
+  await context.close();
+}
+reports['dpr2-smoke-matrix'] = dpr2Reports;
+
+// One live mobile page must survive both orientation transitions without
+// resetting or freezing the normal drive.
+const orientationContext = await browser.newContext({
+  viewport: { width: 390, height: 844 },
+  deviceScaleFactor: 1,
+  isMobile: true,
+  hasTouch: true,
+});
+const orientationPage = await orientationContext.newPage();
+attachRuntimeDiagnostics(orientationPage, 'orientation-playback', runtimeErrors);
+await waitForExperience(orientationPage);
+if (!(await orientationPage.evaluate(() => window.__BEIJING_LOOP_TEST__.readState().playing))) {
+  await orientationPage.locator('[data-act="play"]').click();
+}
+const orientationSamples = [];
+let previousOrientationProgress = await orientationPage.evaluate(
+  () => window.__BEIJING_LOOP_TEST__.readState().progress,
+);
+for (const viewport of [
+  { name: 'portrait-before', width: 390, height: 844 },
+  { name: 'landscape', width: 844, height: 390 },
+  { name: 'portrait-after', width: 390, height: 844 },
+]) {
+  await orientationPage.setViewportSize({ width: viewport.width, height: viewport.height });
+  await orientationPage.waitForFunction(
+    ({ width, height, previous }) => {
+      const state = window.__BEIJING_LOOP_TEST__.readState();
+      const delta = (state.progress - previous + 1) % 1;
+      return innerWidth === width && innerHeight === height && state.playing && delta > 0.001;
+    },
+    { width: viewport.width, height: viewport.height, previous: previousOrientationProgress },
+  );
+  const state = await orientationPage.evaluate(() => window.__BEIJING_LOOP_TEST__.readState());
+  const layout = await orientationPage.evaluate(() => ({
+    viewport: [innerWidth, innerHeight],
+    canvas: [
+      document.querySelector('canvas')?.getBoundingClientRect().width ?? 0,
+      document.querySelector('canvas')?.getBoundingClientRect().height ?? 0,
+    ],
+    controls: document.querySelectorAll('[data-act]').length,
+  }));
+  assert.deepEqual(layout.viewport, [viewport.width, viewport.height], `${viewport.name}: viewport`);
+  assert.deepEqual(layout.canvas, [viewport.width, viewport.height], `${viewport.name}: canvas layout`);
+  assert.equal(layout.controls, 4, `${viewport.name}: controls remain mounted`);
+  assertOverlaySafety(await visibleOverlayBoxes(orientationPage), viewport, `orientation/${viewport.name}`);
+  orientationSamples.push({ ...viewport, progress: state.progress });
+  previousOrientationProgress = state.progress;
+}
+reports['orientation-playback'] = { transitions: orientationSamples, sceneAdvanced: true };
+await orientationContext.close();
+
+// Exercise the real touchscreen input path by tapping element centres rather
+// than dispatching synthetic click events.
+const touchContext = await browser.newContext({
+  viewport: { width: 390, height: 844 },
+  deviceScaleFactor: 1,
+  isMobile: true,
+  hasTouch: true,
+  acceptDownloads: true,
+});
+const touchPage = await touchContext.newPage();
+attachRuntimeDiagnostics(touchPage, 'touch-controls', runtimeErrors);
+await waitForExperience(touchPage);
+let touchDownloads = 0;
+touchPage.on('download', () => {
+  touchDownloads += 1;
+});
+async function tapLocator(page, locator, label) {
+  const box = await locator.boundingBox();
+  assert.ok(box, `${label}: touch target has no box`);
+  await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+}
+const touchPlay = touchPage.locator('[data-act="play"]');
+const touchInitiallyPlaying = await touchPage.evaluate(
+  () => window.__BEIJING_LOOP_TEST__.readState().playing,
+);
+await tapLocator(touchPage, touchPlay, 'touch play');
+assert.equal(
+  await touchPage.evaluate(() => window.__BEIJING_LOOP_TEST__.readState().playing),
+  !touchInitiallyPlaying,
+  'touch play toggles playback',
+);
+assert.match((await touchPlay.getAttribute('aria-label')) ?? '', /resume|pause/i, 'touch play label');
+await tapLocator(touchPage, touchPlay, 'touch resume');
+assert.equal(
+  await touchPage.evaluate(() => window.__BEIJING_LOOP_TEST__.readState().playing),
+  touchInitiallyPlaying,
+  'touch play restores playback',
+);
+
+const touchAbout = touchPage.locator('[data-act="about"]');
+await tapLocator(touchPage, touchAbout, 'touch about');
+await touchPage.waitForSelector('.about-root.is-visible .about-panel', { state: 'visible' });
+assert.equal(await touchAbout.getAttribute('aria-pressed'), 'true', 'touch about opens dialog');
+await tapLocator(touchPage, touchPage.locator('[data-about-close]'), 'touch about close');
+await touchPage.waitForFunction(() => !document.body.classList.contains('is-about-open'));
+assert.equal(await touchAbout.getAttribute('aria-pressed'), 'false', 'touch about closes dialog');
+
+const touchRecord = touchPage.locator('[data-act="record"]');
+await tapLocator(touchPage, touchRecord, 'touch record');
+await touchPage.waitForFunction(
+  () => window.__BEIJING_LOOP_TEST__.readRecording().status === 'recording',
+);
+assert.equal(await touchRecord.getAttribute('aria-label'), 'Cancel recording', 'touch record starts');
+await tapLocator(touchPage, touchRecord, 'touch cancel');
+await touchPage.waitForFunction(
+  () => window.__BEIJING_LOOP_TEST__.readRecording().status === 'cancelled',
+);
+const touchCancelLive = await waitForLiveMessage(
+  touchPage,
+  /recording cancelled.*no video was downloaded/i,
+);
+assert.match(touchCancelLive, /recording cancelled.*no video was downloaded/i, 'touch cancel announced');
+assert.equal(await touchRecord.getAttribute('aria-label'), 'Record one complete loop', 'touch cancel label');
+assert.equal(touchDownloads, 0, 'touch cancel downloaded a video');
+reports['touch-controls'] = {
+  playPause: true,
+  aboutOpenClose: true,
+  recordingStartCancel: true,
+  downloads: touchDownloads,
+};
+await touchContext.close();
+
+// Keyboard success-path fixture plus focus-order/focus-visible coverage.
+const keyboardContext = await browser.newContext({
+  viewport: { width: 900, height: 640 },
+  deviceScaleFactor: 1,
+  acceptDownloads: true,
+});
+await keyboardContext.addInitScript(() => {
+  window.__BEIJING_MOCK_FULLSCREEN__ = false;
+  Object.defineProperty(Document.prototype, 'fullscreenElement', {
+    configurable: true,
+    get: () => (window.__BEIJING_MOCK_FULLSCREEN__ ? document.documentElement : null),
+  });
+  Object.defineProperty(HTMLElement.prototype, 'requestFullscreen', {
+    configurable: true,
+    value: () => {
+      window.__BEIJING_MOCK_FULLSCREEN__ = true;
+      document.dispatchEvent(new Event('fullscreenchange'));
+      return Promise.resolve();
+    },
+  });
+  Object.defineProperty(Document.prototype, 'exitFullscreen', {
+    configurable: true,
+    value: () => {
+      window.__BEIJING_MOCK_FULLSCREEN__ = false;
+      document.dispatchEvent(new Event('fullscreenchange'));
+      return Promise.resolve();
+    },
+  });
+});
+const keyboardPage = await keyboardContext.newPage();
+attachRuntimeDiagnostics(keyboardPage, 'keyboard-focus', runtimeErrors);
+await waitForExperience(keyboardPage);
+let keyboardDownloads = 0;
+keyboardPage.on('download', () => {
+  keyboardDownloads += 1;
+});
+await keyboardPage.locator('canvas').click({ position: { x: 450, y: 400 } });
+const keyboardInitiallyPlaying = await keyboardPage.evaluate(
+  () => window.__BEIJING_LOOP_TEST__.readState().playing,
+);
+await keyboardPage.keyboard.press('Space');
+assert.equal(
+  await keyboardPage.evaluate(() => window.__BEIJING_LOOP_TEST__.readState().playing),
+  !keyboardInitiallyPlaying,
+  'body Space toggles playback',
+);
+await keyboardPage.keyboard.press('Space');
+assert.equal(
+  await keyboardPage.evaluate(() => window.__BEIJING_LOOP_TEST__.readState().playing),
+  keyboardInitiallyPlaying,
+  'body Space restores playback',
+);
+
+await keyboardPage.keyboard.press('r');
+await keyboardPage.waitForFunction(
+  () => window.__BEIJING_LOOP_TEST__.readRecording().status === 'recording',
+);
+assert.equal(
+  await keyboardPage.locator('[data-act="record"]').getAttribute('aria-label'),
+  'Cancel recording',
+  'R starts recording',
+);
+await keyboardPage.keyboard.press('r');
+await keyboardPage.waitForFunction(
+  () => window.__BEIJING_LOOP_TEST__.readRecording().status === 'cancelled',
+);
+const keyboardCancelLive = await waitForLiveMessage(
+  keyboardPage,
+  /recording cancelled.*no video was downloaded/i,
+);
+assert.match(keyboardCancelLive, /recording cancelled.*no video was downloaded/i, 'R cancel announced');
+assert.equal(keyboardDownloads, 0, 'R cancel downloaded a video');
+
+const keyboardFullscreen = keyboardPage.locator('[data-act="fs"]');
+await keyboardPage.keyboard.press('f');
+await keyboardPage.waitForFunction(
+  () => document.querySelector('[data-act="fs"]')?.getAttribute('aria-pressed') === 'true',
+);
+assert.equal(await keyboardFullscreen.getAttribute('aria-pressed'), 'true', 'F enters fullscreen');
+assert.equal(await keyboardFullscreen.getAttribute('aria-label'), 'Exit fullscreen', 'fullscreen exit label');
+assert.doesNotMatch(
+  (await keyboardPage.locator('[data-ui-live]').textContent()) ?? '',
+  /could not.*fullscreen|fullscreen is unavailable/i,
+  'fullscreen success emitted a false live-region failure',
+);
+await keyboardPage.keyboard.press('f');
+await keyboardPage.waitForFunction(
+  () => document.querySelector('[data-act="fs"]')?.getAttribute('aria-pressed') === 'false',
+);
+assert.equal(await keyboardFullscreen.getAttribute('aria-pressed'), 'false', 'F exits fullscreen');
+assert.equal(await keyboardFullscreen.getAttribute('aria-label'), 'Enter fullscreen', 'fullscreen enter label');
+assert.doesNotMatch(
+  (await keyboardPage.locator('[data-ui-live]').textContent()) ?? '',
+  /could not.*fullscreen|fullscreen is unavailable/i,
+  'fullscreen exit emitted a false live-region failure',
+);
+
+await keyboardPage.evaluate(() => {
+  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+});
+const tabOrder = [];
+let firstFocusStyle;
+for (const action of ['play', 'record', 'fs', 'about']) {
+  await keyboardPage.keyboard.press('Tab');
+  const focused = await keyboardPage.evaluate(() => document.activeElement?.getAttribute('data-act'));
+  assert.equal(focused, action, `Tab focuses ${action} in toolbar order`);
+  tabOrder.push(focused);
+  if (!firstFocusStyle) {
+    firstFocusStyle = await keyboardPage.locator(`[data-act="${action}"]`).evaluate((element) => {
+      const style = getComputedStyle(element);
+      return { outlineWidth: style.outlineWidth, outlineStyle: style.outlineStyle, boxShadow: style.boxShadow };
+    });
+  }
+}
+assert.ok(
+  (Number.parseFloat(firstFocusStyle.outlineWidth) > 0 && firstFocusStyle.outlineStyle !== 'none') ||
+    firstFocusStyle.boxShadow !== 'none',
+  `focus-visible style is missing: ${JSON.stringify(firstFocusStyle)}`,
+);
+await keyboardPage.keyboard.press('Enter');
+await keyboardPage.waitForSelector('.about-root.is-visible .about-panel', { state: 'visible' });
+await keyboardPage.waitForFunction(() => document.activeElement?.classList.contains('about-panel'));
+assert.equal(
+  await keyboardPage.evaluate(() => document.activeElement?.getAttribute('role')),
+  'dialog',
+  'About opening moves semantic focus to the dialog',
+);
+await keyboardPage.keyboard.press('Escape');
+await keyboardPage.waitForFunction(() => !document.body.classList.contains('is-about-open'));
+assert.equal(
+  await keyboardPage.evaluate(() => document.activeElement?.getAttribute('data-act')),
+  'about',
+  'Escape restores focus to About',
+);
+reports['keyboard-focus'] = {
+  bodySpace: true,
+  recordShortcut: 'start-cancel',
+  fullscreenShortcut: 'enter-exit',
+  fullscreenLiveState: 'no false failure',
+  tabOrder,
+  focusVisible: firstFocusStyle,
+  dialogFocusRestored: true,
+};
+await keyboardContext.close();
 
 // Personal intro overlay: curated dialog over the continuing drive.
 for (const aboutViewport of [
@@ -1041,20 +1381,22 @@ assert.match(
 );
 await unsupportedPage.locator('body').click({ position: { x: 400, y: 420 } });
 await unsupportedPage.keyboard.press('r');
-await unsupportedPage.waitForFunction(
-  () => /recording is unavailable/i.test(document.querySelector('[data-ui-live]')?.textContent ?? ''),
+const unsupportedRecordingLive = await waitForLiveMessage(
+  unsupportedPage,
+  /recording is unavailable/i,
 );
 assert.match(
-  (await unsupportedPage.locator('[data-ui-live]').textContent()) ?? '',
+  unsupportedRecordingLive,
   /recording is unavailable/i,
   'keyboard recording failure is announced',
 );
 await unsupportedPage.keyboard.press('f');
-await unsupportedPage.waitForFunction(
-  () => /fullscreen is unavailable/i.test(document.querySelector('[data-ui-live]')?.textContent ?? ''),
+const unsupportedFullscreenLive = await waitForLiveMessage(
+  unsupportedPage,
+  /fullscreen is unavailable/i,
 );
 assert.match(
-  (await unsupportedPage.locator('[data-ui-live]').textContent()) ?? '',
+  unsupportedFullscreenLive,
   /fullscreen is unavailable/i,
   'keyboard fullscreen failure is announced',
 );
@@ -1094,11 +1436,11 @@ await waitForExperience(fullscreenRejectPage);
 const fullscreenRejectButton = fullscreenRejectPage.locator('[data-act="fs"]');
 assert.equal(await fullscreenRejectButton.isDisabled(), false, 'rejecting fullscreen API is available');
 await fullscreenRejectButton.click();
-await fullscreenRejectPage.waitForFunction(() =>
-  /could not enter fullscreen.*denied/i.test(
-    document.querySelector('[data-ui-live]')?.textContent ?? '',
-  ),
+const rejectedEnterLive = await waitForLiveMessage(
+  fullscreenRejectPage,
+  /could not enter fullscreen.*denied/i,
 );
+assert.match(rejectedEnterLive, /could not enter fullscreen.*denied/i, 'rejected enter is announced');
 assert.equal(
   await fullscreenRejectButton.getAttribute('aria-pressed'),
   'false',
@@ -1115,11 +1457,11 @@ assert.equal(
   'exit rejection fixture did not expose fullscreen state',
 );
 await fullscreenRejectButton.click();
-await fullscreenRejectPage.waitForFunction(() =>
-  /could not exit fullscreen.*denied/i.test(
-    document.querySelector('[data-ui-live]')?.textContent ?? '',
-  ),
+const rejectedExitLive = await waitForLiveMessage(
+  fullscreenRejectPage,
+  /could not exit fullscreen.*denied/i,
 );
+assert.match(rejectedExitLive, /could not exit fullscreen.*denied/i, 'rejected exit is announced');
 assert.equal(
   await fullscreenRejectButton.getAttribute('aria-pressed'),
   'true',
@@ -1171,7 +1513,10 @@ assert.equal(
 );
 await rejectedWebmPage.locator('body').click({ position: { x: 400, y: 420 } });
 await rejectedWebmPage.keyboard.press('r');
-await rejectedWebmPage.waitForTimeout(80);
+const rejectedWebmLive = await waitForLiveMessage(
+  rejectedWebmPage,
+  /recording is unavailable.*WebM/i,
+);
 assert.equal(
   await rejectedWebmPage.evaluate(() => window.__BEIJING_CAPTURE_CALLS__),
   0,
@@ -1179,7 +1524,7 @@ assert.equal(
 );
 assert.equal(rejectedWebmDownloads, 0, 'WebM-rejected browser created a download');
 assert.match(
-  (await rejectedWebmPage.locator('[data-ui-live]').textContent()) ?? '',
+  rejectedWebmLive,
   /recording is unavailable.*WebM/i,
   'WebM rejection is announced',
 );
@@ -1222,11 +1567,13 @@ assert.equal(
   'missing MIME capability API defers the decision until construction',
 );
 await selectedMp4Page.locator('[data-act="record"]').click();
-await selectedMp4Page.waitForTimeout(80);
+const selectedMp4Live = await waitForLiveMessage(
+  selectedMp4Page,
+  /recording could not start/i,
+);
 const selectedMp4Recording = await selectedMp4Page.evaluate(() => ({
   recording: window.__BEIJING_LOOP_TEST__.readRecording(),
   trackStops: window.__BEIJING_TRACK_STOPS__,
-  live: document.querySelector('[data-ui-live]')?.textContent ?? '',
 }));
 assert.equal(selectedMp4Recording.recording.status, 'failed', 'MP4 fallback status');
 assert.match(
@@ -1235,7 +1582,7 @@ assert.match(
   'MP4 fallback retains a structured error',
 );
 assert.ok(selectedMp4Recording.trackStops >= 1, 'MP4 fallback leaked its capture track');
-assert.match(selectedMp4Recording.live, /recording could not start/i, 'MP4 rejection announced');
+assert.match(selectedMp4Live, /recording could not start/i, 'MP4 rejection announced');
 assert.equal(selectedMp4Downloads, 0, 'MP4 fallback was mislabeled and downloaded as WebM');
 reports['recorder-selected-mp4'] = {
   failed: true,
@@ -1281,7 +1628,10 @@ assert.equal(
   'constructor-failure setup still advertises the API capability',
 );
 await constructorFailurePage.locator('[data-act="record"]').click();
-await constructorFailurePage.waitForTimeout(80);
+const constructorFailureLive = await waitForLiveMessage(
+  constructorFailurePage,
+  /recording could not start/i,
+);
 const constructorFailureRecording = await constructorFailurePage.evaluate(() => ({
   recording: window.__BEIJING_LOOP_TEST__.readRecording(),
   capturePerformance: window.__BEIJING_LOOP_TEST__.readCapturePerformance(),
@@ -1312,7 +1662,7 @@ assert.equal(
   'failed recording badge clears',
 );
 assert.match(
-  (await constructorFailurePage.locator('[data-ui-live]').textContent()) ?? '',
+  constructorFailureLive,
   /recording could not start/i,
   'constructor failure is announced',
 );
@@ -1358,12 +1708,14 @@ await tickFailurePage.evaluate(() => {
   });
 });
 await tickFailurePage.locator('[data-act="record"]').click();
-await tickFailurePage.waitForTimeout(100);
+const tickFailureLive = await waitForLiveMessage(
+  tickFailurePage,
+  /recording could not start/i,
+);
 const tickFailure = await tickFailurePage.evaluate(() => ({
   recording: window.__BEIJING_LOOP_TEST__.readRecording(),
   capturePerformance: window.__BEIJING_LOOP_TEST__.readCapturePerformance(),
   trackStops: window.__BEIJING_TRACK_STOPS__,
-  live: document.querySelector('[data-ui-live]')?.textContent ?? '',
 }));
 assert.equal(tickFailure.recording.active, false, 'initial tick failure left recorder active');
 assert.equal(tickFailure.recording.status, 'failed', 'initial tick failure status');
@@ -1373,7 +1725,7 @@ assert.match(
   'initial tick failure reason is retained',
 );
 assert.ok(tickFailure.trackStops >= 1, 'initial tick failure leaked its capture track');
-assert.match(tickFailure.live, /recording could not start/i, 'initial tick failure announced');
+assert.match(tickFailureLive, /recording could not start/i, 'initial tick failure announced');
 assert.equal(tickFailureDownloads, 0, 'initial tick failure created a download');
 assert.equal(
   tickFailure.capturePerformance.active,
@@ -1624,15 +1976,13 @@ await recorderErrorPage.locator('[data-act="record"]').click();
 await recorderErrorPage.waitForFunction(
   () => window.__BEIJING_LOOP_TEST__.readRecording().status === 'failed',
 );
-await recorderErrorPage.waitForFunction(
-  () => /recording failed/i.test(document.querySelector('[data-ui-live]')?.textContent ?? ''),
-);
+const recorderErrorLive = await waitForLiveMessage(recorderErrorPage, /recording failed/i);
 assert.ok(
   (await recorderErrorPage.evaluate(() => window.__BEIJING_TRACK_STOPS__)) >= 1,
   'MediaRecorder error leaked the canvas capture track',
 );
 assert.match(
-  (await recorderErrorPage.locator('[data-ui-live]').textContent()) ?? '',
+  recorderErrorLive,
   /recording failed/i,
   'MediaRecorder runtime error is announced',
 );
@@ -1771,11 +2121,14 @@ await recordingPage.waitForFunction(
   undefined,
   { timeout: 70_000 },
 );
-await recordingPage.waitForTimeout(80);
+const completedRecordingLive = await waitForLiveMessage(
+  recordingPage,
+  /recording complete.*48-second WebM/i,
+  { timeout: 70_000 },
+);
 const completedRecording = await recordingPage.evaluate(() => ({
   recording: window.__BEIJING_LOOP_TEST__.readRecording(),
   state: window.__BEIJING_LOOP_TEST__.readState(),
-  live: document.querySelector('[data-ui-live]')?.textContent ?? '',
   terminalFrameRequests: window.__BEIJING_TERMINAL_FRAME_REQUESTS__,
   captureStreamRates: window.__BEIJING_CAPTURE_STREAM_RATES__,
   captureStreamSizes: window.__BEIJING_CAPTURE_STREAM_SIZES__,
@@ -1818,7 +2171,7 @@ assert.ok(
   completedRecording.capturePerformance.visibleLampLightCount > 0,
   'capture material mode did not restore point lights',
 );
-assert.match(completedRecording.live, /recording complete.*48-second WebM/i, 'completion announced');
+assert.match(completedRecordingLive, /recording complete.*48-second WebM/i, 'completion announced');
 assert.equal(await recordingPage.locator('.ui-rec').isVisible(), false, 'record badge clears');
 assert.equal(await recordingPage.locator('[data-act="play"]').isDisabled(), false, 'play unlocks');
 assert.equal(await recordingPage.locator('[data-act="record"]').isDisabled(), false, 'record unlocks');
@@ -1904,9 +2257,12 @@ await cancelPage.locator('[data-act="record"]').click();
 await cancelPage.waitForFunction(
   () => window.__BEIJING_LOOP_TEST__.readRecording().status === 'cancelled',
 );
+const cancelledRecordingLive = await waitForLiveMessage(
+  cancelPage,
+  /recording cancelled.*no video was downloaded/i,
+);
 const cancelledRecording = await cancelPage.evaluate(() => ({
   recording: window.__BEIJING_LOOP_TEST__.readRecording(),
-  live: document.querySelector('[data-ui-live]')?.textContent ?? '',
 }));
 assert.equal(cancelledRecording.recording.active, false, 'cancelled recording left recorder active');
 assert.equal(cancelledRecording.recording.status, 'cancelled', 'cancelled recording status');
@@ -1915,7 +2271,7 @@ assert.ok(
   'cancelled recording ran a full loop before stopping',
 );
 assert.match(
-  cancelledRecording.live,
+  cancelledRecordingLive,
   /recording cancelled.*no video was downloaded/i,
   'cancel is announced',
 );
