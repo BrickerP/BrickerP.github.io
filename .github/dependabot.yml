@@ -19,6 +19,11 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      # Vite 8.1.5 produces a repeatable 10-channel 0s/48s seam delta in macOS Chrome.
+      - dependency-name: "vite"
+        versions:
+          - "8.x"
 
   - package-ecosystem: "github-actions"
     directory: "/"

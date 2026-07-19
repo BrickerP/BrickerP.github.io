@@ -1,15 +1,14 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { access, readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { documentFor, redirectPaths } from './generate-poe2-redirects.mjs';
 import { assertAboutIsGenerated, escapeHtml, readPublicProfile } from './generate-about.mjs';
+import { assertAccessibleResume } from './verify-resume.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SITE_ORIGIN = 'https://brickerp.github.io';
 const POE2_TARGET = `${SITE_ORIGIN}/poe2-build-lab/`;
-const APPROVED_RESUME_SHA256 = '3a4ceeebef174745fa8117dafee31d5741eb63f23891b60f47e1c94ad9eeff7e';
 
 async function text(relativePath) {
   return readFile(path.join(ROOT, relativePath), 'utf8');
@@ -246,8 +245,6 @@ for (const previewName of ['social-preview.png', 'profile-preview.png']) {
 }
 
 const resume = await readFile(path.join(ROOT, 'public', 'resume.pdf'));
-assert.equal(resume.subarray(0, 5).toString('ascii'), '%PDF-', 'public/resume.pdf must be a PDF');
-assert.equal(createHash('sha256').update(resume).digest('hex'), APPROVED_RESUME_SHA256, 'public/resume.pdf must match the visually approved revision');
-assert.ok(!resume.toString('latin1').toLowerCase().includes('yupeng-dev'), 'public/resume.pdf must not retain the stale GitHub identity');
+assertAccessibleResume(resume, 'public/resume.pdf');
 
 console.log(`Static integrity verified: root, about, sitemap, and ${redirectPaths.length} PoE2 redirects.`);

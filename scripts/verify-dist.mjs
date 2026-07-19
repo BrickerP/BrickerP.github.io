@@ -1,13 +1,12 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { assertAccessibleResume } from './verify-resume.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.join(ROOT, 'dist');
 const HTTP_ORIGIN = process.env.URL;
-const APPROVED_RESUME_SHA256 = '3a4ceeebef174745fa8117dafee31d5741eb63f23891b60f47e1c94ad9eeff7e';
 
 async function read(relativePath) {
   return readFile(path.join(DIST, relativePath), 'utf8');
@@ -17,12 +16,6 @@ function assertPng(buffer, name) {
   assert.equal(buffer.subarray(1, 4).toString('ascii'), 'PNG', `${name}: invalid PNG signature`);
   assert.equal(buffer.readUInt32BE(16), 1200, `${name}: width must be 1200px`);
   assert.equal(buffer.readUInt32BE(20), 630, `${name}: height must be 630px`);
-}
-
-function assertResume(buffer, name) {
-  assert.equal(buffer.subarray(0, 5).toString('ascii'), '%PDF-', `${name}: invalid PDF signature`);
-  assert.equal(createHash('sha256').update(buffer).digest('hex'), APPROVED_RESUME_SHA256, `${name}: unapproved resume revision`);
-  assert.ok(!buffer.toString('latin1').toLowerCase().includes('yupeng-dev'), `${name}: stale GitHub identity`);
 }
 
 const about = await read('about/index.html');
@@ -44,7 +37,7 @@ assert.match(legacyBeijingLoop, /<a\b[^>]*href=["']\/["']/i, 'legacy Beijing loo
 for (const image of ['social-preview.png', 'profile-preview.png']) {
   assertPng(await readFile(path.join(DIST, image)), `dist/${image}`);
 }
-assertResume(await readFile(path.join(DIST, 'resume.pdf')), 'dist/resume.pdf');
+assertAccessibleResume(await readFile(path.join(DIST, 'resume.pdf')), 'dist/resume.pdf');
 
 if (HTTP_ORIGIN) {
   const cases = [
@@ -69,7 +62,7 @@ if (HTTP_ORIGIN) {
     assert.match(response.headers.get('content-type') ?? '', definition.type, `${definition.pathname}: wrong content type`);
     const bytes = Buffer.from(await response.arrayBuffer());
     if (definition.png) assertPng(bytes, definition.pathname);
-    if (definition.resume) assertResume(bytes, definition.pathname);
+    if (definition.resume) assertAccessibleResume(bytes, definition.pathname);
     if (definition.body) assert.match(bytes.toString('utf8'), definition.body, `${definition.pathname}: response body contract`);
   }
 }
