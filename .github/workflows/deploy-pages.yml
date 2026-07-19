@@ -15,16 +15,25 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DIST_ARTIFACT: site-dist-${{ github.sha }}
+  DIST_ARTIFACT: site-dist-${{ github.sha }}-${{ github.run_attempt }}
 
 jobs:
   build:
     name: Build production artifact
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      dist-artifact-id: ${{ steps.upload-dist.outputs.artifact-id }}
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Review dependency changes
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: moderate
+          fail-on-scopes: runtime, development, unknown
 
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -50,6 +59,7 @@ jobs:
         run: npm run verify:dist
 
       - name: Upload immutable dist
+        id: upload-dist
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ env.DIST_ARTIFACT }}
@@ -75,7 +85,7 @@ jobs:
       - name: Download immutable dist
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: ${{ env.DIST_ARTIFACT }}
+          artifact-ids: ${{ needs.build.outputs.dist-artifact-id }}
           path: dist
       - name: Install QA browser
         run: npx playwright install --with-deps chromium
@@ -129,7 +139,7 @@ jobs:
       - name: Download immutable dist
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: ${{ env.DIST_ARTIFACT }}
+          artifact-ids: ${{ needs.build.outputs.dist-artifact-id }}
           path: dist
       - name: Install QA browser
         run: npx playwright install --with-deps chromium
@@ -164,26 +174,81 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  seam_macos:
+    name: macOS Chrome seam QA
+    needs: build
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Download immutable dist
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ needs.build.outputs.dist-artifact-id }}
+          path: dist
+      - name: Verify loop seam in macOS Chrome
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .omx/handoff/ci
+          npm run preview -- --host 127.0.0.1 --port 4173 --strictPort > .omx/handoff/ci/seam-macos-preview.log 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:4173/ > /dev/null && break
+            if ! kill -0 "$preview_pid" 2>/dev/null || [[ "$attempt" == 30 ]]; then
+              tail -100 .omx/handoff/ci/seam-macos-preview.log
+              exit 1
+            fi
+            sleep 1
+          done
+          PW_CHANNEL=chrome URL='http://127.0.0.1:4173/?qa=1' npm run verify:seam
+      - name: Upload macOS seam evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: seam-macos-evidence-${{ github.run_attempt }}
+          path: |
+            .omx/handoff/**
+            playwright-report/**
+            test-results/**
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 14
+
   quality_gate:
     name: Quality gate
     if: always()
     needs:
       - browser
       - seam
+      - seam_macos
     runs-on: ubuntu-latest
     timeout-minutes: 2
     env:
       BROWSER_RESULT: ${{ needs.browser.result }}
       SEAM_RESULT: ${{ needs.seam.result }}
+      MACOS_SEAM_RESULT: ${{ needs.seam_macos.result }}
     steps:
       - name: Require every QA lane
         run: |
           test "$BROWSER_RESULT" = success
           test "$SEAM_RESULT" = success
+          test "$MACOS_SEAM_RESULT" = success
 
   publish_pages_artifact:
     name: Prepare verified Pages artifact
-    needs: quality_gate
+    needs:
+      - build
+      - quality_gate
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -191,7 +256,7 @@ jobs:
       - name: Download verified dist
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: ${{ env.DIST_ARTIFACT }}
+          artifact-ids: ${{ needs.build.outputs.dist-artifact-id }}
           path: dist
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
@@ -200,9 +265,12 @@ jobs:
 
   deploy:
     name: Deploy verified GitHub Pages artifact
-    needs: publish_pages_artifact
+    needs:
+      - build
+      - publish_pages_artifact
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     permissions:
+      contents: read
       pages: write
       id-token: write
     runs-on: ubuntu-latest
@@ -214,3 +282,27 @@ jobs:
       - name: Deploy GitHub Pages
         id: deployment
         uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
+
+      - name: Checkout smoke test
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Set up Node.js for smoke test
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+
+      - name: Download immutable dist for live comparison
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ needs.build.outputs.dist-artifact-id }}
+          path: dist
+
+      - name: Verify live Pages origin
+        env:
+          DEPLOYMENT_URL: ${{ steps.deployment.outputs.page_url }}
+          DIST_DIR: dist
+          MAX_ATTEMPTS: 12
+          REQUEST_TIMEOUT_MS: 8000
+          RETRY_DELAY_MS: 5000
+          SMOKE_DEADLINE_MS: 120000
+        run: timeout 150s node scripts/verify-live.mjs
