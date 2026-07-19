@@ -1,12 +1,31 @@
 # Design
 
 ## Source of truth
-- Status: Active
-- Last refreshed: 2026-07-17
+- Status: Active — Visual Ralph refinement target approved
+- Last refreshed: 2026-07-19
 - Primary product surface: One full-viewport, first-person Beijing endless-drive artwork.
-- Evidence reviewed: `README.md`, `scripts/geometry-check.mjs`, `scripts/verify.mjs`, `scripts/seam-check.mjs`, `.github/workflows/deploy-pages.yml`, `src/main.ts`, `src/app/BeijingLoopApp.ts`, `src/rendering/BeijingDriveScene.ts`, `src/rendering/surfaceTextures.ts`, `src/rendering/FirstPersonCameraRig.ts`, `src/rendering/drivePath.ts`, `src/rendering/theme.ts`, `src/ui/controls.ts`, `src/ui/recorder.ts`, `src/styles/main.css`, and current responsive Visual Ralph captures.
+- Evidence reviewed: `README.md`, `scripts/geometry-check.mjs`, `scripts/verify.mjs`, `scripts/seam-check.mjs`, `.github/workflows/deploy-pages.yml`, current rendering and UI source, GitHub API metadata for remote `main`, successful Pages workflow run [29608554869](https://github.com/BrickerP/BrickerP.github.io/actions/runs/29608554869), `.omx/artifacts/visual-ralph/animation-deep-refinement/BASELINE.md`, and the 2026-07-19 live page/canvas captures under `.omx/artifacts/visual-ralph/animation-deep-refinement/live/`.
 - Superseded direction: Every overhead map, ring-road plan, recursive route diagram, `Infinite`/`Plan` mode switch, and dense line-field composition. None is a valid implementation or visual baseline.
 - Product definition: The visitor is at street height, moving forward through an authored Beijing-inspired environment. The experience is cinematic generative art, not a map, route planner, driving game, or geographic simulation.
+- Workspace synchronization: The implementation branch is based on fetched remote commit `4915012e91cc39d82ca8141ff09fd85ceed3cb85` and carries this approved Visual Ralph design overlay. Superseded shorter-loop or reduced-sequence assumptions must not drive implementation.
+
+## Current refinement evidence — 2026-07-19
+- Authoritative remote contract: Remote `main` and the latest successful Pages deployment both point to commit `4915012e91cc39d82ca8141ff09fd85ceed3cb85`, whose theme and design contract define a deterministic 48-second, twelve-passage circuit. Live phase results and pixel-identical `0s`/`48s` frames confirm that deployed behavior is correct for that contract.
+- Repository condition: The workspace is synchronized to the fetched remote baseline at `4915012e91cc39d82ca8141ff09fd85ceed3cb85`; this design overlay records the approved refinement target without replacing remote product content.
+- Visual Ralph baseline result: `54`, verdict `partial_match_needs_major_refinement`. This live audit is the starting evidence for the approved refinement target.
+- Confirmed strengths: The live result is first-person, uses solid authored geometry, exposes the four intended controls, freezes stably when paused, and starts reduced-motion users on an opt-in static state.
+- Highest-priority defects:
+  - Lighting, material response, and fog separation are too shallow; many surfaces collapse into flat black or undifferentiated blocks.
+  - At 390×844, near-camera gate geometry severely occludes the road and horizon, showing that portrait camera clearance is not safe across the full phase range.
+  - The `SECOND RING` road sign and foreground columns become dominant full-frame objects instead of supporting depth and transition rhythm.
+  - The desktop title is oversized; 320×568 forces the product title into a dense three-line block; mobile hierarchy competes with the scene.
+  - The reduced-motion 390×844 poster has a large black upper band and an off-center, weakly framed gate.
+  - The waterfront passage is not consistently readable as water; material, reflection, parapet, and horizontal depth cues are too weak.
+  - Exact desktop and mobile twelve-passage contact sheets are complete at four-second passage boundaries, and `0s`/`48s` endpoint pixels are identical. Contact sheets prove coverage and composition, but abrupt-transition risk remains open until fine-grained temporal sampling and a watched full-speed circuit pass.
+  - The correct live QA hook is present and confirms the remote 48-second contract. The production-quarter evidence is stored as `production-quarters-desktop.png`, `production-quarters-mobile.png`, and the individual `production-quarter-{0,12,24,36,48}s` files under the live artifact directory.
+- Refinement direction: Preserve the remote 48-second, twelve-passage journey, geometry vocabulary, palette, text, controls, and interaction contract. Improve clearance, proportion, depth grading, atmospheric staging, transition flow, and responsive composition; do not redesign the product or shorten/restructure its circuit without explicit user approval.
+- Approval state: The user explicitly approved the Visual Ralph target; scoped product refinement and Ralph iteration may proceed against this contract.
+- Visual completion gate: Post-approval iterations stop only at a Visual Ralph score of `>= 90` against the approved target, with build, browser, seam, regression, and performance evidence green and no unapproved design pivot.
 
 ## Brand
 - Personality: Cinematic, calm, architectural, distinctly Beijing, restrained, and slightly dreamlike.
@@ -50,10 +69,10 @@
 - Clock: One normalized phase, `phase = (elapsed % 48000) / 48000`, owns camera, scenery, light, fog, reflections, materials, and all secondary motion.
 - Camera: Always first-person at human/vehicle eye height, aimed predominantly forward. It may rise or bank subtly with the road but never becomes aerial, third-person, orbital, or top-down.
 - Pace: Continuous and measured. No stop, teleport, whip pan, hard cut, reverse, or acceleration spike.
-- Surface craft: Unified mid-tier for all devices — seeded boot-once canvas atlases add brick/tile/bark/glass rhythm under flat-shaded masses. No desktop-only high tier; no photo-skin.
-- **0–4s — Central axis:** Zhengyangmen gate tower, then a distinct **天安门** palace wall (five arches, double eaves, plaque) with huabiao columns and white balustrades.
-- **4–8s — Palace moat:** Long red wall and Forbidden City corner tower across the moat (north of the axis).
-- **8–12s — Shichahai:** Willows, humpback bridge, lantern string, bright **white** Beihai dagoba across water.
+- Surface craft: Unified mid-tier for all devices—seeded boot-once canvas atlases add brick, tile, bark, glass, stone, asphalt, lattice, and blue-panel rhythm under flat-shaded masses. No desktop-only high tier and no photo-skin.
+- **0–4s — Central axis:** Zhengyangmen gate tower, then a distinct **天安门** palace wall with five arches, double eaves, plaque, huabiao columns, and white balustrades.
+- **4–8s — Palace moat:** Long red wall and Forbidden City corner tower across the moat north of the axis.
+- **8–12s — Shichahai:** Willows, humpback bridge, lantern string, and bright white Beihai dagoba across water.
 - **12–16s — Deshengmen / Second Ring:** Arrow tower and 二环 gantry on the north ring.
 - **16–20s — Olympic:** Bird's Nest lattice shell and Water Cube as further-north skyline.
 - **20–24s — Bell & Drum Tower plaza:** Drum Tower near-field, Bell Tower offset behind.
@@ -70,7 +89,7 @@
 - **Beijing through sequence, not symbols pasted on top:** Axis, grey brick, tiled roofs, vermilion masses, water edges, and ring-road concrete create identity through spatial experience.
 - **Mass before line:** Use filled planes, extruded silhouettes, and large tonal blocks. Mid-tier atlases add surface rhythm under those masses; they must not become photo-skins or sticker identity crutches. Lines are limited to necessary edges, lane marks, and fine accents.
 - **One journey, one clock:** All motion derives from the same deterministic 48-second phase.
-- **Occlusion is the edit:** Geometry and atmosphere conceal transitions; there are no cuts between four separate scenes.
+- **Occlusion is the edit:** Geometry and atmosphere conceal transitions; there are no cuts between twelve separate passages.
 - **Negative space preserves depth:** Sky, road, fog, and water are deliberate quiet fields, not empty areas to fill with detail.
 - **Interface yields to the world:** Controls remain discoverable and accessible but visually secondary.
 - Tradeoffs: Prefer authored recognition and seamless rhythm over geographic literalness; prefer a small number of reusable modular forms over unique high-detail assets; prefer stable frame pacing over particle count or shader spectacle.
@@ -149,7 +168,7 @@
   - Portrait horizon target: 34–43% of viewport height, preserving more road depth below it.
   - Vertical field of view adapts within a bounded range; the implementation must not stretch or simply crop a desktop render until the road disappears.
 - Scene adaptation: Portrait layouts use a wider bounded field of view, a more central lane offset, and a farther path look-ahead so the road corridor and Beijing anchors remain legible without replacing or shrinking the authored world geometry.
-- UI layout: Brand/title sits top-left and actions top-right on wide screens. On narrow screens, the same three actions form a compact top-right toolbar inside the top/right safe area while the title remains clear of both controls and horizon.
+- UI layout: Brand/title sits top-left and actions top-right on wide screens. On narrow screens, the same four actions form a compact top-right toolbar inside the top/right safe area while the title remains clear of both controls and horizon.
 - Collision rule: At every supported viewport, title, status, controls, debug state, and safe areas have zero overlap; no public UI may cover the central vanishing point.
 - Touch/hover differences: Hover decoration is optional; pressed, selected, recording, and disabled states remain visible on touch devices.
 
@@ -176,24 +195,35 @@
 - Determinism:
   - Seed all authored variation.
   - Perform no unseeded randomness after boot.
-  - Derive every visible animated value from normalized phase, not accumulated frame deltas.
+  - Keep real elapsed time, normalized scene phase, and render/capture timestamps as separate values. Derive every visible animated value from normalized phase, not accumulated frame deltas or screenshot timing.
   - Do not use temporal framebuffer feedback, physics state, or particle histories that cannot be reconstructed exactly for an arbitrary phase.
+  - A direct seek and natural playback at the same phase must produce the same visible state.
+- Visibility lifecycle: Stop ordinary rendering while the page is hidden. On return, reset the elapsed-time baseline before requesting the next frame so background time cannot cause a camera jump, phase leap, or animation catch-up.
+- Reduced motion: Detect the preference before autoplay, render one authored static poster, and keep all phase-derived motion stopped until the visitor explicitly presses Play. The opt-in does not erase the preference or weaken future-load behavior.
+- Capture discipline:
+  - Wait for feature detection, canvas creation, non-zero backing-store size, and the expected control surface before capturing; never rely on a blind page-load delay alone.
+  - Set and record viewport, mobile emulation, DPR, route, reduced-motion state, phase, and capture timestamp for every artifact. Use DPR 1 for canonical visual comparisons unless a separate high-DPR test is explicitly identified.
+  - Deterministic phase captures require `window.__BEIJING_LOOP_TEST__`; the capture must fail visibly when the hook is absent rather than silently substituting an arbitrary animation frame.
 - Performance:
   - Target a stable 60 fps on a representative desktop and 30+ fps on a mid-range mobile device.
   - Cap device pixel ratio, batch repeated geometry, cull hidden segments, reuse materials, and avoid per-frame allocation or geometry rebuilding.
   - Pause rendering in hidden tabs and on a static reduced-motion poster.
+  - Record the browser/device, viewport, DPR, warm-up period, sample duration, median and p95 frame time, achieved FPS, and long-frame/dropped-frame count. A screenshot or debug FPS label alone is not performance evidence.
 - Compatibility: WebGL-capable evergreen browsers. Recording requires `MediaRecorder` plus `canvas.captureStream`; fullscreen requires the Fullscreen API. Both are progressive enhancements, and their unavailable states must not block playback. Relative asset paths and Vite base remain compatible with GitHub Pages at `https://brickerp.github.io/`.
 - Production QA boundary: Development builds install the deterministic test hook automatically. Production installs it only for the explicit `?qa=1` query used by automated verification; the normal production URL must not expose it.
 - Test/screenshot expectations: Geometry, typecheck, build, deterministic screenshot capture, responsive browser assertions, capability/keyboard/accessibility smoke tests, reduced-motion capture, and seam verification must pass before deployment. The GitHub Pages workflow runs browser and seam checks against the built preview before upload.
 
 ## Loop and seam acceptance criteria
 - Canonical duration: `48000ms`; there is no secondary camera, environment, or shader clock.
+- Remote contract parity: After workspace synchronization, runtime, QA seek behavior, seam verification, recording, performance sampling, and documentation must share the deployed `48000ms` duration and twelve-passage sequence. Any change to duration or passage structure is a redesign requiring explicit user approval.
 - Endpoint identity: Rendering phase `1` resolves through modulo to the exact state of phase `0` for camera transform, field of view, world transforms, visibility, materials, light, fog, water, and UI playback-independent visuals.
 - Path continuity: Camera position and forward tangent are continuous across the boundary. Speed, heading, pitch, roll, and their first derivatives have no perceptible step from `47.999s` to `0s`.
 - Transition continuity: The closed authored world requires no tile recycling. The overpass-return passage frames the re-emerging central-axis horizon, and no object pops into view at the seam.
 - Reproducibility: Seeking directly to any phase yields the same image as naturally playing to that phase from zero.
 - Automated endpoint check: At 900×640 and DPR 1, native-size deterministic captures at `0ms` and `48000ms` must have zero differing RGBA channels, zero maximum delta, and zero mean absolute difference.
 - Motion continuity check: Sample 385 frames at 0.125-second intervals, reject flat frames, and bound difference spikes with `p95 / median < 4.5`, `max / median < 8`, `seam / median < 3.5`, and a first-versus-seam adjacent-frame ratio below 4. Responsive composition is verified separately at all supported viewports.
+- Phase contact sheet: Capture deterministic DPR-1 frames at `0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44` seconds plus seam-adjacent frames at `47.875` and `0` seconds. The sheet must show all twelve passages, intentional overlap at passage boundaries, no unexplained object teleport, and no frame whose identity depends only on a sign label.
+- Transition proof: Contact sheets are composition evidence, not temporal proof. The 385-frame continuity check, seam-adjacent comparison, and one watched full-speed cycle must all pass before abrupt-transition risk is closed.
 - Loop recording: Export begins at phase zero, contains exactly one 48-second cycle, and ends without appending a duplicate terminal frame.
 
 ## Visual acceptance criteria
@@ -202,9 +232,15 @@
 - The scene uses filled geometry and tonal mass; dense crossing lines, map rings, recursive route outlines, and wireframe clutter are absent.
 - Beijing blue hour dominates; vermilion and amber remain selective accents.
 - Road, horizon, and forward direction stay legible in every sampled frame, including 320×568 portrait.
+- Camera clearance: At 390×844 and 320×568, no wall, gate, sign, tree, or column intersects the driver-eye path or fully blocks the central road corridor. Outside the intentional overpass ceiling, the central 30% of the frame retains a visible forward opening, and no single near-camera object dominates more than roughly one-third of the frame for longer than a brief transition beat.
+- Material and atmospheric depth: Every sampled passage contains readable foreground, midground, and distance separation through directional light, local warm accents, material response, and fog. Large architectural masses retain surface information instead of clipping into featureless black.
+- Waterfront readability: Across consecutive samples in its passage, water reads as a horizontal blue-toned plane distinct from road and sky, supported by parapet, reflection, shoreline, or vegetation cues; it cannot depend on a single isolated frame.
 - Public UI contains no Plan/map/route control and does not cover the vanishing point.
-- Reduced-motion capture is a deliberate central-axis poster, not a broken first animation frame.
+- Mobile hierarchy: At 390×844 and 320×568, the exact title `ENDLESS SECOND RING` uses at most two calm lines, remains subordinate to the scene, and has zero collision with the four-control toolbar, safe areas, or vanishing point. Desktop title scale must not become the dominant foreground object.
+- Reduced-motion poster: The 390×844 capture is a deliberate, centered central-axis composition with a legible road, gate, and sky. It contains no unintended blank/black band larger than 8% of viewport height, no clipped landmark, and no motion before explicit Play.
 - Desktop and mobile captures feel composed for their aspect ratios rather than merely scaled versions of one another.
+- Live/local parity: The deployed `?qa=1` route exposes the deterministic hook defined by the tested local production bundle, while the normal production URL does not. At the same route state, viewport, DPR, reduced-motion setting, and phase, live and local contact sheets must have the same composition and passage identity; any GPU-level pixel variance is recorded rather than mistaken for a design change.
+- Performance evidence: A warmed full 48-second circuit measurement at 1440×900/DPR 1 and 390×844/DPR 1 reports the required frame-time statistics and meets the 60 fps desktop / 30+ fps mobile targets without sustained long-frame clusters at any of the twelve passage transitions.
 
 ## Open questions
-- None blocking. This contract intentionally resolves viewpoint, sequence, duration, palette, geometry style, navigation, accessibility, responsive behavior, and seam quality for implementation.
+- None blocking. The Visual Ralph refinement target in `.omx/artifacts/visual-ralph/animation-deep-refinement/BASELINE.md` is approved.
