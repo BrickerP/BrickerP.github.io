@@ -387,17 +387,52 @@ async function waitForExperience(
 ) {
   try {
     await page.goto(URL, { waitUntil: 'networkidle' });
-    await page.waitForSelector('canvas, .boot.error', { state: 'visible', timeout: 30_000 });
+    await page.waitForSelector('canvas, .boot.error', { state: 'attached', timeout: 30_000 });
 
     const bootError = page.locator('.boot.error');
-    if (await bootError.isVisible()) {
+    if (await bootError.count()) {
       const bootText = ((await bootError.textContent()) ?? '').trim();
       throw new Error(`${label}: boot error: ${bootText || '(empty boot error)'}`);
     }
 
-    await page.waitForFunction(() => Boolean(window.__BEIJING_LOOP_TEST__), undefined, {
-      timeout: 30_000,
-    });
+    await page.waitForFunction(
+      () => document.querySelector('.boot.error') || Boolean(window.__BEIJING_LOOP_TEST__),
+      undefined,
+      { timeout: 30_000 },
+    );
+    if (await bootError.count()) {
+      const bootText = ((await bootError.textContent()) ?? '').trim();
+      throw new Error(`${label}: boot error: ${bootText || '(empty boot error)'}`);
+    }
+
+    await page.waitForFunction(
+      () => {
+        if (document.querySelector('.boot.error')) return true;
+        const canvas = document.querySelector('canvas');
+        if (!(canvas instanceof HTMLCanvasElement)) return false;
+        const rect = canvas.getBoundingClientRect();
+        const style = getComputedStyle(canvas);
+        return (
+          canvas.getClientRects().length > 0 &&
+          Number.isFinite(rect.width) &&
+          Number.isFinite(rect.height) &&
+          rect.width > 0 &&
+          rect.height > 0 &&
+          style.display !== 'none' &&
+          style.visibility !== 'hidden' &&
+          style.visibility !== 'collapse' &&
+          Number(style.opacity) > 0 &&
+          canvas.width > 0 &&
+          canvas.height > 0
+        );
+      },
+      undefined,
+      { timeout: 30_000 },
+    );
+    if (await bootError.count()) {
+      const bootText = ((await bootError.textContent()) ?? '').trim();
+      throw new Error(`${label}: boot error: ${bootText || '(empty boot error)'}`);
+    }
     await page.waitForTimeout(80);
   } catch (cause) {
     const inspect = async (callback, fallback) => {
@@ -421,6 +456,31 @@ async function waitForExperience(
         '',
       ),
       canvasCount: await inspect(() => page.locator('canvas').count(), -1),
+      canvas: await inspect(
+        () =>
+          page.evaluate(() => {
+            const canvas = document.querySelector('canvas');
+            if (!(canvas instanceof HTMLCanvasElement)) return null;
+            const rect = canvas.getBoundingClientRect();
+            const style = getComputedStyle(canvas);
+            return {
+              rect: {
+                x: rect.x,
+                y: rect.y,
+                width: rect.width,
+                height: rect.height,
+              },
+              style: {
+                display: style.display,
+                visibility: style.visibility,
+                opacity: style.opacity,
+              },
+              backing: { width: canvas.width, height: canvas.height },
+              clientRects: canvas.getClientRects().length,
+            };
+          }),
+        null,
+      ),
       hook: await inspect(
         () => page.evaluate(() => Boolean(window.__BEIJING_LOOP_TEST__)),
         false,
