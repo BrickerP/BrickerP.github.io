@@ -502,6 +502,14 @@ export class BeijingDriveScene {
       upperGoldEdge,
     );
 
+    // Warm portal reveals separate this near gate from the dimmer inner gate
+    // and far rostrum without changing the authored gate mass.
+    for (const x of [-4.72, 4.72]) {
+      const reveal = this.box(0.16, 3.6, 0.14, this.windowMaterial);
+      reveal.position.set(x, 2.45, -2.48);
+      gate.add(reveal);
+    }
+
     if (plaqueText) {
       const plaque = this.canvasPlaque(plaqueText, {
         width: 640,
@@ -587,6 +595,14 @@ export class BeijingDriveScene {
     const upperGold = this.box(20, 0.15, 5.4, roofEdge);
     upperGold.position.y = 11.1;
     gate.add(upperHall, lowerRoof, lowerGold, towerHall, upperRoof, upperGold);
+
+    // Five restrained arch sills keep the far Tiananmen layer legible through
+    // Zhengyangmen's opening instead of merging into one dark mass.
+    for (const x of [-8.55, -4.5, 0, 4.5, 8.55]) {
+      const sill = this.box(x === 0 ? 2.5 : 1.75, 0.14, 0.12, this.windowMaterial);
+      sill.position.set(x, 1.22, -(depth / 2 + 0.08));
+      gate.add(sill);
+    }
 
     // Abstract portrait niche — dark framed panel, no likeness.
     const portraitFrame = this.box(2.1, 2.6, 0.16, this.standard('#6A5230', { roughness: 0.9 }));
@@ -983,17 +999,21 @@ export class BeijingDriveScene {
   private buildYonghegong(): void {
     // Landmark mass stays left of the road; keep offset near enough to read.
     const ochre = this.textured('#C4A040', 'brick', { roughness: 0.9 });
-    const yellowRoof = this.textured('#D4A820', 'tileRoof', { roughness: 0.88 });
+    const yellowRoof = this.textured('#D4A820', 'tileRoof', {
+      roughness: 0.88,
+      emissive: '#6B480C',
+      emissiveIntensity: 0.34,
+    });
     const roofEdge = this.standard(PALETTE.roofEdge, {
       emissive: '#2A1B09',
-      emissiveIntensity: 0.15,
+      emissiveIntensity: 0.3,
       roughness: 0.85,
     });
     const stone = this.textured(PALETTE.stone, 'stoneGrain', { roughness: 0.96 });
 
     const temple = new Group();
-    this.place(temple, 0.669, -8.4, 0);
-    temple.scale.setScalar(0.6);
+    this.place(temple, 0.669, -7.2, 0);
+    temple.scale.setScalar(0.5);
 
     const plinth = this.box(14.2, 1.6, 10.4, stone);
     plinth.position.y = 0.8;
@@ -1215,22 +1235,18 @@ export class BeijingDriveScene {
     this.root.add(group);
   }
 
-  /** Beihai-style white dagoba — unlit ivory so night fog/ACES cannot crush it charcoal. */
+  /** Beihai-style white dagoba — softly emissive ivory that still obeys ACES. */
   private buildWhiteDagoba(progress: number, offset: number): void {
-    const white = this.trackMaterial(
-      new MeshBasicMaterial({
-        color: '#F4F0E6',
-        fog: true,
-        toneMapped: false,
-      }),
-    );
-    const gold = this.trackMaterial(
-      new MeshBasicMaterial({
-        color: PALETTE.roofEdge,
-        fog: true,
-        toneMapped: false,
-      }),
-    );
+    const white = this.standard('#C8CBC4', {
+      emissive: '#555A56',
+      emissiveIntensity: 0.12,
+      roughness: 0.92,
+    });
+    const gold = this.standard(PALETTE.roofEdge, {
+      emissive: '#5C431A',
+      emissiveIntensity: 0.18,
+      roughness: 0.88,
+    });
     const group = new Group();
     this.place(group, progress, offset, 0);
     group.scale.setScalar(1.35);
@@ -1291,12 +1307,12 @@ export class BeijingDriveScene {
     const blueRoof = this.textured('#2A4F6A', 'tileRoof', {
       roughness: 0.92,
       emissive: '#2F5F82',
-      emissiveIntensity: 0.38,
+      emissiveIntensity: 0.52,
     });
     const red = this.textured(PALETTE.palaceRed, 'brick', {
       roughness: 0.88,
       emissive: '#4A1814',
-      emissiveIntensity: 0.16,
+      emissiveIntensity: 0.24,
     });
     const white = this.standard('#EDE7DA', {
       roughness: 0.9,
@@ -1305,7 +1321,7 @@ export class BeijingDriveScene {
     });
     const roofEdge = this.standard(PALETTE.roofEdge, {
       emissive: '#2A1B09',
-      emissiveIntensity: 0.14,
+      emissiveIntensity: 0.28,
       roughness: 0.85,
     });
 
@@ -1323,8 +1339,8 @@ export class BeijingDriveScene {
     // Keep the circular terrace entirely left of the curb — a wide terrace at
     // ~-9 clipped the camera and flashed the south-return beat white.
     const hall = new Group();
-    this.place(hall, 0.818, -9.2, 0);
-    hall.scale.setScalar(0.62);
+    this.place(hall, 0.818, -7.4, 0);
+    hall.scale.setScalar(0.54);
 
     const terrace = this.box(12.5, 1.2, 12.5, white);
     terrace.position.y = 0.6;
@@ -1412,6 +1428,11 @@ export class BeijingDriveScene {
       emissiveIntensity: 0.12,
     });
     const concrete = this.standard('#69767C', { roughness: 0.96 });
+    const warmCoreMaterial = this.standard('#F0B45D', {
+      emissive: '#E9842F',
+      emissiveIntensity: 1.18,
+      roughness: 0.72,
+    });
 
     // Early silhouette so the lattice mass does not hard-cut into the FOV.
     const nestHint = new Group();
@@ -1423,8 +1444,8 @@ export class BeijingDriveScene {
     this.root.add(nestHint);
 
     const nest = new Group();
-    this.place(nest, 0.419, -8.8, 0);
-    nest.scale.setScalar(0.48);
+    this.place(nest, 0.419, -7.8, 0);
+    nest.scale.setScalar(0.42);
 
     const base = this.box(18, 2.2, 16, concrete);
     base.position.y = 1.1;
@@ -1450,7 +1471,7 @@ export class BeijingDriveScene {
       nest.add(rib);
     }
     for (const y of [5.2, 7.4, 9.6]) {
-      const warmCore = this.box(12.8, 0.22, 0.18, this.windowMaterial);
+      const warmCore = this.box(12.8, 0.24, 0.18, warmCoreMaterial);
       warmCore.position.set(0, y, -7.82);
       nest.add(warmCore);
     }
@@ -1543,7 +1564,7 @@ export class BeijingDriveScene {
       }
     }
 
-    this.buildArrowTower(0.336, -8.8, 0.72);
+    this.buildArrowTower(0.336, -7.8, 0.64);
     this.buildSecondRingSign(0.33);
 
     this.addLamp(0.258, -5.8, false);
@@ -1553,7 +1574,12 @@ export class BeijingDriveScene {
 
   /** 0.667–0.750 — CBD east skyline hero and Xidan / Financial Street west. */
   private buildCbdFinance(): void {
-    const glass = this.textured('#2C3A45', 'glassGrid', { roughness: 0.7, metalness: 0.15 });
+    const glass = this.textured('#344756', 'glassGrid', {
+      roughness: 0.7,
+      metalness: 0.15,
+      emissive: '#18384C',
+      emissiveIntensity: 0.3,
+    });
     const concrete = this.standard('#69767C', { roughness: 0.96 });
 
     for (let index = 0; index < 10; index += 1) {
@@ -1568,7 +1594,7 @@ export class BeijingDriveScene {
     // A near-centre stepped hero stays visible in portrait while preserving
     // the carriageway clearance envelope.
     const hero = new Group();
-    this.place(hero, 0.766, 11.5, 0);
+    this.place(hero, 0.766, 8.6, 0);
     const heroShaft = this.box(4.6, 16.5, 5, glass);
     heroShaft.position.y = 8.25;
     const heroShoulder = this.box(3.2, 11, 4, glass);
@@ -1577,8 +1603,8 @@ export class BeijingDriveScene {
     heroCrown.position.y = 16.65;
     hero.add(heroShaft, heroShoulder, heroCrown);
     for (const y of [3.5, 6.5, 9.5, 12.5]) {
-      const windowBand = this.box(0.12, 0.28, 4, this.windowMaterial);
-      windowBand.position.set(-2.33, y, 0);
+      const windowBand = this.box(3.6, 0.28, 0.12, this.windowMaterial);
+      windowBand.position.set(0, y, -2.56);
       hero.add(windowBand);
     }
     this.root.add(hero);
@@ -1596,8 +1622,8 @@ export class BeijingDriveScene {
       tower.position.y = height / 2;
       towerGroup.add(tower);
       for (const y of [height * 0.35, height * 0.62]) {
-        const band = this.box(0.1, 0.24, width * 0.72, this.windowMaterial);
-        band.position.set(-width / 2 - 0.05, y, 0);
+        const band = this.box(width * 0.72, 0.24, 0.1, this.windowMaterial);
+        band.position.set(0, y, -width / 2 - 0.05);
         towerGroup.add(band);
       }
       this.root.add(towerGroup);
@@ -1615,8 +1641,8 @@ export class BeijingDriveScene {
       plate.position.y = height / 2;
       plateGroup.add(plate);
       for (const y of [height * 0.38, height * 0.68]) {
-        const band = this.box(0.1, 0.22, 3.6, this.windowMaterial);
-        band.position.set(width / 2 + 0.05, y, 0);
+        const band = this.box(width * 0.68, 0.22, 0.1, this.windowMaterial);
+        band.position.set(0, y, -2.55);
         plateGroup.add(band);
       }
       this.root.add(plateGroup);
@@ -1629,9 +1655,21 @@ export class BeijingDriveScene {
 
   /** Deshengmen-style arrow tower with ranked arrow windows. */
   private buildArrowTower(progress: number, offset: number, scale = 1): void {
-    const masonry = this.standard('#4A5650', { roughness: 1 });
-    const body = this.standard('#55625B', { roughness: 1 });
-    const roof = this.standard('#222D2C', { roughness: 1 });
+    const masonry = this.standard('#52635B', {
+      emissive: '#20332E',
+      emissiveIntensity: 0.2,
+      roughness: 1,
+    });
+    const body = this.standard('#617168', {
+      emissive: '#263C35',
+      emissiveIntensity: 0.24,
+      roughness: 1,
+    });
+    const roof = this.standard('#293634', {
+      emissive: '#182421',
+      emissiveIntensity: 0.12,
+      roughness: 1,
+    });
     const slot = this.standard('#161D1E', { roughness: 1 });
 
     const group = new Group();
@@ -1646,11 +1684,11 @@ export class BeijingDriveScene {
     // Arrow windows rank across the road-facing side.
     for (let row = 0; row < 3; row += 1) {
       for (let column = 0; column < 6; column += 1) {
-        const window = this.box(0.1, 0.62, 0.48, slot);
+        const window = this.box(0.48, 0.62, 0.1, slot);
         window.position.set(
-          -5.06,
-          3.6 + row * 1.7,
           -2.9 + column * 1.16,
+          3.6 + row * 1.7,
+          -3.56,
         );
         group.add(window);
       }
