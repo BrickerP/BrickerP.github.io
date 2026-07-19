@@ -462,6 +462,44 @@ function isRetryableStartupEvaluationError(cause) {
     .test(describeCause(cause));
 }
 
+class StartupDeadlineError extends Error {
+  constructor(label) {
+    super(`${label}: startup deadline expired`);
+    this.name = 'StartupDeadlineError';
+  }
+}
+
+async function settleBeforeDeadline(operation, deadline, label) {
+  const remainingMs = deadline - performance.now();
+  if (remainingMs <= 0) throw new StartupDeadlineError(label);
+
+  let timeoutId;
+  const operationPromise = Promise.resolve().then(operation);
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(
+      () => reject(new StartupDeadlineError(label)),
+      Math.max(1, Math.ceil(remainingMs)),
+    );
+  });
+  try {
+    return await Promise.race([operationPromise, timeoutPromise]);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function assertStartupPageIdentity(page, expectedUrl, label) {
+  if (page.isClosed()) throw new Error(`${label}: startup page closed`);
+  const actualUrl = new globalThis.URL(page.url());
+  if (
+    actualUrl.origin !== expectedUrl.origin ||
+    actualUrl.pathname !== expectedUrl.pathname ||
+    actualUrl.search !== expectedUrl.search
+  ) {
+    throw new Error(`${label}: unexpected startup URL ${actualUrl.href}`);
+  }
+}
+
 async function waitForExperience(
   page,
   label = 'experience',
@@ -469,6 +507,7 @@ async function waitForExperience(
   { suppressScreenshot = false } = {},
 ) {
   const deadline = performance.now() + 30_000;
+  const expectedUrl = new globalThis.URL(URL);
   let lastSnapshot = null;
   let lastEvaluateCause = null;
   try {
@@ -476,36 +515,40 @@ async function waitForExperience(
       waitUntil: 'networkidle',
       timeout: Math.max(1, Math.ceil(deadline - performance.now())),
     });
-
-    const expectedUrl = new globalThis.URL(URL);
-    const actualUrl = new globalThis.URL(page.url());
-    if (
-      actualUrl.origin !== expectedUrl.origin ||
-      actualUrl.pathname !== expectedUrl.pathname ||
-      actualUrl.search !== expectedUrl.search
-    ) {
-      throw new Error(`${label}: unexpected startup URL ${actualUrl.href}`);
-    }
+    assertStartupPageIdentity(page, expectedUrl, label);
 
     while (performance.now() < deadline) {
+      assertStartupPageIdentity(page, expectedUrl, label);
+      let snapshotReturned = false;
       try {
-        lastSnapshot = await readStartupSnapshot(page);
+        lastSnapshot = await settleBeforeDeadline(
+          () => readStartupSnapshot(page),
+          deadline,
+          label,
+        );
+        snapshotReturned = true;
       } catch (cause) {
         lastEvaluateCause = describeCause(cause);
+        if (cause instanceof StartupDeadlineError) throw cause;
         if (page.isClosed() || !isRetryableStartupEvaluationError(cause)) throw cause;
+        assertStartupPageIdentity(page, expectedUrl, label);
       }
 
-      if (lastSnapshot?.bootError) {
-        throw new Error(
-          `${label}: boot error: ${lastSnapshot.bootError.text || '(empty boot error)'}`,
-        );
+      if (snapshotReturned) {
+        if (performance.now() >= deadline) throw new StartupDeadlineError(label);
+        assertStartupPageIdentity(page, expectedUrl, label);
+        if (lastSnapshot?.bootError) {
+          throw new Error(
+            `${label}: boot error: ${lastSnapshot.bootError.text || '(empty boot error)'}`,
+          );
+        }
+        if (
+          lastSnapshot?.hook &&
+          lastSnapshot.qaState?.finite &&
+          lastSnapshot.canvasCount === 1 &&
+          lastSnapshot.canvas?.ready
+        ) return;
       }
-      if (
-        lastSnapshot?.hook &&
-        lastSnapshot.qaState?.finite &&
-        lastSnapshot.canvasCount === 1 &&
-        lastSnapshot.canvas?.ready
-      ) return;
 
       const remainingMs = deadline - performance.now();
       if (remainingMs <= 0) break;
@@ -514,6 +557,10 @@ async function waitForExperience(
 
     throw new Error(`${label}: semantic startup state was not ready within 30000ms`);
   } catch (cause) {
+    const deadlineExpired =
+      cause instanceof StartupDeadlineError ||
+      cause?.name === 'TimeoutError' ||
+      performance.now() >= deadline;
     const inspect = async (callback, fallback) => {
       try {
         return await callback();
@@ -522,7 +569,7 @@ async function waitForExperience(
       }
     };
     const safeLabel = label.replace(/[^a-z0-9._-]+/gi, '-').replace(/^-+|-+$/g, '') || 'experience';
-    if (!lastSnapshot) {
+    if (!deadlineExpired && !lastSnapshot) {
       try {
         lastSnapshot = await readStartupSnapshot(page);
       } catch (diagnosticCause) {
@@ -536,7 +583,7 @@ async function waitForExperience(
       evaluateCause: lastEvaluateCause,
       runtimeErrors: runtimeErrors.filter((entry) => entry.startsWith(`[${label}]`)),
     };
-    if (!suppressScreenshot) {
+    if (!deadlineExpired && !suppressScreenshot) {
       await inspect(
         () => page.screenshot({ path: `${OUT}/${safeLabel}-startup-failure.png`, fullPage: true }),
         undefined,
@@ -551,10 +598,67 @@ async function waitForExperience(
 }
 
 assert.doesNotMatch(
-  `${readStartupSnapshot.toString()}\n${waitForExperience.toString()}`,
+  `${readStartupSnapshot.toString()}\n${settleBeforeDeadline.toString()}\n${waitForExperience.toString()}`,
   /\.waitFor(?:Selector|Function)\s*\(/,
   'startup helper must use Node-driven semantic snapshots instead of Playwright selector polling',
 );
+
+async function verifyStartupDeadlineContract() {
+  const unhandledRejections = [];
+  const onUnhandledRejection = (reason) => unhandledRejections.push(describeCause(reason));
+  process.on('unhandledRejection', onUnhandledRejection);
+  try {
+    let lateProbeResolved = false;
+    const lateProbe = new Promise((resolve) => {
+      setTimeout(() => {
+        lateProbeResolved = true;
+        resolve('late-ready');
+      }, 25);
+    });
+    const shortDeadline = performance.now() + 5;
+    await assert.rejects(
+      () => settleBeforeDeadline(() => lateProbe, shortDeadline, 'deadline-regression'),
+      StartupDeadlineError,
+      'a probe resolving after the remaining startup budget must be rejected',
+    );
+    await lateProbe;
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(lateProbeResolved, true, 'deadline regression must exercise a late resolution');
+    assert.deepEqual(unhandledRejections, [], 'late startup probes must not leak rejections');
+
+    const expectedUrl = new globalThis.URL('https://example.test/loop/?qa=1');
+    assert.doesNotThrow(
+      () => assertStartupPageIdentity(
+        { isClosed: () => false, url: () => expectedUrl.href },
+        expectedUrl,
+        'identity-regression',
+      ),
+      'matching live page identity must be accepted',
+    );
+    assert.throws(
+      () => assertStartupPageIdentity(
+        { isClosed: () => true, url: () => expectedUrl.href },
+        expectedUrl,
+        'identity-regression',
+      ),
+      /page closed/,
+      'closed pages must never satisfy startup readiness',
+    );
+    assert.throws(
+      () => assertStartupPageIdentity(
+        { isClosed: () => false, url: () => 'https://example.test/error/' },
+        expectedUrl,
+        'identity-regression',
+      ),
+      /unexpected startup URL/,
+      'navigated pages must never satisfy startup readiness',
+    );
+  } finally {
+    process.off('unhandledRejection', onUnhandledRejection);
+  }
+}
+
+await verifyStartupDeadlineContract();
 
 async function waitForLiveMessage(page, regex, options = {}) {
   const pattern = { source: regex.source, flags: regex.flags };
