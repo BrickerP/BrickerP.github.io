@@ -969,8 +969,8 @@ export class BeijingDriveScene {
       }
     }
 
-    this.buildDrumTower(0.458, -14.5, 1.6);
-    this.buildBellTower(0.491, -14, 1.5);
+    this.buildDrumTower(0.477, -10.5, 1.05);
+    this.buildBellTower(0.493, -11.5, 1.15);
 
     this.addLamp(0.429, 6.5, true);
     this.addLamp(0.462, -6.4, true);
@@ -992,8 +992,8 @@ export class BeijingDriveScene {
     const stone = this.textured(PALETTE.stone, 'stoneGrain', { roughness: 0.96 });
 
     const temple = new Group();
-    this.place(temple, 0.662, -10.8, 0);
-    temple.scale.setScalar(0.82);
+    this.place(temple, 0.669, -8.4, 0);
+    temple.scale.setScalar(0.6);
 
     const plinth = this.box(14.2, 1.6, 10.4, stone);
     plinth.position.y = 0.8;
@@ -1311,8 +1311,8 @@ export class BeijingDriveScene {
 
     // Far-field foreshadow so the hall grows into view instead of popping.
     const foreshadow = new Group();
-    this.place(foreshadow, 0.748, -22, 0);
-    foreshadow.scale.setScalar(0.72);
+    this.place(foreshadow, 0.765, -18, 0);
+    foreshadow.scale.setScalar(0.5);
     const tip = this.cylinder(3.2, 4.5, red);
     tip.position.y = 3.2;
     const tipRoof = this.cylinder(4.2, 1.2, blueRoof);
@@ -1323,8 +1323,8 @@ export class BeijingDriveScene {
     // Keep the circular terrace entirely left of the curb — a wide terrace at
     // ~-9 clipped the camera and flashed the south-return beat white.
     const hall = new Group();
-    this.place(hall, 0.818, -10.5, 0);
-    hall.scale.setScalar(0.75);
+    this.place(hall, 0.818, -9.2, 0);
+    hall.scale.setScalar(0.62);
 
     const terrace = this.box(12.5, 1.2, 12.5, white);
     terrace.position.y = 0.6;
@@ -1415,16 +1415,16 @@ export class BeijingDriveScene {
 
     // Early silhouette so the lattice mass does not hard-cut into the FOV.
     const nestHint = new Group();
-    this.place(nestHint, 0.328, -24, 0);
-    nestHint.scale.setScalar(0.7);
+    this.place(nestHint, 0.372, -20, 0);
+    nestHint.scale.setScalar(0.3);
     const hintShell = this.box(14, 8, 12, lattice);
     hintShell.position.y = 5;
     nestHint.add(hintShell);
     this.root.add(nestHint);
 
     const nest = new Group();
-    this.place(nest, 0.415, -12.2, 0);
-    nest.scale.setScalar(0.72);
+    this.place(nest, 0.419, -8.8, 0);
+    nest.scale.setScalar(0.48);
 
     const base = this.box(18, 2.2, 16, concrete);
     base.position.y = 1.1;
@@ -1443,17 +1443,22 @@ export class BeijingDriveScene {
     roofVoid.scale.set(6.4, 0.32, 5.3);
     roofVoid.position.y = 14.05;
     nest.add(shell, lowerBand, rim, roofVoid);
-    for (let index = 0; index < 7; index += 1) {
-      const rib = this.box(0.24, 12.8, 0.28, concrete);
-      rib.position.set(-7.2 + index * 2.4, 8, -7.95);
+    for (let index = 0; index < 11; index += 1) {
+      const rib = this.box(0.18, 12.8, 0.24, concrete);
+      rib.position.set(-8 + index * 1.6, 8, -7.95);
       rib.rotation.z = index % 2 === 0 ? -0.34 : 0.34;
       nest.add(rib);
+    }
+    for (const y of [5.2, 7.4, 9.6]) {
+      const warmCore = this.box(12.8, 0.22, 0.18, this.windowMaterial);
+      warmCore.position.set(0, y, -7.82);
+      nest.add(warmCore);
     }
     this.root.add(nest);
 
     const cube = new Group();
-    this.place(cube, 0.405, 10.8, 0);
-    cube.scale.setScalar(0.76);
+    this.place(cube, 0.405, 9.5, 0);
+    cube.scale.setScalar(0.62);
     const cubeBody = this.box(12, 8, 12, bluePanel);
     cubeBody.position.y = 4;
     cube.add(cubeBody);
@@ -1538,7 +1543,7 @@ export class BeijingDriveScene {
       }
     }
 
-    this.buildArrowTower(0.312, -13.8);
+    this.buildArrowTower(0.336, -8.8, 0.72);
     this.buildSecondRingSign(0.33);
 
     this.addLamp(0.258, -5.8, false);
@@ -1560,47 +1565,61 @@ export class BeijingDriveScene {
       }
     }
 
-    // A stepped, lit hero tower makes the CBD read as architecture rather than
-    // two anonymous dark slabs at the edge of the frame.
+    // A near-centre stepped hero stays visible in portrait while preserving
+    // the carriageway clearance envelope.
     const hero = new Group();
-    this.place(hero, 0.748, 11.5, 0);
-    const heroShaft = this.box(6.4, 24, 6.4, glass);
-    heroShaft.position.y = 12;
-    const heroShoulder = this.box(4.2, 17, 4.8, glass);
-    heroShoulder.position.set(-4.6, 8.5, 0.7);
-    const heroCrown = this.box(6.9, 0.45, 6.9, concrete);
-    heroCrown.position.y = 24.1;
+    this.place(hero, 0.766, 11.5, 0);
+    const heroShaft = this.box(4.6, 16.5, 5, glass);
+    heroShaft.position.y = 8.25;
+    const heroShoulder = this.box(3.2, 11, 4, glass);
+    heroShoulder.position.set(3.5, 5.5, 0.5);
+    const heroCrown = this.box(5.1, 0.4, 5.5, concrete);
+    heroCrown.position.y = 16.65;
     hero.add(heroShaft, heroShoulder, heroCrown);
-    for (const y of [5.5, 9.5, 13.5, 17.5]) {
-      const windowBand = this.box(0.12, 0.3, 4.8, this.windowMaterial);
-      windowBand.position.set(-3.23, y, 0);
+    for (const y of [3.5, 6.5, 9.5, 12.5]) {
+      const windowBand = this.box(0.12, 0.28, 4, this.windowMaterial);
+      windowBand.position.set(-2.33, y, 0);
       hero.add(windowBand);
     }
     this.root.add(hero);
 
-    // CBD tower cluster — dominant far-field skyline on the east side.
-    for (let index = 0; index < 5; index += 1) {
-      const progress = 0.744 + index * 0.004;
-      const height = 18 + hash01(index, 71) * 10;
-      const width = 5 + hash01(index, 73) * 2;
-      const towerOffset = 14 + hash01(index, 77) * 6;
+    // Staggered east-side cluster: fewer, lower masses with road-facing window
+    // ranks read as a skyline instead of featureless black canyon walls.
+    for (let index = 0; index < 4; index += 1) {
+      const progress = 0.758 + index * 0.006;
+      const height = 9 + hash01(index, 71) * 6;
+      const width = 4 + hash01(index, 73) * 1.6;
+      const towerOffset = 16 + hash01(index, 77) * 4;
+      const towerGroup = new Group();
+      this.place(towerGroup, progress, towerOffset, 0);
       const tower = this.box(width, height, width, glass);
-      this.place(tower, progress, towerOffset, height / 2);
-      this.root.add(tower);
-      const strip = this.box(0.18, height * 0.55, 0.18, this.windowMaterial);
-      this.place(strip, progress - 0.001, towerOffset - width / 2 + 0.4, height * 0.42);
-      this.root.add(strip);
+      tower.position.y = height / 2;
+      towerGroup.add(tower);
+      for (const y of [height * 0.35, height * 0.62]) {
+        const band = this.box(0.1, 0.24, width * 0.72, this.windowMaterial);
+        band.position.set(-width / 2 - 0.05, y, 0);
+        towerGroup.add(band);
+      }
+      this.root.add(towerGroup);
     }
 
     // Xidan / Financial Street — secondary lower glass plate band to the west.
-    for (let index = 0; index < 5; index += 1) {
-      const progress = 0.732 + index * 0.0045;
-      const height = 9 + hash01(index, 91) * 5;
-      const width = 6 + hash01(index, 93) * 2.5;
-      const plateOffset = 12 + hash01(index, 97) * 4;
+    for (let index = 0; index < 4; index += 1) {
+      const progress = 0.76 + index * 0.006;
+      const height = 7 + hash01(index, 91) * 3;
+      const width = 5 + hash01(index, 93) * 2;
+      const plateOffset = 15 + hash01(index, 97) * 3;
+      const plateGroup = new Group();
+      this.place(plateGroup, progress, -plateOffset, 0);
       const plate = this.box(width, height, 5, glass);
-      this.place(plate, progress, -plateOffset, height / 2);
-      this.root.add(plate);
+      plate.position.y = height / 2;
+      plateGroup.add(plate);
+      for (const y of [height * 0.38, height * 0.68]) {
+        const band = this.box(0.1, 0.22, 3.6, this.windowMaterial);
+        band.position.set(width / 2 + 0.05, y, 0);
+        plateGroup.add(band);
+      }
+      this.root.add(plateGroup);
     }
 
     this.addLamp(0.675, -5.8, false);
@@ -1609,7 +1628,7 @@ export class BeijingDriveScene {
   }
 
   /** Deshengmen-style arrow tower with ranked arrow windows. */
-  private buildArrowTower(progress: number, offset: number): void {
+  private buildArrowTower(progress: number, offset: number, scale = 1): void {
     const masonry = this.standard('#4A5650', { roughness: 1 });
     const body = this.standard('#55625B', { roughness: 1 });
     const roof = this.standard('#222D2C', { roughness: 1 });
@@ -1617,6 +1636,7 @@ export class BeijingDriveScene {
 
     const group = new Group();
     this.place(group, progress, offset, 0);
+    group.scale.setScalar(scale);
     const base = this.box(11.5, 2.4, 8.4, masonry);
     base.position.y = 1.2;
     const tower = this.box(10, 6.4, 7, body);
