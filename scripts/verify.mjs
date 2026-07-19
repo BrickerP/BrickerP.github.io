@@ -379,61 +379,140 @@ async function launchBrowser() {
   }
 }
 
+async function readStartupSnapshot(page) {
+  return page.evaluate(() => {
+    const boot = document.querySelector('.boot');
+    const bootError = document.querySelector('.boot.error');
+    const canvas = document.querySelector('canvas');
+    const hook = window.__BEIJING_LOOP_TEST__;
+    let qaState = null;
+    let qaStateCause = null;
+    if (hook) {
+      try {
+        const state = hook.readState();
+        qaState = {
+          progress: state.progress,
+          phase: state.phase,
+          angle: state.angle,
+          playing: state.playing,
+          finite: [state.progress, state.phase, state.angle].every(Number.isFinite),
+        };
+      } catch (cause) {
+        qaStateCause = cause instanceof Error
+          ? `${cause.name}: ${cause.message}`
+          : String(cause);
+      }
+    }
+    const canvasSnapshot = canvas instanceof HTMLCanvasElement
+      ? (() => {
+          const rect = canvas.getBoundingClientRect();
+          const style = getComputedStyle(canvas);
+          const clientRects = canvas.getClientRects().length;
+          const ready =
+            clientRects > 0 &&
+            Number.isFinite(rect.width) &&
+            Number.isFinite(rect.height) &&
+            rect.width > 0 &&
+            rect.height > 0 &&
+            style.display !== 'none' &&
+            style.visibility !== 'hidden' &&
+            style.visibility !== 'collapse' &&
+            Number(style.opacity) > 0 &&
+            canvas.width > 0 &&
+            canvas.height > 0;
+          return {
+            ready,
+            rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+            style: {
+              display: style.display,
+              visibility: style.visibility,
+              opacity: style.opacity,
+            },
+            backing: { width: canvas.width, height: canvas.height },
+            clientRects,
+          };
+        })()
+      : null;
+
+    return {
+      readyState: document.readyState,
+      bootClass: boot?.getAttribute('class') ?? null,
+      bootText: (boot?.textContent ?? '').trim(),
+      bootError: bootError
+        ? { text: (bootError.textContent ?? '').trim() }
+        : null,
+      canvasCount: document.querySelectorAll('canvas').length,
+      canvas: canvasSnapshot,
+      hook: Boolean(hook),
+      qaState,
+      qaStateCause,
+      body: (document.body?.innerText ?? '').slice(0, 1000),
+    };
+  });
+}
+
+function describeCause(cause) {
+  return cause instanceof Error
+    ? `${cause.name}: ${cause.message}`
+    : String(cause);
+}
+
+function isRetryableStartupEvaluationError(cause) {
+  return /execution context was destroyed|cannot find context with specified id|most likely because of a navigation/i
+    .test(describeCause(cause));
+}
+
 async function waitForExperience(
   page,
   label = 'experience',
   runtimeErrors = [],
   { suppressScreenshot = false } = {},
 ) {
+  const deadline = performance.now() + 30_000;
+  let lastSnapshot = null;
+  let lastEvaluateCause = null;
   try {
-    await page.goto(URL, { waitUntil: 'networkidle' });
-    await page.waitForSelector('canvas, .boot.error', { state: 'attached', timeout: 30_000 });
+    await page.goto(URL, {
+      waitUntil: 'networkidle',
+      timeout: Math.max(1, Math.ceil(deadline - performance.now())),
+    });
 
-    const bootError = page.locator('.boot.error');
-    if (await bootError.count()) {
-      const bootText = ((await bootError.textContent()) ?? '').trim();
-      throw new Error(`${label}: boot error: ${bootText || '(empty boot error)'}`);
+    const expectedUrl = new globalThis.URL(URL);
+    const actualUrl = new globalThis.URL(page.url());
+    if (
+      actualUrl.origin !== expectedUrl.origin ||
+      actualUrl.pathname !== expectedUrl.pathname ||
+      actualUrl.search !== expectedUrl.search
+    ) {
+      throw new Error(`${label}: unexpected startup URL ${actualUrl.href}`);
     }
 
-    await page.waitForFunction(
-      () => document.querySelector('.boot.error') || Boolean(window.__BEIJING_LOOP_TEST__),
-      undefined,
-      { timeout: 30_000 },
-    );
-    if (await bootError.count()) {
-      const bootText = ((await bootError.textContent()) ?? '').trim();
-      throw new Error(`${label}: boot error: ${bootText || '(empty boot error)'}`);
-    }
+    while (performance.now() < deadline) {
+      try {
+        lastSnapshot = await readStartupSnapshot(page);
+      } catch (cause) {
+        lastEvaluateCause = describeCause(cause);
+        if (page.isClosed() || !isRetryableStartupEvaluationError(cause)) throw cause;
+      }
 
-    await page.waitForFunction(
-      () => {
-        if (document.querySelector('.boot.error')) return true;
-        const canvas = document.querySelector('canvas');
-        if (!(canvas instanceof HTMLCanvasElement)) return false;
-        const rect = canvas.getBoundingClientRect();
-        const style = getComputedStyle(canvas);
-        return (
-          canvas.getClientRects().length > 0 &&
-          Number.isFinite(rect.width) &&
-          Number.isFinite(rect.height) &&
-          rect.width > 0 &&
-          rect.height > 0 &&
-          style.display !== 'none' &&
-          style.visibility !== 'hidden' &&
-          style.visibility !== 'collapse' &&
-          Number(style.opacity) > 0 &&
-          canvas.width > 0 &&
-          canvas.height > 0
+      if (lastSnapshot?.bootError) {
+        throw new Error(
+          `${label}: boot error: ${lastSnapshot.bootError.text || '(empty boot error)'}`,
         );
-      },
-      undefined,
-      { timeout: 30_000 },
-    );
-    if (await bootError.count()) {
-      const bootText = ((await bootError.textContent()) ?? '').trim();
-      throw new Error(`${label}: boot error: ${bootText || '(empty boot error)'}`);
+      }
+      if (
+        lastSnapshot?.hook &&
+        lastSnapshot.qaState?.finite &&
+        lastSnapshot.canvasCount === 1 &&
+        lastSnapshot.canvas?.ready
+      ) return;
+
+      const remainingMs = deadline - performance.now();
+      if (remainingMs <= 0) break;
+      await new Promise((resolve) => setTimeout(resolve, Math.min(100, remainingMs)));
     }
-    await page.waitForTimeout(80);
+
+    throw new Error(`${label}: semantic startup state was not ready within 30000ms`);
   } catch (cause) {
     const inspect = async (callback, fallback) => {
       try {
@@ -443,52 +522,18 @@ async function waitForExperience(
       }
     };
     const safeLabel = label.replace(/[^a-z0-9._-]+/gi, '-').replace(/^-+|-+$/g, '') || 'experience';
+    if (!lastSnapshot) {
+      try {
+        lastSnapshot = await readStartupSnapshot(page);
+      } catch (diagnosticCause) {
+        lastEvaluateCause = describeCause(diagnosticCause);
+      }
+    }
     const diagnostics = {
       label,
       url: page.url(),
-      readyState: await inspect(() => page.evaluate(() => document.readyState), 'unavailable'),
-      bootClass: await inspect(
-        () => page.locator('.boot').first().getAttribute('class'),
-        null,
-      ),
-      bootText: await inspect(
-        async () => ((await page.locator('.boot').first().textContent()) ?? '').trim(),
-        '',
-      ),
-      canvasCount: await inspect(() => page.locator('canvas').count(), -1),
-      canvas: await inspect(
-        () =>
-          page.evaluate(() => {
-            const canvas = document.querySelector('canvas');
-            if (!(canvas instanceof HTMLCanvasElement)) return null;
-            const rect = canvas.getBoundingClientRect();
-            const style = getComputedStyle(canvas);
-            return {
-              rect: {
-                x: rect.x,
-                y: rect.y,
-                width: rect.width,
-                height: rect.height,
-              },
-              style: {
-                display: style.display,
-                visibility: style.visibility,
-                opacity: style.opacity,
-              },
-              backing: { width: canvas.width, height: canvas.height },
-              clientRects: canvas.getClientRects().length,
-            };
-          }),
-        null,
-      ),
-      hook: await inspect(
-        () => page.evaluate(() => Boolean(window.__BEIJING_LOOP_TEST__)),
-        false,
-      ),
-      body: await inspect(
-        () => page.evaluate(() => (document.body?.innerText ?? '').slice(0, 1000)),
-        '',
-      ),
+      snapshot: lastSnapshot,
+      evaluateCause: lastEvaluateCause,
       runtimeErrors: runtimeErrors.filter((entry) => entry.startsWith(`[${label}]`)),
     };
     if (!suppressScreenshot) {
@@ -504,6 +549,12 @@ async function waitForExperience(
     );
   }
 }
+
+assert.doesNotMatch(
+  `${readStartupSnapshot.toString()}\n${waitForExperience.toString()}`,
+  /\.waitFor(?:Selector|Function)\s*\(/,
+  'startup helper must use Node-driven semantic snapshots instead of Playwright selector polling',
+);
 
 async function waitForLiveMessage(page, regex, options = {}) {
   const pattern = { source: regex.source, flags: regex.flags };
