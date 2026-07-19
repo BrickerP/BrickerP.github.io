@@ -24,10 +24,10 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .node-version
           cache: npm
@@ -50,7 +50,7 @@ jobs:
         run: npm run verify:dist
 
       - name: Upload immutable dist
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ env.DIST_ARTIFACT }}
           path: dist
@@ -64,16 +64,16 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .node-version
           cache: npm
       - name: Install dependencies
         run: npm ci
       - name: Download immutable dist
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: ${{ env.DIST_ARTIFACT }}
           path: dist
@@ -99,7 +99,7 @@ jobs:
           URL='http://127.0.0.1:4173/?qa=1' EXPECT_PRODUCTION=1 npm run verify:browser
       - name: Upload browser evidence
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: browser-evidence-${{ github.run_attempt }}
           path: |
@@ -118,16 +118,16 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .node-version
           cache: npm
       - name: Install dependencies
         run: npm ci
       - name: Download immutable dist
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: ${{ env.DIST_ARTIFACT }}
           path: dist
@@ -152,62 +152,9 @@ jobs:
           URL='http://127.0.0.1:4173/?qa=1' npm run verify:seam
       - name: Upload seam evidence
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: seam-evidence-${{ github.run_attempt }}
-          path: |
-            .omx/handoff/**
-            playwright-report/**
-            test-results/**
-            **/*.webm
-          include-hidden-files: true
-          if-no-files-found: ignore
-          retention-days: 14
-
-  performance:
-    name: Performance QA
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
-      - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version-file: .node-version
-          cache: npm
-      - name: Install dependencies
-        run: npm ci
-      - name: Download immutable dist
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        with:
-          name: ${{ env.DIST_ARTIFACT }}
-          path: dist
-      - name: Install QA browser
-        run: npx playwright install --with-deps chromium
-      - name: Verify real-time product rendering
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p .omx/handoff/ci
-          npm run preview -- --host 127.0.0.1 --port 4173 --strictPort > .omx/handoff/ci/performance-preview.log 2>&1 &
-          preview_pid=$!
-          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
-          for attempt in {1..30}; do
-            curl --fail --silent http://127.0.0.1:4173/ > /dev/null && break
-            if ! kill -0 "$preview_pid" 2>/dev/null || [[ "$attempt" == 30 ]]; then
-              tail -100 .omx/handoff/ci/performance-preview.log
-              exit 1
-            fi
-            sleep 1
-          done
-          URL='http://127.0.0.1:4173/?qa=1' npm run verify:performance
-      - name: Upload performance evidence
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: performance-evidence-${{ github.run_attempt }}
           path: |
             .omx/handoff/**
             playwright-report/**
@@ -223,19 +170,16 @@ jobs:
     needs:
       - browser
       - seam
-      - performance
     runs-on: ubuntu-latest
     timeout-minutes: 2
     env:
       BROWSER_RESULT: ${{ needs.browser.result }}
       SEAM_RESULT: ${{ needs.seam.result }}
-      PERFORMANCE_RESULT: ${{ needs.performance.result }}
     steps:
       - name: Require every QA lane
         run: |
           test "$BROWSER_RESULT" = success
           test "$SEAM_RESULT" = success
-          test "$PERFORMANCE_RESULT" = success
 
   publish_pages_artifact:
     name: Prepare verified Pages artifact
@@ -245,12 +189,12 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Download verified dist
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: ${{ env.DIST_ARTIFACT }}
           path: dist
       - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: dist
 
@@ -269,4 +213,4 @@ jobs:
     steps:
       - name: Deploy GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0

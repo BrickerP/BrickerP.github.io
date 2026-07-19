@@ -179,10 +179,11 @@ VERIFY_LAYOUT=1 URL='http://127.0.0.1:4173/' npm run verify:dist
 ```
 
 The GitHub Pages workflow builds `dist` once, verifies its static routes and
-binary assets, then sends that same immutable artifact through parallel browser,
-seam and real-time product-rendering lanes. Pull requests stop at the stable
-`Quality gate`; only verified non-PR runs create and deploy a Pages artifact. A
-normal production URL without `?qa=1` does not install the test hook.
+binary assets, then sends that same immutable artifact through parallel browser
+and seam lanes. Pull requests stop at the stable `Quality gate`; only verified
+non-PR runs create and deploy a Pages artifact. The hardware-sensitive full-loop
+performance budget remains a local release gate, and a normal production URL
+without `?qa=1` does not install the test hook.
 
 ## Deploy to GitHub Pages
 

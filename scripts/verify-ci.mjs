@@ -18,18 +18,23 @@ const globalPermissions = workflow.slice(0, workflow.indexOf('\njobs:'));
 assert.match(globalPermissions, /permissions:\s*\n\s+contents: read/, 'default permissions must be contents: read');
 assert.doesNotMatch(globalPermissions, /pages: write|id-token: write/, 'deployment permissions must not be global');
 
-for (const job of ['build', 'browser', 'seam', 'performance', 'quality_gate', 'publish_pages_artifact', 'deploy']) {
+for (const job of ['build', 'browser', 'seam', 'quality_gate', 'publish_pages_artifact', 'deploy']) {
   assert.match(workflow, new RegExp(`^  ${job}:`, 'm'), `workflow job missing: ${job}`);
 }
 assert.match(workflow, /name: Quality gate/, 'aggregate check name must remain stable');
-for (const command of ['verify:browser', 'verify:seam', 'verify:performance']) {
+for (const command of ['verify:browser', 'verify:seam']) {
   assert.match(workflow, new RegExp(`npm run ${command}`), `QA lane missing ${command}`);
 }
-assert.ok((workflow.match(/node-version-file: \.node-version/g) ?? []).length >= 4, 'every Node job must use .node-version');
+assert.doesNotMatch(
+  workflow,
+  /npm run verify:performance/,
+  'hardware-sensitive full-circuit performance evidence must remain outside hosted CI',
+);
+assert.ok((workflow.match(/node-version-file: \.node-version/g) ?? []).length >= 3, 'every Node job must use .node-version');
 assert.match(workflow, /uses: actions\/upload-artifact@[^\s#]+[^\n]*[\s\S]*path: dist/, 'build must upload the single dist artifact');
 assert.match(workflow, /name: Verify built static artifact[\s\S]*npm run verify:dist/, 'build must verify the exact dist before upload');
 assert.match(workflow, /VERIFY_LAYOUT=1 URL='http:\/\/127\.0\.0\.1:4173\/' npm run verify:dist/, 'downloaded dist needs an HTTP and mobile target-size smoke gate');
-assert.ok((workflow.match(/uses: actions\/download-artifact@/g) ?? []).length >= 4, 'QA and publish jobs must consume the built dist');
+assert.ok((workflow.match(/uses: actions\/download-artifact@/g) ?? []).length >= 3, 'QA and publish jobs must consume the built dist');
 assert.match(workflow, /publish_pages_artifact:[\s\S]*needs: quality_gate[\s\S]*github\.event_name != 'pull_request'/, 'Pages artifact must wait for non-PR quality success');
 assert.equal(
   (workflow.match(/if: github\.event_name != 'pull_request' && github\.ref == 'refs\/heads\/main'/g) ?? []).length,
@@ -39,12 +44,12 @@ assert.equal(
 assert.match(workflow, /deploy:[\s\S]*pages: write[\s\S]*id-token: write/, 'only deploy receives Pages permissions');
 assert.doesNotMatch(workflow, /^\s*uses:\s+[^#\n]+@[vV]\d/m, 'workflow actions must use immutable commit SHAs');
 for (const actionSha of [
-  'df4cb1c069e1874edd31b4311f1884172cec0e10',
-  '49933ea5288caeca8642d1e84afbd3f7d6820020',
-  'ea165f8d65b6e75b540449e92b4886f43607fa02',
-  'd3f86a106a0bac45b974a628896c90dbdf5c8093',
-  '7b1f4a764d45c48632c6b24a0339c27f5614fb0b',
-  'd6db90164ac5ed86f2b6aed7e0febac5b3c0c03e',
+  '9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0',
+  '820762786026740c76f36085b0efc47a31fe5020',
+  '043fb46d1a93c77aae656e7c1c64a875d1fc6a0a',
+  '3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c',
+  'fc324d3547104276b827a68afc52ff2a11cc49c9',
+  'cd2ce8fcbc39b97be8ca5fce6e763baed58fa128',
 ]) {
   assert.ok(workflow.includes(`@${actionSha}`), `workflow is missing approved action SHA ${actionSha}`);
 }
