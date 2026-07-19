@@ -45,6 +45,9 @@ export interface CapturePerformanceState {
   proxiedMeshCount: number;
   cachedProxyMaterialCount: number;
   visibleLampLightCount: number;
+  staticSceneObjectCount: number;
+  sceneMatrixWorldAutoUpdate: boolean;
+  matrixWorldDirtyCount: number;
 }
 
 /** Unit triangular-prism roof: pitched in X, with its ridge running along Z. */
@@ -193,6 +196,13 @@ export class BeijingDriveScene {
     this.buildQianmenStreet();
     this.buildHutong();
     this.buildOverpass();
+
+    // Every scene transform is authored once during construction. Resolve the
+    // hierarchy now so the renderer does not walk roughly two thousand static
+    // objects to recompute unchanged world matrices on every frame. The camera
+    // is intentionally outside this scene and Three.js updates it separately.
+    this.scene.updateMatrixWorld(true);
+    this.scene.matrixWorldAutoUpdate = false;
   }
 
   /** All changing values are reconstructed from phase, including the seam. */
@@ -254,11 +264,20 @@ export class BeijingDriveScene {
 
   /** QA evidence that capture-only simplifications are active and reversible. */
   readCapturePerformanceState(): CapturePerformanceState {
+    let staticSceneObjectCount = 0;
+    let matrixWorldDirtyCount = 0;
+    this.scene.traverse((object) => {
+      staticSceneObjectCount += 1;
+      if (object.matrixWorldNeedsUpdate) matrixWorldDirtyCount += 1;
+    });
     return {
       active: this.capturePerformanceMode,
       proxiedMeshCount: this.captureOriginalMaterials.size,
       cachedProxyMaterialCount: this.captureMaterialProxies.size,
       visibleLampLightCount: this.lampLights.filter(({ light }) => light.visible).length,
+      staticSceneObjectCount,
+      sceneMatrixWorldAutoUpdate: this.scene.matrixWorldAutoUpdate,
+      matrixWorldDirtyCount,
     };
   }
 

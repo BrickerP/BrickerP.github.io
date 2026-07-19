@@ -203,7 +203,12 @@ export class Controls {
   }
 
   setRecording(active: boolean, seconds = 0): void {
-    if (active) this.recordingTime.textContent = `${seconds.toFixed(1)}s`;
+    if (active) {
+      const recordingTime = `${seconds.toFixed(1)}s`;
+      if (this.recordingTime.textContent !== recordingTime) {
+        this.recordingTime.textContent = recordingTime;
+      }
+    }
     if (this.recording === active) return;
 
     this.recording = active;
