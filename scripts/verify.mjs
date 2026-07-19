@@ -641,10 +641,11 @@ async function verifyStartupDeadlineContract() {
       StartupDeadlineError,
       'a probe rejecting after the remaining startup budget must time out first',
     );
-    await assert.rejects(lateRejection, /late-probe-rejection/);
+    await new Promise((resolve) => setTimeout(resolve, 35));
     await new Promise((resolve) => setImmediate(resolve));
     assert.equal(lateRejectionSettled, true, 'deadline regression must exercise a late rejection');
     assert.deepEqual(unhandledRejections, [], 'late rejecting probes must remain handled');
+    await assert.rejects(lateRejection, /late-probe-rejection/);
 
     const expectedUrl = new globalThis.URL('https://example.test/loop/?qa=1');
     assert.doesNotThrow(
