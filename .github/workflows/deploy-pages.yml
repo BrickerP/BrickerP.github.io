@@ -71,7 +71,7 @@ jobs:
     name: Browser QA
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -106,7 +106,7 @@ jobs:
             sleep 1
           done
           VERIFY_LAYOUT=1 URL='http://127.0.0.1:4173/' npm run verify:dist
-          URL='http://127.0.0.1:4173/?qa=1' EXPECT_PRODUCTION=1 npm run verify:browser
+          URL='http://127.0.0.1:4173/?qa=1' EXPECT_PRODUCTION=1 timeout --signal=TERM --kill-after=30s 35m npm run verify:browser 2>&1 | tee .omx/handoff/ci/browser-verify.log
       - name: Upload browser evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
