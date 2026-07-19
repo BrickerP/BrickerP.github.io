@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta
@@ -8,6 +8,7 @@
     />
     <meta name="theme-color" content="#070B12" />
     <meta name="color-scheme" content="dark" />
+    <link rel="canonical" href="https://brickerp.github.io/" />
     <!-- Inline favicon: a vermilion road vanishing into Beijing night. -->
     <link
       rel="icon"
@@ -15,18 +16,68 @@
     />
     <meta
       name="description"
-      content="BEIJING / 北京 — ENDLESS SECOND RING. A seamless first-person night drive through an imagined Beijing, built as a generative WebGL artwork."
+      content="Beijing — Endless Second Ring is a seamless first-person night drive through an imagined Beijing, built by Yupeng Lu as a generative WebGL artwork."
     />
-    <title>BEIJING / 北京 — ENDLESS SECOND RING</title>
+    <meta property="og:title" content="Beijing — Endless Second Ring" />
+    <meta
+      property="og:description"
+      content="A seamless first-person night drive through an imagined Beijing, built by Yupeng Lu as a generative WebGL artwork."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://brickerp.github.io/" />
+    <meta property="og:site_name" content="Yupeng Lu — BrickerP" />
+    <meta property="og:image" content="https://brickerp.github.io/social-preview.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="A first-person view driving through an imagined Beijing at night." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Beijing — Endless Second Ring" />
+    <meta
+      name="twitter:description"
+      content="A seamless first-person night drive through an imagined Beijing, built by Yupeng Lu as a generative WebGL artwork."
+    />
+    <meta name="twitter:image" content="https://brickerp.github.io/social-preview.png" />
+    <meta name="twitter:image:alt" content="A first-person view driving through an imagined Beijing at night." />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://brickerp.github.io/#website",
+            "url": "https://brickerp.github.io/",
+            "name": "Yupeng Lu — BrickerP",
+            "inLanguage": "en",
+            "creator": { "@id": "https://brickerp.github.io/about/#yupeng-lu" }
+          },
+          {
+            "@type": "CreativeWork",
+            "@id": "https://brickerp.github.io/#beijing-endless-second-ring",
+            "url": "https://brickerp.github.io/",
+            "name": "Beijing — Endless Second Ring",
+            "alternateName": "北京 — Endless Second Ring",
+            "description": "A seamless first-person night drive through an imagined Beijing, built as a generative WebGL artwork.",
+            "inLanguage": ["en", "zh-CN"],
+            "isPartOf": { "@id": "https://brickerp.github.io/#website" },
+            "creator": { "@id": "https://brickerp.github.io/about/#yupeng-lu" },
+            "image": "https://brickerp.github.io/social-preview.png"
+          }
+        ]
+      }
+    </script>
+    <title>Beijing — Endless Second Ring</title>
   </head>
   <body>
     <div id="app"></div>
     <p id="artwork-description" class="sr-only">
-      An artistic first-person Beijing night drive, viewed from driver-eye height.
+      An artistic first-person Beijing (<span lang="zh-CN">北京</span>) night drive, viewed from driver-eye height.
       The camera travels between city silhouettes, flyovers, lamps and road markings
       before returning seamlessly to its starting frame. Not for navigation.
     </p>
-    <noscript>This visualization requires JavaScript.</noscript>
+    <noscript>
+      This visualization requires JavaScript. You can still read
+      <a href="/about/">Yupeng Lu's profile</a>.
+    </noscript>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

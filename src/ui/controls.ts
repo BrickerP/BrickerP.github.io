@@ -50,7 +50,7 @@ export class Controls {
   private template(): string {
     return `
       <header class="ui-brand" aria-labelledby="experience-title">
-        <p class="ui-eyebrow">BEIJING <span>/ 北京</span></p>
+        <p class="ui-eyebrow">BEIJING <span lang="zh-CN">/ 北京</span></p>
         <h1 class="ui-title" id="experience-title">ENDLESS SECOND RING</h1>
         <p class="ui-sub">ARTISTIC NIGHT DRIVE</p>
       </header>

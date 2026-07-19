@@ -276,6 +276,14 @@ const smallTextSelectors = [
   { name: 'footer', selector: '.ui-footer' },
 ];
 
+const aboutSmallTextSelectors = [
+  { name: 'about eyebrow', selector: '.about-eyebrow' },
+  { name: 'about section title', selector: '.about-section-title' },
+  { name: 'about status', selector: '.about-status' },
+  { name: 'about role metadata', selector: '.about-role-meta' },
+  { name: 'about link detail', selector: '.about-link-detail' },
+];
+
 function parseCssColor(value, label) {
   const color = value.trim();
   const hex = color.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
@@ -1092,6 +1100,8 @@ const reports = {};
 const runtimeErrors = [];
 
 for (const viewport of viewports) {
+  const isPriorityMobileViewport =
+    viewport.name === 'mobile-320' || viewport.name === 'mobile-390';
   const context = await browser.newContext({
     viewport: { width: viewport.width, height: viewport.height },
     deviceScaleFactor: 1,
@@ -1135,6 +1145,9 @@ for (const viewport of viewports) {
     assert.ok((await button.getAttribute('aria-label'))?.trim(), `${viewport.name}: button ${index} name`);
     const box = await button.boundingBox();
     assert.ok(box && box.width >= 44 && box.height >= 44, `${viewport.name}: button ${index} target`);
+    if (viewport.mobile) {
+      assert.ok(box.width >= 48 && box.height >= 48, `${viewport.name}: coarse button ${index} target`);
+    }
   }
   assert.match(
     (await page.locator('[data-act="play"]').getAttribute('aria-label')) ?? '',
@@ -1156,6 +1169,11 @@ for (const viewport of viewports) {
     /personal intro|about/i,
     `${viewport.name}: about control name`,
   );
+  assert.equal(
+    await page.locator('.ui-eyebrow span').getAttribute('lang'),
+    'zh-CN',
+    `${viewport.name}: HUD Chinese text has an explicit language`,
+  );
   assert.equal(await page.locator('[data-act="record"]').isDisabled(), false, `${viewport.name}: record supported`);
   assert.equal(await page.locator('[data-act="fs"]').isDisabled(), false, `${viewport.name}: fullscreen supported`);
   assert.equal(await page.locator('[data-act="about"]').isDisabled(), false, `${viewport.name}: about supported`);
@@ -1173,6 +1191,21 @@ for (const viewport of viewports) {
   }));
   assert.ok(layout.scrollWidth <= layout.viewportWidth, `${viewport.name}: horizontal overflow`);
   assert.ok(layout.scrollHeight <= layout.viewportHeight, `${viewport.name}: vertical overflow`);
+  const titleLayout = await page.locator('.ui-title').evaluate((title) => {
+    const range = document.createRange();
+    range.selectNodeContents(title);
+    const lineTops = [...range.getClientRects()]
+      .filter((rect) => rect.width > 0 && rect.height > 0)
+      .map((rect) => Math.round(rect.top * 2) / 2);
+    return {
+      lineCount: new Set(lineTops).size,
+      width: title.getBoundingClientRect().width,
+      height: title.getBoundingClientRect().height,
+    };
+  });
+  if (isPriorityMobileViewport) {
+    assert.ok(titleLayout.lineCount <= 2, `${viewport.name}: title exceeds two lines`);
+  }
   const boxes = await visibleOverlayBoxes(page);
   assertOverlaySafety(boxes, viewport, viewport.name);
   const smallTextContrast = await smallTextContrastReport(page, viewport.name);
@@ -1273,10 +1306,36 @@ for (const viewport of viewports) {
   await page.keyboard.press('d');
   assert.equal(await page.locator('.ui-debug').isVisible(), false, `${viewport.name}: debug closes`);
 
+  let recordingDebugBoxes = [];
+  if (isPriorityMobileViewport) {
+    const recordButton = page.locator('[data-act="record"]');
+    await recordButton.click();
+    await page.waitForFunction(
+      () => window.__BEIJING_LOOP_TEST__.readRecording().status === 'recording',
+    );
+    assert.equal(await page.locator('.ui-rec').isVisible(), true, `${viewport.name}: record badge opens`);
+    await page.evaluate(() => {
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    });
+    await page.keyboard.press('d');
+    assert.equal(await page.locator('.ui-debug').isVisible(), true, `${viewport.name}: debug opens while recording`);
+    recordingDebugBoxes = await visibleOverlayBoxes(page);
+    assertOverlaySafety(recordingDebugBoxes, viewport, `${viewport.name}/recording-debug`);
+    await page.screenshot({ path: `${OUT}/${viewport.name}-recording-debug.png` });
+    await page.keyboard.press('d');
+    await recordButton.click();
+    await page.waitForFunction(
+      () => window.__BEIJING_LOOP_TEST__.readRecording().status === 'cancelled',
+    );
+    assert.equal(await page.locator('.ui-rec').isVisible(), false, `${viewport.name}: record badge closes`);
+  }
+
   reports[viewport.name] = {
     passages: passageReports,
     overlays: boxes,
     debugOverlays: debugBoxes,
+    recordingDebugOverlays: recordingDebugBoxes,
+    titleLayout,
     smallTextContrast,
     vermilionSignal,
     warmSignal,
@@ -1619,22 +1678,68 @@ reports['keyboard-focus'] = {
 };
 await keyboardContext.close();
 
+async function captureAboutBackgroundInertState(page, seedExistingInert = false) {
+  return page.evaluate((shouldSeedExistingInert) => {
+    const aboutRoot = document.querySelector('.about-root');
+    if (!(aboutRoot instanceof HTMLElement)) throw new Error('About root is missing');
+
+    const background = [];
+    let dialogBranch = aboutRoot;
+    while (dialogBranch !== document.body) {
+      const parent = dialogBranch.parentElement;
+      if (!parent) break;
+      background.push(
+        ...[...parent.children].filter(
+          (element) => element instanceof HTMLElement && element !== dialogBranch,
+        ),
+      );
+      dialogBranch = parent;
+    }
+
+    if (shouldSeedExistingInert) {
+      const preservedInert =
+        background.find((element) => element.tagName === 'CANVAS') ?? background[0];
+      if (preservedInert instanceof HTMLElement) preservedInert.inert = true;
+    }
+
+    const snapshot = background.map((element, index) => ({ index, inert: element.inert }));
+    return {
+      snapshot,
+      appInert: document.querySelector('#app')?.inert ?? false,
+      bodyInert: document.body.inert,
+      artworkDescriptionInert:
+        document.querySelector('#artwork-description')?.inert ?? false,
+      siblings: snapshot.map(({ inert }) => inert),
+    };
+  }, seedExistingInert);
+}
+
 // Personal intro overlay: curated dialog over the continuing drive.
 for (const aboutViewport of [
   { name: 'about-desktop', width: 1280, height: 720, mobile: false },
   { name: 'about-mobile', width: 390, height: 844, mobile: true },
+  { name: 'about-mobile-320', width: 320, height: 568, mobile: true },
+  {
+    name: 'about-reduced-motion',
+    width: 390,
+    height: 844,
+    mobile: true,
+    reducedMotion: 'reduce',
+  },
 ]) {
   const aboutContext = await browser.newContext({
     viewport: { width: aboutViewport.width, height: aboutViewport.height },
     deviceScaleFactor: 1,
     isMobile: Boolean(aboutViewport.mobile),
     hasTouch: Boolean(aboutViewport.mobile),
+    reducedMotion: aboutViewport.reducedMotion,
   });
   const aboutPage = await aboutContext.newPage();
   attachRuntimeDiagnostics(aboutPage, aboutViewport.name, runtimeErrors);
   await waitForExperience(aboutPage);
 
   const aboutButton = aboutPage.locator('[data-act="about"]');
+  const inertBefore = (await captureAboutBackgroundInertState(aboutPage, true)).snapshot;
   await aboutButton.focus();
   await aboutButton.click();
   await aboutPage.waitForSelector('.about-root.is-visible .about-panel', { state: 'visible' });
@@ -1669,6 +1774,93 @@ for (const aboutViewport of [
     true,
     `${aboutViewport.name}: about open body class`,
   );
+  const modalInert = await captureAboutBackgroundInertState(aboutPage);
+  assert.equal(modalInert.appInert, false, `${aboutViewport.name}: #app must not be inert`);
+  assert.equal(modalInert.bodyInert, false, `${aboutViewport.name}: body must not be inert`);
+  assert.equal(
+    modalInert.artworkDescriptionInert,
+    true,
+    `${aboutViewport.name}: body-level artwork description is inert behind the modal`,
+  );
+  assert.ok(modalInert.siblings.length > 0, `${aboutViewport.name}: background siblings exist`);
+  assert.ok(
+    modalInert.siblings.every(Boolean),
+    `${aboutViewport.name}: every background sibling is inert while modal is open`,
+  );
+
+  const primaryLabels = await aboutPage.locator('.about-primary-actions a').allTextContents();
+  assert.deepEqual(
+    primaryLabels.map((label) => label.trim()),
+    ['Email', 'Resume', 'LinkedIn', 'GitHub'],
+    `${aboutViewport.name}: compact primary contact actions`,
+  );
+  const proofLinks = aboutPage.locator('.about-proof a[href]');
+  assert.deepEqual(
+    await proofLinks.evaluateAll((links) => links.map((link) => link.getAttribute('href'))),
+    [
+      'https://github.com/cookiy-ai/user-research-skill',
+      'https://github.com/cookiy-ai/cookiy-cli',
+      'https://cookiy.ai',
+    ],
+    `${aboutViewport.name}: public proof links use the verified public surfaces`,
+  );
+  for (let index = 0; index < (await proofLinks.count()); index += 1) {
+    assert.match(
+      (await proofLinks.nth(index).getAttribute('href')) ?? '',
+      /^https:\/\//,
+      `${aboutViewport.name}: proof link ${index} has a real HTTPS URL`,
+    );
+  }
+  const externalLinks = aboutPage.locator('.about-panel a[href^="https://"]');
+  for (let index = 0; index < (await externalLinks.count()); index += 1) {
+    assert.equal(
+      await externalLinks.nth(index).getAttribute('target'),
+      '_blank',
+      `${aboutViewport.name}: external link ${index} opens separately`,
+    );
+    const rel = ((await externalLinks.nth(index).getAttribute('rel')) ?? '').split(/\s+/);
+    assert.ok(
+      rel.includes('noopener') && rel.includes('noreferrer'),
+      `${aboutViewport.name}: external link ${index} prevents opener/referrer leakage`,
+    );
+  }
+  assert.match(
+    ((await aboutPage.locator('.about-experience-note').textContent()) ?? '').trim(),
+    /concurrent/i,
+    `${aboutViewport.name}: overlapping Present roles are explicitly concurrent`,
+  );
+
+  const aboutContrast = await aboutPage.evaluate((checks) => {
+    const panel = document.querySelector('.about-panel');
+    const panelStyle = panel instanceof HTMLElement ? getComputedStyle(panel) : null;
+    return checks.map(({ name, selector }) => {
+      const element = document.querySelector(selector);
+      const style = element instanceof HTMLElement ? getComputedStyle(element) : null;
+      return {
+        name,
+        selector,
+        color: style?.color ?? '',
+        panelBackground: panelStyle?.backgroundColor ?? '',
+        sky: getComputedStyle(document.documentElement).getPropertyValue('--sky').trim(),
+      };
+    });
+  }, aboutSmallTextSelectors);
+  for (const sample of aboutContrast) {
+    const sky = parseCssColor(sample.sky, `${aboutViewport.name}/${sample.name} sky`);
+    const panel = compositeColor(
+      parseCssColor(sample.panelBackground, `${aboutViewport.name}/${sample.name} panel`),
+      sky,
+    );
+    const foreground = compositeColor(
+      parseCssColor(sample.color, `${aboutViewport.name}/${sample.name} color`),
+      panel,
+    );
+    const ratio = contrastRatio(foreground, panel);
+    assert.ok(
+      ratio >= SMALL_TEXT_MIN_CONTRAST,
+      `${aboutViewport.name}/${sample.name}: contrast ${ratio.toFixed(2)} is below ${SMALL_TEXT_MIN_CONTRAST}:1`,
+    );
+  }
 
   const playingBefore = await aboutPage.evaluate(
     () => window.__BEIJING_LOOP_TEST__.readState().playing,
@@ -1684,6 +1876,15 @@ for (const aboutViewport of [
   assert.equal(await detailList.isVisible(), false, `${aboutViewport.name}: details collapsed`);
   const expandCookiy = aboutPage.locator('[data-expand="cookiy"]');
   await expandCookiy.scrollIntoViewIfNeeded();
+  for (const target of await aboutPage
+    .locator('.about-expand, .about-primary-actions a, .about-proof a, .about-elsewhere a')
+    .all()) {
+    const box = await target.boundingBox();
+    assert.ok(
+      box && box.width >= 44 && box.height >= 44,
+      `${aboutViewport.name}: About interactive target is smaller than 44 CSS px`,
+    );
+  }
   await expandCookiy.click();
   assert.equal(await detailList.isVisible(), true, `${aboutViewport.name}: details expanded`);
   assert.ok(
@@ -1705,6 +1906,16 @@ for (const aboutViewport of [
   assert.ok(aboutLayout.panelWidth > 0, `${aboutViewport.name}: about panel has width`);
   assert.ok(aboutLayout.panelLeft >= -0.5, `${aboutViewport.name}: about panel leaves left edge`);
 
+  const firstFocusable = aboutPage.locator('.about-panel button, .about-panel a[href]').first();
+  const lastFocusable = aboutPage.locator('.about-panel button, .about-panel a[href]').last();
+  await lastFocusable.focus();
+  await aboutPage.keyboard.press('Tab');
+  assert.equal(
+    await firstFocusable.evaluate((element) => document.activeElement === element),
+    true,
+    `${aboutViewport.name}: Tab wraps from the last to the first dialog control`,
+  );
+
   await aboutPage.keyboard.press('Escape');
   await aboutPage.waitForFunction(() => !document.body.classList.contains('is-about-open'));
   await aboutPage.waitForSelector('.about-root[hidden]', { state: 'attached' });
@@ -1718,11 +1929,67 @@ for (const aboutViewport of [
     true,
     `${aboutViewport.name}: focus returns to about control`,
   );
+  const inertAfter = (await captureAboutBackgroundInertState(aboutPage)).snapshot;
+  assert.deepEqual(
+    inertAfter,
+    inertBefore,
+    `${aboutViewport.name}: closing restores every background sibling's prior inert state`,
+  );
+
+  async function assertEscapeTiming(timing) {
+    await aboutPage.evaluate(async (escapeTiming) => {
+      const button = document.querySelector('[data-act="about"]');
+      if (!(button instanceof HTMLButtonElement)) throw new Error('About button is missing');
+      button.click();
+      if (escapeTiming === 'next-frame') {
+        await new Promise((resolve) => requestAnimationFrame(() => resolve()));
+      } else if (escapeTiming === '300ms') {
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+      );
+    }, timing);
+    await aboutPage.waitForTimeout(40);
+    assert.equal(
+      await aboutPage.locator('.about-root').evaluate((element) => element.classList.contains('is-visible')),
+      false,
+      `${aboutViewport.name}/${timing}: Escape must not let a stale rAF re-show About`,
+    );
+    await aboutPage.waitForTimeout(300);
+    assert.equal(
+      await aboutPage.locator('.about-root').getAttribute('hidden'),
+      '',
+      `${aboutViewport.name}/${timing}: About finishes hidden`,
+    );
+    assert.equal(
+      await aboutButton.getAttribute('aria-pressed'),
+      'false',
+      `${aboutViewport.name}/${timing}: About control state closes`,
+    );
+  }
+
+  for (const timing of ['same-frame', 'next-frame', '300ms']) {
+    await assertEscapeTiming(timing);
+  }
+
+  await aboutButton.click();
+  await aboutPage.waitForSelector('.about-root.is-visible .about-panel', { state: 'visible' });
+  await aboutPage.keyboard.press('Escape');
+  await aboutPage.waitForFunction(() => !document.body.classList.contains('is-about-open'));
+  assert.equal(
+    await aboutPage.evaluate(() => document.activeElement?.getAttribute('data-act')),
+    'about',
+    `${aboutViewport.name}: About can reopen and still restores focus`,
+  );
 
   reports[aboutViewport.name] = {
     opened: true,
     expanded: true,
     closedByEscape: true,
+    escapeTiming: ['same-frame', 'next-frame', '300ms'],
+    inertRestored: true,
+    contrastChecked: aboutContrast.length,
   };
   await aboutContext.close();
 }

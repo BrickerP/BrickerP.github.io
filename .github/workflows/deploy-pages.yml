@@ -1,6 +1,7 @@
 name: Deploy GitHub Pages
 
 on:
+  pull_request:
   push:
     branches:
       - main
@@ -8,36 +9,36 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  DIST_ARTIFACT: site-dist-${{ github.sha }}
 
 jobs:
   build:
+    name: Build production artifact
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22
+          node-version-file: .node-version
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-
       - name: Verify source
         run: npm run verify
 
-      - name: Build
+      - name: Build once
         run: npm run build
         env:
           VITE_BASE: /
@@ -45,47 +46,227 @@ jobs:
       - name: Verify bundle budget
         run: npm run verify:bundle
 
+      - name: Verify built static artifact
+        run: npm run verify:dist
+
+      - name: Upload immutable dist
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ env.DIST_ARTIFACT }}
+          path: dist
+          if-no-files-found: error
+          retention-days: 7
+
+  browser:
+    name: Browser QA
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Download immutable dist
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ env.DIST_ARTIFACT }}
+          path: dist
       - name: Install QA browser
         run: npx playwright install --with-deps chromium
-
-      - name: Verify production artifact
+      - name: Verify browser behavior
         shell: bash
         run: |
           set -euo pipefail
-          npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/beijing-preview.log 2>&1 &
+          mkdir -p .omx/handoff/ci
+          npm run preview -- --host 127.0.0.1 --port 4173 --strictPort > .omx/handoff/ci/browser-preview.log 2>&1 &
           preview_pid=$!
           trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
-
           for attempt in {1..30}; do
-            if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then
-              break
-            fi
-            if ! kill -0 "$preview_pid" 2>/dev/null; then
-              cat /tmp/beijing-preview.log
-              exit 1
-            fi
-            if [[ "$attempt" == 30 ]]; then
-              cat /tmp/beijing-preview.log
+            curl --fail --silent http://127.0.0.1:4173/ > /dev/null && break
+            if ! kill -0 "$preview_pid" 2>/dev/null || [[ "$attempt" == 30 ]]; then
+              tail -100 .omx/handoff/ci/browser-preview.log
               exit 1
             fi
             sleep 1
           done
-
+          VERIFY_LAYOUT=1 URL='http://127.0.0.1:4173/' npm run verify:dist
           URL='http://127.0.0.1:4173/?qa=1' EXPECT_PRODUCTION=1 npm run verify:browser
-          URL='http://127.0.0.1:4173/?qa=1' npm run verify:seam
-
-      - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v4
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          path: ./dist
+          name: browser-evidence-${{ github.run_attempt }}
+          path: |
+            .omx/handoff/**
+            playwright-report/**
+            test-results/**
+            **/*.webm
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 14
 
-  deploy:
+  seam:
+    name: Seam QA
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Download immutable dist
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ env.DIST_ARTIFACT }}
+          path: dist
+      - name: Install QA browser
+        run: npx playwright install --with-deps chromium
+      - name: Verify loop seam
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .omx/handoff/ci
+          npm run preview -- --host 127.0.0.1 --port 4173 --strictPort > .omx/handoff/ci/seam-preview.log 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:4173/ > /dev/null && break
+            if ! kill -0 "$preview_pid" 2>/dev/null || [[ "$attempt" == 30 ]]; then
+              tail -100 .omx/handoff/ci/seam-preview.log
+              exit 1
+            fi
+            sleep 1
+          done
+          URL='http://127.0.0.1:4173/?qa=1' npm run verify:seam
+      - name: Upload seam evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: seam-evidence-${{ github.run_attempt }}
+          path: |
+            .omx/handoff/**
+            playwright-report/**
+            test-results/**
+            **/*.webm
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 14
+
+  performance:
+    name: Performance QA
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Download immutable dist
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ env.DIST_ARTIFACT }}
+          path: dist
+      - name: Install QA browser
+        run: npx playwright install --with-deps chromium
+      - name: Verify real-time product rendering
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .omx/handoff/ci
+          npm run preview -- --host 127.0.0.1 --port 4173 --strictPort > .omx/handoff/ci/performance-preview.log 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:4173/ > /dev/null && break
+            if ! kill -0 "$preview_pid" 2>/dev/null || [[ "$attempt" == 30 ]]; then
+              tail -100 .omx/handoff/ci/performance-preview.log
+              exit 1
+            fi
+            sleep 1
+          done
+          URL='http://127.0.0.1:4173/?qa=1' npm run verify:performance
+      - name: Upload performance evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: performance-evidence-${{ github.run_attempt }}
+          path: |
+            .omx/handoff/**
+            playwright-report/**
+            test-results/**
+            **/*.webm
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 14
+
+  quality_gate:
+    name: Quality gate
+    if: always()
+    needs:
+      - browser
+      - seam
+      - performance
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    env:
+      BROWSER_RESULT: ${{ needs.browser.result }}
+      SEAM_RESULT: ${{ needs.seam.result }}
+      PERFORMANCE_RESULT: ${{ needs.performance.result }}
+    steps:
+      - name: Require every QA lane
+        run: |
+          test "$BROWSER_RESULT" = success
+          test "$SEAM_RESULT" = success
+          test "$PERFORMANCE_RESULT" = success
+
+  publish_pages_artifact:
+    name: Prepare verified Pages artifact
+    needs: quality_gate
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Download verified dist
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ env.DIST_ARTIFACT }}
+          path: dist
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: dist
+
+  deploy:
+    name: Deploy verified GitHub Pages artifact
+    needs: publish_pages_artifact
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    permissions:
+      pages: write
+      id-token: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

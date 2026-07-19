@@ -1,9 +1,18 @@
+import PUBLIC_PROFILE from './public-profile.json';
+
 /** Curated personal intro content sourced from the public resume PDF. */
 
 export interface ProfileLink {
+  id: string;
   label: string;
   href: string;
   detail?: string;
+}
+
+export interface PublicProof {
+  label: string;
+  detail: string;
+  href: string;
 }
 
 export interface ExperienceRole {
@@ -23,9 +32,19 @@ export interface EducationItem {
 export interface Profile {
   name: string;
   role: string;
+  dateModified: string;
   status: string;
   summary: string;
-  publicProof: string[];
+  publicProof: PublicProof[];
+  experienceNote: string;
+  primaryActions: Array<{
+    linkId: string;
+    label: string;
+    staticLabel: string;
+    style: string;
+    modalOrder: number;
+    staticOrder: number;
+  }>;
   experience: ExperienceRole[];
   education: EducationItem[];
   focus: string;
@@ -33,22 +52,13 @@ export interface Profile {
 }
 
 export const PROFILE: Profile = {
-  name: 'Yupeng Lu',
-  role: 'AI Agent Engineer',
-  status: 'US Permanent Resident · No sponsorship required',
-  summary:
-    'Production agent systems: MCP/tool-use contracts, public API boundaries, CLI/skill distribution, evidence-bound report synthesis, voice runtimes, monetized workflows, and evidence-gated releases.',
-  publicProof: [
-    'Public user-research skill — end-to-end AI interviews across Claude, Codex, Cursor, and OpenClaw-style clients.',
-    'Public TypeScript CLI / npm package — interviews, synthetic users, quant surveys, recruitment, playback, billing, and REST/MCP workflows.',
-    'MCP package and developer portal — one-command skill/MCP setup, Redoc/OpenAPI docs, and public agent onboarding.',
-  ],
+  ...PUBLIC_PROFILE,
   experience: [
     {
       id: 'cookiy',
       title: 'AI Agent Engineer',
       org: 'Cookiy AI',
-      meta: 'Aug 2025 – Present · Silicon Valley HQ / Beijing Engineering Team',
+      meta: 'Aug 2025 – Present · Primary role · Silicon Valley HQ / Beijing Engineering Team',
       summary: [
         'Owned 41 tools across 4 MCP servers and 26 Zod/OpenAPI schema files spanning study, interview, quant, billing, recruit, guide, playback, and report workflows.',
         'Shipped dual-surface E2E harness with 291 cases (168 SaaS + 123 CLI/MCP) and 7 L0–L6 gate profiles with runtime evidence packets.',
@@ -84,7 +94,7 @@ export const PROFILE: Profile = {
       id: 'quant',
       title: 'Co-Engineer',
       org: 'Quant Trading Systems Venture',
-      meta: 'Apr 2026 – Present',
+      meta: 'Apr 2026 – Present · Concurrent venture role',
       summary: [
         'Improved live IBKR execution safety with heartbeat/reconnect, account-update ordering, broker+DB startup reconcile, bracket/OCO fixes, and deterministic flatten paths.',
         'Built research/ops visibility: live dashboard, Pipeline Health, Trade Cards, Factor/Calibration/Drift views, Signal Funnel, and daily S3 Parquet archive.',
@@ -113,35 +123,6 @@ export const PROFILE: Profile = {
     {
       school: 'The Ohio State University',
       detail: "B.A. Physics · GPA 3.84 · Dean's List",
-    },
-  ],
-  focus:
-    'MCP · tool-use contracts · OpenAPI / Zod · agent eval & release gates · evidence-bound synthesis · voice / realtime · auth & billing · TypeScript · Python · C++ · REST / SSE / WebSocket',
-  elsewhere: [
-    {
-      label: 'Email',
-      href: 'mailto:yplmicro@gmail.com',
-      detail: 'yplmicro@gmail.com',
-    },
-    {
-      label: 'LinkedIn',
-      href: 'https://www.linkedin.com/in/yupeng-lu-845a0b411',
-      detail: 'Full profile',
-    },
-    {
-      label: 'GitHub work',
-      href: 'https://github.com/yupeng-dev',
-      detail: 'github.com/yupeng-dev',
-    },
-    {
-      label: 'GitHub personal',
-      href: 'https://github.com/BrickerP',
-      detail: 'github.com/BrickerP',
-    },
-    {
-      label: 'Resume PDF',
-      href: '/resume.pdf',
-      detail: 'Download',
     },
   ],
 };

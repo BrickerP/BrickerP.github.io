@@ -1,181 +1,477 @@
 %PDF-1.4
-%“Œ‹ž ReportLab Generated PDF document (opensource)
+%âãÏÓ
 1 0 obj
 <<
-/F1 2 0 R /F2 3 0 R
+/Producer (ReportLab PDF Library \055 \050opensource\051)
+/Author (Yupeng Lu)
+/CreationDate (D\07220260709190331\05308\04700\047)
+/Creator (\050unspecified\051)
+/Keywords (AI Agent Engineer\054 AI Agent Infrastructure\054 MCP\054 Model Context Protocol\054 tool\055use\054 developer tools\054 OpenAI Apps\054 structured tool outputs\054 evals\054 release gates\054 trace evidence\054 report synthesis\054 Report Voice Platform\054 streaming TTS\054 TypeScript\054 Python\054 NestJS\054 FastAPI\054 AWS\054 SSE\054 WebSocket\054 LiveKit\054 OAuth\054 Stripe\054 Quant\054 IBKR)
+/ModDate (D\07220260709190331\05308\04700\047)
+/Subject (Resume \055 AI Agent Engineer)
+/Title (Yupeng Lu \055 AI Agent Engineer)
+/Trapped (\057False)
 >>
 endobj
 2 0 obj
 <<
-/BaseFont /Helvetica /Encoding /WinAnsiEncoding /Name /F1 /Subtype /Type1 /Type /Font
+/Type /Pages
+/Count 2
+/Kids [ 4 0 R 18 0 R ]
 >>
 endobj
 3 0 obj
 <<
-/BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding /Name /F2 /Subtype /Type1 /Type /Font
+/Type /Catalog
+/Pages 2 0 R
 >>
 endobj
 4 0 obj
 <<
-/A <<
-/S /URI /Type /Action /URI (mailto:yplmicro@gmail.com)
->> /Border [ 0 0 0 ] /Rect [ 191.0696 714.02 270.9894 724.34 ] /Subtype /Link /Type /Annot
+/Annots [ 5 0 R 6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R ]
+/Contents 14 0 R
+/MediaBox [ 0 0 612 792 ]
+/Resources <<
+/Font 15 0 R
+/ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>>
+/Rotate 0
+/Trans <<
+>>
+/Type /Page
+/Parent 2 0 R
 >>
 endobj
 5 0 obj
 <<
 /A <<
-/S /URI /Type /Action /URI (https://www.linkedin.com/in/yupeng-lu-845a0b411/)
->> /Border [ 0 0 0 ] /Rect [ 278.007 714.02 420.9304 724.34 ] /Subtype /Link /Type /Annot
+/S /URI
+/Type /Action
+/URI (mailto\072yplmicro\100gmail\056com)
+>>
+/Border [ 0 0 0 ]
+/Rect [ 191.0696 714.02 270.9894 724.34 ]
+/Subtype /Link
+/Type /Annot
 >>
 endobj
 6 0 obj
 <<
 /A <<
-/S /URI /Type /Action /URI (https://github.com/yupeng-dev)
->> /Border [ 0 0 0 ] /Rect [ 211.9117 703.62 301.3001 713.94 ] /Subtype /Link /Type /Annot
+/S /URI
+/Type /Action
+/URI (https\072\057\057www\056linkedin\056com\057in\057yupeng\055lu\055845a0b411\057)
+>>
+/Border [ 0 0 0 ]
+/Rect [ 278.007 714.02 420.9304 724.34 ]
+/Subtype /Link
+/Type /Annot
 >>
 endobj
 7 0 obj
 <<
 /A <<
-/S /URI /Type /Action /URI (https://github.com/BrickerP)
->> /Border [ 0 0 0 ] /Rect [ 375.2343 703.62 452.1785 713.94 ] /Subtype /Link /Type /Annot
+/S /URI
+/Type /Action
+/URI (https\072\057\057github\056com\057BrickerP)
+>>
+/Border [ 0 0 0 ]
+/Rect [ 216.2289 703.62 293.1731 713.94 ]
+/Subtype /Link
+/Type /Annot
 >>
 endobj
 8 0 obj
 <<
 /A <<
-/S /URI /Type /Action /URI (https://github.com/cookiy-ai/user-research-skill)
->> /Border [ 0 0 0 ] /Rect [ 49.3034 594.26 152.7222 605.54 ] /Subtype /Link /Type /Annot
+/S /URI
+/Type /Action
+/URI (https\072\057\057github\056com\057cookiy\055ai)
+>>
+/Border [ 0 0 0 ]
+/Rect [ 348.9355 703.62 427.3159 713.94 ]
+/Subtype /Link
+/Type /Annot
 >>
 endobj
 9 0 obj
 <<
 /A <<
-/S /URI /Type /Action /URI (https://github.com/cookiy-ai/cookiy-cli)
->> /Border [ 0 0 0 ] /Rect [ 49.3034 569.56 138.6316 580.84 ] /Subtype /Link /Type /Annot
+/S /URI
+/Type /Action
+/URI (https\072\057\057github\056com\057cookiy\055ai\057user\055research\055skill)
+>>
+/Border [ 0 0 0 ]
+/Rect [ 49.3034 594.26 152.7222 605.54 ]
+/Subtype /Link
+/Type /Annot
 >>
 endobj
 10 0 obj
 <<
 /A <<
-/S /URI /Type /Action /URI (https://www.npmjs.com/package/cookiy-cli)
->> /Border [ 0 0 0 ] /Rect [ 146.4712 569.56 220.139 580.84 ] /Subtype /Link /Type /Annot
+/S /URI
+/Type /Action
+/URI (https\072\057\057github\056com\057cookiy\055ai\057cookiy\055cli)
+>>
+/Border [ 0 0 0 ]
+/Rect [ 49.3034 569.56 138.6316 580.84 ]
+/Subtype /Link
+/Type /Annot
 >>
 endobj
 11 0 obj
 <<
 /A <<
-/S /URI /Type /Action /URI (https://www.npmjs.com/package/cookiy-mcp)
->> /Border [ 0 0 0 ] /Rect [ 49.3034 544.86 108.3354 556.14 ] /Subtype /Link /Type /Annot
+/S /URI
+/Type /Action
+/URI (https\072\057\057www\056npmjs\056com\057package\057cookiy\055cli)
+>>
+/Border [ 0 0 0 ]
+/Rect [ 146.4712 569.56 220.139 580.84 ]
+/Subtype /Link
+/Type /Annot
 >>
 endobj
 12 0 obj
 <<
 /A <<
-/S /URI /Type /Action /URI (https://s.cookiy.ai/developer-portal)
->> /Border [ 0 0 0 ] /Rect [ 129.241 544.86 196.639 556.14 ] /Subtype /Link /Type /Annot
+/S /URI
+/Type /Action
+/URI (https\072\057\057www\056npmjs\056com\057package\057cookiy\055mcp)
+>>
+/Border [ 0 0 0 ]
+/Rect [ 49.3034 544.86 108.3354 556.14 ]
+/Subtype /Link
+/Type /Annot
 >>
 endobj
 13 0 obj
 <<
-/Annots [ 4 0 R 5 0 R 6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R ] /Contents 20 0 R /MediaBox [ 0 0 612 792 ] /Parent 19 0 R /Resources <<
-/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
->> /Rotate 0 
-  /Trans <<
-
->> /Type /Page
+/A <<
+/S /URI
+/Type /Action
+/URI (https\072\057\057s\056cookiy\056ai\057developer\055portal)
+>>
+/Border [ 0 0 0 ]
+/Rect [ 129.241 544.86 196.639 556.14 ]
+/Subtype /Link
+/Type /Annot
 >>
 endobj
 14 0 obj
 <<
-/A <<
-/S /URI /Type /Action /URI (https://getdatelove.com)
->> /Border [ 0 0 0 ] /Rect [ 239.6332 712.66 295.018 723.94 ] /Subtype /Link /Type /Annot
+/Length 8702
 >>
+stream
+1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+q
+1 0 0 1 40.56 735.64 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 4 Tm /F2 19 Tf 23 TL 216.3535 0 Td (Yupeng Lu) Tj T* -216.3535 0 Td ET
+Q
+Q
+q
+1 0 0 1 40.56 724.34 cm
+q
+.266667 .266667 .266667 rg
+BT 1 0 0 1 0 1.9 Tm /F1 8.9 Tf 10.8 TL 165.3551 0 Td (US Permanent Resident | No sponsorship required) Tj T* -165.3551 0 Td ET
+Q
+Q
+q
+1 0 0 1 40.56 703.54 cm
+q
+.023529 .270588 .678431 RG
+n 150.5096 11.125 m 230.4294 11.125 l S
+n 237.447 11.125 m 380.3704 11.125 l S
+n 171.3517 .725 m 260.7401 .725 l S
+n 334.6743 .725 m 411.6185 .725 l S
+BT 1 0 0 1 0 12.2 Tm 150.5096 0 Td 10.4 TL /F1 8.6 Tf .023529 .270588 .678431 rg (yplmicro@gmail.com) Tj .266667 .266667 .266667 rg ( | ) Tj .023529 .270588 .678431 rg (linkedin.com/in/yupeng-lu-845a0b411) Tj .266667 .266667 .266667 rg  T* -6.3855 0 Td (GitHub: ) Tj .023529 .270588 .678431 rg (github.com/BrickerP) Tj .266667 .266667 .266667 rg ( | Public work: ) Tj .023529 .270588 .678431 rg (github.com/cookiy-ai) Tj T* -119.2615 0 Td ET
+Q
+Q
+q
+1 0 0 1 40.56 685.14 cm
+q
+.133333 .133333 .133333 rg
+BT 1 0 0 1 0 2.2 Tm /F2 11.2 Tf 13.4 TL 216.8992 0 Td (AI Agent Engineer) Tj T* -216.8992 0 Td ET
+Q
+Q
+q
+1 0 0 1 40.56 665.74 cm
+q
+.066667 .066667 .066667 rg
+BT 1 0 0 1 0 2 Tm /F2 10.4 Tf 12.4 TL (SUMMARY) Tj T* ET
+Q
+Q
+q
+1 0 0 1 40.56 664.24 cm
+q
+.5 w
+1 J
+.6 .6 .6 RG
+n 0 0 m 530.88 0 l S
+Q
+Q
+q
+1 0 0 1 40.56 627.44 cm
+q
+0 0 0 rg
+BT 1 0 0 1 0 25.4 Tm /F1 9.4 Tf 11.6 TL (AI Agent Engineer and backend platform builder focused on production agent systems: MCP/tool-use contracts, public API) Tj T* (boundaries, CLI/skill distribution, evidence-bound report synthesis, Report Voice Platform, monetized workflows, and) Tj T* (evidence-gated releases. U.S. Permanent Resident; no sponsorship required.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 40.56 609.04 cm
+q
+.066667 .066667 .066667 rg
+BT 1 0 0 1 0 2 Tm /F2 10.4 Tf 12.4 TL (PUBLIC PROOF) Tj T* ET
+Q
+Q
+q
+1 0 0 1 40.56 607.54 cm
+q
+.5 w
+1 J
+.6 .6 .6 RG
+n 0 0 m 530.88 0 l S
+Q
+Q
+q
+1 0 0 1 40.56 582.34 cm
+q
+.023529 .270588 .678431 RG
+n 8.7434 12.625 m 112.1622 12.625 l S
+BT 1 0 0 1 10 13.8 Tm -7 0 Td 11.6 TL /F1 9.4 Tf 0 0 0 rg (- ) Tj .023529 .270588 .678431 rg (public user-research skill) Tj 0 0 0 rg ( - public AI-agent skill for end-to-end user research across Claude, Codex, Cursor, and) Tj T* 7 0 Td (OpenClaw-style clients.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 40.56 557.64 cm
+q
+.023529 .270588 .678431 RG
+n 8.7434 12.625 m 98.0716 12.625 l S
+n 105.9112 12.625 m 179.579 12.625 l S
+BT 1 0 0 1 10 13.8 Tm -7 0 Td 11.6 TL /F1 9.4 Tf 0 0 0 rg (- ) Tj .023529 .270588 .678431 rg (public TypeScript CLI) Tj 0 0 0 rg ( / ) Tj .023529 .270588 .678431 rg (npm CLI package) Tj 0 0 0 rg ( - TypeScript CLI for AI interviews, synthetic users, quant surveys, recruitment,) Tj T* 7 0 Td (playback, billing, and REST/MCP-compatible workflows.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 40.56 532.94 cm
+q
+.023529 .270588 .678431 RG
+n 8.7434 12.625 m 67.7754 12.625 l S
+n 88.681 12.625 m 156.079 12.625 l S
+BT 1 0 0 1 10 13.8 Tm -7 0 Td 11.6 TL /F1 9.4 Tf 0 0 0 rg (- ) Tj .023529 .270588 .678431 rg (MCP package) Tj 0 0 0 rg ( and ) Tj .023529 .270588 .678431 rg (developer portal) Tj 0 0 0 rg ( - one-command skill/MCP setup, Redoc/OpenAPI docs, and public agent onboarding) Tj T* 7 0 Td (surface.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 40.56 514.54 cm
+q
+.066667 .066667 .066667 rg
+BT 1 0 0 1 0 2 Tm /F2 10.4 Tf 12.4 TL (EXPERIENCE) Tj T* ET
+Q
+Q
+q
+1 0 0 1 40.56 513.04 cm
+q
+.5 w
+1 J
+.6 .6 .6 RG
+n 0 0 m 530.88 0 l S
+Q
+Q
+q
+1 0 0 1 40.56 497.24 cm
+q
+BT 1 0 0 1 0 2.1 Tm 11.8 TL /F2 9.7 Tf 0 0 0 rg (Cookiy AI - AI Agent Engineer) Tj T* ET
+Q
+Q
+q
+1 0 0 1 40.56 486.74 cm
+q
+.333333 .333333 .333333 rg
+BT 1 0 0 1 0 1.9 Tm /F1 8.6 Tf 10.5 TL (Aug 2025 - Present | Silicon Valley HQ / Beijing Engineering Team) Tj T* ET
+Q
+Q
+q
+1 0 0 1 40.56 451.14 cm
+q
+BT 1 0 0 1 0 25.4 Tm 11.6 TL /F1 9.4 Tf 0 0 0 rg (Voice-AI platform for user-research interviews. Built agent-native research infrastructure across MCP tools, public REST APIs,) Tj T* (OAuth/billing, report generation, Report Voice Platform, interview/playback flows, and E2E/release gates. Evidence snapshot:) Tj T* /F2 9.4 Tf (1,040 Cookiy merged PRs) Tj /F1 9.4 Tf ( spanning MCP/API, report synthesis, voice runtime, video clips, billing, and release gates.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 40.56 425.74 cm
+q
+BT 1 0 0 1 10 13.8 Tm -7 0 Td 11.6 TL /F1 9.4 Tf 0 0 0 rg (- ) Tj /F2 9.4 Tf (Contract-first agent/API platform.) Tj /F1 9.4 Tf ( Designed and hardened Zod/OpenAPI/MCP-style tool contracts, DTO/runtime validation,) Tj T* 7 0 Td (pagination/status semantics, CLI payload compatibility, and public API boundaries.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 40.56 401.04 cm
+q
+BT 1 0 0 1 10 13.8 Tm -7 0 Td 11.6 TL /F1 9.4 Tf 0 0 0 rg (- ) Tj /F2 9.4 Tf (MCP and tool registry.) Tj /F1 9.4 Tf ( Owned 41 tools across 4 MCP servers and 26 Zod/OpenAPI schema files, including study, interview,) Tj T* 7 0 Td (quant, billing, recruit, guide, playback, and report workflows.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 40.56 376.34 cm
+q
+BT 1 0 0 1 10 13.8 Tm -7 0 Td 11.6 TL /F1 9.4 Tf 0 0 0 rg (- ) Tj /F2 9.4 Tf (CLI/skill distribution.) Tj /F1 9.4 Tf ( Published public skill and TypeScript CLI surfaces; migrated shell workflows to npm CLI; added) Tj T* 7 0 Td (MCP-first/REST-fallback behavior, token/login flows, and Cursor/Claude deep-link paths.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 40.56 351.64 cm
+q
+BT 1 0 0 1 10 13.8 Tm -7 0 Td 11.6 TL /F1 9.4 Tf 0 0 0 rg (- ) Tj /F2 9.4 Tf (Tool-using report/study chat agents.) Tj /F1 9.4 Tf ( Re-architected scoped registries, artifact load-before-edit discipline, evidence) Tj T* 7 0 Td (bundles, direct-save tools, and locked-fact guards; removed 7 duplicate tools and slimmed prompts by ~2.5k LOC.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 40.56 303.74 cm
+q
+BT 1 0 0 1 10 37 Tm -7 0 Td 11.6 TL /F1 9.4 Tf 0 0 0 rg (- ) Tj /F2 9.4 Tf (Evidence-bound report synthesis.) Tj /F1 9.4 Tf ( Moved research reports from fragile single-shot prompting to objective-first multi-pass) Tj T* 7 0 Td (synthesis with cohort-batch passes for large corpora, objective-independence and emergent-discovery passes, chunked) Tj T* (HTML fidelity/readiness gates, report-driven auto clips \(MediaConvert + GCP Transcoder fallback\), screener/chat corpus QA,) Tj T* (and editorial HTML preservation.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 40.56 267.44 cm
+q
+BT 1 0 0 1 10 25.4 Tm -7 0 Td 11.6 TL /F1 9.4 Tf 0 0 0 rg (- ) Tj /F2 9.4 Tf (LLM production reliability.) Tj /F1 9.4 Tf ( Hardened OpenAI/Gemini execution paths under release pressure: native fetch, uncompressed) Tj T* 7 0 Td (SDK responses, preserved auth headers, typed client options, runtime pinning, Cloudflare/401 handling, and preview) Tj T* (backports.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 40.56 242.74 cm
+q
+BT 1 0 0 1 10 13.8 Tm -7 0 Td 11.6 TL /F1 9.4 Tf 0 0 0 rg (- ) Tj /F2 9.4 Tf (Streaming and long tool work.) Tj /F1 9.4 Tf ( Owned SSE/WebSocket/MCP streamable-HTTP paths with heartbeats, abort-cleanup) Tj T* 7 0 Td (isolation, hard timeouts, run-ID propagation, and stream-boundary regression tests.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 40.56 206.44 cm
+q
+BT 1 0 0 1 10 25.4 Tm -7 0 Td 11.6 TL /F1 9.4 Tf 0 0 0 rg (- ) Tj /F2 9.4 Tf (Eval/release infrastructure.) Tj /F1 9.4 Tf ( Built dual-surface E2E harness \(291 cases: 168 SaaS + 123 CLI/MCP\), 7 L0-L6 gate profiles,) Tj T* 7 0 Td (preview SaaS/voice/share-link oracles, runtime evidence packets, trace correlation, p95 budgets, baseline ledger, and) Tj T* (notification loops.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 40.56 158.54 cm
+q
+BT 1 0 0 1 10 37 Tm -7 0 Td 11.6 TL /F1 9.4 Tf 0 0 0 rg (- ) Tj /F2 9.4 Tf (Realtime interview, avatar, and Report Voice Platform.) Tj /F1 9.4 Tf ( Worked across LiveKit rooms, Deepgram STT, TTS providers,) Tj T* 7 0 Td (Gemini/OpenAI LLM paths, and Tavus/SpatialReal avatar integration \(~200 ms barge-in\); shipped a dedicated report-voice) Tj T* (delivery runtime with streaming TTS, speculative follow-up turn-taking, VAD barge-in, voice-role training, and Cookiy-account) Tj T* (admin sessions.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 40.56 122.24 cm
+q
+BT 1 0 0 1 10 25.4 Tm -7 0 Td 11.6 TL /F1 9.4 Tf 0 0 0 rg (- ) Tj /F2 9.4 Tf (Agent-compatible auth and billing.) Tj /F1 9.4 Tf ( Hardened compact CLI tokens, OAuth/Bearer semantics, wallet-ledger idempotency,) Tj T* 7 0 Td (StripeEventLog webhook audit, pay-before-reveal report billing, post-queue debit linking, and minimum-disclosure tool) Tj T* (responses.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 40.56 97.54 cm
+q
+BT 1 0 0 1 10 13.8 Tm -7 0 Td 11.6 TL /F1 9.4 Tf 0 0 0 rg (- ) Tj /F2 9.4 Tf (Platform/release operations.) Tj /F1 9.4 Tf ( Supported Nginx gateway/deploy paths, cross-environment short-link routing, cookie isolation,) Tj T* 7 0 Td (preview/backport propagation, and Homebrew installer distribution.) Tj T* ET
+Q
+Q
+ 
+
+endstream
 endobj
 15 0 obj
 <<
-/A <<
-/S /URI /Type /Action /URI (https://d3f4e9lehnan57.cloudfront.net/#research)
->> /Border [ 0 0 0 ] /Rect [ 164.7448 499.66 225.873 510.94 ] /Subtype /Link /Type /Annot
+/F1 16 0 R
+/F2 17 0 R
 >>
 endobj
 16 0 obj
 <<
-/Annots [ 14 0 R 15 0 R ] /Contents 21 0 R /MediaBox [ 0 0 612 792 ] /Parent 19 0 R /Resources <<
-/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
->> /Rotate 0 
-  /Trans <<
-
->> /Type /Page
+/BaseFont /Helvetica
+/Encoding /WinAnsiEncoding
+/Name /F1
+/Subtype /Type1
+/Type /Font
 >>
 endobj
 17 0 obj
 <<
-/PageMode /UseNone /Pages 19 0 R /Type /Catalog
+/BaseFont /Helvetica-Bold
+/Encoding /WinAnsiEncoding
+/Name /F2
+/Subtype /Type1
+/Type /Font
 >>
 endobj
 18 0 obj
 <<
-/Author (Yupeng Lu) /CreationDate (D:20260709190331+08'00') /Creator (\(unspecified\)) /Keywords (AI Agent Engineer, AI Agent Infrastructure, MCP, Model Context Protocol, tool-use, developer tools, OpenAI Apps, structured tool outputs, evals, release gates, trace evidence, report synthesis, Report Voice Platform, streaming TTS, TypeScript, Python, NestJS, FastAPI, AWS, SSE, WebSocket, LiveKit, OAuth, Stripe, Quant, IBKR) /ModDate (D:20260709190331+08'00') /Producer (ReportLab PDF Library - \(opensource\)) 
-  /Subject (Resume - AI Agent Engineer) /Title (Yupeng Lu - AI Agent Engineer) /Trapped /False
+/Annots [ 19 0 R 20 0 R ]
+/Contents 21 0 R
+/MediaBox [ 0 0 612 792 ]
+/Resources <<
+/Font 15 0 R
+/ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>>
+/Rotate 0
+/Trans <<
+>>
+/Type /Page
+/Parent 2 0 R
 >>
 endobj
 19 0 obj
 <<
-/Count 2 /Kids [ 13 0 R 16 0 R ] /Type /Pages
+/A <<
+/S /URI
+/Type /Action
+/URI (https\072\057\057getdatelove\056com)
+>>
+/Border [ 0 0 0 ]
+/Rect [ 239.6332 712.66 295.018 723.94 ]
+/Subtype /Link
+/Type /Annot
 >>
 endobj
 20 0 obj
 <<
-/Filter [ /ASCII85Decode /FlateDecode ] /Length 3686
+/A <<
+/S /URI
+/Type /Action
+/URI (https\072\057\057d3f4e9lehnan57\056cloudfront\056net\057\043research)
 >>
-stream
-GauHM?$G$]&q/*0Qq)APUe",-8+NsGj%[1oCY)J<m@LsU,V5W9#mM[BC<rLNp:UQWkeiS62JJ?p99qhN0_`k`$cFD'Isq2M8r;EMW:s)[r.&DRj:C#Hc*$8>p?M6"^DT'$gi,fZIcq7HGQcoKp)C>_KnoVE5!56BY(6EVcP?(tVSF:brNIC'qcQT?5?58<(3EQ)6aND!p,@$##@QNZnb:_r_8,FsMn?e:In$gB\f6[u:?m@W)S7mOhfHgXP<TJ\AEYs,I@S`f1o\Q,<mmNi<6T:[8)J#1Eh*s!'MF^TOe4.8ADBVf4jB\A]tPGoOaBAY$mpdTjFuVK\\lg>d.cemrMtnT&ECIGOF5sYK9/tVcuTH.AC,dgckPMlrl?)g7dFL]Z01gNhTdg)j<HW+ko&$8%6\nlnGN.WH;)(<5R<!k4(a!\LAj/;O4d9Ai!,_!/lK<",h5eicL[.hHt]-a5pr]q8QB<n58L4pM&Y^/k4::*F93lU0eZ4iW9cgi.cUh^.dO2fc^^eO`e.*4F):6r3Yp2YmfnDabDc1qr(tZ&8XkLea(&5ME`pY("O6MBI/GS.CR3)=.<Ho"hm_*>US8!-DV)8f-^`e@\Y+];d.LUHqL/?1]<AgMe\H)RgimPIkh"a6&W\<'TZPsA-(QWtLb>ueb+pjue\3)L-o_plW2l=5ANR*AK'Pb0I(X+#g<`Tl+0VlomXAn<34S)Na>[mhoRsFJoa5fDs4Ib@i@0JZ8tb.rqUdl.^]jRt:^3UTBVfFk7-epY>jY*'M(GO7!609.'2dV%PL@*A8W5=kF]9)2-Cn"OFBh82_HUG]-rrbce)E5jTAT?7XV1q,.FM@56rXr"PZRHE7<E^"fd>lmY,a)h7S.uUIWa<o*`S;!XGYH)H,Yu>P'geoN20qg6Pjf\GdXVX69Oer?2_kU>"+TlRugDpeX7u=Ih=7Ke:"'`0G_:d(@NSVLf3f^M%kXp>l*YZh)u\TL9gajm2cAaS%.<V,M;D([o\pZFF/4Qo?X0>O4N.FMc^aTK69\3WNV7X8f3@tLK<Ja]^pnEd!i8Fo=i764m(!MUIO2]DJmh/jY`Sga2P'P)9?G1,7>qoZm89qqri>YE]Qg!3Xpirs1f]XrLHhJ>Qm5'FYa>GPG4`A6r^DoCNV1X_+Oqd2-]un[W?HkD8tceV^PUQ$6i>LWAqnc0H>67kBA5"13U?n5MXIAg9VU,'0rgRb@omiUWHjQbA<HeBk11LEl%2gdQ9WgQDaX+jj5E+p)MQK'eG_K3L,lX4=\Gs:hrSSO9?YQXosAaR7Fg)Y=;!Y;Ip3*:3Y*=,d(5j:MC<=W,,lsVn7lOX9[^*cm*U/W]?1/AEPAlrP5!%&Zga4G;KX3gK9MFMoP`#dbtarp^<3R)@iIYWB0l<ClD%Elj9r"M`kVZA`lIZ4In',:-B>tXE&1`Z&X-8Fm(Z8pU0@s[9aZ\cK8:I34Qp[^gP!lLu_FWE-;Q&R\jHiqtB%;o&@:QMkeJhf<++l'R_YQFUhs&GPTg5qt93-j.3]TD&/XWrLd1r<t66m?O+"n(_>5AX5A0;S_"Yg=2X0>("Nkl>#=..fFH`C8DCK#;up_nP932Ua;'-u*m4%SWh4id(FHnh8Wb&%2tT2t]%9ur=>&0h3(QnZV-&eeHdc/e>^?dQ<Rr.41?cfSUlBBg7_fnXF]Co>NJO"KDJO*n=GtgC'qKT?gmhC+ZI^O+j.W]71no.r#>A)5>H\c*>!"1E#VLF_D'Cl8fYBpcWi4!,?7^6p\dbA\P0M=0J*IJ*C06]mZ[i(e]drHrNBEfJDM]oSUtAXU:T&R;hkQ1a<*?1uFCYkHF.:F4*Kf1gobd,5qGctGHF^T^o>VD)pW=0ZfY"\R,OY.c]Ydbd)7%3X=@0PDs7.6P[mF_s:[Kj'%@b*/h<_#jA;;3pU>d*^B:Vbi0'lZQU(h0=5Z"/YBTohaLSh6f/RiI!*,;Q[D.tM=@Vt@jB%Z]:/c3*sk*k54CaP*Gn9JKN-`]1%SAg%d(Jn=5"0/s>gjgj?4MbtmePnq0A;9MP_WM]"77kIhKSm'm<uX$g/B-1QClkqW)Q0s@'V!4P\Ie(jc>U-'rR%k@k[0a_H]Mcc&ph_`.$h/K7/[hgB#g2pD74[VWEL-c!5ijpgMIb":h04UOGIEBbZQa`D%6/?nsk&_]iD#A>`)%jG.c<aa7^,TAoHs8mFHWlLSn7sgu01m0YCX3:GWp+n4uXIX?JHsQ"oZ4Q;J>J73`JbSt+\0LYIG2ARr+a_)fOelg;etQr5*\-#r`AEs[hgNf6u[E(2=thW=U(]pn+DlIce5``X+X<JX/uFrX7hU8%r24*H0D"_e%87]-"o;2cp+0RX(OgDXSFQDcWONYj09=jVOb^BSTN5Z]o-8$h[W&'/d@oHh&_GkmY6:Yr;B%_M.65>fcj2ME4a;b/WQR7N,1@'a&A(W=nrT92dRpSJ7m<Dk:o(Idl<O1$4YP:Dn1h^+S.k+]e_4C/fS;Bu<<']0fs+\juY='7)J>BNm,lq?)Oi@c$qm(oclGtpZ4MXNDag[JWpI0H$s,qD,>]n"<u.&:^QD(Bd=K68p^<S=`bqK-`eH3lDh9OH6*krf/lAjh@Wm57d?WLpo@@4X0sI7V\iS2YuDoDR@r]@`K:<c+'laG,q#f$0slX3b:l"N0p2fJ[/A"8>;7F*2W=Gmah#Tg[]NpTWaHgTt`1\a7"rWQGps?Y!]d[+69"pZuHYD,bbP&5)be)D?=g!W+<8E=_1bT8V_$h7$'M^8>@uRT-P5J-D_p0XO@,ElBM*?Ug.&3<VgYYmItHXp]YBd8bQ)ElfB[jt?bTg.u-pDKG-u4@!Y>i$]q)i(roEdh43+\]AN"ZIPi<Y&_kh9W&]?+6@mm6<;Z-8NVpI.GjkSS)$!\fE+GF9f\PlSX#Qus!*&Z<V\6YWmF=IY1^#k-WX;[SRq!T*HMIWWu5AhdB;ak%Vis$c58?!:iF)lXkrPCUA>%@A*<KncQRY@=s%558gI0\k4tgg=g72]kp2Yk'_,JpC\!6jRL1d'8GGL.?313/(5<E,H-XseM@JaK[Th'_CX#.,8'db0H3G(IF[Lp"7^dNK`,;'7]qCGq#.nCrSCh/#76V#l?H!<Lr>]ftK;:opPO0m7P>%aXEdM;T'!:c#)#<.#]/TMRrTd49`9qU35"S!_KkW0<p7:[G@.tlQKuKdp_H.;>DrD@geg[4:i07X#;OYmCV_jl;)&LSsGn*M"E4'>m,cd287!1=BnQ6O>.3Bd&_P&ong?9@GR1qdZ2=N_#@1]rZTp'p$jpgk*4%kojDi:a(BY1Z^iU=#0Y%>4LMnL_"U([fcO7&3!J!3?,FTRKb<&oN]R8\tJX)pRr^$>`5%\&L+I*OK6AXs[hLKR,8&^%RfGHVjAi@n]`pc(?e@,Ig)=/]MR7C.8$C"n4;c^stinl!f>O%$Hr\!@pdelN2sTn[5_)^iTP^2bZn\loBp898(2jAsSD!j,M6]RY2SYOmF<jEue(,-[Gq6o]%l<YZq+'PT[4GC%DS;*(="=g<[QK;DiD*?NG=Zq@ID8MkWggBfoK\fQ,*PKE#R_1$+%C9+QP<ke14eDFmtVcD$s#9)LY2"QWj`@%qU_;-D`eJ=K'>=W:db31Cas.s0&U/aR5p1*\-0ioM5?&(J6WkGj95OVSoF=QGX_Q0u:AB<#eZf*sEo]lI19RW'~>endstream
+/Border [ 0 0 0 ]
+/Rect [ 164.7448 499.66 225.873 510.94 ]
+/Subtype /Link
+/Type /Annot
+>>
 endobj
 21 0 obj
 <<
-/Filter [ /ASCII85Decode /FlateDecode ] /Length 2357
+/Filter [ /ASCII85Decode /FlateDecode ]
+/Length 2357
 >>
 stream
-Gatm<>C5,7&UjDWR&AN;-/N`dp.:S;`*"Hg/@kWdOe@Ap,e*h&8,i5&pC'L4Ncl@"XX/Im#_M!&1G`YJ%Oo1PXH.?rFKltg3i"I(77q"GldOjZXqiD"T7kJ5Ic(Zi2!PUbE?C8"%\<t;b=#Z-Mk%Z2)tTj(F[YELLfXuLY?B9;r6kajBs(D/,`JP"@\jD\%J^][SaM4h1HMLE7s@a_2#j5f='GNc;1-4S:Ioe!YLaoeHM*&RcXui5aO!"]ODO16)qLlq/]N-`/XI.T;',d&MLp<fkmtAUQ6sRCB$tj93ba3\7PBjTW&KOXabrX)?p#cS3#_O<+l0mt.4@;CpOZ6q!h^YS:eoC<PRkdYF[ksIgc]8WAp:ap2[$bkn(GAg:3=ZQ\5\rfN6W]Z[;[D+Q(gf[6E5!n"Jr]HV<Q]3(KML1B\4sWp/RfV&l*<)3teNFKBud,V(,L[@m1BJ/kmnqX8CSAO],8U7Ta<-5\4I2M^5Tm3#"""d]uc=,JYF-8g><^>!MhT=CQX69*^[AXkq-FmYdne/F7'..U<$O@4Pa>O*N=;)NKU0H/kk%ZEG,V?RUCmoq)-M#a6#1STa7l[VN<oCS7'ID%Y[\;5m0U+gN][.O6-g\OeEF0kW,F$ok/X`JBJuBYN&o9"4GggmULl05O!,XT_.G+F$#D6msaf%=Dc'$KK:rmFrlE2\TFLMg.mod0LJ?Pq!%\mfd6+#oQ3=oG3,(3DokU?7*hk^P_Y\+;?^f=.:crbRRo':+!:dJ#9>P)*._;926=hVIZOVW0hYn.`3MH>:E7YV@Ra:l9nOIoj_!FBO2&;#l@X.-2@M-NN[Yb,qa?<.#n7((6>K"1qiFWQc*e<D;M7;S?im;]P,tn:iGD(hC`8D`ASl2fM-anK:np9Zf;V%%apU0cjO,"qFrU*Cn@CATd$/)/$RHsN<Xf1BZD+<`-*K5@rgS:N$!3(3_Y5,)397<VjX]NCSM8rJu;`u[SKAperC07:KU1=;(p%u]t^)nqk[./JQP9m4%N(-Iuq\?s34n0n:L1L#bb?_0puFJMWJ/D&.(lVL7#7q9IP6iQdD?V/:f_!S;PJueFAS?_52+t\,t6dN9Eq]U<_CFCaR)g_E,3A'J<_`/b[$;i./*!aj'L5n*cbjaWg$G%/1ZHau_SH;9Eh(J=S`'-^N-F")_@*8Xdh1/%($$OVdr!-2C1[$:bIKP1m(@FY^Gu0A$XI7kL7rm_2B(_18BmhQ@nq9!^%b?$$7u!`7YK+^mUXclWJEl&=X?P\6q@?.[G3)`fkd*BWeaX(h3dCb27HL0^:cM:td``81sY>l8nD9DFedZk70a,<ohXr*Efnqk(:!/;M6=KX.!sG??+&G.lDB,d#@I/qn5;9/elrc3Cht$m7AQWXP4p.oPW#nl4A?QD.?c##_pp_YHYZ<=V;8a65*[[jmS&I+e'oR?g<0MU*n.33\CC8ueM@<@0fJqUG#shbEQ1)H.=HD6H*Z"N@<TMMhS5)5hAg)8'i_'.?]W/XY7M:(mXlC__`Z>Os+#@(K!>?Y7.7MBudX3EFWcmMPa7(H;`%=a^hpGrHN.59e7]SQ-]])Wg$79.5;r*aLglX63[_3l(6tm:KNI#F:i*QoQBAL4f:7I>IMIhNLpc**rqHC87ss*dOO\Wjdua?9%AJQ]8Xdh;!bFJ_(9VqgkO1p(d%CP(2-HmRub->C9Cgg*j"f.T:6^Y._*A,Q*X38%g4kB%+KA#:VF;maUMMBo9HeRhp7@58BSimV7c3M;H2PJp_$OW>/L.lO$tE3kGY]Fri_rhpA(IZRVq(fkG\SfBKu3$+:@P4"hm1hj.JGmeMIH.Psl$hK;8*gq8iP`/dbel6P+TZoA-SUhe5:r[9mN`BRX!5#gN5.U'o<?0Ftc'\_HZf^"*]f`PM(6S_s0mAf"bL52jY];j9][)7Xe&%[kf/')R[!i^S]!SPH\e=W>'0cRhm2[4t,Tr+bD()o(tT<J+-'ql28.>3`9JQhVf)h?8_boLmNVd*`8VHIGZWF_7e$ti+F<mY`jOf0!Sc1D[V@J)"YICR&J90e7r//C%-p4OGd\&^R_"L$j%dhVS(Uo^\/HROU2LRuElLA6_kpjDG:BZFArhV(gCmJ[Q7H?K$;SLe[H5.A9!V+HH[T5a\f$0^:Fe`t*%F&^E"K.$l1(B*>e6$Q5<T2((J2!W/rLB=F_@So;#oZ<SLoEfOhF1<u;Ki!IO5j7,#(T.]Dnbm8j4`</pZ*SWq*d2=;O;(WaQ^->"c^uI@Z`HW;VrMp5$\S.aEKsN@S7F.'Rp5%mD7[_FYbT#XD17qr"cD9p>+p/?)rg<7^$m?ic.6+BBsHi=bkZW87IbRp[n)o3E-1YhjRkYM~>endstream
+Gatm<>C5,7&UjDWR&AN;-/N`dp.:S;`*"Hg/@kWdOe@Ap,e*h&8,i5&pC'L4Ncl@"XX/Im#_M!&1G`YJ%Oo1PXH.?rFKltg3i"I(77q"GldOjZXqiD"T7kJ5Ic(Zi2!PUbE?C8"%\<t;b=#Z-Mk%Z2)tTj(F[YELLfXuLY?B9;r6kajBs(D/,`JP"@\jD\%J^][SaM4h1HMLE7s@a_2#j5f='GNc;1-4S:Ioe!YLaoeHM*&RcXui5aO!"]ODO16)qLlq/]N-`/XI.T;',d&MLp<fkmtAUQ6sRCB$tj93ba3\7PBjTW&KOXabrX)?p#cS3#_O<+l0mt.4@;CpOZ6q!h^YS:eoC<PRkdYF[ksIgc]8WAp:ap2[$bkn(GAg:3=ZQ\5\rfN6W]Z[;[D+Q(gf[6E5!n"Jr]HV<Q]3(KML1B\4sWp/RfV&l*<)3teNFKBud,V(,L[@m1BJ/kmnqX8CSAO],8U7Ta<-5\4I2M^5Tm3#"""d]uc=,JYF-8g><^>!MhT=CQX69*^[AXkq-FmYdne/F7'..U<$O@4Pa>O*N=;)NKU0H/kk%ZEG,V?RUCmoq)-M#a6#1STa7l[VN<oCS7'ID%Y[\;5m0U+gN][.O6-g\OeEF0kW,F$ok/X`JBJuBYN&o9"4GggmULl05O!,XT_.G+F$#D6msaf%=Dc'$KK:rmFrlE2\TFLMg.mod0LJ?Pq!%\mfd6+#oQ3=oG3,(3DokU?7*hk^P_Y\+;?^f=.:crbRRo':+!:dJ#9>P)*._;926=hVIZOVW0hYn.`3MH>:E7YV@Ra:l9nOIoj_!FBO2&;#l@X.-2@M-NN[Yb,qa?<.#n7((6>K"1qiFWQc*e<D;M7;S?im;]P,tn:iGD(hC`8D`ASl2fM-anK:np9Zf;V%%apU0cjO,"qFrU*Cn@CATd$/)/$RHsN<Xf1BZD+<`-*K5@rgS:N$!3(3_Y5,)397<VjX]NCSM8rJu;`u[SKAperC07:KU1=;(p%u]t^)nqk[./JQP9m4%N(-Iuq\?s34n0n:L1L#bb?_0puFJMWJ/D&.(lVL7#7q9IP6iQdD?V/:f_!S;PJueFAS?_52+t\,t6dN9Eq]U<_CFCaR)g_E,3A'J<_`/b[$;i./*!aj'L5n*cbjaWg$G%/1ZHau_SH;9Eh(J=S`'-^N-F")_@*8Xdh1/%($$OVdr!-2C1[$:bIKP1m(@FY^Gu0A$XI7kL7rm_2B(_18BmhQ@nq9!^%b?$$7u!`7YK+^mUXclWJEl&=X?P\6q@?.[G3)`fkd*BWeaX(h3dCb27HL0^:cM:td``81sY>l8nD9DFedZk70a,<ohXr*Efnqk(:!/;M6=KX.!sG??+&G.lDB,d#@I/qn5;9/elrc3Cht$m7AQWXP4p.oPW#nl4A?QD.?c##_pp_YHYZ<=V;8a65*[[jmS&I+e'oR?g<0MU*n.33\CC8ueM@<@0fJqUG#shbEQ1)H.=HD6H*Z"N@<TMMhS5)5hAg)8'i_'.?]W/XY7M:(mXlC__`Z>Os+#@(K!>?Y7.7MBudX3EFWcmMPa7(H;`%=a^hpGrHN.59e7]SQ-]])Wg$79.5;r*aLglX63[_3l(6tm:KNI#F:i*QoQBAL4f:7I>IMIhNLpc**rqHC87ss*dOO\Wjdua?9%AJQ]8Xdh;!bFJ_(9VqgkO1p(d%CP(2-HmRub->C9Cgg*j"f.T:6^Y._*A,Q*X38%g4kB%+KA#:VF;maUMMBo9HeRhp7@58BSimV7c3M;H2PJp_$OW>/L.lO$tE3kGY]Fri_rhpA(IZRVq(fkG\SfBKu3$+:@P4"hm1hj.JGmeMIH.Psl$hK;8*gq8iP`/dbel6P+TZoA-SUhe5:r[9mN`BRX!5#gN5.U'o<?0Ftc'\_HZf^"*]f`PM(6S_s0mAf"bL52jY];j9][)7Xe&%[kf/')R[!i^S]!SPH\e=W>'0cRhm2[4t,Tr+bD()o(tT<J+-'ql28.>3`9JQhVf)h?8_boLmNVd*`8VHIGZWF_7e$ti+F<mY`jOf0!Sc1D[V@J)"YICR&J90e7r//C%-p4OGd\&^R_"L$j%dhVS(Uo^\/HROU2LRuElLA6_kpjDG:BZFArhV(gCmJ[Q7H?K$;SLe[H5.A9!V+HH[T5a\f$0^:Fe`t*%F&^E"K.$l1(B*>e6$Q5<T2((J2!W/rLB=F_@So;#oZ<SLoEfOhF1<u;Ki!IO5j7,#(T.]Dnbm8j4`</pZ*SWq*d2=;O;(WaQ^->"c^uI@Z`HW;VrMp5$\S.aEKsN@S7F.'Rp5%mD7[_FYbT#XD17qr"cD9p>+p/?)rg<7^$m?ic.6+BBsHi=bkZW87IbRp[n)o3E-1YhjRkYM~>
+endstream
 endobj
 xref
 0 22
 0000000000 65535 f 
-0000000061 00000 n 
-0000000102 00000 n 
-0000000209 00000 n 
-0000000321 00000 n 
-0000000494 00000 n 
-0000000689 00000 n 
-0000000866 00000 n 
-0000001041 00000 n 
-0000001236 00000 n 
-0000001422 00000 n 
-0000001610 00000 n 
-0000001798 00000 n 
-0000001981 00000 n 
-0000002246 00000 n 
-0000002417 00000 n 
-0000002612 00000 n 
-0000002834 00000 n 
-0000002904 00000 n 
-0000003533 00000 n 
-0000003601 00000 n 
-0000007379 00000 n 
+0000000015 00000 n 
+0000000764 00000 n 
+0000000830 00000 n 
+0000000879 00000 n 
+0000001140 00000 n 
+0000001322 00000 n 
+0000001547 00000 n 
+0000001737 00000 n 
+0000001931 00000 n 
+0000002153 00000 n 
+0000002364 00000 n 
+0000002576 00000 n 
+0000002788 00000 n 
+0000002992 00000 n 
+0000011747 00000 n 
+0000011791 00000 n 
+0000011899 00000 n 
+0000012012 00000 n 
+0000012230 00000 n 
+0000012413 00000 n 
+0000012629 00000 n 
 trailer
 <<
-/ID 
-[<ac1482737c7be60043e29c527376dc50><ac1482737c7be60043e29c527376dc50>]
-% ReportLab generated PDF document -- digest (opensource)
-
-/Info 18 0 R
-/Root 17 0 R
 /Size 22
+/Root 3 0 R
+/Info 1 0 R
 >>
 startxref
-9828
+15079
 %%EOF
