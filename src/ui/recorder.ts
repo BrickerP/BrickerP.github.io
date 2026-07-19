@@ -21,6 +21,9 @@ export interface RecordingResult {
   blobSize: number;
   trackCount: number;
   tracksStopped: number;
+  renderCallbackCount: number;
+  renderCallbackAverageFps: number;
+  maxRenderCallbackGapSeconds: number;
   error?: string;
 }
 
@@ -55,6 +58,9 @@ export class LoopRecorder {
   private failureMessage: string | undefined;
   private onDone: ((result: RecordingResult) => void) | null = null;
   private lastTick: RecordingTick = frameTick(0, 0);
+  private renderCallbackCount = 0;
+  private lastRenderCallbackTime = 0;
+  private maxRenderCallbackGapSeconds = 0;
   private finalized = false;
 
   get active(): boolean {
@@ -129,6 +135,9 @@ export class LoopRecorder {
     this.failureMessage = undefined;
     this.onDone = onDone;
     this.lastTick = frameTick(0, 0);
+    this.renderCallbackCount = 0;
+    this.lastRenderCallbackTime = 0;
+    this.maxRenderCallbackGapSeconds = 0;
     this.finalized = false;
 
     recorder.ondataavailable = (event) => {
@@ -143,6 +152,7 @@ export class LoopRecorder {
 
     try {
       this.startTime = performance.now();
+      this.lastRenderCallbackTime = this.startTime;
       recorder.start();
     } catch (error) {
       recorder.ondataavailable = null;
@@ -211,6 +221,13 @@ export class LoopRecorder {
       this.stop('failed');
       return;
     }
+    const renderCallbackTime = performance.now();
+    this.renderCallbackCount += 1;
+    this.maxRenderCallbackGapSeconds = Math.max(
+      this.maxRenderCallbackGapSeconds,
+      (renderCallbackTime - this.lastRenderCallbackTime) / 1000,
+    );
+    this.lastRenderCallbackTime = renderCallbackTime;
 
     if (elapsedSeconds >= DRIVE.duration) {
       // Reaching the terminal frame is not yet proof of a completed recording.
@@ -265,6 +282,10 @@ export class LoopRecorder {
     }
     const trackResult = stopStreamTracks(this.stream);
     const done = this.onDone;
+    const renderCallbackWindowSeconds = Math.max(
+      0,
+      (this.lastRenderCallbackTime - this.startTime) / 1000,
+    );
     const result: RecordingResult = {
       status,
       elapsedSeconds,
@@ -274,6 +295,12 @@ export class LoopRecorder {
       blobSize: blob.size,
       trackCount: trackResult.trackCount,
       tracksStopped: trackResult.tracksStopped,
+      renderCallbackCount: this.renderCallbackCount,
+      renderCallbackAverageFps:
+        renderCallbackWindowSeconds > 0
+          ? this.renderCallbackCount / renderCallbackWindowSeconds
+          : 0,
+      maxRenderCallbackGapSeconds: this.maxRenderCallbackGapSeconds,
       ...(this.failureMessage ? { error: this.failureMessage } : {}),
     };
 

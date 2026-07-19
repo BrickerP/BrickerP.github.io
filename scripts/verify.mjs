@@ -2383,6 +2383,12 @@ assert.equal(
 reports['recorder-runtime-error'] = { trackStopped: true, playbackRestored: true };
 await recorderErrorContext.close();
 
+// The preceding fault-injection matrix creates many short-lived contexts and
+// media pipelines. Isolate the real 48-second recording in a fresh browser so
+// its render-throughput measurement does not inherit harness resource pressure.
+await browser.close();
+browser = await launchBrowser();
+
 // Real 48-second capture regression. A 1.2-second main-thread stall must not
 // shorten the scene traversal: the next frame catches up from wall time, the
 // final non-duplicate frame is 2879/60s, and the UI returns to the exact seam.
@@ -2445,6 +2451,20 @@ assert.equal(
   0,
   'capture material mode left point lights visible',
 );
+assert.ok(
+  activeCapturePerformance.staticSceneObjectCount > 2_000,
+  `static scene object count is unexpectedly low: ${activeCapturePerformance.staticSceneObjectCount}`,
+);
+assert.equal(
+  activeCapturePerformance.sceneMatrixWorldAutoUpdate,
+  false,
+  'static scene world matrices are still recomputed automatically',
+);
+assert.equal(
+  activeCapturePerformance.matrixWorldDirtyCount,
+  0,
+  'static scene contains dirty world matrices before recording',
+);
 assert.deepEqual(
   await recordingPage.locator('canvas').evaluate((canvas) => [canvas.width, canvas.height]),
   [320, 180],
@@ -2484,6 +2504,12 @@ assert.deepEqual(
   await recordingPage.locator('canvas').evaluate((canvas) => [canvas.width, canvas.height]),
   [320, 180],
   'desktop viewport restore changed the active capture track dimensions',
+);
+await recordingPage.keyboard.press('d');
+assert.equal(
+  await recordingPage.locator('.ui-debug').isVisible(),
+  false,
+  'debug telemetry remains open during recorder throughput measurement',
 );
 
 await recordingPage.waitForTimeout(900);
@@ -2544,6 +2570,18 @@ assert.equal(
   recordingResult.trackCount,
   'normal completion leaked a media stream track',
 );
+assert.ok(
+  recordingResult.renderCallbackAverageFps >= 28,
+  `recorder render callback throughput ${recordingResult.renderCallbackAverageFps.toFixed(3)}fps is below 28fps`,
+);
+assert.ok(
+  recordingResult.renderCallbackCount > 0,
+  'recorder did not report any successful rAF render callbacks',
+);
+assert.ok(
+  recordingResult.maxRenderCallbackGapSeconds >= 1.2,
+  `recorder did not observe the injected stall: ${recordingResult.maxRenderCallbackGapSeconds.toFixed(3)}s`,
+);
 assert.equal(completedRecording.state.playing, false, 'recording restores previous paused state');
 assert.ok(Math.abs(completedRecording.state.phase) < 1e-10, 'recording returns to the exact seam');
 assert.equal(
@@ -2603,12 +2641,6 @@ assert.ok(
   webmTimeline.lastTimestampSeconds >= 47.9 && webmTimeline.lastTimestampSeconds <= 48.3,
   `downloaded WebM ends at ${webmTimeline.lastTimestampSeconds.toFixed(3)}s instead of one loop`,
 );
-// captureStream(60) is still requested; software-GL CI may only deliver ~30
-// encoded blocks/sec while keeping the 48s timeline intact.
-assert.ok(
-  webmTimeline.averageFps >= 28 && webmTimeline.averageFps <= 65,
-  `downloaded WebM block rate ${webmTimeline.averageFps.toFixed(3)}fps is outside 28–65fps`,
-);
 reports['recording-stall'] = {
   elapsedSeconds: recordingResult.elapsedSeconds,
   finalFrameIndex: recordingResult.finalFrameIndex,
@@ -2616,6 +2648,9 @@ reports['recording-stall'] = {
   blobSize: recordingResult.blobSize,
   tracksStopped: recordingResult.tracksStopped,
   trackCount: recordingResult.trackCount,
+  renderCallbackCount: recordingResult.renderCallbackCount,
+  renderCallbackAverageFps: recordingResult.renderCallbackAverageFps,
+  maxRenderCallbackGapSeconds: recordingResult.maxRenderCallbackGapSeconds,
   restoredPhase: completedRecording.state.phase,
   combinedOverlaySafe: ['desktop-900', 'mobile-320'],
   terminalFrameRequests: completedRecording.terminalFrameRequests,
