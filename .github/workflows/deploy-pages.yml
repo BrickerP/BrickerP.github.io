@@ -34,10 +34,16 @@ jobs:
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
+      - name: Verify source
+        run: npm run verify
+
       - name: Build
         run: npm run build
         env:
           VITE_BASE: /
+
+      - name: Verify bundle budget
+        run: npm run verify:bundle
 
       - name: Install QA browser
         run: npx playwright install --with-deps chromium

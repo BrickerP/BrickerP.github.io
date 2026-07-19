@@ -12,7 +12,9 @@
     "verify": "npm run verify:geometry && npm run typecheck",
     "verify:geometry": "node scripts/geometry-check.mjs",
     "verify:browser": "node scripts/verify.mjs",
-    "verify:seam": "node scripts/seam-check.mjs"
+    "verify:seam": "node scripts/seam-check.mjs",
+    "verify:performance": "node scripts/performance-check.mjs",
+    "verify:bundle": "node scripts/bundle-budget.mjs"
   },
   "dependencies": {
     "three": "0.185.1"
