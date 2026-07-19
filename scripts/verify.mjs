@@ -379,11 +379,70 @@ async function launchBrowser() {
   }
 }
 
-async function waitForExperience(page) {
-  await page.goto(URL, { waitUntil: 'networkidle' });
-  await page.waitForSelector('canvas');
-  await page.waitForFunction(() => Boolean(window.__BEIJING_LOOP_TEST__));
-  await page.waitForTimeout(80);
+async function waitForExperience(
+  page,
+  label = 'experience',
+  runtimeErrors = [],
+  { suppressScreenshot = false } = {},
+) {
+  try {
+    await page.goto(URL, { waitUntil: 'networkidle' });
+    await page.waitForSelector('canvas, .boot.error', { state: 'visible', timeout: 30_000 });
+
+    const bootError = page.locator('.boot.error');
+    if (await bootError.isVisible()) {
+      const bootText = ((await bootError.textContent()) ?? '').trim();
+      throw new Error(`${label}: boot error: ${bootText || '(empty boot error)'}`);
+    }
+
+    await page.waitForFunction(() => Boolean(window.__BEIJING_LOOP_TEST__), undefined, {
+      timeout: 30_000,
+    });
+    await page.waitForTimeout(80);
+  } catch (cause) {
+    const inspect = async (callback, fallback) => {
+      try {
+        return await callback();
+      } catch {
+        return fallback;
+      }
+    };
+    const safeLabel = label.replace(/[^a-z0-9._-]+/gi, '-').replace(/^-+|-+$/g, '') || 'experience';
+    const diagnostics = {
+      label,
+      url: page.url(),
+      readyState: await inspect(() => page.evaluate(() => document.readyState), 'unavailable'),
+      bootClass: await inspect(
+        () => page.locator('.boot').first().getAttribute('class'),
+        null,
+      ),
+      bootText: await inspect(
+        async () => ((await page.locator('.boot').first().textContent()) ?? '').trim(),
+        '',
+      ),
+      canvasCount: await inspect(() => page.locator('canvas').count(), -1),
+      hook: await inspect(
+        () => page.evaluate(() => Boolean(window.__BEIJING_LOOP_TEST__)),
+        false,
+      ),
+      body: await inspect(
+        () => page.evaluate(() => (document.body?.innerText ?? '').slice(0, 1000)),
+        '',
+      ),
+      runtimeErrors: runtimeErrors.filter((entry) => entry.startsWith(`[${label}]`)),
+    };
+    if (!suppressScreenshot) {
+      await inspect(
+        () => page.screenshot({ path: `${OUT}/${safeLabel}-startup-failure.png`, fullPage: true }),
+        undefined,
+      );
+    }
+    throw new Error(
+      `${label}: startup failed: ${cause instanceof Error ? cause.message : String(cause)}\n` +
+        `diagnostics=${JSON.stringify(diagnostics)}`,
+      { cause },
+    );
+  }
 }
 
 async function waitForLiveMessage(page, regex, options = {}) {
@@ -639,7 +698,7 @@ async function runG003FocusedBrowserRegressions() {
     });
     const lowFpsPage = await lowFpsContext.newPage();
     attachRuntimeDiagnostics(lowFpsPage, 'g003-low-fps', runtimeErrors);
-    await waitForExperience(lowFpsPage);
+    await waitForExperience(lowFpsPage, 'g003-low-fps', runtimeErrors);
 
     const runVisibleFrame = async (milliseconds) => {
       await seek(lowFpsPage, 0);
@@ -753,7 +812,7 @@ async function runG003FocusedBrowserRegressions() {
     });
     const posterPage = await posterContext.newPage();
     attachRuntimeDiagnostics(posterPage, 'g003-reduced-poster', runtimeErrors);
-    await waitForExperience(posterPage);
+    await waitForExperience(posterPage, 'g003-reduced-poster', runtimeErrors);
     const posterReport = await canvasReport(posterPage);
     if (focusedCase === 'all' || focusedCase === 'poster') {
       assertFirstPersonFrame(posterReport, 'reduced-motion portrait poster');
@@ -779,7 +838,7 @@ if (process.env.G003_FOCUSED === '1') {
 }
 await runG003FocusedBrowserRegressions();
 
-const browser = await launchBrowser();
+let browser = await launchBrowser();
 const reports = {};
 const runtimeErrors = [];
 
@@ -792,7 +851,7 @@ for (const viewport of viewports) {
   });
   const page = await context.newPage();
   attachRuntimeDiagnostics(page, viewport.name, runtimeErrors);
-  await waitForExperience(page);
+  await waitForExperience(page, viewport.name, runtimeErrors);
 
   const canvas = page.locator('canvas');
   assert.equal(await canvas.count(), 1, `${viewport.name}: expected one renderer canvas`);
@@ -976,6 +1035,12 @@ for (const viewport of viewports) {
   await context.close();
 }
 
+// The full DPR 1 visual matrix creates hundreds of WebGL render targets over
+// several minutes. Start DPR 2 in a fresh Chromium/GPU process so its smoke
+// checks do not inherit driver/resource pressure from the capture matrix.
+await browser.close();
+browser = await launchBrowser();
+
 // DPR 2 smoke matrix: verify the responsive CSS viewport and the renderer's
 // bounded backing-store ratio without repeating the 5 x 12 visual captures.
 const dpr2Reports = {};
@@ -987,50 +1052,53 @@ for (const viewport of viewports) {
     isMobile: Boolean(viewport.mobile),
     hasTouch: Boolean(viewport.mobile),
   });
-  const page = await context.newPage();
-  attachRuntimeDiagnostics(page, label, runtimeErrors);
-  await waitForExperience(page);
+  try {
+    const page = await context.newPage();
+    attachRuntimeDiagnostics(page, label, runtimeErrors);
+    await waitForExperience(page, label, runtimeErrors);
 
-  const smoke = await page.evaluate(() => {
-    const canvas = document.querySelector('canvas');
-    const state = window.__BEIJING_LOOP_TEST__?.readState();
-    const canvasRect = canvas?.getBoundingClientRect();
-    return {
-      hook: Boolean(window.__BEIJING_LOOP_TEST__),
-      state,
-      viewport: [innerWidth, innerHeight],
-      canvasCss: [canvasRect?.width ?? 0, canvasRect?.height ?? 0],
-      canvasBacking: [canvas?.width ?? 0, canvas?.height ?? 0],
-      brandVisible: Boolean(document.querySelector('.ui-brand')?.getClientRects().length),
-      toolbarVisible: Boolean(document.querySelector('.ui-actions')?.getClientRects().length),
-      controlCount: document.querySelectorAll('[data-act]').length,
+    const smoke = await page.evaluate(() => {
+      const canvas = document.querySelector('canvas');
+      const state = window.__BEIJING_LOOP_TEST__?.readState();
+      const canvasRect = canvas?.getBoundingClientRect();
+      return {
+        hook: Boolean(window.__BEIJING_LOOP_TEST__),
+        state,
+        viewport: [innerWidth, innerHeight],
+        canvasCss: [canvasRect?.width ?? 0, canvasRect?.height ?? 0],
+        canvasBacking: [canvas?.width ?? 0, canvas?.height ?? 0],
+        brandVisible: Boolean(document.querySelector('.ui-brand')?.getClientRects().length),
+        toolbarVisible: Boolean(document.querySelector('.ui-actions')?.getClientRects().length),
+        controlCount: document.querySelectorAll('[data-act]').length,
+      };
+    });
+    const cappedRatio = viewport.mobile ? 1.35 : 1.8;
+    const expectedBacking = [viewport.width * cappedRatio, viewport.height * cappedRatio];
+    assert.equal(smoke.hook, true, `${label}: QA hook missing`);
+    assert.ok(
+      smoke.state && [smoke.state.progress, smoke.state.phase, smoke.state.angle].every(Number.isFinite),
+      `${label}: scene state is invalid`,
+    );
+    assert.deepEqual(smoke.viewport, [viewport.width, viewport.height], `${label}: CSS viewport`);
+    assert.deepEqual(smoke.canvasCss, [viewport.width, viewport.height], `${label}: canvas CSS size`);
+    assert.ok(
+      Math.abs(smoke.canvasBacking[0] - expectedBacking[0]) <= 1 &&
+        Math.abs(smoke.canvasBacking[1] - expectedBacking[1]) <= 1,
+      `${label}: canvas backing ${smoke.canvasBacking.join('x')} does not honor the ${cappedRatio} cap`,
+    );
+    assert.equal(smoke.brandVisible, true, `${label}: brand overlay hidden`);
+    assert.equal(smoke.toolbarVisible, true, `${label}: control overlay hidden`);
+    assert.equal(smoke.controlCount, 4, `${label}: expected four controls`);
+    dpr2Reports[label] = {
+      cssViewport: smoke.viewport,
+      canvasCss: smoke.canvasCss,
+      canvasBacking: smoke.canvasBacking,
+      cappedRatio,
+      controls: smoke.controlCount,
     };
-  });
-  const cappedRatio = viewport.mobile ? 1.35 : 1.8;
-  const expectedBacking = [viewport.width * cappedRatio, viewport.height * cappedRatio];
-  assert.equal(smoke.hook, true, `${label}: QA hook missing`);
-  assert.ok(
-    smoke.state && [smoke.state.progress, smoke.state.phase, smoke.state.angle].every(Number.isFinite),
-    `${label}: scene state is invalid`,
-  );
-  assert.deepEqual(smoke.viewport, [viewport.width, viewport.height], `${label}: CSS viewport`);
-  assert.deepEqual(smoke.canvasCss, [viewport.width, viewport.height], `${label}: canvas CSS size`);
-  assert.ok(
-    Math.abs(smoke.canvasBacking[0] - expectedBacking[0]) <= 1 &&
-      Math.abs(smoke.canvasBacking[1] - expectedBacking[1]) <= 1,
-    `${label}: canvas backing ${smoke.canvasBacking.join('x')} does not honor the ${cappedRatio} cap`,
-  );
-  assert.equal(smoke.brandVisible, true, `${label}: brand overlay hidden`);
-  assert.equal(smoke.toolbarVisible, true, `${label}: control overlay hidden`);
-  assert.equal(smoke.controlCount, 4, `${label}: expected four controls`);
-  dpr2Reports[label] = {
-    cssViewport: smoke.viewport,
-    canvasCss: smoke.canvasCss,
-    canvasBacking: smoke.canvasBacking,
-    cappedRatio,
-    controls: smoke.controlCount,
-  };
-  await context.close();
+  } finally {
+    await context.close();
+  }
 }
 reports['dpr2-smoke-matrix'] = dpr2Reports;
 
@@ -2427,6 +2495,8 @@ const webglUnavailableContext = await browser.newContext({
   deviceScaleFactor: 1,
 });
 const webglUnavailablePage = await webglUnavailableContext.newPage();
+const webglDiagnosticErrors = [];
+attachRuntimeDiagnostics(webglUnavailablePage, 'webgl-unavailable-startup', webglDiagnosticErrors);
 await webglUnavailablePage.addInitScript(() => {
   const originalGetContext = HTMLCanvasElement.prototype.getContext;
   HTMLCanvasElement.prototype.getContext = function (type, ...args) {
@@ -2434,15 +2504,38 @@ await webglUnavailablePage.addInitScript(() => {
     return originalGetContext.call(this, type, ...args);
   };
 });
-await webglUnavailablePage.goto(URL, { waitUntil: 'networkidle' });
+const webglDiagnosticStartedAt = performance.now();
+await assert.rejects(
+  () =>
+    waitForExperience(
+      webglUnavailablePage,
+      'webgl-unavailable-startup',
+      webglDiagnosticErrors,
+      { suppressScreenshot: true },
+    ),
+  (error) => {
+    assert.match(error.message, /boot error/i, 'startup diagnostic identifies the boot error');
+    assert.match(error.message, /WebGL/i, 'startup diagnostic preserves the full WebGL message');
+    return true;
+  },
+  'WebGL-unavailable startup must fail through the diagnostic helper',
+);
+const webglDiagnosticMs = performance.now() - webglDiagnosticStartedAt;
+assert.ok(
+  webglDiagnosticMs < 5_000,
+  `WebGL startup diagnostic took ${webglDiagnosticMs.toFixed(0)}ms instead of failing promptly`,
+);
 const webglError = webglUnavailablePage.locator('.boot.error');
-await webglError.waitFor({ state: 'visible' });
 assert.equal(await webglError.getAttribute('role'), 'alert', 'WebGL error role');
 assert.equal(await webglError.getAttribute('aria-live'), 'assertive', 'WebGL error live region');
 assert.equal(await webglError.getAttribute('aria-atomic'), 'true', 'WebGL error atomicity');
 assert.match((await webglError.textContent()) ?? '', /WebGL/i, 'WebGL error text');
 assert.equal(await webglUnavailablePage.locator('canvas').count(), 0, 'WebGL error has no canvas');
-reports['webgl-unavailable'] = { accessibleAlert: true, canvasCount: 0 };
+reports['webgl-unavailable'] = {
+  accessibleAlert: true,
+  canvasCount: 0,
+  diagnosticMs: webglDiagnosticMs,
+};
 await webglUnavailableContext.close();
 
 if (process.env.EXPECT_PRODUCTION === '1') {
