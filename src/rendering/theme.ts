@@ -1,19 +1,19 @@
 /** Shared palette for the stylised blue-hour street drive. */
 export const PALETTE = {
-  skyTop: '#101B2D',
-  skyHorizon: '#355B73',
-  fog: '#607786',
-  asphalt: '#24292C',
-  pavement: '#756F64',
-  stone: '#D1C7B5',
+  skyTop: '#0E1B2D',
+  skyHorizon: '#315F7B',
+  fog: '#3B5B6D',
+  asphalt: '#28333D',
+  pavement: '#73777A',
+  stone: '#C8C4B8',
   wallRed: '#8F2B22',
   palaceRed: '#B53A2B',
-  roof: '#303936',
+  roof: '#344148',
   roofEdge: '#C9A056',
   lane: '#E5DDCC',
   lamp: '#FFD38A',
-  water: '#315F70',
-  foliage: '#35513D',
+  water: '#2F667A',
+  foliage: '#365A43',
   text: '#F4E7D2',
 } as const;
 

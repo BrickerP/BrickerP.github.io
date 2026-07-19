@@ -109,7 +109,13 @@ export class BeijingDriveScene {
   private readonly geometries = new Set<BufferGeometry>();
   private readonly materials = new Set<Material>();
   private readonly textures = new Set<Texture>();
-  private readonly lampLights: Array<{ light: PointLight; phase: number }> = [];
+  private readonly lampLights: Array<{
+    light: PointLight;
+    phase: number;
+    baseIntensity: number;
+    variation: number;
+    harmonic: number;
+  }> = [];
   private readonly unitBox: BoxGeometry;
   private readonly unitCylinder: CylinderGeometry;
   private readonly unitSphere: SphereGeometry;
@@ -136,7 +142,7 @@ export class BeijingDriveScene {
     this.scene = new Scene();
     this.scene.name = 'Beijing endless drive';
     this.scene.background = new Color(PALETTE.skyTop);
-    this.scene.fog = new Fog(PALETTE.fog, 40, 165);
+    this.scene.fog = new Fog(PALETTE.fog, 54, 178);
     this.scene.add(this.root);
 
     this.unitBox = this.trackGeometry(new BoxGeometry(1, 1, 1));
@@ -145,10 +151,10 @@ export class BeijingDriveScene {
     this.unitPitchedRoof = this.trackGeometry(createPitchedRoofGeometry());
 
     this.waterMaterial = this.standard(PALETTE.water, {
-      emissive: '#0B202A',
-      emissiveIntensity: 0.16,
-      metalness: 0.08,
-      roughness: 0.46,
+      emissive: '#123745',
+      emissiveIntensity: 0.2,
+      metalness: 0.12,
+      roughness: 0.38,
     });
     this.lampMaterial = this.standard(PALETTE.lamp, {
       emissive: PALETTE.lamp,
@@ -157,17 +163,17 @@ export class BeijingDriveScene {
     });
     this.windowMaterial = this.standard('#E8B25F', {
       emissive: '#D89A45',
-      emissiveIntensity: 0.62,
+      emissiveIntensity: 0.72,
       roughness: 0.8,
     });
     this.lanternMaterial = this.standard(PALETTE.palaceRed, {
-      emissive: '#A33420',
-      emissiveIntensity: 0.85,
+      emissive: '#B94528',
+      emissiveIntensity: 0.94,
       roughness: 0.7,
     });
 
-    this.scene.add(new HemisphereLight('#BED3DC', '#4C4740', 2.4));
-    this.keyLight = new DirectionalLight('#F2D5B0', 1.55);
+    this.scene.add(new HemisphereLight('#AFC8D6', '#2B3B4B', 1.82));
+    this.keyLight = new DirectionalLight('#E5CBAA', 1.34);
     this.keyLight.position.set(-42, 68, -24);
     this.scene.add(this.keyLight);
 
@@ -193,13 +199,14 @@ export class BeijingDriveScene {
   update(phase: number): void {
     const progress = wrapProgress(phase);
     const wave = 0.5 + 0.5 * Math.cos(progress * TAU);
-    this.waterMaterial.emissiveIntensity = 0.13 + wave * 0.04;
-    this.lampMaterial.emissiveIntensity = 1.38 + wave * 0.12;
-    this.keyLight.intensity = 1.42 + wave * 0.1;
+    this.waterMaterial.emissiveIntensity = 0.18 + wave * 0.035;
+    this.lampMaterial.emissiveIntensity = 1.4 + wave * 0.08;
+    this.keyLight.intensity = 1.28 + wave * 0.08;
 
     for (const entry of this.lampLights) {
-      entry.light.intensity =
-        0.72 + 0.08 * Math.cos((progress + entry.phase) * TAU);
+      entry.light.intensity = entry.baseIntensity * (
+        1 + entry.variation * Math.cos((progress * entry.harmonic + entry.phase) * TAU)
+      );
     }
     if (this.capturePerformanceMode) {
       for (const [source, proxy] of this.captureMaterialProxies) {
@@ -292,7 +299,7 @@ export class BeijingDriveScene {
     sky.renderOrder = -100;
     this.root.add(sky);
 
-    const groundMaterial = this.standard('#1A2021', { roughness: 1 });
+    const groundMaterial = this.standard('#202C35', { roughness: 1 });
     const groundGeometry = this.trackGeometry(new PlaneGeometry(320, 320));
     const ground = new Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
@@ -1101,8 +1108,12 @@ export class BeijingDriveScene {
       emissiveIntensity: 0.08,
       roughness: 0.98,
     });
-    const oppositeWall = this.textured('#46545A', 'brick', { roughness: 1 });
-    const barWall = this.textured('#3E4A50', 'brick', { roughness: 1 });
+    const oppositeWall = this.textured('#52636B', 'brick', { roughness: 1 });
+    const barWall = this.textured('#485B64', 'brick', {
+      emissive: '#251B13',
+      emissiveIntensity: 0.1,
+      roughness: 1,
+    });
 
     const water = new Mesh(
       this.trackGeometry(
@@ -1849,10 +1860,17 @@ export class BeijingDriveScene {
     group.add(pole, bulb);
 
     if (castLight) {
-      const light = new PointLight(PALETTE.lamp, 0.78, 15, 1.8);
+      const baseIntensity = 8.2 + hash01(Math.round(progress * 10_000), 91) * 1.8;
+      const light = new PointLight(PALETTE.lamp, baseIntensity, 13, 2);
       light.position.y = 3.58;
       group.add(light);
-      this.lampLights.push({ light, phase: progress });
+      this.lampLights.push({
+        light,
+        phase: progress,
+        baseIntensity,
+        variation: 0.025 + hash01(Math.round(progress * 10_000), 92) * 0.035,
+        harmonic: 1 + Math.floor(hash01(Math.round(progress * 10_000), 93) * 3),
+      });
     }
     this.root.add(group);
   }
