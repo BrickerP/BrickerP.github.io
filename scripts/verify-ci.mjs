@@ -108,11 +108,32 @@ for (const ecosystem of ['npm', 'github-actions']) {
 }
 assert.ok((dependabot.match(/interval: ["']weekly["']/g) ?? []).length >= 2, 'Dependabot must run weekly for both ecosystems');
 assert.match(dependabot, /groups:/, 'Dependabot updates must be grouped');
+
+function dependencyIgnorePattern(dependency, field, value) {
+  const escape = (input) => input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(
+    `-\\s+dependency-name: ["']${escape(dependency)}["']\\s*\\n\\s+${escape(field)}:\\s*\\n\\s+- ["']${escape(value)}["']`,
+  );
+}
+
+const viteEightIgnore = dependencyIgnorePattern('vite', 'versions', '8.x');
 assert.match(
   dependabot,
-  /dependency-name: ["']vite["'][\s\S]*versions:[\s\S]*- ["']8\.x["']/,
+  viteEightIgnore,
   'Dependabot must not reintroduce the proven Vite 8 macOS seam regression',
 );
+assert.doesNotMatch(
+  '- dependency-name: "vite"\n- dependency-name: "unrelated"\n  versions:\n    - "8.x"',
+  viteEightIgnore,
+  'the Vite 8 guard must not accept a versions rule from another dependency entry',
+);
+for (const dependency of ['@types/node', 'typescript']) {
+  assert.match(
+    dependabot,
+    dependencyIgnorePattern(dependency, 'update-types', 'version-update:semver-major'),
+    `Dependabot must gate incompatible ${dependency} major upgrades`,
+  );
+}
 
 for (const route of [
   "fetchHtml('/')",
