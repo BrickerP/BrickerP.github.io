@@ -9,6 +9,7 @@ import {
   DoubleSide,
   Float32BufferAttribute,
   Fog,
+  FrontSide,
   Group,
   HemisphereLight,
   LinearFilter,
@@ -123,7 +124,6 @@ function createPitchedRoofGeometry(): BufferGeometry {
 /** Lateral offsets that keep mass faces off the asphalt corridor. */
 const CURB_BUILDING = 8.4;
 const CURB_TREE = 7.4;
-const CURB_PLAQUE = 6.9;
 export class BeijingDriveScene {
   readonly scene: Scene;
 
@@ -484,7 +484,12 @@ export class BeijingDriveScene {
   }
 
   private buildDistantSkyline(): void {
-    const material = this.standard('#34414A', { roughness: 1 });
+    const material = this.textured('#3A4851', 'glassGrid', {
+      emissive: '#152832',
+      emissiveIntensity: 0.12,
+      metalness: 0.03,
+      roughness: 0.92,
+    });
     const roofMaterial = this.textured(PALETTE.roof, 'tileRoof', { roughness: 1 });
     for (let index = 0; index < 32; index += 1) {
       const progress = (index + 0.5) / 32;
@@ -857,13 +862,12 @@ export class BeijingDriveScene {
         if (index % 2 === 0) {
           const board = this.buildVerticalSignBoard(
             signBoards[(index / 2 + (side > 0 ? 1 : 0)) % signBoards.length],
-            side > 0 ? 1 : -1,
           );
           if (board) {
             board.position.set(
               side > 0 ? width / 2 - 0.55 : -width / 2 + 0.55,
               height - 1.6,
-              side > 0 ? -depth / 2 - 0.32 : depth / 2 + 0.32,
+              -depth / 2 - 0.32,
             );
             group.add(board);
           }
@@ -948,7 +952,6 @@ export class BeijingDriveScene {
   /** Hanging vertical shop sign with stacked calligraphy. */
   private buildVerticalSignBoard(
     text: string,
-    wallSide: -1 | 1,
   ): Group | undefined {
     const material = this.canvasPlaque(text, {
       width: 128,
@@ -960,17 +963,18 @@ export class BeijingDriveScene {
       vertical: true,
     });
     if (!material) return undefined;
+    material.side = FrontSide;
     const group = new Group();
     const backingMaterial = this.standard('#242B26', { roughness: 0.95 });
     const hardwareMaterial = this.standard('#33291C', { roughness: 1 });
     const backing = this.box(0.56, 2.15, 0.1, backingMaterial);
     const face = new Mesh(this.trackGeometry(new PlaneGeometry(0.5, 2.02)), material);
-    face.position.z = -wallSide * 0.06;
-    face.rotation.y = wallSide > 0 ? Math.PI : 0;
+    face.position.z = -0.06;
+    face.rotation.y = Math.PI;
     const arm = this.box(0.1, 0.1, 0.62, hardwareMaterial);
-    arm.position.set(0, 0.78, wallSide * 0.22);
+    arm.position.set(0, 0.78, 0.22);
     const wallPlate = this.box(0.18, 0.66, 0.06, hardwareMaterial);
-    wallPlate.position.set(0, 0.78, wallSide * 0.32);
+    wallPlate.position.set(0, 0.78, 0.32);
     group.add(backing, face, arm, wallPlate);
     return group;
   }
@@ -1037,6 +1041,16 @@ export class BeijingDriveScene {
             group.add(litWindow);
           }
         }
+        if (index === 0 && side < 0) {
+          const plaque = this.buildWallStreetPlaque(
+            '前门东河沿街',
+            'QIANMEN DONGHEYAN ST',
+          );
+          if (plaque) {
+            plaque.position.set(roadFaceX, 2.2, -depth * 0.06);
+            group.add(plaque);
+          }
+        }
         this.root.add(group);
       }
 
@@ -1048,10 +1062,10 @@ export class BeijingDriveScene {
     // Leaning power poles with long catenary spans.
     const poleMaterial = this.standard('#2E2A24', { roughness: 1 });
     const polePositions: Array<[number, number]> = [
-      [0.879, -CURB_TREE],
-      [0.891, -CURB_TREE],
-      [0.892, CURB_TREE],
-      [0.904, CURB_TREE],
+      [0.884, -5.65],
+      [0.895, -5.65],
+      [0.892, 5.65],
+      [0.904, 5.65],
     ];
     for (const [progress, offset] of polePositions) {
       const group = new Group();
@@ -1065,19 +1079,17 @@ export class BeijingDriveScene {
       this.root.add(group);
     }
     for (const [fromProgress, toProgress, offset] of [
-      [0.879, 0.891, -CURB_TREE],
-      [0.892, 0.904, CURB_TREE],
+      [0.884, 0.895, -5.65],
+      [0.892, 0.904, 5.65],
     ] as const) {
       const mid = (fromProgress + toProgress) / 2;
-      const wire = this.box(0.035, 0.035, 19.2, poleMaterial);
+      const wire = this.box(0.035, 0.035, 6.4, poleMaterial);
       this.place(wire, mid, offset, 5.18);
       this.root.add(wire);
     }
 
-    this.addLamp(0.882, -6.35, false);
-    this.addLamp(0.897, 6.35, true);
-    this.addLamp(0.911, -6.35, false);
-    this.buildStreetPlaque(0.878, -CURB_PLAQUE, '前门东河沿街', 'QIANMEN DONGHEYAN ST');
+    this.addLamp(0.897, 5.25, true);
+    this.addLamp(0.911, -5.25, false);
   }
 
   /** 0.500–0.583 — Nanluo / Wudaoying commercial alley. */
@@ -1091,7 +1103,7 @@ export class BeijingDriveScene {
       const progress = 0.502 + index * 0.005;
       for (const side of [-1, 1]) {
         const opensNanluoEntrance = side > 0 && index >= 2 && index <= 4;
-        const opensWudaoyingEntrance = side < 0 && index >= 11;
+        const opensWudaoyingEntrance = side < 0 && index >= 10 && index <= 13;
         if (opensNanluoEntrance || opensWudaoyingEntrance) continue;
         const width = 3.5 + hash01(index, side + 51) * 1.4;
         const height = 3.8 + hash01(index, side + 55) * 1.5;
@@ -1118,13 +1130,12 @@ export class BeijingDriveScene {
             signNames[
               (Math.floor(index / 4) + (side > 0 ? 1 : 0)) % signNames.length
             ],
-            side > 0 ? 1 : -1,
           );
           if (board) {
             board.position.set(
               side > 0 ? width / 2 - 0.5 : -width / 2 + 0.5,
               height - 1.4,
-              side > 0 ? -depth / 2 - 0.28 : depth / 2 + 0.28,
+              -depth / 2 - 0.28,
             );
             group.add(board);
           }
@@ -1148,9 +1159,8 @@ export class BeijingDriveScene {
     this.buildHutongEntranceMarker(0.562, -1, '五道营胡同');
     this.addLamp(0.508, -6.4, true);
     this.addLamp(0.545, 6.4, false);
-    this.addLamp(0.578, -6.4, true);
     this.addTree(0.525, 11.5, 4.3);
-    this.addTree(0.568, -11.4, 4.6);
+    this.addTree(0.568, -12.8, 4.6);
   }
 
   /** 0.417–0.500 — the Bell & Drum Tower pair above low grey shops. */
@@ -1805,7 +1815,6 @@ export class BeijingDriveScene {
     this.buildSecondRingSign(0.299);
 
     this.addLamp(0.258, -5.8, false);
-    this.addLamp(0.292, 5.8, true);
     this.addLamp(0.322, -5.8, false);
   }
 
@@ -1960,7 +1969,7 @@ export class BeijingDriveScene {
 
     const underside = new Mesh(
       this.trackGeometry(
-        createPathRibbon(-7.7, 7.7, 7.55, {
+        createPathRibbon(-7.25, 7.25, 7.55, {
           from: 0.921,
           to: 0.986,
           centerScale: DRIVE_PATH_SCALE,
@@ -1974,12 +1983,12 @@ export class BeijingDriveScene {
     for (let index = 0; index < 5; index += 1) {
       const progress = 0.928 + index * 0.013;
       for (const side of [-1, 1]) {
-        const column = this.box(0.72, 7.5, 0.72, concrete);
-        this.place(column, progress, side * 7.9, 3.75);
+        const column = this.box(0.58, 7.5, 0.58, concrete);
+        this.place(column, progress, side * 8.25, 3.75);
         this.root.add(column);
       }
-      const beam = this.box(17, 0.46, 0.9, concrete);
-      this.place(beam, progress, 0, 7.2);
+      const beam = this.box(17, 0.34, 0.68, concrete);
+      this.place(beam, progress, 0, 7.38);
       this.root.add(beam);
     }
 
@@ -1987,7 +1996,7 @@ export class BeijingDriveScene {
       const progress = 0.918 + index * 0.0058;
       for (const side of [-1, 1]) {
         const guard = this.box(0.36, 0.72, 3.7, concrete);
-        this.place(guard, progress, side * 7.65, 7.95);
+        this.place(guard, progress, side * 7.05, 7.95);
         this.root.add(guard);
       }
     }
@@ -2080,31 +2089,29 @@ export class BeijingDriveScene {
     this.root.add(shelter);
   }
 
-  private buildStreetPlaque(
-    progress: number,
-    offset: number,
+  private buildWallStreetPlaque(
     name: string,
     latin: string,
-  ): void {
+  ): Group | undefined {
     const canvas = document.createElement('canvas');
-    canvas.width = 768;
-    canvas.height = 288;
+    canvas.width = 1024;
+    canvas.height = 224;
     const context = canvas.getContext('2d');
-    if (!context) return;
+    if (!context) return undefined;
 
     context.fillStyle = '#24618A';
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.strokeStyle = '#EEF4EE';
-    context.lineWidth = 14;
+    context.lineWidth = 12;
     context.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.fillStyle = '#FFFFFF';
-    context.font = '800 84px "PingFang SC", "Microsoft YaHei", sans-serif';
-    context.fillText(name, canvas.width / 2, 112);
-    context.font = '650 31px Inter, Arial, sans-serif';
+    context.font = '800 78px "PingFang SC", "Microsoft YaHei", sans-serif';
+    context.fillText(name, canvas.width / 2, 78);
+    context.font = '650 27px Inter, Arial, sans-serif';
     context.letterSpacing = '3px';
-    context.fillText(latin, canvas.width / 2, 221);
+    context.fillText(latin, canvas.width / 2, 164);
 
     const texture = new CanvasTexture(canvas);
     texture.colorSpace = SRGBColorSpace;
@@ -2114,28 +2121,23 @@ export class BeijingDriveScene {
     const material = this.trackMaterial(
       new MeshBasicMaterial({
         map: texture,
-        side: DoubleSide,
+        side: FrontSide,
         fog: true,
         toneMapped: false,
       }),
     );
     const backingMaterial = this.standard('#293236', { roughness: 0.96 });
     const group = new Group();
-    this.place(group, progress, offset, 0);
-    const backing = this.box(3.86, 1.58, 0.16, backingMaterial);
-    backing.position.y = 2.42;
+    const backing = this.box(0.1, 0.66, 2.65, backingMaterial);
+    backing.position.x = -0.05;
     const sign = new Mesh(
-      this.trackGeometry(new PlaneGeometry(3.68, 1.38)),
+      this.trackGeometry(new PlaneGeometry(2.46, 0.54)),
       material,
     );
-    sign.position.set(0, 2.42, -0.09);
-    sign.rotation.y = Math.PI;
-    const leftPost = this.box(0.13, 1.6, 0.13, backingMaterial);
-    leftPost.position.set(-1.46, 0.8, 0);
-    const rightPost = leftPost.clone();
-    rightPost.position.x = 1.46;
-    group.add(backing, sign, leftPost, rightPost);
-    this.root.add(group);
+    sign.position.x = -0.105;
+    sign.rotation.y = -Math.PI / 2;
+    group.add(backing, sign);
+    return group;
   }
 
   private buildHutongEntranceMarker(
@@ -2171,11 +2173,12 @@ export class BeijingDriveScene {
     const cap = this.box(0.72, 0.12, 4.5, capMaterial);
     cap.position.y = 2.65;
     const panel = new Mesh(
-      this.trackGeometry(new PlaneGeometry(3.1, 0.7)),
+      this.trackGeometry(new PlaneGeometry(2.9, 0.66)),
       plaque,
     );
-    panel.position.set(side * 0.29, 2.42, 0);
-    panel.rotation.y = side > 0 ? Math.PI / 2 : -Math.PI / 2;
+    plaque.side = FrontSide;
+    panel.position.set(side * 0.55, 2.42, 0);
+    panel.rotation.y = side * (Math.PI / 2 + 0.17);
     entrance.add(apron, lintel, cap, panel);
     this.root.add(entrance);
   }
