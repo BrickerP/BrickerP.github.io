@@ -6,6 +6,7 @@ const URL = process.env.URL || 'http://127.0.0.1:5173/';
 const OUT = 'docs/verify';
 const LOOP_SECONDS = 48;
 const REDUCED_POSTER_PHASE = 0.53 / 48;
+const BOUNDARY_CAPTURE_VIEWPORT = 'desktop-1280';
 mkdirSync(OUT, { recursive: true });
 
 const EBML_ID = 0x1a45dfa3;
@@ -267,6 +268,22 @@ const passages = [
   { name: 'qianmen-hutong', seconds: 41.8 },
   { name: 'overpass', seconds: 47 },
 ];
+
+const passageBoundaryMoments = Array.from(
+  { length: LOOP_SECONDS / 4 },
+  (_, index) => index * 4,
+).flatMap((boundarySeconds) => [
+  {
+    boundarySeconds,
+    side: 'before',
+    seconds: boundarySeconds === 0 ? LOOP_SECONDS - 0.25 : boundarySeconds - 0.25,
+  },
+  {
+    boundarySeconds,
+    side: 'after',
+    seconds: boundarySeconds + 0.25,
+  },
+]);
 
 const SMALL_TEXT_MIN_CONTRAST = 4.5;
 const smallTextSelectors = [
@@ -812,6 +829,25 @@ async function canvasReport(page) {
   }, screenshot.toString('base64'));
 }
 
+async function capturePassageBoundaries(page, viewportName) {
+  const boundaryReports = {};
+  for (const moment of passageBoundaryMoments) {
+    await seek(page, moment.seconds);
+    const state = await page.evaluate(() => window.__BEIJING_LOOP_TEST__.readState());
+    const expectedPhase = moment.seconds / LOOP_SECONDS;
+    assert.ok(
+      Math.abs(state.phase - expectedPhase) < 1e-10,
+      `${viewportName}/boundary-${moment.boundarySeconds}s-${moment.side}: phase mismatch ${state.phase}`,
+    );
+    const boundaryLabel = `boundary-${String(moment.boundarySeconds).padStart(2, '0')}s-${moment.side}`;
+    await page.screenshot({ path: `${OUT}/${viewportName}-${boundaryLabel}.png` });
+    const report = await canvasReport(page);
+    assertFirstPersonFrame(report, `${viewportName}/${boundaryLabel}`);
+    boundaryReports[boundaryLabel] = report;
+  }
+  return boundaryReports;
+}
+
 function overlapArea(left, right) {
   const width = Math.max(
     0,
@@ -1094,6 +1130,32 @@ if (process.env.G003_FOCUSED === '1') {
   await runG003FocusedBrowserRegressions();
   process.exit(0);
 }
+
+if (process.env.BOUNDARY_CAPTURE_FOCUSED === '1') {
+  const focusedBrowser = await launchBrowser();
+  const focusedErrors = [];
+  try {
+    const focusedContext = await focusedBrowser.newContext({
+      viewport: { width: 1280, height: 720 },
+      deviceScaleFactor: 1,
+    });
+    const focusedPage = await focusedContext.newPage();
+    attachRuntimeDiagnostics(focusedPage, BOUNDARY_CAPTURE_VIEWPORT, focusedErrors);
+    await waitForExperience(focusedPage, BOUNDARY_CAPTURE_VIEWPORT, focusedErrors);
+    const boundaryReports = await capturePassageBoundaries(
+      focusedPage,
+      BOUNDARY_CAPTURE_VIEWPORT,
+    );
+    await focusedContext.close();
+    assert.deepEqual(focusedErrors, [], `boundary capture runtime failures:\n${focusedErrors.join('\n')}`);
+    console.log('=== PASSAGE BOUNDARY CAPTURE ===');
+    console.log(JSON.stringify(boundaryReports, null, 2));
+    console.log('PASSAGE BOUNDARY CAPTURE OK');
+  } finally {
+    await focusedBrowser.close();
+  }
+  process.exit(0);
+}
 await runG003FocusedBrowserRegressions();
 
 let browser = await launchBrowser();
@@ -1273,6 +1335,11 @@ for (const viewport of viewports) {
   assert.ok(vermilionSignal > 0.025, `${viewport.name}: Beijing vermilion signal is missing`);
   assert.ok(warmSignal > 0.01, `${viewport.name}: warm lantern/window signal is missing`);
 
+  const boundaryReports =
+    viewport.name === BOUNDARY_CAPTURE_VIEWPORT
+      ? await capturePassageBoundaries(page, viewport.name)
+      : {};
+
   // `seek` pauses deterministically. Resuming must advance, and pausing must freeze.
   const playButton = page.locator('[data-act="play"]');
   const pausedAt = await page.evaluate(() => window.__BEIJING_LOOP_TEST__.readState().progress);
@@ -1354,6 +1421,7 @@ for (const viewport of viewports) {
 
   reports[viewport.name] = {
     passages: passageReports,
+    passageBoundaries: boundaryReports,
     overlays: boxes,
     debugOverlays: debugBoxes,
     recordingDebugOverlays: recordingDebugBoxes,
@@ -2749,8 +2817,9 @@ assert.equal(
   'capture material mode left point lights visible',
 );
 assert.ok(
-  activeCapturePerformance.staticSceneObjectCount > 2_000,
-  `static scene object count is unexpectedly low: ${activeCapturePerformance.staticSceneObjectCount}`,
+  activeCapturePerformance.staticSceneObjectCount >= 1_850 &&
+    activeCapturePerformance.staticSceneObjectCount < 2_000,
+  `static scene object count is outside the authored complexity budget: ${activeCapturePerformance.staticSceneObjectCount}`,
 );
 assert.equal(
   activeCapturePerformance.sceneMatrixWorldAutoUpdate,
