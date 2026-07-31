@@ -1287,7 +1287,7 @@ export class BeijingDriveScene {
     plinth.position.y = 0.8;
     const mainHall = this.box(12.6, 5.4, 8.4, ochre);
     mainHall.position.y = 3.5;
-    const mainRoofHeight = 1.7;
+    const mainRoofHeight = 2;
     const mainRoof = new Mesh(this.unitPitchedRoof, yellowRoof);
     mainRoof.scale.set(
       9.6,
@@ -1539,22 +1539,22 @@ export class BeijingDriveScene {
     const island = new Mesh(this.unitCylinder, islandStone);
     island.scale.set(whiteDagobaModel.solidHalfWidth, 0.55, 4.1);
     island.position.y = 0.275;
-    const lowerTerrace = this.box(8.4, 0.65, 7.4, white);
+    const lowerTerrace = this.box(7.6, 0.65, 7, white);
     lowerTerrace.position.y = 0.75;
-    const upperTerrace = this.box(6.8, 0.65, 6.2, white);
+    const upperTerrace = this.box(6.2, 0.65, 5.8, white);
     upperTerrace.position.y = 1.3;
-    const platform = this.box(5.6, 1.2, 5.6, white);
+    const platform = this.box(5, 1.2, 5, white);
     platform.position.y = 2.1;
     const body = new Mesh(this.unitSphere, white);
-    body.scale.set(2.45, 2.25, 2.45);
-    body.position.y = 4.9;
-    const drum = this.cylinder(1, 0.7, white);
-    drum.position.y = 7.35;
-    const neck = this.cylinder(0.62, 2, white);
-    neck.position.y = 8.65;
-    const canopy = this.cylinder(1.18, 0.24, gold);
-    canopy.position.y = 9.7;
-    const spireHeight = 2.1;
+    body.scale.set(2.15, 2.55, 2.15);
+    body.position.y = 4.95;
+    const drum = this.cylinder(0.88, 0.72, white);
+    drum.position.y = 7.55;
+    const neck = this.cylinder(0.56, 2, white);
+    neck.position.y = 8.82;
+    const canopy = this.cylinder(1.08, 0.24, gold);
+    canopy.position.y = 9.86;
+    const spireHeight = 1.92;
     const spire = this.cylinder(0.27, spireHeight, gold);
     spire.position.y = whiteDagobaModel.height - spireHeight / 2;
     group.add(

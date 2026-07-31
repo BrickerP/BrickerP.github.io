@@ -294,22 +294,32 @@ if (runsGeometryCase('dynamic-resize')) {
 if (runsGeometryCase('portrait-landmark-framing')) {
   const portraitAspect = 390 / 844;
   const landscapeAspect = 1440 / 900;
-  const portraitMoments = [
-    { phase: 9 / 48, hero: spatialContractModule.PASSAGE_HEROES.whiteDagoba },
-    { phase: 30 / 48, hero: spatialContractModule.PASSAGE_HEROES.yonghegong },
-    { phase: 37.2 / 48, hero: spatialContractModule.PASSAGE_HEROES.templeOfHeaven },
+  const focusWindows = [
+    [0.167, 0.184, 0.232, 0.25],
+    [0.583, 0.605, 0.648, 0.667],
+    [0.75, 0.77, 0.815, 0.833],
   ];
-  for (const { phase, hero } of portraitMoments) {
+  const portraitMoments = [
+    {
+      phase: 9 / 48,
+      hero: spatialContractModule.PASSAGE_HEROES.whiteDagoba,
+      expectedFov: 82,
+    },
+    {
+      phase: 30 / 48,
+      hero: spatialContractModule.PASSAGE_HEROES.yonghegong,
+      expectedFov: 88,
+    },
+    {
+      phase: 37.2 / 48,
+      hero: spatialContractModule.PASSAGE_HEROES.templeOfHeaven,
+      expectedFov: 74,
+    },
+  ];
+  for (const { phase, hero, expectedFov } of portraitMoments) {
     const frame = drive.samplePathFrame(phase);
     const portrait = cameraSnapshot(portraitAspect, phase);
-    const landscape = cameraSnapshot(landscapeAspect, phase);
     const legacyPortrait = legacyCameraSnapshot(phase, 0.0215, -0.72, -0.15);
-    const legacyLandscape = legacyCameraSnapshot(
-      phase,
-      0.0175,
-      themeModule.DRIVE.laneOffset,
-      -0.08,
-    );
     const portraitBias = portrait.direction
       .clone()
       .sub(legacyPortrait.direction)
@@ -323,14 +333,8 @@ if (runsGeometryCase('portrait-landmark-framing')) {
       `portrait camera no longer looks forward at phase ${phase}`,
     );
     assert.ok(
-      landscape.direction.dot(frame.tangent) > 0,
-      `landscape camera no longer looks forward at phase ${phase}`,
-    );
-    assert.ok(
-      landscape.fov === 58 &&
-        vectorDelta(landscape.position, legacyLandscape.position) < 1e-10 &&
-        vectorDelta(landscape.direction, legacyLandscape.direction) < 1e-10,
-      `portrait focus changed the landscape camera at phase ${phase}`,
+      Math.abs(portrait.fov - expectedFov) < EPSILON,
+      `${hero.id} portrait FOV ${portrait.fov} does not match ${expectedFov}`,
     );
 
     const roadAheadFrame = drive.samplePathFrame(phase + 0.0215);
@@ -341,8 +345,12 @@ if (runsGeometryCase('portrait-landmark-framing')) {
     roadAhead.y = themeModule.DRIVE.cameraHeight - 0.15;
     roadAhead.project(portrait.camera);
     assert.ok(
-      Math.abs(roadAhead.x) <= 0.3,
+      roadAhead.x >= 0 && roadAhead.x <= 0.65,
       `portrait landmark focus pushes the vanishing point out of contract at phase ${phase}: ${roadAhead.x}`,
+    );
+    assert.ok(
+      roadAhead.z >= -1 && roadAhead.z <= 1,
+      `portrait road-ahead point leaves the depth range at phase ${phase}: ${roadAhead.z}`,
     );
 
     const heroFrame = drive.samplePathFrame(hero.progress);
@@ -350,38 +358,81 @@ if (runsGeometryCase('portrait-landmark-framing')) {
       .clone()
       .multiplyScalar(cameraModule.DRIVE_PATH_SCALE)
       .addScaledVector(heroFrame.normal, hero.lateralOffset);
-    const visibleHeroSample = [-1, 0, 1].some((lateralStep) =>
-      [0.2, 0.55, 0.9].some((heightStep) => {
+    const heroSamples = [-1, 0, 1].flatMap((lateralStep) =>
+      [0.2, 0.55, 0.9].map((heightStep) => {
         const sample = heroCentre
           .clone()
           .addScaledVector(heroFrame.normal, hero.solidHalfWidth * lateralStep);
         sample.y = hero.targetHeight * heightStep;
         sample.project(portrait.camera);
-        return (
-          Math.abs(sample.x) <= 1 &&
-          Math.abs(sample.y) <= 1 &&
-          sample.z >= -1 &&
-          sample.z <= 1
-        );
+        return sample;
       }),
     );
     assert.ok(
-      visibleHeroSample,
-      `${hero.id} has no visible portrait sample at phase ${phase}`,
+      heroSamples.every(({ z }) => z >= -1 && z <= 1),
+      `${hero.id} leaves the portrait depth range at phase ${phase}`,
+    );
+    const visibleFraction = (minimum, maximum) => {
+      const span = maximum - minimum;
+      assert.ok(span > EPSILON, `${hero.id} has a collapsed projected span`);
+      return Math.max(0, Math.min(1, maximum) - Math.max(-1, minimum)) / span;
+    };
+    const projectedX = heroSamples.map(({ x }) => x);
+    const projectedY = heroSamples.map(({ y }) => y);
+    const horizontalVisibility = visibleFraction(
+      Math.min(...projectedX),
+      Math.max(...projectedX),
+    );
+    const verticalVisibility = visibleFraction(
+      Math.min(...projectedY),
+      Math.max(...projectedY),
+    );
+    const requiredHorizontalVisibility = hero.id === 'temple-of-heaven' ? 0.98 : 0.85;
+    assert.ok(
+      horizontalVisibility >= requiredHorizontalVisibility,
+      `${hero.id} portrait horizontal visibility ${horizontalVisibility.toFixed(3)} ` +
+        `is below ${requiredHorizontalVisibility}`,
+    );
+    assert.ok(
+      verticalVisibility >= 0.9,
+      `${hero.id} portrait vertical visibility ${verticalVisibility.toFixed(3)} is below 0.9`,
     );
   }
 
-  const focusBoundaries = [
-    0.167, 0.184, 0.232, 0.25,
-    0.583, 0.605, 0.648, 0.667,
-    0.75, 0.77, 0.815, 0.833,
-  ];
-  for (const boundary of focusBoundaries) {
-    const before = cameraSnapshot(portraitAspect, boundary - 0.0001).direction;
-    const after = cameraSnapshot(portraitAspect, boundary + 0.0001).direction;
+  const landscapeOraclePhases = focusWindows.flatMap(([start, full, release, end]) => [
+    start,
+    full,
+    (full + release) / 2,
+    release,
+    end,
+  ]);
+  for (const phase of landscapeOraclePhases) {
+    const landscape = cameraSnapshot(landscapeAspect, phase);
+    const legacyLandscape = legacyCameraSnapshot(
+      phase,
+      0.0175,
+      themeModule.DRIVE.laneOffset,
+      -0.08,
+    );
     assert.ok(
-      vectorDelta(before, after) < 0.01,
+      landscape.fov === 58 &&
+        vectorDelta(landscape.position, legacyLandscape.position) < 1e-10 &&
+        vectorDelta(landscape.direction, legacyLandscape.direction) < 1e-10,
+      `portrait framing changed the landscape camera at phase ${phase}`,
+    );
+  }
+
+  const focusBoundaries = focusWindows.flat();
+  for (const boundary of focusBoundaries) {
+    const before = cameraSnapshot(portraitAspect, boundary - 0.0001);
+    const after = cameraSnapshot(portraitAspect, boundary + 0.0001);
+    assert.ok(
+      vectorDelta(before.direction, after.direction) < 0.01,
       `portrait landmark focus jumps at phase ${boundary}`,
+    );
+    assert.ok(
+      Math.abs(before.fov - after.fov) < 0.05,
+      `portrait landmark FOV jumps at phase ${boundary}`,
     );
   }
 }
