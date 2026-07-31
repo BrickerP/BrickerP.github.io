@@ -34,8 +34,8 @@ export interface PassageHeroContract {
 /** Unscaled bounds used by both scene construction and spatial verification. */
 export const CALIBRATED_LANDMARK_MODELS = {
   whiteDagoba: { height: 11.9, solidHalfWidth: 4.8 },
-  yonghegong: { height: 12.3, solidHalfWidth: 7.4 },
-  templeOfHeaven: { height: 14.2, solidHalfWidth: 7.2 },
+  yonghegong: { height: 7.8, solidHalfWidth: 7.4 },
+  templeOfHeaven: { height: 13.2, solidHalfWidth: 7.2 },
 } as const;
 
 type CalibratedLandmarkModel = keyof typeof CALIBRATED_LANDMARK_MODELS;
@@ -109,7 +109,7 @@ export const PASSAGE_HEROES = {
     id: 'white-dagoba',
     passage: 2,
     progress: 0.248,
-    lateralOffset: -21.8,
+    lateralOffset: -19,
     modelKey: 'whiteDagoba',
     targetHeight: 9.6,
   }),
@@ -173,7 +173,7 @@ export const PASSAGE_HEROES = {
     id: 'temple-of-heaven',
     passage: 9,
     progress: 0.832,
-    lateralOffset: -11.8,
+    lateralOffset: -10.5,
     modelKey: 'templeOfHeaven',
     targetHeight: 7.4,
   }),

@@ -11,7 +11,7 @@ export const DRIVE_PATH_SCALE = 0.19;
 export const DRIVE_EYE_HEIGHT = DRIVE.cameraHeight;
 
 const LANDSCAPE_FOV = 58;
-const PORTRAIT_FOV = 70;
+const PORTRAIT_FOV = 74;
 const LANDSCAPE_LOOK_HEIGHT = -0.08;
 const PORTRAIT_LOOK_HEIGHT = -0.15;
 // Normalized path fractions scaled for the 48s circuit so look-ahead metres
@@ -21,6 +21,9 @@ const PORTRAIT_AHEAD_PHASE = 0.0215;
 const ASPECT_MIX_START = 0.75;
 const ASPECT_MIX_END = 1.25;
 const PORTRAIT_LANE_OFFSET = -0.72;
+const PORTRAIT_FOCUS_MIX_START = 0.62;
+const PORTRAIT_FOCUS_MIX_END = 0.9;
+const PORTRAIT_LANDMARK_LOOK_OFFSET = -1;
 const CLEARANCE_LANE_OFFSET = -0.72;
 const CLEARANCE_START_PHASE = 0.988;
 const CLEARANCE_FADE_PHASE = 0.02;
@@ -49,6 +52,29 @@ function centralAxisClearanceMix(progress: number): number {
         position,
       ))
   );
+}
+
+function focusWindow(
+  progress: number,
+  start: number,
+  full: number,
+  release: number,
+  end: number,
+): number {
+  return (
+    smoothstep(start, full, progress) *
+    (1 - smoothstep(release, end, progress))
+  );
+}
+
+/** Smoothly turn narrow portrait views toward the three left-side passage heroes. */
+function portraitLandmarkLookOffset(progress: number): number {
+  const visibility = Math.max(
+    focusWindow(progress, 0.167, 0.184, 0.232, 0.25),
+    focusWindow(progress, 0.583, 0.605, 0.648, 0.667),
+    focusWindow(progress, 0.75, 0.77, 0.815, 0.833),
+  );
+  return PORTRAIT_LANDMARK_LOOK_OFFSET * visibility;
 }
 
 /** Pure phase-derived first-person camera for the closed authored drive path. */
@@ -110,6 +136,13 @@ export class FirstPersonCameraRig {
       LANDSCAPE_AHEAD_PHASE,
       aspectMix,
     );
+    const portraitFocusMix =
+      1 -
+      smoothstep(
+        PORTRAIT_FOCUS_MIX_START,
+        PORTRAIT_FOCUS_MIX_END,
+        this.aspect,
+      );
     samplePathFrame(
       progress + aheadPhase,
       this.futureFrame,
@@ -132,7 +165,10 @@ export class FirstPersonCameraRig {
       ),
       this.futureFrame.point.z * DRIVE_PATH_SCALE,
     );
-    this.lookTarget.addScaledVector(this.futureFrame.normal, laneOffset);
+    this.lookTarget.addScaledVector(
+      this.futureFrame.normal,
+      laneOffset + portraitLandmarkLookOffset(progress) * portraitFocusMix,
+    );
     this.camera.lookAt(this.lookTarget);
     this.camera.updateMatrixWorld();
   }
