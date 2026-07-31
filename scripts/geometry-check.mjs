@@ -375,6 +375,44 @@ if (runsGeometryCase('passage-hero-clearance')) {
     );
   }
 
+  const calibratedHeroes = Object.fromEntries(
+    Object.entries(spatialContractModule.CALIBRATED_LANDMARK_MODELS).map(([key, model]) => {
+      const hero = spatialContractModule.PASSAGE_HEROES[key];
+      assert.ok(hero, `${key}: calibrated landmark contract is missing`);
+      for (const field of ['modelHeight', 'targetHeight', 'modelSolidHalfWidth']) {
+        assert.ok(
+          Number.isFinite(hero[field]) && hero[field] > 0,
+          `${hero.id}: ${field} must be positive`,
+        );
+      }
+      assert.equal(hero.modelKey, key, `${hero.id}: calibrated model key has drifted`);
+      assert.ok(
+        Math.abs(hero.modelHeight - model.height) < EPSILON,
+        `${hero.id}: model height does not match shared scene bounds`,
+      );
+      assert.ok(
+        Math.abs(hero.modelSolidHalfWidth - model.solidHalfWidth) < EPSILON,
+        `${hero.id}: model footprint does not match shared scene bounds`,
+      );
+      assert.ok(
+        Math.abs(hero.targetHeight - hero.modelHeight * hero.scale) < EPSILON,
+        `${hero.id}: target height is inconsistent with rendered scale`,
+      );
+      assert.ok(
+        Math.abs(hero.solidHalfWidth - hero.modelSolidHalfWidth * hero.scale) < EPSILON,
+        `${hero.id}: solid half-width is inconsistent with rendered scale`,
+      );
+      return [key, hero];
+    }),
+  );
+  assert.ok(
+    calibratedHeroes.whiteDagoba.targetHeight >
+      calibratedHeroes.templeOfHeaven.targetHeight &&
+      calibratedHeroes.templeOfHeaven.targetHeight >
+        calibratedHeroes.yonghegong.targetHeight,
+    'calibrated landmark hierarchy must be white-dagoba > temple-of-heaven > yonghegong',
+  );
+
   passageHeroClearanceReport = {
     requiredClearance,
     heroes: heroes.map((hero) => {
@@ -383,6 +421,7 @@ if (runsGeometryCase('passage-hero-clearance')) {
         id: hero.id,
         passage: hero.passage,
         progress: hero.progress,
+        targetHeight: hero.targetHeight ?? null,
         availableClearance,
         clearanceMargin: availableClearance - requiredClearance,
       };

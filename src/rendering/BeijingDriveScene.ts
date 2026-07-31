@@ -39,6 +39,7 @@ import {
 } from './surfaceTextures';
 import { DRIVE, PALETTE } from './theme';
 import {
+  CALIBRATED_LANDMARK_MODELS,
   CENTRAL_AXIS_LANDMARKS,
   PASSAGE_HEROES,
 } from './spatialContract';
@@ -1215,9 +1216,8 @@ export class BeijingDriveScene {
     this.addTree(0.478, 12.4, 4.2);
   }
 
-  /** 0.583–0.667 — Yonghegong yellow multi-eave temple silhouette. */
+  /** 0.583–0.667 — Yonghegong courtyard with a low front hall and rear pavilion. */
   private buildYonghegong(): void {
-    // Landmark mass stays left of the road; keep offset near enough to read.
     const ochre = this.textured('#C4A040', 'brick', { roughness: 0.9 });
     const yellowRoof = this.textured('#D4A820', 'tileRoof', {
       roughness: 0.88,
@@ -1232,6 +1232,7 @@ export class BeijingDriveScene {
     const stone = this.textured(PALETTE.stone, 'stoneGrain', { roughness: 0.96 });
 
     const yonghegong = PASSAGE_HEROES.yonghegong;
+    const yonghegongModel = CALIBRATED_LANDMARK_MODELS.yonghegong;
     const temple = new Group();
     this.place(temple, yonghegong.progress, yonghegong.lateralOffset, 0);
     temple.scale.setScalar(yonghegong.scale);
@@ -1243,36 +1244,72 @@ export class BeijingDriveScene {
       stone,
     );
 
+    const courtyard = this.box(
+      yonghegongModel.solidHalfWidth * 2,
+      0.16,
+      15.8,
+      stone,
+    );
+    courtyard.position.set(0, 0.08, -6.6);
+
+    const frontHall = this.box(10.8, 1.9, 4, ochre);
+    frontHall.position.set(0, 1.05, -10.5);
+    const frontRoof = new Mesh(this.unitPitchedRoof, yellowRoof);
+    frontRoof.scale.set(4.7, 0.78, 12.4);
+    frontRoof.rotation.y = Math.PI / 2;
+    frontRoof.position.set(0, 2.03, -10.5);
+    const frontEdge = this.box(12.8, 0.13, 5.1, roofEdge);
+    frontEdge.position.set(0, 2.06, -10.5);
+
+    const sideHalls = new Group();
+    for (const side of [-1, 1]) {
+      const hall = this.box(3.2, 1.8, 6, ochre);
+      hall.position.set(side * 5.1, 0.98, -4.8);
+      const roof = new Mesh(this.unitPitchedRoof, yellowRoof);
+      roof.scale.set(6.8, 0.65, 4);
+      roof.rotation.y = Math.PI / 2;
+      roof.position.set(side * 5.1, 1.92, -4.8);
+      sideHalls.add(hall, roof);
+    }
+
+    const rearPavilion = new Group();
+    rearPavilion.position.z = 2.5;
     const plinth = this.box(14.2, 1.6, 10.4, stone);
     plinth.position.y = 0.8;
     const lowerHall = this.box(11.8, 2.8, 8.2, ochre);
-    lowerHall.position.y = 2.9;
+    lowerHall.position.y = 3;
     const lowerRoof = new Mesh(this.unitPitchedRoof, yellowRoof);
     lowerRoof.scale.set(8.2, 1.35, 13.6);
     lowerRoof.rotation.y = Math.PI / 2;
-    lowerRoof.position.y = 4.35;
-    const lowerEdge = this.box(14.8, 0.16, 10.2, roofEdge);
-    lowerEdge.position.y = 4.38;
+    lowerRoof.position.y = 4.45;
+    const lowerEdge = this.box(
+      yonghegongModel.solidHalfWidth * 2,
+      0.16,
+      10.2,
+      roofEdge,
+    );
+    lowerEdge.position.y = 4.48;
 
-    const midHall = this.box(9.6, 2.2, 6.8, ochre);
-    midHall.position.y = 5.55;
+    const midHall = this.box(9.6, 2.4, 6.8, ochre);
+    midHall.position.y = 6.75;
     const midRoof = new Mesh(this.unitPitchedRoof, yellowRoof);
-    midRoof.scale.set(6.8, 1.22, 11.2);
+    midRoof.scale.set(6.8, 1.25, 11.2);
     midRoof.rotation.y = Math.PI / 2;
-    midRoof.position.y = 6.72;
+    midRoof.position.y = 8;
     const midEdge = this.box(12.2, 0.14, 8.4, roofEdge);
-    midEdge.position.y = 6.74;
+    midEdge.position.y = 8.03;
 
-    const upperHall = this.box(7.2, 1.8, 5.2, ochre);
-    upperHall.position.y = 7.65;
+    const upperHall = this.box(7.2, 1.9, 5.2, ochre);
+    upperHall.position.y = 10.1;
+    const upperRoofHeight = 1.2;
     const upperRoof = new Mesh(this.unitPitchedRoof, yellowRoof);
-    upperRoof.scale.set(5.2, 1.1, 8.8);
+    upperRoof.scale.set(5.2, upperRoofHeight, 8.8);
     upperRoof.rotation.y = Math.PI / 2;
-    upperRoof.position.y = 8.55;
+    upperRoof.position.y = yonghegongModel.height - upperRoofHeight;
     const upperEdge = this.box(9.4, 0.12, 6.6, roofEdge);
-    upperEdge.position.y = 8.56;
+    upperEdge.position.y = 11.14;
 
-    temple.add(
+    rearPavilion.add(
       plinth,
       lowerHall,
       lowerRoof,
@@ -1298,10 +1335,18 @@ export class BeijingDriveScene {
         this.trackGeometry(new PlaneGeometry(2.8, 0.96)),
         plaque,
       );
-      panel.position.set(0, 5.2, -4.18);
+      panel.position.set(0, 3.15, -4.18);
       panel.rotation.y = Math.PI;
-      temple.add(panel);
+      rearPavilion.add(panel);
     }
+    temple.add(
+      courtyard,
+      frontHall,
+      frontRoof,
+      frontEdge,
+      sideHalls,
+      rearPavilion,
+    );
     this.root.add(temple);
 
     const vergeBrick = this.textured('#565F60', 'brick', { roughness: 1 });
@@ -1319,7 +1364,7 @@ export class BeijingDriveScene {
     this.addLamp(0.635, 6.4, false);
     this.addLamp(0.659, -6.4, true);
     this.addTree(0.606, 12, 4.4);
-    this.addTree(0.652, -11.8, 4.2);
+    this.addTree(0.652, 11.8, 4.2);
   }
 
   private buildBellTower(progress: number, offset: number, scale: number): void {
@@ -1398,8 +1443,8 @@ export class BeijingDriveScene {
       this.root.add(post, cap, topRail, lowerRail);
     }
 
-    // Far bank: low bar fronts with warm windows behind a lantern string.
-    for (let index = 0; index < 10; index += 1) {
+    // Far bank: low bar fronts with a skyline break around the white dagoba.
+    for (let index = 0; index < 8; index += 1) {
       const progress = 0.175 + index * 0.0077;
       const group = new Group();
       this.place(group, progress, -24.5, 0);
@@ -1412,7 +1457,7 @@ export class BeijingDriveScene {
       this.root.add(group);
     }
     // Houhai-style lantern string tracing the water's far edge.
-    for (let index = 0; index < 16; index += 1) {
+    for (let index = 0; index < 14; index += 1) {
       const progress = 0.176 + index * 0.0045;
       const sag = index % 2 === 0 ? 0 : -0.28;
       const lantern = new Mesh(this.unitSphere, this.lanternMaterial);
@@ -1473,8 +1518,9 @@ export class BeijingDriveScene {
     this.root.add(group);
   }
 
-  /** Beihai-style white dagoba — softly emissive ivory that still obeys ACES. */
+  /** Beihai-style white dagoba, grounded on the far bank of the lake. */
   private buildWhiteDagoba(progress: number, offset: number, scale: number): void {
+    const whiteDagobaModel = CALIBRATED_LANDMARK_MODELS.whiteDagoba;
     const white = this.standard('#C8CBC4', {
       emissive: '#555A56',
       emissiveIntensity: 0.12,
@@ -1485,19 +1531,47 @@ export class BeijingDriveScene {
       emissiveIntensity: 0.18,
       roughness: 0.88,
     });
+    const islandStone = this.textured('#77766E', 'stoneGrain', {
+      emissive: '#2D302E',
+      emissiveIntensity: 0.08,
+      roughness: 1,
+    });
     const group = new Group();
     this.place(group, progress, offset, 0);
     group.scale.setScalar(scale);
-    const platform = this.box(5.6, 1.4, 5.6, white);
-    platform.position.y = 3.1;
+
+    const island = new Mesh(this.unitCylinder, islandStone);
+    island.scale.set(whiteDagobaModel.solidHalfWidth, 0.55, 4.1);
+    island.position.y = 0.275;
+    const lowerTerrace = this.box(8.4, 0.65, 7.4, white);
+    lowerTerrace.position.y = 0.75;
+    const upperTerrace = this.box(6.8, 0.65, 6.2, white);
+    upperTerrace.position.y = 1.3;
+    const platform = this.box(5.6, 1.2, 5.6, white);
+    platform.position.y = 2.1;
     const body = new Mesh(this.unitSphere, white);
-    body.scale.set(2.5, 2.7, 2.5);
-    body.position.y = 6.1;
-    const neck = this.cylinder(0.62, 2.6, white);
-    neck.position.y = 9.3;
-    const spire = this.cylinder(0.3, 1.8, gold);
-    spire.position.y = 11.4;
-    group.add(platform, body, neck, spire);
+    body.scale.set(2.45, 2.25, 2.45);
+    body.position.y = 4.9;
+    const drum = this.cylinder(1, 0.7, white);
+    drum.position.y = 7.35;
+    const neck = this.cylinder(0.62, 2, white);
+    neck.position.y = 8.65;
+    const canopy = this.cylinder(1.18, 0.24, gold);
+    canopy.position.y = 9.7;
+    const spireHeight = 2.1;
+    const spire = this.cylinder(0.27, spireHeight, gold);
+    spire.position.y = whiteDagobaModel.height - spireHeight / 2;
+    group.add(
+      island,
+      lowerTerrace,
+      upperTerrace,
+      platform,
+      body,
+      drum,
+      neck,
+      canopy,
+      spire,
+    );
     this.root.add(group);
   }
 
@@ -1569,6 +1643,7 @@ export class BeijingDriveScene {
     });
 
     const templeOfHeaven = PASSAGE_HEROES.templeOfHeaven;
+    const templeModel = CALIBRATED_LANDMARK_MODELS.templeOfHeaven;
     const hall = new Group();
     this.place(
       hall,
@@ -1585,32 +1660,48 @@ export class BeijingDriveScene {
       white,
     );
 
-    const terrace = this.box(12.5, 1.2, 12.5, white);
-    terrace.position.y = 0.6;
-    const lowerRing = this.cylinder(5.8, 2.4, red);
-    lowerRing.position.y = 2.2;
-    const lowerRoof = this.cylinder(6.6, 0.85, blueRoof);
-    lowerRoof.position.y = 3.55;
-    const lowerEaves = this.cylinder(7.2, 0.14, roofEdge);
-    lowerEaves.position.y = 3.62;
+    const lowerTerrace = this.cylinder(
+      templeModel.solidHalfWidth,
+      0.45,
+      white,
+    );
+    lowerTerrace.position.y = 0.225;
+    const middleTerrace = this.cylinder(6.6, 0.45, white);
+    middleTerrace.position.y = 0.65;
+    const upperTerrace = this.cylinder(6, 0.75, white);
+    upperTerrace.position.y = 1.25;
 
-    const midRing = this.cylinder(4.6, 2, red);
-    midRing.position.y = 4.5;
-    const midRoof = this.cylinder(5.4, 0.78, blueRoof);
-    midRoof.position.y = 5.55;
+    const lowerRing = this.cylinder(5.8, 3.4, red);
+    lowerRing.position.y = 3.3;
+    const lowerRoof = this.cylinder(6.6, 1.15, blueRoof);
+    lowerRoof.position.y = 5.05;
+    const lowerEaves = this.cylinder(
+      templeModel.solidHalfWidth,
+      0.14,
+      roofEdge,
+    );
+    lowerEaves.position.y = 5.12;
+
+    const midRing = this.cylinder(4.6, 3, red);
+    midRing.position.y = 7;
+    const midRoof = this.cylinder(5.4, 1.05, blueRoof);
+    midRoof.position.y = 8.55;
     const midEaves = this.cylinder(6, 0.12, roofEdge);
-    midEaves.position.y = 5.6;
+    midEaves.position.y = 8.62;
 
-    const upperRing = this.cylinder(3.4, 1.6, red);
-    upperRing.position.y = 6.35;
-    const upperRoof = this.cylinder(4.2, 0.72, blueRoof);
-    upperRoof.position.y = 7.15;
+    const upperRing = this.cylinder(3.4, 2.8, red);
+    upperRing.position.y = 10.4;
+    const upperRoof = this.cylinder(4.2, 1, blueRoof);
+    upperRoof.position.y = 11.85;
     const upperEaves = this.cylinder(4.8, 0.1, roofEdge);
-    upperEaves.position.y = 7.2;
+    upperEaves.position.y = 11.92;
 
     const finial = new Mesh(this.unitSphere, roofEdge);
-    finial.scale.setScalar(0.35);
-    finial.position.y = 7.85;
+    finial.scale.setScalar(0.42);
+    finial.position.y = 12.65;
+    const spireHeight = 1.5;
+    const spire = this.cylinder(0.13, spireHeight, roofEdge);
+    spire.position.y = templeModel.height - spireHeight / 2;
 
     const plaque = this.canvasPlaque('祈年殿', {
       width: 512,
@@ -1622,12 +1713,14 @@ export class BeijingDriveScene {
     });
     if (plaque) {
       const panel = new Mesh(this.trackGeometry(new PlaneGeometry(3.2, 1.1)), plaque);
-      panel.position.set(0, 3.1, 5.95);
+      panel.position.set(0, 3.4, 5.95);
       hall.add(panel);
     }
 
     hall.add(
-      terrace,
+      lowerTerrace,
+      middleTerrace,
+      upperTerrace,
       lowerRing,
       lowerRoof,
       lowerEaves,
@@ -1638,6 +1731,7 @@ export class BeijingDriveScene {
       upperRoof,
       upperEaves,
       finial,
+      spire,
     );
     this.root.add(hall);
 
@@ -1646,7 +1740,7 @@ export class BeijingDriveScene {
     const barkMaterial = this.textured('#3A3224', 'bark', { roughness: 1 });
     for (let index = 0; index < 10; index += 1) {
       const progress = 0.755 + index * 0.007;
-      if (progress > 0.778 && progress < 0.812) continue;
+      if (progress > 0.778 && progress < 0.825) continue;
       const height = 5.5 + hash01(index, 81) * 2.5;
       const trunk = this.cylinder(0.12, height * 0.55, barkMaterial);
       this.place(trunk, progress, -11.8, height * 0.275);

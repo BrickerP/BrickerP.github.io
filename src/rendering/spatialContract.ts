@@ -31,6 +31,42 @@ export interface PassageHeroContract {
   solidHalfWidth: number;
 }
 
+/** Unscaled bounds used by both scene construction and spatial verification. */
+export const CALIBRATED_LANDMARK_MODELS = {
+  whiteDagoba: { height: 11.9, solidHalfWidth: 4.8 },
+  yonghegong: { height: 12.3, solidHalfWidth: 7.4 },
+  templeOfHeaven: { height: 14.2, solidHalfWidth: 7.2 },
+} as const;
+
+type CalibratedLandmarkModel = keyof typeof CALIBRATED_LANDMARK_MODELS;
+
+export interface CalibratedPassageHeroContract extends PassageHeroContract {
+  modelKey: CalibratedLandmarkModel;
+  modelHeight: number;
+  targetHeight: number;
+  modelSolidHalfWidth: number;
+}
+
+type AuthoredPassageHeroContract = Omit<
+  CalibratedPassageHeroContract,
+  'scale' | 'solidHalfWidth' | 'modelHeight' | 'modelSolidHalfWidth'
+>;
+
+/** Derive rendered scale and footprint from an explicit landmark height. */
+function withTargetHeight(
+  hero: AuthoredPassageHeroContract,
+): CalibratedPassageHeroContract {
+  const model = CALIBRATED_LANDMARK_MODELS[hero.modelKey];
+  const scale = hero.targetHeight / model.height;
+  return {
+    ...hero,
+    modelHeight: model.height,
+    modelSolidHalfWidth: model.solidHalfWidth,
+    scale,
+    solidHalfWidth: model.solidHalfWidth * scale,
+  };
+}
+
 /**
  * Authored spatial contract for the first four seconds. These values are used
  * by the scene and by geometry verification so visual intent cannot drift
@@ -69,14 +105,14 @@ export const PASSAGE_HEROES = {
     scale: 0.72,
     solidHalfWidth: 3.03,
   },
-  whiteDagoba: {
+  whiteDagoba: withTargetHeight({
     id: 'white-dagoba',
     passage: 2,
     progress: 0.248,
-    lateralOffset: -8.5,
-    scale: 0.76,
-    solidHalfWidth: 2.13,
-  },
+    lateralOffset: -21.8,
+    modelKey: 'whiteDagoba',
+    targetHeight: 9.6,
+  }),
   deshengmen: {
     id: 'deshengmen',
     passage: 3,
@@ -117,14 +153,14 @@ export const PASSAGE_HEROES = {
     scale: 0.68,
     solidHalfWidth: 2.59,
   },
-  yonghegong: {
+  yonghegong: withTargetHeight({
     id: 'yonghegong',
     passage: 7,
     progress: 0.666,
-    lateralOffset: -10.5,
-    scale: 0.46,
-    solidHalfWidth: 3.27,
-  },
+    lateralOffset: -11.8,
+    modelKey: 'yonghegong',
+    targetHeight: 6.9,
+  }),
   cbdHero: {
     id: 'cbd-hero',
     passage: 8,
@@ -133,14 +169,14 @@ export const PASSAGE_HEROES = {
     scale: 0.48,
     solidHalfWidth: 2.45,
   },
-  templeOfHeaven: {
+  templeOfHeaven: withTargetHeight({
     id: 'temple-of-heaven',
     passage: 9,
     progress: 0.832,
-    lateralOffset: -10.8,
-    scale: 0.44,
-    solidHalfWidth: 2.75,
-  },
+    lateralOffset: -11.8,
+    modelKey: 'templeOfHeaven',
+    targetHeight: 7.4,
+  }),
 } as const satisfies Record<string, PassageHeroContract>;
 
 export const CENTRAL_AXIS_REQUIRED_CLEARANCE =
