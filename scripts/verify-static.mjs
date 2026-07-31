@@ -115,16 +115,43 @@ assert.match(
   /<svg\b(?=[^>]*\brole=["']img["'])(?=[^>]*\baria-labelledby=["']loop-card-title loop-card-desc["'])[^>]*>/i,
   'profile-loop-card.svg: must expose its title and description as the image label',
 );
-assert.match(profileLoopCard, /<title\s+id=["']loop-card-title["']>[^<]+<\/title>/i, 'profile-loop-card.svg: missing accessible title');
-assert.match(profileLoopCard, /<desc\s+id=["']loop-card-desc["']>[^<]+<\/desc>/i, 'profile-loop-card.svg: missing accessible description');
+assert.match(
+  profileLoopCard,
+  /<title\s+id=["']loop-card-title["']>Loop 01 — Endless Second Ring<\/title>/i,
+  'profile-loop-card.svg: accessible title must name Loop 01 and Endless Second Ring',
+);
+assert.match(
+  profileLoopCard,
+  /<desc\s+id=["']loop-card-desc["']>[^<]*48-second[^<]*Beijing night drive[^<]*<\/desc>/i,
+  'profile-loop-card.svg: accessible description must identify the 48-second Beijing night drive',
+);
 for (const label of [
   'LOOP 01',
   'ENDLESS SECOND RING',
   '48-SECOND GENERATIVE BEIJING NIGHT DRIVE',
-  'ENTER THE LOOP ↗',
 ]) {
   assert.ok(profileLoopCard.includes(label), `profile-loop-card.svg: missing visible label “${label}”`);
 }
+assert.match(
+  profileLoopCard,
+  /<path\b(?=[^>]*\bid=["']loop-road-carrier["'])(?=[^>]*\bd=["']M560 139L400 79["'])(?=[^>]*\bstroke=["']#ECE5D8["'])[^>]*>/i,
+  'profile-loop-card.svg: warm-white road marking must converge on the handoff node',
+);
+assert.match(
+  profileLoopCard,
+  /<circle\b(?=[^>]*\bid=["']loop-road-node["'])(?=[^>]*\bcx=["']400["'])(?=[^>]*\bcy=["']79["'])(?=[^>]*\bfill=["']#D9684B["'])[^>]*>/i,
+  'profile-loop-card.svg: missing vermilion handoff node at the road vanishing point',
+);
+assert.equal(
+  (profileLoopCard.match(/#D9684B/gi) ?? []).length,
+  1,
+  'profile-loop-card.svg: must contain exactly one vermilion handoff node',
+);
+assert.doesNotMatch(
+  profileLoopCard,
+  /ENTER THE LOOP|<a\b|<button\b|role=["']button["']|cursor\s*:\s*pointer/i,
+  'profile-loop-card.svg: action affordances belong to the surrounding link, not the artwork',
+);
 assert.doesNotMatch(
   profileLoopCard,
   /<(?:script|image|foreignObject|iframe|object)\b|(?:href|src)\s*=|@import|@font-face/i,
