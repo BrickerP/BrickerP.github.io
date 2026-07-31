@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="160" viewBox="0 0 560 160" role="img" aria-labelledby="loop-card-title loop-card-desc">
+  <title id="loop-card-title">Loop 01 — Endless Second Ring</title>
+  <desc id="loop-card-desc">A high-contrast Beijing night-drive card with a restrained road vanishing point, ledger-like skyline, and road markings continuing through the right edge.</desc>
+  <defs>
+    <clipPath id="frame">
+      <rect width="560" height="160" rx="12"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#frame)">
+    <rect width="560" height="160" fill="#07111B"/>
+    <path d="M0 26H560M0 52H560M0 78H560M0 104H560M0 130H560" stroke="#2B4050" stroke-width=".6" opacity=".34"/>
+    <path d="M28 0V160M84 0V160M140 0V160M196 0V160M252 0V160M308 0V160M364 0V160M420 0V160M476 0V160M532 0V160" stroke="#233847" stroke-width=".6" opacity=".28"/>
+
+    <path d="M400 79 560 91V160H313Z" fill="#0B1F2E"/>
+    <path d="M400 79 313 160" stroke="#71828B" stroke-width="1.4" opacity=".72"/>
+    <path d="M400 79 560 91" stroke="#536976" stroke-width="1.1" opacity=".66"/>
+    <path d="M407 82 560 139" stroke="#ECE5D8" stroke-width="3" stroke-dasharray="17 12" stroke-linecap="square"/>
+    <path d="M414 86 560 141" stroke="#78909B" stroke-width="7" opacity=".08"/>
+    <circle cx="400" cy="79" r="2.8" fill="#D9684B"/>
+
+    <g fill="#081622" stroke="#405A69" stroke-width="1">
+      <path d="M342 78V47H358V36H375V78Z"/>
+      <path d="M370 78V25H389V78Z"/>
+      <path d="M385 78V43H402V31H414V78Z"/>
+      <path d="M413 78V18H428V78Z"/>
+      <path d="M427 78V39H441V29H452V78Z"/>
+      <path d="M450 78V47H464V22H479V78Z"/>
+      <path d="M477 78V33H491V15H510V78Z"/>
+      <path d="M507 78V41H521V27H536V78Z"/>
+      <path d="M533 78V20H560V78Z"/>
+    </g>
+    <g fill="#D9A35B">
+      <path d="M348 53H354V56H348ZM377 32H382V36H377ZM419 27H423V33H419ZM458 53H462V57H458ZM485 40H489V45H485ZM516 48H520V52H516ZM541 28H546V33H541Z"/>
+    </g>
+    <g fill="#AEB5B1">
+      <path d="M377 45H382V48H377ZM392 50H398V53H392ZM434 47H439V51H434ZM470 32H475V36H470ZM498 25H504V29H498ZM548 42H553V46H548Z"/>
+    </g>
+    <path d="M338 78H560" stroke="#71828B" stroke-width="1.3" opacity=".78"/>
+    <path d="M470 11V72M496 11V72M522 11V72M548 11V72" stroke="#536976" stroke-width=".6" opacity=".4"/>
+    <path d="M458 17H560M458 29H560M458 41H560M458 53H560M458 65H560" stroke="#536976" stroke-width=".6" opacity=".34"/>
+
+    <rect x="20" y="20" width="3" height="120" fill="#536976"/>
+    <rect x="20" y="20" width="3" height="28" fill="#D9684B"/>
+    <text x="38" y="48" fill="#ECE5D8" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="28" font-weight="800" letter-spacing="1">LOOP 01</text>
+    <text x="39" y="68" fill="#AEB5B1" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="11" font-weight="700" letter-spacing="2.2">ENDLESS SECOND RING</text>
+    <text x="39" y="92" fill="#AEB5B1" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="9" font-weight="600" letter-spacing=".45">48-SECOND GENERATIVE BEIJING NIGHT DRIVE</text>
+    <g transform="translate(39 112)" aria-label="ENTER THE LOOP ↗">
+      <rect width="142" height="28" rx="3" fill="#0B1F2E" stroke="#71828B"/>
+      <text x="11" y="18" fill="#ECE5D8" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="10" font-weight="800" letter-spacing=".6">ENTER THE LOOP</text>
+      <text x="125" y="18" fill="#D9684B" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="800">↗</text>
+    </g>
+  </g>
+  <rect x=".5" y=".5" width="559" height="159" rx="11.5" fill="none" stroke="#405A69"/>
+</svg>

@@ -100,10 +100,36 @@ async function walk(directory) {
 
 const rootHtml = await text('index.html');
 const aboutHtml = await text('public/about/index.html');
+const profileLoopCard = await text('public/profile-loop-card.svg');
 const publicProfile = await readPublicProfile();
 await assertAboutIsGenerated();
 assertPageMetadata(rootHtml, 'index.html', `${SITE_ORIGIN}/`, 'social-preview.png');
 assertPageMetadata(aboutHtml, 'public/about/index.html', `${SITE_ORIGIN}/about/`, 'profile-preview.png');
+assert.match(
+  profileLoopCard,
+  /<svg\b(?=[^>]*\bwidth=["']560["'])(?=[^>]*\bheight=["']160["'])(?=[^>]*\bviewBox=["']0 0 560 160["'])[^>]*>/i,
+  'profile-loop-card.svg: must be a 560×160 SVG',
+);
+assert.match(
+  profileLoopCard,
+  /<svg\b(?=[^>]*\brole=["']img["'])(?=[^>]*\baria-labelledby=["']loop-card-title loop-card-desc["'])[^>]*>/i,
+  'profile-loop-card.svg: must expose its title and description as the image label',
+);
+assert.match(profileLoopCard, /<title\s+id=["']loop-card-title["']>[^<]+<\/title>/i, 'profile-loop-card.svg: missing accessible title');
+assert.match(profileLoopCard, /<desc\s+id=["']loop-card-desc["']>[^<]+<\/desc>/i, 'profile-loop-card.svg: missing accessible description');
+for (const label of [
+  'LOOP 01',
+  'ENDLESS SECOND RING',
+  '48-SECOND GENERATIVE BEIJING NIGHT DRIVE',
+  'ENTER THE LOOP ↗',
+]) {
+  assert.ok(profileLoopCard.includes(label), `profile-loop-card.svg: missing visible label “${label}”`);
+}
+assert.doesNotMatch(
+  profileLoopCard,
+  /<(?:script|image|foreignObject|iframe|object)\b|(?:href|src)\s*=|@import|@font-face/i,
+  'profile-loop-card.svg: must not load scripts, images, fonts, or other external resources',
+);
 const rootFavicon = linkHref(rootHtml, 'icon');
 assert.ok(rootFavicon?.startsWith('data:image/svg+xml,'), 'index.html: missing inline SVG favicon');
 assert.equal(linkHref(aboutHtml, 'icon'), rootFavicon, 'about: favicon must match the root artwork identity');
