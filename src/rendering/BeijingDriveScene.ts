@@ -1062,10 +1062,10 @@ export class BeijingDriveScene {
     // Leaning power poles with long catenary spans.
     const poleMaterial = this.standard('#2E2A24', { roughness: 1 });
     const polePositions: Array<[number, number]> = [
-      [0.884, -5.65],
-      [0.895, -5.65],
-      [0.892, 5.65],
-      [0.904, 5.65],
+      [0.884, -5.25],
+      [0.895, -5.25],
+      [0.892, 5.25],
+      [0.904, 5.25],
     ];
     for (const [progress, offset] of polePositions) {
       const group = new Group();
@@ -1073,14 +1073,14 @@ export class BeijingDriveScene {
       const pole = this.cylinder(0.09, 6, poleMaterial);
       pole.position.y = 3;
       pole.rotation.z = offset > 0 ? -0.03 : 0.03;
-      const crossarm = this.box(1.5, 0.09, 0.09, poleMaterial);
+      const crossarm = this.box(0.6, 0.09, 0.09, poleMaterial);
       crossarm.position.y = 5.35;
       group.add(pole, crossarm);
       this.root.add(group);
     }
     for (const [fromProgress, toProgress, offset] of [
-      [0.884, 0.895, -5.65],
-      [0.892, 0.904, 5.65],
+      [0.884, 0.895, -5.25],
+      [0.892, 0.904, 5.25],
     ] as const) {
       const mid = (fromProgress + toProgress) / 2;
       const wire = this.box(0.035, 0.035, 6.4, poleMaterial);
@@ -2177,7 +2177,7 @@ export class BeijingDriveScene {
       plaque,
     );
     plaque.side = FrontSide;
-    panel.position.set(side * 0.55, 2.42, 0);
+    panel.position.set(side * 0.63, 2.42, 0);
     panel.rotation.y = side * (Math.PI / 2 + 0.17);
     entrance.add(apron, lintel, cap, panel);
     this.root.add(entrance);
