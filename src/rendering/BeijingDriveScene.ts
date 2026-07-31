@@ -1100,7 +1100,7 @@ export class BeijingDriveScene {
     const roof = this.textured('#4A5352', 'tileRoof', { roughness: 1 });
     const signNames = ['小馆', '茶室', '书店', '杂货'];
 
-    for (let index = 0; index < 14; index += 1) {
+    for (let index = 0; index < 16; index += 1) {
       const progress = 0.502 + index * 0.005;
       for (const side of [-1, 1]) {
         const opensNanluoEntrance = side > 0 && index >= 2 && index <= 4;
@@ -1457,7 +1457,7 @@ export class BeijingDriveScene {
       this.root.add(group);
     }
     // Houhai-style lantern string tracing the water's far edge.
-    for (let index = 0; index < 16; index += 1) {
+    for (let index = 0; index < 14; index += 1) {
       const progress = 0.176 + index * 0.0045;
       const sag = index % 2 === 0 ? 0 : -0.28;
       const lantern = new Mesh(this.unitSphere, this.lanternMaterial);
