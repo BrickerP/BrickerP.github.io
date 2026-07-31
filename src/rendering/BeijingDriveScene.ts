@@ -39,6 +39,20 @@ import {
 import { DRIVE, PALETTE } from './theme';
 
 const TAU = Math.PI * 2;
+const OPEN_CIRCUIT_CARRIER_OFFSET = 0.62;
+const OPEN_CIRCUIT_CARRIER_HALF_WIDTH = 0.05;
+const OPEN_CIRCUIT_NODE_PHASE = 0.026;
+const OPEN_CIRCUIT_CARRIER_NAME = 'LOOP 01 warm-white road carrier';
+const OPEN_CIRCUIT_NODE_NAME = 'LOOP 01 closure node';
+
+export interface OpenCircuitIdentityState {
+  carrierCount: number;
+  nodeCount: number;
+  carrierColor: string | null;
+  nodeColor: string | null;
+  carrierVisible: boolean;
+  nodeVisible: boolean;
+}
 
 export interface CapturePerformanceState {
   active: boolean;
@@ -48,6 +62,7 @@ export interface CapturePerformanceState {
   staticSceneObjectCount: number;
   sceneMatrixWorldAutoUpdate: boolean;
   matrixWorldDirtyCount: number;
+  openCircuitIdentity: OpenCircuitIdentityState;
 }
 
 /** Unit triangular-prism roof: pitched in X, with its ridge running along Z. */
@@ -137,6 +152,8 @@ export class BeijingDriveScene {
     Material | Material[]
   >();
   private readonly atlases: SurfaceAtlasLibrary;
+  private openCircuitCarrier!: Mesh;
+  private openCircuitNode!: Mesh;
   private capturePerformanceMode = false;
   private disposed = false;
 
@@ -170,18 +187,19 @@ export class BeijingDriveScene {
       roughness: 0.8,
     });
     this.lanternMaterial = this.standard(PALETTE.palaceRed, {
-      emissive: '#B94528',
-      emissiveIntensity: 0.94,
+      emissive: '#7A3029',
+      emissiveIntensity: 0.68,
       roughness: 0.7,
     });
 
-    this.scene.add(new HemisphereLight('#AFC8D6', '#2B3B4B', 1.82));
-    this.keyLight = new DirectionalLight('#E5CBAA', 1.34);
+    this.scene.add(new HemisphereLight('#91AAB7', '#182A36', 1.62));
+    this.keyLight = new DirectionalLight('#DDCBB4', 1.22);
     this.keyLight.position.set(-42, 68, -24);
     this.scene.add(this.keyLight);
 
     this.buildSkyAndGround();
     this.buildRoad();
+    this.buildOpenCircuitSignature();
     this.buildDistantSkyline();
     this.buildCentralAxis();
     this.buildPalaceMoat();
@@ -211,7 +229,7 @@ export class BeijingDriveScene {
     const wave = 0.5 + 0.5 * Math.cos(progress * TAU);
     this.waterMaterial.emissiveIntensity = 0.18 + wave * 0.035;
     this.lampMaterial.emissiveIntensity = 1.4 + wave * 0.08;
-    this.keyLight.intensity = 1.28 + wave * 0.08;
+    this.keyLight.intensity = 1.16 + wave * 0.08;
 
     for (const entry of this.lampLights) {
       entry.light.intensity = entry.baseIntensity * (
@@ -266,9 +284,13 @@ export class BeijingDriveScene {
   readCapturePerformanceState(): CapturePerformanceState {
     let staticSceneObjectCount = 0;
     let matrixWorldDirtyCount = 0;
+    let carrierCount = 0;
+    let nodeCount = 0;
     this.scene.traverse((object) => {
       staticSceneObjectCount += 1;
       if (object.matrixWorldNeedsUpdate) matrixWorldDirtyCount += 1;
+      if (object.name === OPEN_CIRCUIT_CARRIER_NAME) carrierCount += 1;
+      if (object.name === OPEN_CIRCUIT_NODE_NAME) nodeCount += 1;
     });
     return {
       active: this.capturePerformanceMode,
@@ -278,6 +300,14 @@ export class BeijingDriveScene {
       staticSceneObjectCount,
       sceneMatrixWorldAutoUpdate: this.scene.matrixWorldAutoUpdate,
       matrixWorldDirtyCount,
+      openCircuitIdentity: {
+        carrierCount,
+        nodeCount,
+        carrierColor: this.readMeshColor(this.openCircuitCarrier),
+        nodeColor: this.readMeshColor(this.openCircuitNode),
+        carrierVisible: this.openCircuitCarrier.visible,
+        nodeVisible: this.openCircuitNode.visible,
+      },
     };
   }
 
@@ -318,7 +348,7 @@ export class BeijingDriveScene {
     sky.renderOrder = -100;
     this.root.add(sky);
 
-    const groundMaterial = this.standard('#202C35', { roughness: 1 });
+    const groundMaterial = this.standard('#122430', { roughness: 1 });
     const groundGeometry = this.trackGeometry(new PlaneGeometry(320, 320));
     const ground = new Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
@@ -372,6 +402,67 @@ export class BeijingDriveScene {
       this.place(dash, (index + 0.3) / 140, 0, 0.035);
       this.root.add(dash);
     }
+  }
+
+  /**
+   * LOOP 01's scene-native signature: one continuous warm-white carrier and
+   * one non-emissive closure node encountered during the overpass return.
+   * The carrier uses an unlit material for legibility; the node deliberately
+   * remains a standard, non-glowing surface. Both remain present when capture
+   * mode swaps standard materials for lightweight proxies.
+   */
+  private buildOpenCircuitSignature(): void {
+    const carrierMaterial = this.trackMaterial(
+      new MeshBasicMaterial({
+        color: PALETTE.warmWhite,
+        fog: true,
+      }),
+    );
+    this.openCircuitCarrier = new Mesh(
+      this.trackGeometry(
+        createPathRibbon(
+          OPEN_CIRCUIT_CARRIER_OFFSET - OPEN_CIRCUIT_CARRIER_HALF_WIDTH,
+          OPEN_CIRCUIT_CARRIER_OFFSET + OPEN_CIRCUIT_CARRIER_HALF_WIDTH,
+          0.058,
+          {
+            centerScale: DRIVE_PATH_SCALE,
+            segments: 960,
+          },
+        ),
+      ),
+      carrierMaterial,
+    );
+    this.openCircuitCarrier.name = OPEN_CIRCUIT_CARRIER_NAME;
+    this.openCircuitCarrier.renderOrder = 2;
+    this.root.add(this.openCircuitCarrier);
+
+    const nodeMaterial = this.standard(PALETTE.signature, {
+      metalness: 0,
+      roughness: 0.88,
+    });
+    this.openCircuitNode = this.cylinder(0.22, 0.04, nodeMaterial);
+    this.openCircuitNode.name = OPEN_CIRCUIT_NODE_NAME;
+    this.place(
+      this.openCircuitNode,
+      OPEN_CIRCUIT_NODE_PHASE,
+      OPEN_CIRCUIT_CARRIER_OFFSET,
+      0.082,
+    );
+    this.openCircuitNode.renderOrder = 3;
+    this.root.add(this.openCircuitNode);
+  }
+
+  private readMeshColor(mesh: Mesh): string | null {
+    const material = Array.isArray(mesh.material)
+      ? mesh.material[0]
+      : mesh.material;
+    if (
+      !(material instanceof MeshBasicMaterial) &&
+      !(material instanceof MeshStandardMaterial)
+    ) {
+      return null;
+    }
+    return `#${material.color.getHexString().toUpperCase()}`;
   }
 
   private buildDistantSkyline(): void {

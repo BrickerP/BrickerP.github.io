@@ -101,10 +101,81 @@ async function walk(directory) {
 const rootHtml = await text('index.html');
 const aboutHtml = await text('public/about/index.html');
 const profileLoopCard = await text('public/profile-loop-card.svg');
+const controlsSource = await text('src/ui/controls.ts');
+const stylesSource = await text('src/styles/main.css');
+const themeSource = await text('src/rendering/theme.ts');
+const designSource = await text('DESIGN.md');
+const actionMarkup = controlsSource.match(
+  /<div class="ui-actions"[\s\S]*?<\/div>/,
+)?.[0] ?? '';
 const publicProfile = await readPublicProfile();
 await assertAboutIsGenerated();
 assertPageMetadata(rootHtml, 'index.html', `${SITE_ORIGIN}/`, 'social-preview.png');
 assertPageMetadata(aboutHtml, 'public/about/index.html', `${SITE_ORIGIN}/about/`, 'profile-preview.png');
+assert.match(
+  controlsSource,
+  /<p class="ui-eyebrow">LOOP 01<\/p>[\s\S]*?<h1 class="ui-title" id="experience-title">ENDLESS SECOND RING<\/h1>[\s\S]*?<p class="ui-sub">BEIJING <span lang="zh-CN">\/ 北京<\/span> <span aria-hidden="true">·<\/span> 48-SECOND GENERATIVE DRIVE<\/p>/,
+  'controls: visible identity must follow the approved LOOP 01 mono hierarchy',
+);
+assert.equal(
+  (actionMarkup.match(/\bdata-act="/g) ?? []).length,
+  4,
+  'controls: Open Circuit must retain exactly four public actions',
+);
+for (const [label, token, role, color] of [
+  ['Night', '--sky', 'night', '#07111B'],
+  ['Asphalt', '--asphalt', 'asphalt', '#0B1F2E'],
+  ['Warm white', '--text', 'warmWhite', '#ECE5D8'],
+  ['Steel', '--steel', 'steel', '#71828B'],
+  ['Signature vermilion', '--vermilion', 'signature', '#D9684B'],
+]) {
+  assert.match(
+    stylesSource,
+    new RegExp(`${escapeRegExp(token)}:\\s*${escapeRegExp(color)}`, 'i'),
+    `styles: missing approved ${token} identity token`,
+  );
+  assert.match(
+    themeSource,
+    new RegExp(`\\b${role}:\\s*['"]${escapeRegExp(color)}['"]`),
+    `theme: missing approved ${role} identity role`,
+  );
+  assert.match(
+    designSource,
+    new RegExp(`${escapeRegExp(label)}:\\s*\`${escapeRegExp(color)}\``),
+    `design: ${label} identity role drifted from the runtime theme`,
+  );
+}
+for (const [label, role, color] of [
+  ['Blue-hour horizon', 'skyHorizon', '#27495C'],
+  ['Distance fog', 'fog', '#405563'],
+  ['Pavement', 'pavement', '#53606A'],
+  ['Stone', 'stone', '#C8C4B8'],
+  ['Beijing wall red', 'wallRed', '#4F292B'],
+  ['Palace oxblood', 'palaceRed', '#642B28'],
+  ['Roof tile', 'roof', '#344148'],
+  ['Roof edge', 'roofEdge', '#9F7A48'],
+  ['Lane marking', 'lane', '#71828B'],
+  ['Warm lamp', 'lamp', '#FFD38A'],
+  ['Water', 'water', '#2F667A'],
+  ['Foliage', 'foliage', '#365A43'],
+  ['Text/accent', 'text', '#ECE5D8'],
+]) {
+  assert.match(
+    themeSource,
+    new RegExp(`\\b${role}:\\s*['"]${escapeRegExp(color)}['"]`),
+    `theme: missing approved ${role} scene role`,
+  );
+  assert.match(
+    designSource,
+    new RegExp(`${escapeRegExp(label)}:\\s*\`${escapeRegExp(color)}\``),
+    `design: ${label} scene role drifted from the runtime theme`,
+  );
+}
+assert.match(
+  stylesSource,
+  /@media \(max-width: 700px\)[\s\S]*?\.ui-actions\s*\{[\s\S]*?top:\s*auto;[\s\S]*?bottom:\s*calc\(12px \+ var\(--safe-b\)\);/,
+  'styles: portrait action rail must occupy the bottom safe area',
+);
 assert.match(
   profileLoopCard,
   /<svg\b(?=[^>]*\bwidth=["']560["'])(?=[^>]*\bheight=["']160["'])(?=[^>]*\bviewBox=["']0 0 560 160["'])[^>]*>/i,

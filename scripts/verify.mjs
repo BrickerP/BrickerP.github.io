@@ -270,9 +270,10 @@ const passages = [
 
 const SMALL_TEXT_MIN_CONTRAST = 4.5;
 const smallTextSelectors = [
-  { name: 'eyebrow', selector: '.ui-eyebrow' },
-  { name: 'eyebrow detail', selector: '.ui-eyebrow span' },
-  { name: 'subtitle', selector: '.ui-sub' },
+  { name: 'loop identity', selector: '.ui-eyebrow' },
+  { name: 'work title', selector: '.ui-title' },
+  { name: 'descriptor', selector: '.ui-sub' },
+  { name: 'descriptor Chinese', selector: '.ui-sub span[lang]' },
   { name: 'footer', selector: '.ui-footer' },
 ];
 
@@ -1170,9 +1171,14 @@ for (const viewport of viewports) {
     `${viewport.name}: about control name`,
   );
   assert.equal(
-    await page.locator('.ui-eyebrow span').getAttribute('lang'),
+    await page.locator('.ui-sub span[lang]').getAttribute('lang'),
     'zh-CN',
     `${viewport.name}: HUD Chinese text has an explicit language`,
+  );
+  assert.match(
+    bodyText,
+    /LOOP 01 ENDLESS SECOND RING BEIJING \/ 北京 · 48-SECOND GENERATIVE DRIVE/,
+    `${viewport.name}: Open Circuit identity hierarchy drifted`,
   );
   assert.equal(await page.locator('[data-act="record"]').isDisabled(), false, `${viewport.name}: record supported`);
   assert.equal(await page.locator('[data-act="fs"]').isDisabled(), false, `${viewport.name}: fullscreen supported`);
@@ -1208,17 +1214,33 @@ for (const viewport of viewports) {
   }
   const boxes = await visibleOverlayBoxes(page);
   assertOverlaySafety(boxes, viewport, viewport.name);
+  if (viewport.mobile) {
+    const actionRail = boxes.find(({ selector }) => selector === '.ui-actions');
+    assert.ok(actionRail, `${viewport.name}: portrait action rail is missing`);
+    assert.ok(
+      actionRail.y >= viewport.height * 0.72,
+      `${viewport.name}: portrait action rail must stay in the bottom safe area`,
+    );
+  }
   const smallTextContrast = await smallTextContrastReport(page, viewport.name);
   assert.ok(
-    smallTextContrast.some(({ name }) => name === 'eyebrow'),
-    `${viewport.name}: eyebrow contrast was not checked`,
+    smallTextContrast.some(({ name }) => name === 'loop identity'),
+    `${viewport.name}: LOOP 01 contrast was not checked`,
   );
   assert.ok(
-    smallTextContrast.some(({ name }) => name === 'eyebrow detail'),
-    `${viewport.name}: eyebrow detail contrast was not checked`,
+    smallTextContrast.some(({ name }) => name === 'work title'),
+    `${viewport.name}: work title contrast was not checked`,
+  );
+  assert.ok(
+    smallTextContrast.some(({ name }) => name === 'descriptor'),
+    `${viewport.name}: descriptor contrast was not checked`,
+  );
+  assert.ok(
+    smallTextContrast.some(({ name }) => name === 'descriptor Chinese'),
+    `${viewport.name}: descriptor Chinese text contrast was not checked`,
   );
   if (!viewport.mobile) {
-    for (const name of ['subtitle', 'footer']) {
+    for (const name of ['footer']) {
       assert.ok(
         smallTextContrast.some((entry) => entry.name === name),
         `${viewport.name}: ${name} contrast was not checked`,
@@ -2739,6 +2761,18 @@ assert.equal(
   activeCapturePerformance.matrixWorldDirtyCount,
   0,
   'static scene contains dirty world matrices before recording',
+);
+assert.deepEqual(
+  activeCapturePerformance.openCircuitIdentity,
+  {
+    carrierCount: 1,
+    nodeCount: 1,
+    carrierColor: '#ECE5D8',
+    nodeColor: '#D9684B',
+    carrierVisible: true,
+    nodeVisible: true,
+  },
+  'capture mode does not preserve the single Open Circuit carrier and node',
 );
 assert.deepEqual(
   await recordingPage.locator('canvas').evaluate((canvas) => [canvas.width, canvas.height]),

@@ -3,9 +3,9 @@
 ## Source of truth
 
 - Status: Active. The user-approved Visual Ralph refinement direction is the current product contract.
-- Last refreshed: 2026-07-19.
+- Last refreshed: 2026-07-31.
 - Product: A full-viewport, first-person, deterministic Beijing endless-drive artwork.
-- Direction: Preserve and refine the 48-second, twelve-passage journey. Improve composition, clearance, depth, atmosphere, transition flow, responsive framing, and interface restraint without changing the product into a map, route planner, driving game, or geographic simulation.
+- Direction: `LOOP 01 / ENDLESS SECOND RING` — preserve the 48-second, twelve-passage journey while carrying the approved Open Circuit identity through the scene and interface without changing the product into a map, route planner, driving game, or geographic simulation.
 - Superseded concepts: Overhead maps, ring-road plans, recursive route diagrams, route labels, dense line fields, and `Plan`/`Infinite` mode switching.
 
 ## Product and experience contract
@@ -39,27 +39,32 @@ Adjacent passages overlap through shared silhouettes, fog occlusion, walls, tree
 ## Visual language
 
 - Personality: Cinematic, calm, architectural, distinctly Beijing, restrained, and slightly dreamlike.
-- Palette, exactly synchronized with `src/rendering/theme.ts`:
-  - Night sky: `#0E1B2D`
-  - Blue-hour horizon: `#315F7B`
-  - Distance fog: `#3B5B6D`
-  - Asphalt: `#28333D`
-  - Pavement: `#73777A`
+- Core identity palette, exactly synchronized with `src/rendering/theme.ts` and the UI tokens:
+  - Night: `#07111B`
+  - Asphalt: `#0B1F2E`
+  - Warm white: `#ECE5D8`
+  - Steel: `#71828B`
+  - Signature vermilion: `#D9684B`
+- Muted Beijing scene roles:
+  - Blue-hour horizon: `#27495C`
+  - Distance fog: `#405563`
+  - Pavement: `#53606A`
   - Stone: `#C8C4B8`
-  - Beijing wall red: `#8F2B22`
-  - Palace vermilion: `#B53A2B`
+  - Beijing wall red: `#4F292B`
+  - Palace oxblood: `#642B28`
   - Roof tile: `#344148`
-  - Roof edge: `#C9A056`
-  - Lane marking: `#E5DDCC`
+  - Roof edge: `#9F7A48`
+  - Lane marking: `#71828B`
   - Warm lamp: `#FFD38A`
   - Water: `#2F667A`
   - Foliage: `#365A43`
-  - Text/accent: `#F4E7D2`
-- Cool navy, blue-grey, charcoal, and fog dominate. Vermilion and amber are localized anchors, not global neon accents.
+  - Text/accent: `#ECE5D8`
+- One warm-white road carrier resolves at one non-glowing signature vermilion closure node. The node color is exact, appears once in the runtime scene, and is never repeated as a decorative motif.
+- Cool navy, blue-grey, charcoal, and fog dominate. Beijing reds remain diegetic and muted; signature vermilion and amber are localized anchors, not global neon accents.
 - Use filled planes, extruded silhouettes, and large tonal masses. Seeded boot-once atlases may add brick, tile, bark, glass, stone, asphalt, lattice, and blue-panel rhythm, but never become photo skins or sticker identity.
 - Prefer a foreground occluder, midground street/structure, and distant skyline. Avoid more than three dominant architectural layers in one frame.
 - Preserve deliberate quiet fields of sky, road, fog, and water while keeping foreground, midground, and distance readable.
-- Use system sans for product title/actions and system monospace only for optional recording/debug status. No downloaded font.
+- Use system monospace for artifact identity, metadata, controls, and status. System sans is reserved for longer About copy. No downloaded font.
 - Motion is limited to forward parallax, subtle phase-derived camera movement, and restrained lamp/water modulation. No random shake, strobe, recursive zoom, or temporal feedback.
 
 ## Composition and responsive contract
@@ -71,20 +76,22 @@ Adjacent passages overlap through shared silhouettes, fog occlusion, walls, tree
 - Supported DPR-1 verification viewports: `1440×900`, `1280×720`, `390×844`, `360×800`, and `320×568`.
 - Desktop horizon target: 40–48% of viewport height. Portrait horizon target: 34–43%, with sufficient road depth below it.
 - Portrait framing may use a wider bounded field of view, more central lane offset, and farther look-ahead. It must not merely crop the desktop image until the road or landmark disappears.
-- Brand/title sits top-left and the action toolbar top-right on wide screens. Narrow layouts keep the same hierarchy within safe areas with zero collision among title, toolbar, status, and vanishing point.
+- Brand/title sits top-left and the action rail top-right on wide screens. Portrait layouts move the action rail to the bottom safe area so it does not compete with the title or horizon; all layouts preserve zero collision among title, rail, status, and vanishing point.
+- Visible identity hierarchy is `LOOP 01`, then `ENDLESS SECOND RING`, then the restrained `BEIJING / 北京 · 48-SECOND GENERATIVE DRIVE` descriptor, using the exact mono grammar of the approved profile card.
 - `ENDLESS SECOND RING` is exact product-title text. At `390×844` and `320×568`, it uses no more than two calm lines and remains subordinate to the scene.
 - The reduced-motion `390×844` poster is a centered central-axis composition with legible road, gate, and sky, no clipped landmark, and no unintended blank/black band larger than 8% of viewport height.
 
 ## Interface and content contract
 
 - Public controls are exactly four: play/pause, record one loop, enter/exit fullscreen, and open/close personal intro.
+- The four actions share one quiet steel-rule rail with sharp, compact visual geometry while every semantic button retains its minimum `44×44` target and full pressed, disabled, hover, focus, and shortcut behavior.
 - Recording and fullscreen are progressive enhancements. Unsupported actions remain disabled with an accessible explanation and never block playback.
 - The toolbar personal intro is a modal overlay over the continuing drive. The indexable `/about/` page is its static content counterpart for direct navigation, sharing, no-JavaScript access, and search discovery; it does not replace or alter the artwork runtime.
 - Both About surfaces present the same concise identity, concurrent-role explanation, public work evidence, and Email / Resume / LinkedIn / GitHub primary actions. Public proof must link to inspectable public URLs; an empty profile shell is not evidence.
 - The modal header prioritizes the four primary actions on mobile. Detailed experience stays progressively disclosed below them, and every link or expander exposes at least a `44×44` CSS-pixel target.
 - `D` toggles private maintainer telemetry. It is not a public toolbar action and must not collide with title, toolbar, or recording status.
 - Forbidden UI and terms: `Plan`, `Map`, `Route`, `Overview`, mini-map, compass, progress map, route selection, and non-diegetic street-name labels. Physical signs inside the 3D streetscape are valid.
-- Preferred visible text includes `BEIJING / 北京`, `ENDLESS SECOND RING`, `PLAY`, `PAUSE`, `FULLSCREEN`, `RECORD LOOP`, `PERSONAL INTRO` / `ABOUT`, and `ARTISTIC COMPOSITION · NOT FOR NAVIGATION`.
+- Preferred visible text includes `LOOP 01`, `ENDLESS SECOND RING`, `BEIJING / 北京 · 48-SECOND GENERATIVE DRIVE`, `PLAY`, `PAUSE`, `FULLSCREEN`, `RECORD LOOP`, `PERSONAL INTRO` / `ABOUT`, and `ARTISTIC COMPOSITION · NOT FOR NAVIGATION`.
 
 ## Interaction and accessibility
 
