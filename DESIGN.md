@@ -71,6 +71,8 @@ Adjacent passages overlap through shared silhouettes, fog occlusion, walls, tree
 
 - The road is a continuous lower-central visual floor, and the forward opening remains legible in every passage.
 - The vanishing point stays within the central 30% of viewport width and 32–52% of viewport height, except during the intentional overpass compression.
+- The central-axis sequence is a composed street encounter, not a drive-through diorama: Zhengyangmen may span the road only where its open portal clears the full drivable corridor, while Tiananmen reads as a set-back vista across a forecourt rather than an obstacle placed on the carriageway.
+- No solid landmark footprint, gate pier, sign, wall, tree, or column may enter the drivable corridor (`±4.2` scene units from the road centreline). A spanning gateway must expose an opening at least as wide as that corridor; visual overhangs may cross it only above driver-eye clearance.
 - No gate, sign, wall, tree, or column may intersect the driver-eye path or dominate more than roughly one-third of the frame for longer than a brief transition.
 - Water must read across consecutive samples as a horizontal blue-toned plane distinct from road and sky, supported by parapet, reflection, shoreline, or vegetation.
 - Supported DPR-1 verification viewports: `1440×900`, `1280×720`, `390×844`, `360×800`, and `320×568`.
@@ -118,7 +120,7 @@ Adjacent passages overlap through shared silhouettes, fog occlusion, walls, tree
 
 The implementation uses Vite, TypeScript, Three.js, and plain CSS. It adds no map SDK, tile service, runtime data service, UI framework, or downloaded font.
 
-The authored world currently contains roughly `2052` scene objects whose transforms become static after construction. Construction resolves their world matrices once and disables automatic scene world-matrix updates; any future dynamic scene transform must explicitly update its world matrix or deliberately restore automatic updates. The camera remains outside this static scene hierarchy and updates independently.
+The authored world currently contains roughly `1939` scene objects whose transforms become static after construction. The browser regression keeps that count within an `1850–1999` complexity budget: the lower bound catches accidental scene loss, while the upper bound prevents decorative repetition from quietly returning. Construction resolves world matrices once and disables automatic scene world-matrix updates; any future dynamic scene transform must explicitly update its world matrix or deliberately restore automatic updates. The camera remains outside this static scene hierarchy and updates independently.
 
 ## Determinism, lifecycle, and compatibility
 
@@ -136,6 +138,7 @@ The authored world currently contains roughly `2052` scene objects whose transfo
 - At `900×640`, DPR 1, native deterministic `0ms` and `48000ms` captures have zero differing RGBA channels, zero maximum delta, and zero mean absolute difference.
 - The `385`-frame check samples every `0.125s`, rejects flat frames, and requires `p95 / median < 4.5`, `max / median < 8`, `seam / median < 3.5`, and first-versus-seam adjacent-frame ratio below `4`.
 - Canonical contact sheets capture DPR-1 frames at `0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44` seconds plus `47.875` and `0` seam-adjacent frames.
+- Transition evidence also captures the canonical `1280×720` viewport at `±250ms` around every four-second boundary, including the wrapped `48s → 0s` boundary. These frames must retain a legible forward opening and show adjacent passage identities overlapping through authored geometry, atmosphere, or occlusion rather than a hard composition pop.
 - Contact sheets prove composition only. The fine-grained continuity check and one observed full-speed circuit are required to close transition risk.
 - Every passage must be recognizable without explanatory titles, retain road/horizon direction, use filled tonal masses, and show atmospheric separation without featureless black clipping.
 - Local production and deployed `?qa=1` captures at equal viewport, DPR, motion preference, and phase must preserve the same composition and passage identity; GPU-level pixel variance is recorded separately.

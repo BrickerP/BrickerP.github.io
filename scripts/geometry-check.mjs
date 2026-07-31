@@ -49,7 +49,7 @@ function transpileDrivePath() {
 }
 
 function transpileCameraModules(directory) {
-  const modules = ['theme', 'drivePath', 'FirstPersonCameraRig'];
+  const modules = ['theme', 'drivePath', 'spatialContract', 'FirstPersonCameraRig'];
   for (const name of modules) {
     const sourcePath = join(ROOT, 'src', 'rendering', `${name}.ts`);
     const output = ts.transpileModule(readFileSync(sourcePath, 'utf8'), {
@@ -148,8 +148,16 @@ try {
 
 const cameraTempDirectory = mkdtempSync(join(ROOT, 'scripts', '.geometry-camera-check-'));
 let cameraModule;
+let themeModule;
+let spatialContractModule;
 try {
   transpileCameraModules(cameraTempDirectory);
+  themeModule = await import(
+    `${pathToFileURL(join(cameraTempDirectory, 'theme.mjs')).href}?run=${Date.now()}`
+  );
+  spatialContractModule = await import(
+    `${pathToFileURL(join(cameraTempDirectory, 'spatialContract.mjs')).href}?run=${Date.now()}`
+  );
   cameraModule = await import(
     `${pathToFileURL(join(cameraTempDirectory, 'FirstPersonCameraRig.mjs')).href}?run=${Date.now()}`
   );
@@ -266,7 +274,62 @@ if (runsGeometryCase('dynamic-resize')) {
   );
 }
 
+let centralAxisClearanceReport = null;
 if (runsGeometryCase('central-axis-clearance')) {
+  const requiredClearance = spatialContractModule.CENTRAL_AXIS_REQUIRED_CLEARANCE;
+  const clearanceMargin = spatialContractModule.LANDMARK_CLEARANCE_MARGIN;
+  const landmarkContracts = Object.values(spatialContractModule.CENTRAL_AXIS_LANDMARKS);
+  assert.ok(Number.isFinite(clearanceMargin) && clearanceMargin > 0, 'clearance margin must be positive');
+  assert.equal(
+    requiredClearance,
+    themeModule.DRIVE.roadHalfWidth + clearanceMargin,
+    'central-axis clearance must include the road half-width and landmark margin',
+  );
+  assert.deepEqual(
+    landmarkContracts.map(({ id }) => id).sort(),
+    ['tiananmen', 'zhengyangmen'],
+    'central-axis landmark clearance contract is incomplete',
+  );
+  for (const landmark of landmarkContracts) {
+    assert.ok(
+      Number.isFinite(landmark.progress) && landmark.progress >= 0 && landmark.progress < 1,
+      `${landmark.id}: progress must be a normalized loop phase`,
+    );
+    assert.ok(Number.isFinite(landmark.scale) && landmark.scale > 0, `${landmark.id}: scale`);
+    assert.ok(Number.isFinite(landmark.lateralOffset), `${landmark.id}: lateral offset`);
+    if (landmark.kind === 'pass-through') {
+      assert.ok(
+        landmark.clearHalfWidth >= requiredClearance,
+        `${landmark.id}: portal half-width ${landmark.clearHalfWidth} does not clear the ` +
+          `${requiredClearance} drivable corridor`,
+      );
+      continue;
+    }
+    assert.equal(landmark.kind, 'set-back', `${landmark.id}: unsupported clearance strategy`);
+    assert.ok(Number.isFinite(landmark.headingOffset), `${landmark.id}: heading offset`);
+    assert.ok(
+      Number.isFinite(landmark.solidHalfWidth) && landmark.solidHalfWidth > 0,
+      `${landmark.id}: solid footprint half-width`,
+    );
+    assert.ok(
+      Math.abs(landmark.lateralOffset) - landmark.solidHalfWidth >= requiredClearance,
+      `${landmark.id}: solid footprint enters the drivable corridor`,
+    );
+  }
+  centralAxisClearanceReport = {
+    roadHalfWidth: themeModule.DRIVE.roadHalfWidth,
+    clearanceMargin,
+    requiredClearance,
+    landmarks: landmarkContracts.map((landmark) => ({
+      id: landmark.id,
+      kind: landmark.kind,
+      availableClearance:
+        landmark.kind === 'pass-through'
+          ? landmark.clearHalfWidth
+          : Math.abs(landmark.lateralOffset) - landmark.solidHalfWidth,
+    })),
+  };
+
   for (const aspect of [0.75, 0.999, 1.001]) {
     for (const phase of [0.016, 0.018, 0.02, 0.056, 0.058, 0.06]) {
       const snapshot = cameraSnapshot(aspect, phase);
@@ -279,6 +342,52 @@ if (runsGeometryCase('central-axis-clearance')) {
       );
     }
   }
+}
+
+let passageHeroClearanceReport = null;
+if (runsGeometryCase('passage-hero-clearance')) {
+  const requiredClearance = spatialContractModule.CENTRAL_AXIS_REQUIRED_CLEARANCE;
+  const heroes = Object.values(spatialContractModule.PASSAGE_HEROES);
+  const ids = heroes.map(({ id }) => id);
+  assert.equal(new Set(ids).size, ids.length, 'passage hero ids must be unique');
+
+  for (const hero of heroes) {
+    assert.ok(typeof hero.id === 'string' && hero.id.length > 0, 'passage hero id is empty');
+    for (const field of ['passage', 'progress', 'lateralOffset', 'scale', 'solidHalfWidth']) {
+      assert.ok(Number.isFinite(hero[field]), `${hero.id}: ${field} must be finite`);
+    }
+    assert.ok(
+      Number.isInteger(hero.passage) && hero.passage >= 0 && hero.passage < 12,
+      `${hero.id}: passage must be an integer from 0 through 11`,
+    );
+    const passageStart = hero.passage / 12;
+    const passageEnd = (hero.passage + 1) / 12;
+    assert.ok(
+      hero.progress >= passageStart && hero.progress < passageEnd,
+      `${hero.id}: progress ${hero.progress} is outside passage ${hero.passage} ` +
+        `[${passageStart}, ${passageEnd})`,
+    );
+    assert.ok(hero.scale > 0, `${hero.id}: scale must be positive`);
+    assert.ok(hero.solidHalfWidth > 0, `${hero.id}: solid half-width must be positive`);
+    assert.ok(
+      Math.abs(hero.lateralOffset) - hero.solidHalfWidth >= requiredClearance,
+      `${hero.id}: solid footprint enters the drivable corridor`,
+    );
+  }
+
+  passageHeroClearanceReport = {
+    requiredClearance,
+    heroes: heroes.map((hero) => {
+      const availableClearance = Math.abs(hero.lateralOffset) - hero.solidHalfWidth;
+      return {
+        id: hero.id,
+        passage: hero.passage,
+        progress: hero.progress,
+        availableClearance,
+        clearanceMargin: availableClearance - requiredClearance,
+      };
+    }),
+  };
 }
 
 const repeatedSamples = [];
@@ -311,6 +420,10 @@ const runtimeSources = [
   ...sourceFiles(join(ROOT, 'src', 'rendering')),
 ];
 const combinedSource = runtimeSources.map((path) => readFileSync(path, 'utf8')).join('\n');
+const driveSceneSource = readFileSync(
+  join(ROOT, 'src', 'rendering', 'BeijingDriveScene.ts'),
+  'utf8',
+);
 assert.doesNotMatch(combinedSource, /\bMath\.random\s*\(/, 'runtime scene uses unseeded Math.random');
 assert.doesNotMatch(
   combinedSource,
@@ -318,6 +431,16 @@ assert.doesNotMatch(
   'runtime scene uses non-deterministic crypto randomness',
 );
 assert.match(combinedSource, /central[\s_-]*axis/i, 'scene config is missing the central-axis passage');
+assert.match(
+  driveSceneSource,
+  /CENTRAL_AXIS_LANDMARKS\.zhengyangmen/,
+  'Zhengyangmen placement is not connected to the clearance contract',
+);
+assert.match(
+  driveSceneSource,
+  /CENTRAL_AXIS_LANDMARKS\.tiananmen/,
+  'Tiananmen placement is not connected to the clearance contract',
+);
 assert.match(combinedSource, /qianmen|dashilar/i, 'scene config is missing the Qianmen passage');
 assert.match(combinedSource, /hutong/i, 'scene config is missing the hutong passage');
 assert.match(combinedSource, /nanluo|wudaoying/i, 'scene config is missing the Nanluo/Wudaoying passage');
@@ -347,6 +470,8 @@ console.log(
       maxSegmentLength: Math.max(...segmentLengths),
       endpointDelta: vectorDelta(samples[0], samples.at(-1)),
       tangentEndpointDelta: vectorDelta(tangents[0], tangents.at(-1)),
+      centralAxisClearance: centralAxisClearanceReport,
+      passageHeroClearance: passageHeroClearanceReport,
       ribbonVertices: ribbonSnapshot.position.length / 3,
       ribbonTriangles: ribbonSnapshot.index.length / 3,
       passages: [

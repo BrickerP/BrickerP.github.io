@@ -37,11 +37,15 @@ import {
   type SurfaceAtlasId,
 } from './surfaceTextures';
 import { DRIVE, PALETTE } from './theme';
+import {
+  CENTRAL_AXIS_LANDMARKS,
+  PASSAGE_HEROES,
+} from './spatialContract';
 
 const TAU = Math.PI * 2;
 const OPEN_CIRCUIT_CARRIER_OFFSET = 0.62;
 const OPEN_CIRCUIT_CARRIER_HALF_WIDTH = 0.05;
-const OPEN_CIRCUIT_NODE_PHASE = 0.026;
+const OPEN_CIRCUIT_NODE_PHASE = 0.988;
 const OPEN_CIRCUIT_CARRIER_NAME = 'LOOP 01 warm-white road carrier';
 const OPEN_CIRCUIT_NODE_NAME = 'LOOP 01 closure node';
 
@@ -142,6 +146,11 @@ export class BeijingDriveScene {
   private readonly lampMaterial: MeshStandardMaterial;
   private readonly windowMaterial: MeshStandardMaterial;
   private readonly lanternMaterial: MeshStandardMaterial;
+  private readonly streetMetalMaterial: MeshStandardMaterial;
+  private readonly treeTrunkMaterial: MeshStandardMaterial;
+  private readonly treeBarkMaterial: MeshStandardMaterial;
+  private readonly foliageMaterial: MeshStandardMaterial;
+  private readonly shopHardwareMaterial: MeshStandardMaterial;
   private readonly keyLight: DirectionalLight;
   private readonly captureMaterialProxies = new Map<
     MeshStandardMaterial,
@@ -191,6 +200,14 @@ export class BeijingDriveScene {
       emissiveIntensity: 0.68,
       roughness: 0.7,
     });
+    this.streetMetalMaterial = this.standard('#3A4144', {
+      metalness: 0.3,
+      roughness: 0.72,
+    });
+    this.treeTrunkMaterial = this.standard('#3B3025', { roughness: 1 });
+    this.treeBarkMaterial = this.textured('#39301F', 'bark', { roughness: 1 });
+    this.foliageMaterial = this.standard(PALETTE.foliage, { roughness: 1 });
+    this.shopHardwareMaterial = this.standard('#33291C', { roughness: 1 });
 
     this.scene.add(new HemisphereLight('#91AAB7', '#182A36', 1.62));
     this.keyLight = new DirectionalLight('#DDCBB4', 1.22);
@@ -214,6 +231,7 @@ export class BeijingDriveScene {
     this.buildQianmenStreet();
     this.buildHutong();
     this.buildOverpass();
+    this.buildStreetScaleDetails();
 
     // Every scene transform is authored once during construction. Resolve the
     // hierarchy now so the renderer does not walk roughly two thousand static
@@ -440,13 +458,13 @@ export class BeijingDriveScene {
       metalness: 0,
       roughness: 0.88,
     });
-    this.openCircuitNode = this.cylinder(0.22, 0.04, nodeMaterial);
+    this.openCircuitNode = this.cylinder(0.16, 0.025, nodeMaterial);
     this.openCircuitNode.name = OPEN_CIRCUIT_NODE_NAME;
     this.place(
       this.openCircuitNode,
       OPEN_CIRCUIT_NODE_PHASE,
       OPEN_CIRCUIT_CARRIER_OFFSET,
-      0.082,
+      0.066,
     );
     this.openCircuitNode.renderOrder = 3;
     this.root.add(this.openCircuitNode);
@@ -503,21 +521,39 @@ export class BeijingDriveScene {
       }
     }
 
-    // Keep the opening camera outside Zhengyangmen so its complete roof, plaque
-    // and portal frame Tiananmen instead of becoming a cropped ceiling.
-    this.buildAxisGate(0.041, 0.7, '正阳门');
-    this.buildTiananmen(0.076);
+    const zhengyangmen = CENTRAL_AXIS_LANDMARKS.zhengyangmen;
+    const tiananmen = CENTRAL_AXIS_LANDMARKS.tiananmen;
 
-    for (const side of [-1, 1]) {
+    // Zhengyangmen remains a generous threshold. Tiananmen is deliberately a
+    // side reveal across a forecourt, so the drive reads as passing the square
+    // rather than entering a solid palace wall.
+    this.buildAxisGate(zhengyangmen.progress, zhengyangmen.scale, '正阳门');
+    this.buildCentralAxisForecourt(
+      tiananmen.progress,
+      tiananmen.lateralOffset,
+    );
+    this.buildTiananmen(
+      tiananmen.progress,
+      tiananmen.lateralOffset,
+      tiananmen.scale,
+      tiananmen.headingOffset,
+    );
+
+    for (const [phaseDelta, along] of [[-0.0058, -3.7], [0.0058, 3.7]] as const) {
       const huabiao = new Group();
-      this.place(huabiao, 0.052, side * 7.8, 0);
+      this.place(
+        huabiao,
+        tiananmen.progress + phaseDelta,
+        tiananmen.lateralOffset + 4.75,
+        0,
+      );
       const column = this.cylinder(0.26, 6.4, stone);
       column.position.y = 3.2;
       const capital = this.box(1.15, 0.22, 0.55, stone);
       capital.position.y = 5.85;
       const crown = new Mesh(this.unitSphere, stone);
       crown.scale.set(0.36, 0.44, 0.36);
-      crown.position.y = 6.58;
+      crown.position.set(0, 6.58, along * 0.02);
       huabiao.add(column, capital, crown);
       this.root.add(huabiao);
     }
@@ -545,6 +581,7 @@ export class BeijingDriveScene {
       const progress = 0.068 + index * 0.0024;
       const taper = 1 - index * 0.08;
       for (const side of [-1, 1]) {
+        if (side < 0 && index < 5) continue;
         const wall = this.box(
           3.6,
           2.4 + taper * 1.4,
@@ -567,6 +604,36 @@ export class BeijingDriveScene {
     }
   }
 
+  /** Side-street apron and civic edge that make Tiananmen a set-back vista. */
+  private buildCentralAxisForecourt(progress: number, landmarkOffset: number): void {
+    const stone = this.textured('#A7A397', 'stoneGrain', { roughness: 0.98 });
+    const inset = this.standard('#6E7778', { roughness: 1 });
+    const bronze = this.standard('#4B4233', { metalness: 0.18, roughness: 0.82 });
+
+    const apron = this.box(7.2, 0.08, 13.8, stone);
+    this.place(apron, progress, landmarkOffset + 3.65, 0.045);
+    this.root.add(apron);
+
+    // A restrained transverse crossing tells the viewer that this is a civic
+    // junction. It also breaks the previous visual funnel into the monument.
+    for (let index = 0; index < 5; index += 1) {
+      const stripe = this.box(7.35, 0.018, 0.3, inset);
+      this.place(stripe, progress - 0.009 + index * 0.0007, 0, 0.064);
+      this.root.add(stripe);
+    }
+
+    for (const phaseDelta of [-0.0062, -0.0031, 0, 0.0031, 0.0062]) {
+      const bollard = this.cylinder(0.11, 0.7, bronze);
+      this.place(
+        bollard,
+        progress + phaseDelta,
+        landmarkOffset + 7.15,
+        0.39,
+      );
+      this.root.add(bollard);
+    }
+  }
+
   /** Gate-tower silhouette for Zhengyangmen (drive-through piers). */
   private buildAxisGate(progress: number, scale: number, plaqueText?: string): void {
     const palaceRed = this.textured(PALETTE.palaceRed, 'brick', { roughness: 0.86 });
@@ -581,16 +648,16 @@ export class BeijingDriveScene {
     this.place(gate, progress, 0, 0);
     gate.scale.setScalar(scale);
     const leftPier = this.box(4.5, 6.4, 4.8, palaceRed);
-    leftPier.position.set(-7.15, 3.2, 0);
+    leftPier.position.set(-10.1, 3.2, 0);
     const rightPier = this.box(4.5, 6.4, 4.8, palaceRed);
-    rightPier.position.set(7.15, 3.2, 0);
-    const upperHall = this.box(18.8, 2.25, 4.9, palaceRed);
+    rightPier.position.set(10.1, 3.2, 0);
+    const upperHall = this.box(24.2, 2.25, 4.9, palaceRed);
     upperHall.position.y = 6.45;
     const roofMass = new Mesh(this.unitPitchedRoof, roof);
-    roofMass.scale.set(7.1, 1.58, 21.2);
+    roofMass.scale.set(7.1, 1.58, 26.4);
     roofMass.rotation.y = Math.PI / 2;
     roofMass.position.y = 7.5;
-    const goldEdge = this.box(21.2, 0.18, 6.9, roofEdge);
+    const goldEdge = this.box(26.4, 0.18, 6.9, roofEdge);
     goldEdge.position.y = 7.52;
     const towerHall = this.box(13.2, 1.55, 3.55, palaceRed);
     towerHall.position.y = 9.05;
@@ -613,7 +680,7 @@ export class BeijingDriveScene {
     );
 
     // Warm portal reveals separate the near gate from the nested Tiananmen layer without adding point lights.
-    for (const x of [-4.72, 4.72]) {
+    for (const x of [-8, 8]) {
       const reveal = this.box(0.16, 3.6, 0.14, this.windowMaterial);
       reveal.position.set(x, 2.45, -2.48);
       gate.add(reveal);
@@ -645,7 +712,12 @@ export class BeijingDriveScene {
    * Tiananmen as a broad palace wall with five arch openings and a double-eave
    * upper hall — deliberately unlike Zhengyangmen's drive-through gate tower.
    */
-  private buildTiananmen(progress: number): void {
+  private buildTiananmen(
+    progress: number,
+    offset: number,
+    scale: number,
+    headingOffset: number,
+  ): void {
     const palaceRed = this.textured(PALETTE.palaceRed, 'brick', { roughness: 0.86 });
     const wallRed = this.textured(PALETTE.wallRed, 'brick', { roughness: 0.9 });
     const roof = this.textured(PALETTE.roof, 'tileRoof', { roughness: 1 });
@@ -658,10 +730,11 @@ export class BeijingDriveScene {
     const niche = this.standard('#1A1410', { roughness: 0.95 });
 
     const gate = new Group();
-    this.place(gate, progress, 0, 0);
-    gate.scale.setScalar(0.72);
+    this.place(gate, progress, offset, 0, headingOffset);
+    gate.scale.setScalar(scale);
 
-    // Keep the wall narrow enough for the curved path; five openings still read.
+    // The full five-opening wall is now safely beyond the forecourt instead of
+    // spanning the carriageway.
     const depth = 4.2;
     const podium = this.box(26, 1.05, depth + 0.6, stone);
     podium.position.y = 0.52;
@@ -757,8 +830,8 @@ export class BeijingDriveScene {
     const roof = this.textured('#3A4341', 'tileRoof', { roughness: 1 });
     const signBoards = ['茶莊', '綢緞', '書局', '醬園'];
 
-    for (let index = 0; index < 14; index += 1) {
-      const progress = 0.834 + index * 0.0054;
+    for (let index = 0; index < 12; index += 1) {
+      const progress = 0.842 + index * 0.0052;
       for (const side of [-1, 1]) {
         const width = 3.7 + hash01(index, side + 21) * 1.5;
         const height = 4.3 + hash01(index, side + 25) * 1.2;
@@ -796,7 +869,7 @@ export class BeijingDriveScene {
         }
         if (index % 2 === 1) {
           for (const along of [-0.9, 0.9]) {
-            const hanger = this.box(0.3, 0.05, 0.05, this.standard('#33291C', { roughness: 1 }));
+            const hanger = this.box(0.3, 0.05, 0.05, this.shopHardwareMaterial);
             hanger.position.set(roadFaceX + (side > 0 ? 0.17 : -0.17), height - 0.62, along);
             const lantern = new Mesh(this.unitSphere, this.lanternMaterial);
             lantern.scale.set(0.19, 0.23, 0.19);
@@ -808,8 +881,7 @@ export class BeijingDriveScene {
       }
     }
 
-    this.buildPailou(0.868, '大栅栏');
-    this.buildPailou(0.888);
+    this.buildPailou(0.902, '大栅栏');
 
     this.addLamp(0.8365, -6.5, true);
     this.addLamp(0.851, 6.5, false);
@@ -826,20 +898,21 @@ export class BeijingDriveScene {
 
     const arch = new Group();
     this.place(arch, progress, 0, 0);
-    for (const x of [-7.4, -2.9, 2.9, 7.4]) {
+    arch.scale.setScalar(0.94);
+    for (const x of [-8.5, -5.5, 5.5, 8.5]) {
       const column = this.cylinder(0.22, 6, palaceRed);
       column.position.set(x, 3, 0);
       arch.add(column);
     }
-    const lowBeam = this.box(15.6, 0.5, 0.62, palaceRed);
+    const lowBeam = this.box(17.9, 0.5, 0.62, palaceRed);
     lowBeam.position.y = 5.05;
-    const highBeam = this.box(15.9, 0.42, 0.58, timber);
+    const highBeam = this.box(18.2, 0.42, 0.58, timber);
     highBeam.position.y = 6.02;
     arch.add(lowBeam, highBeam);
     const bays: Array<[number, number]> = [
-      [-5.15, 4.7],
-      [0, 6.1],
-      [5.15, 4.7],
+      [-7, 3.3],
+      [0, 10.8],
+      [7, 3.3],
     ];
     for (const [x, span] of bays) {
       const bayRoof = new Mesh(this.unitPitchedRoof, roof);
@@ -1009,6 +1082,7 @@ export class BeijingDriveScene {
     for (let index = 0; index < 16; index += 1) {
       const progress = 0.502 + index * 0.005;
       for (const side of [-1, 1]) {
+        if (side < 0 && index >= 11) continue;
         const width = 3.5 + hash01(index, side + 51) * 1.4;
         const height = 3.8 + hash01(index, side + 55) * 1.5;
         const depth = 3.8 + hash01(index, side + 59) * 2.2;
@@ -1041,9 +1115,9 @@ export class BeijingDriveScene {
           group.add(board);
         }
 
-        if (index % 2 === 0) {
+        if ((index + (side > 0 ? 2 : 0)) % 4 === 0) {
           for (const along of [-0.75, 0.75]) {
-            const hanger = this.box(0.28, 0.05, 0.05, this.standard('#33291C', { roughness: 1 }));
+            const hanger = this.box(0.28, 0.05, 0.05, this.shopHardwareMaterial);
             hanger.position.set(roadFaceX + (side > 0 ? 0.15 : -0.15), height - 0.58, along);
             const lantern = new Mesh(this.unitSphere, this.lanternMaterial);
             lantern.scale.set(0.2, 0.24, 0.2);
@@ -1068,6 +1142,7 @@ export class BeijingDriveScene {
   private buildBellDrumPlaza(): void {
     const brick = this.textured('#565F60', 'brick', { roughness: 1 });
     const roof = this.textured('#4B5453', 'tileRoof', { roughness: 1 });
+    const civicStone = this.textured('#777B77', 'stoneGrain', { roughness: 1 });
 
     for (let index = 0; index < 9; index += 1) {
       const progress = 0.42 + index * 0.0069;
@@ -1094,8 +1169,19 @@ export class BeijingDriveScene {
       }
     }
 
-    this.buildDrumTower(0.477, -10.5, 1.05);
-    this.buildBellTower(0.493, -11.5, 1.15);
+    this.addSetbackApron(0.47, -9.8, 7.2, 22, civicStone);
+    const drumTower = PASSAGE_HEROES.drumTower;
+    const bellTower = PASSAGE_HEROES.bellTower;
+    this.buildDrumTower(
+      drumTower.progress,
+      drumTower.lateralOffset,
+      drumTower.scale,
+    );
+    this.buildBellTower(
+      bellTower.progress,
+      bellTower.lateralOffset,
+      bellTower.scale,
+    );
 
     this.addLamp(0.429, 6.5, true);
     this.addLamp(0.462, -6.4, true);
@@ -1120,9 +1206,17 @@ export class BeijingDriveScene {
     });
     const stone = this.textured(PALETTE.stone, 'stoneGrain', { roughness: 0.96 });
 
+    const yonghegong = PASSAGE_HEROES.yonghegong;
     const temple = new Group();
-    this.place(temple, 0.669, -7.2, 0);
-    temple.scale.setScalar(0.5);
+    this.place(temple, yonghegong.progress, yonghegong.lateralOffset, 0);
+    temple.scale.setScalar(yonghegong.scale);
+    this.addSetbackApron(
+      yonghegong.progress,
+      -9.55,
+      6.2,
+      15,
+      stone,
+    );
 
     const plinth = this.box(14.2, 1.6, 10.4, stone);
     plinth.position.y = 0.8;
@@ -1189,7 +1283,7 @@ export class BeijingDriveScene {
     for (let index = 0; index < 4; index += 1) {
       const progress = 0.592 + index * 0.018;
       for (const side of [-1, 1]) {
-        if (side < 0 && index >= 2) continue;
+        if (side < 0 && index >= 1) continue;
         const wall = this.box(3, 2.4, 3.8, vergeBrick);
         this.place(wall, progress, side * 9.6, 1.2);
         this.root.add(wall);
@@ -1204,9 +1298,17 @@ export class BeijingDriveScene {
   }
 
   private buildBellTower(progress: number, offset: number, scale: number): void {
-    const masonry = this.standard('#57636B', { roughness: 1 });
-    const body = this.standard('#4A565E', { roughness: 1 });
-    const roof = this.standard('#232E2E', { roughness: 1 });
+    const masonry = this.standard('#66747B', {
+      emissive: '#213039',
+      emissiveIntensity: 0.16,
+      roughness: 1,
+    });
+    const body = this.standard('#59676E', {
+      emissive: '#1C2A31',
+      emissiveIntensity: 0.18,
+      roughness: 1,
+    });
+    const roof = this.standard('#2A3838', { roughness: 1 });
     const group = new Group();
     this.place(group, progress, offset, 0);
     group.scale.setScalar(scale);
@@ -1301,15 +1403,17 @@ export class BeijingDriveScene {
       this.root.add(building);
     }
 
-    this.buildHumpbackBridge(0.223, -13.8);
-    // Over the water, ahead of the ~10s sample, so the bottle silhouette clears the bank.
-    this.buildWhiteDagoba(0.218, -17.5);
+    this.buildHumpbackBridge(0.226, -14.5);
+    const whiteDagoba = PASSAGE_HEROES.whiteDagoba;
+    this.buildWhiteDagoba(
+      whiteDagoba.progress,
+      whiteDagoba.lateralOffset,
+      whiteDagoba.scale,
+    );
 
-    for (const progress of [0.185, 0.209, 0.235]) {
-      this.addWillow(progress, -6.2);
-    }
+    this.addWillow(0.185, -6.2);
     this.addLamp(0.19, -5.62, true);
-    this.addLamp(0.225, -5.62, false);
+    this.addLamp(0.225, 6.5, false);
     this.addLamp(0.242, 6.5, true);
     this.addTree(0.205, CURB_TREE + 1.2, 4.2);
     this.addTree(0.239, CURB_TREE + 1.5, 4.8);
@@ -1345,7 +1449,7 @@ export class BeijingDriveScene {
   }
 
   /** Beihai-style white dagoba — softly emissive ivory that still obeys ACES. */
-  private buildWhiteDagoba(progress: number, offset: number): void {
+  private buildWhiteDagoba(progress: number, offset: number, scale: number): void {
     const white = this.standard('#C8CBC4', {
       emissive: '#555A56',
       emissiveIntensity: 0.12,
@@ -1358,7 +1462,7 @@ export class BeijingDriveScene {
     });
     const group = new Group();
     this.place(group, progress, offset, 0);
-    group.scale.setScalar(1.35);
+    group.scale.setScalar(scale);
     const platform = this.box(5.6, 1.4, 5.6, white);
     platform.position.y = 3.1;
     const body = new Mesh(this.unitSphere, white);
@@ -1401,7 +1505,12 @@ export class BeijingDriveScene {
       this.root.add(post, rail);
     }
 
-    this.buildCornerTower(0.133, -25);
+    const cornerTower = PASSAGE_HEROES.cornerTower;
+    this.buildCornerTower(
+      cornerTower.progress,
+      cornerTower.lateralOffset,
+      cornerTower.scale,
+    );
     this.addLamp(0.096, 6.9, false);
     this.addLamp(0.13, -5.62, true);
     this.addLamp(0.158, 6.9, false);
@@ -1426,7 +1535,7 @@ export class BeijingDriveScene {
     const white = this.standard('#EDE7DA', {
       roughness: 0.9,
       emissive: '#CFC6B4',
-      emissiveIntensity: 0.32,
+      emissiveIntensity: 0.18,
     });
     const roofEdge = this.standard(PALETTE.roofEdge, {
       emissive: '#2A1B09',
@@ -1434,22 +1543,22 @@ export class BeijingDriveScene {
       roughness: 0.85,
     });
 
-    // Far-field foreshadow so the hall grows into view instead of popping.
-    const foreshadow = new Group();
-    this.place(foreshadow, 0.765, -18, 0);
-    foreshadow.scale.setScalar(0.5);
-    const tip = this.cylinder(3.2, 4.5, red);
-    tip.position.y = 3.2;
-    const tipRoof = this.cylinder(4.2, 1.2, blueRoof);
-    tipRoof.position.y = 5.6;
-    foreshadow.add(tip, tipRoof);
-    this.root.add(foreshadow);
-
-    // Keep the circular terrace entirely left of the curb — a wide terrace at
-    // ~-9 clipped the camera and flashed the south-return beat white.
+    const templeOfHeaven = PASSAGE_HEROES.templeOfHeaven;
     const hall = new Group();
-    this.place(hall, 0.818, -7.4, 0);
-    hall.scale.setScalar(0.54);
+    this.place(
+      hall,
+      templeOfHeaven.progress,
+      templeOfHeaven.lateralOffset,
+      0,
+    );
+    hall.scale.setScalar(templeOfHeaven.scale);
+    this.addSetbackApron(
+      templeOfHeaven.progress,
+      -9.65,
+      6.8,
+      16,
+      white,
+    );
 
     const terrace = this.box(12.5, 1.2, 12.5, white);
     terrace.position.y = 0.6;
@@ -1529,12 +1638,17 @@ export class BeijingDriveScene {
 
   /** 0.333–0.417 — Olympic Bird's Nest lattice and Water Cube. */
   private buildOlympic(): void {
-    const lattice = this.textured('#364144', 'lattice', { roughness: 0.85, metalness: 0.2 });
+    const lattice = this.textured('#536266', 'lattice', {
+      roughness: 0.85,
+      metalness: 0.18,
+      emissive: '#1B292D',
+      emissiveIntensity: 0.16,
+    });
     const bluePanel = this.textured('#2F6F88', 'bluePanel', {
       roughness: 0.35,
       metalness: 0.25,
       emissive: '#1A4050',
-      emissiveIntensity: 0.12,
+      emissiveIntensity: 0.22,
     });
     const concrete = this.standard('#69767C', { roughness: 0.96 });
     const warmCoreMaterial = this.standard('#F0B45D', {
@@ -1543,18 +1657,10 @@ export class BeijingDriveScene {
       roughness: 0.72,
     });
 
-    // Early silhouette so the lattice mass does not hard-cut into the FOV.
-    const nestHint = new Group();
-    this.place(nestHint, 0.372, -20, 0);
-    nestHint.scale.setScalar(0.3);
-    const hintShell = this.box(14, 8, 12, lattice);
-    hintShell.position.y = 5;
-    nestHint.add(hintShell);
-    this.root.add(nestHint);
-
+    const birdsNest = PASSAGE_HEROES.birdsNest;
     const nest = new Group();
-    this.place(nest, 0.419, -7.8, 0);
-    nest.scale.setScalar(0.42);
+    this.place(nest, birdsNest.progress, birdsNest.lateralOffset, 0);
+    nest.scale.setScalar(birdsNest.scale);
 
     const base = this.box(18, 2.2, 16, concrete);
     base.position.y = 1.1;
@@ -1586,9 +1692,10 @@ export class BeijingDriveScene {
     }
     this.root.add(nest);
 
+    const waterCube = PASSAGE_HEROES.waterCube;
     const cube = new Group();
-    this.place(cube, 0.405, 9.5, 0);
-    cube.scale.setScalar(0.62);
+    this.place(cube, waterCube.progress, waterCube.lateralOffset, 0);
+    cube.scale.setScalar(waterCube.scale);
     const cubeBody = this.box(12, 8, 12, bluePanel);
     cubeBody.position.y = 4;
     cube.add(cubeBody);
@@ -1609,7 +1716,7 @@ export class BeijingDriveScene {
   }
 
   /** Forbidden City corner tower silhouette across the moat. */
-  private buildCornerTower(progress: number, offset: number): void {
+  private buildCornerTower(progress: number, offset: number, scale: number): void {
     const red = this.textured(PALETTE.palaceRed, 'brick', { roughness: 0.88 });
     const roof = this.textured('#242F2F', 'tileRoof', { roughness: 1 });
     const gold = this.standard(PALETTE.roofEdge, {
@@ -1621,6 +1728,7 @@ export class BeijingDriveScene {
 
     const group = new Group();
     this.place(group, progress, offset, 0);
+    group.scale.setScalar(scale);
     const plinth = this.box(8.4, 2.2, 8.4, masonry);
     plinth.position.y = 1.1;
     const base = this.box(6.2, 2.6, 6.2, red);
@@ -1673,8 +1781,13 @@ export class BeijingDriveScene {
       }
     }
 
-    this.buildArrowTower(0.336, -7.8, 0.64);
-    this.buildSecondRingSign(0.33);
+    const deshengmen = PASSAGE_HEROES.deshengmen;
+    this.buildArrowTower(
+      deshengmen.progress,
+      deshengmen.lateralOffset,
+      deshengmen.scale,
+    );
+    this.buildSecondRingSign(0.299);
 
     this.addLamp(0.258, -5.8, false);
     this.addLamp(0.292, 5.8, true);
@@ -1683,11 +1796,11 @@ export class BeijingDriveScene {
 
   /** 0.667–0.750 — CBD east skyline hero and Xidan / Financial Street west. */
   private buildCbdFinance(): void {
-    const glass = this.textured('#344756', 'glassGrid', {
+    const glass = this.textured('#405A6B', 'glassGrid', {
       roughness: 0.7,
       metalness: 0.15,
-      emissive: '#18384C',
-      emissiveIntensity: 0.3,
+      emissive: '#1C4054',
+      emissiveIntensity: 0.38,
     });
     const concrete = this.standard('#69767C', { roughness: 0.96 });
 
@@ -1700,10 +1813,12 @@ export class BeijingDriveScene {
       }
     }
 
-    // A near-centre stepped hero stays visible in portrait while preserving
-    // the carriageway clearance envelope.
+    // The stepped hero sits within the CBD passage and leaves a clear wedge of
+    // sky above the carriageway.
+    const cbdHero = PASSAGE_HEROES.cbdHero;
     const hero = new Group();
-    this.place(hero, 0.766, 8.6, 0);
+    this.place(hero, cbdHero.progress, cbdHero.lateralOffset, 0);
+    hero.scale.setScalar(cbdHero.scale);
     const heroShaft = this.box(4.6, 16.5, 5, glass);
     heroShaft.position.y = 8.25;
     const heroShoulder = this.box(3.2, 11, 4, glass);
@@ -1721,10 +1836,10 @@ export class BeijingDriveScene {
     // Staggered east-side cluster: fewer, lower masses with road-facing window
     // ranks read as a skyline instead of featureless black canyon walls.
     for (let index = 0; index < 4; index += 1) {
-      const progress = 0.758 + index * 0.006;
-      const height = 9 + hash01(index, 71) * 6;
-      const width = 4 + hash01(index, 73) * 1.6;
-      const towerOffset = 16 + hash01(index, 77) * 4;
+      const progress = 0.739 + index * 0.003;
+      const height = 6.5 + hash01(index, 71) * 3.5;
+      const width = 4 + hash01(index, 73) * 1.2;
+      const towerOffset = 10 + hash01(index, 77) * 2.5;
       const towerGroup = new Group();
       this.place(towerGroup, progress, towerOffset, 0);
       const tower = this.box(width, height, width, glass);
@@ -1740,10 +1855,10 @@ export class BeijingDriveScene {
 
     // Xidan / Financial Street — secondary lower glass plate band to the west.
     for (let index = 0; index < 4; index += 1) {
-      const progress = 0.76 + index * 0.006;
-      const height = 7 + hash01(index, 91) * 3;
-      const width = 5 + hash01(index, 93) * 2;
-      const plateOffset = 15 + hash01(index, 97) * 3;
+      const progress = 0.739 + index * 0.003;
+      const height = 5.5 + hash01(index, 91) * 2;
+      const width = 4.5 + hash01(index, 93) * 1.5;
+      const plateOffset = 10 + hash01(index, 97) * 2.5;
       const plateGroup = new Group();
       this.place(plateGroup, progress, -plateOffset, 0);
       const plate = this.box(width, height, 5, glass);
@@ -1764,19 +1879,19 @@ export class BeijingDriveScene {
 
   /** Deshengmen-style arrow tower with ranked arrow windows. */
   private buildArrowTower(progress: number, offset: number, scale = 1): void {
-    const masonry = this.standard('#52635B', {
-      emissive: '#20332E',
+    const masonry = this.standard('#687A72', {
+      emissive: '#2B4038',
+      emissiveIntensity: 0.34,
+      roughness: 1,
+    });
+    const body = this.standard('#7A8B82', {
+      emissive: '#334D43',
+      emissiveIntensity: 0.38,
+      roughness: 1,
+    });
+    const roof = this.standard('#3B4A46', {
+      emissive: '#22312C',
       emissiveIntensity: 0.2,
-      roughness: 1,
-    });
-    const body = this.standard('#617168', {
-      emissive: '#263C35',
-      emissiveIntensity: 0.24,
-      roughness: 1,
-    });
-    const roof = this.standard('#293634', {
-      emissive: '#182421',
-      emissiveIntensity: 0.12,
       roughness: 1,
     });
     const slot = this.standard('#161D1E', { roughness: 1 });
@@ -1815,20 +1930,24 @@ export class BeijingDriveScene {
 
   /** 0.917–1.000 — overpass compression that hides the loop seam. */
   private buildOverpass(): void {
-    const concrete = this.standard('#69767C', {
+    const concrete = this.standard('#77858C', {
+      emissive: '#24323A',
+      emissiveIntensity: 0.16,
       roughness: 0.96,
       side: DoubleSide,
     });
-    const deepConcrete = this.standard('#48555C', {
+    const deepConcrete = this.standard('#596A73', {
+      emissive: '#1D2A31',
+      emissiveIntensity: 0.24,
       roughness: 1,
       side: DoubleSide,
     });
 
     const underside = new Mesh(
       this.trackGeometry(
-        createPathRibbon(-7.1, 7.1, 5.75, {
+        createPathRibbon(-7.7, 7.7, 7.55, {
           from: 0.921,
-          to: 0.993,
+          to: 0.986,
           centerScale: DRIVE_PATH_SCALE,
           segments: 90,
         }),
@@ -1838,22 +1957,22 @@ export class BeijingDriveScene {
     this.root.add(underside);
 
     for (let index = 0; index < 5; index += 1) {
-      const progress = 0.926 + index * 0.0152;
+      const progress = 0.928 + index * 0.013;
       for (const side of [-1, 1]) {
-        const column = this.box(0.72, 5.7, 0.72, concrete);
-        this.place(column, progress, side * 7.15, 2.85);
+        const column = this.box(0.72, 7.5, 0.72, concrete);
+        this.place(column, progress, side * 7.9, 3.75);
         this.root.add(column);
       }
-      const beam = this.box(15, 0.62, 0.9, concrete);
-      this.place(beam, progress, 0, 5.42);
+      const beam = this.box(17, 0.46, 0.9, concrete);
+      this.place(beam, progress, 0, 7.2);
       this.root.add(beam);
     }
 
     for (let index = 0; index < 12; index += 1) {
-      const progress = 0.918 + index * 0.0068;
+      const progress = 0.918 + index * 0.0058;
       for (const side of [-1, 1]) {
         const guard = this.box(0.36, 0.72, 3.7, concrete);
-        this.place(guard, progress, side * 6.95, 6.15);
+        this.place(guard, progress, side * 7.65, 7.95);
         this.root.add(guard);
       }
     }
@@ -1861,6 +1980,89 @@ export class BeijingDriveScene {
     this.addLamp(0.925, -5.8, false);
     this.addLamp(0.958, 5.8, false);
     this.addLamp(0.985, -5.8, false);
+  }
+
+  /** Sparse, human-scale props that give the drive a believable metre scale. */
+  private buildStreetScaleDetails(): void {
+    const wood = this.standard('#6B5238', { roughness: 0.94 });
+    const shelterGlass = this.textured('#436171', 'glassGrid', {
+      roughness: 0.6,
+      metalness: 0.08,
+    });
+
+    this.addBench(0.202, -5.72, wood);
+    this.addBicycleCluster(0.535, 6.9, 3);
+    this.addBusShelter(0.704, 7.05, shelterGlass);
+    this.addBicycleCluster(0.895, -6.9, 2);
+  }
+
+  private addSetbackApron(
+    progress: number,
+    offset: number,
+    width: number,
+    depth: number,
+    material: Material,
+  ): void {
+    const apron = this.box(width, 0.07, depth, material);
+    this.place(apron, progress, offset, 0.04);
+    this.root.add(apron);
+  }
+
+  private addBench(progress: number, offset: number, wood: Material): void {
+    const bench = new Group();
+    this.place(bench, progress, offset, 0);
+    const seat = this.box(0.52, 0.12, 1.9, wood);
+    seat.position.y = 0.66;
+    const back = this.box(0.12, 0.72, 1.9, wood);
+    back.position.set(offset > 0 ? 0.26 : -0.26, 0.96, 0);
+    const leftLeg = this.box(0.34, 0.58, 0.1, this.streetMetalMaterial);
+    leftLeg.position.set(0, 0.3, -0.62);
+    const rightLeg = leftLeg.clone();
+    rightLeg.position.z = 0.62;
+    bench.add(seat, back, leftLeg, rightLeg);
+    this.root.add(bench);
+  }
+
+  private addBicycleCluster(progress: number, offset: number, count: number): void {
+    const cluster = new Group();
+    this.place(cluster, progress, offset, 0);
+    for (let index = 0; index < count; index += 1) {
+      const along = (index - (count - 1) / 2) * 1.15;
+      for (const wheelZ of [-0.42, 0.42]) {
+        const wheel = this.cylinder(0.31, 0.055, this.shopHardwareMaterial);
+        wheel.rotation.z = Math.PI / 2;
+        wheel.position.set(index * 0.08, 0.33, along + wheelZ);
+        cluster.add(wheel);
+      }
+      const frame = this.box(0.055, 0.055, 0.82, this.streetMetalMaterial);
+      frame.position.set(index * 0.08, 0.47, along);
+      frame.rotation.x = 0.16;
+      const handle = this.box(0.46, 0.055, 0.055, this.streetMetalMaterial);
+      handle.position.set(index * 0.08, 0.78, along + 0.28);
+      cluster.add(frame, handle);
+    }
+    this.root.add(cluster);
+  }
+
+  private addBusShelter(
+    progress: number,
+    offset: number,
+    glass: Material,
+  ): void {
+    const shelter = new Group();
+    this.place(shelter, progress, offset, 0);
+    const rearPane = this.box(0.12, 2.35, 3.3, glass);
+    rearPane.position.set(offset > 0 ? 0.38 : -0.38, 1.25, 0);
+    const roof = this.box(1.1, 0.12, 3.55, this.streetMetalMaterial);
+    roof.position.y = 2.5;
+    const frontPost = this.cylinder(0.07, 2.45, this.streetMetalMaterial);
+    frontPost.position.set(offset > 0 ? -0.4 : 0.4, 1.23, -1.5);
+    const rearPost = frontPost.clone();
+    rearPost.position.z = 1.5;
+    const seat = this.box(0.45, 0.1, 2.3, this.shopHardwareMaterial);
+    seat.position.set(0, 0.72, 0);
+    shelter.add(rearPane, roof, frontPost, rearPost, seat);
+    this.root.add(shelter);
   }
 
   private buildStreetPlaque(
@@ -1971,7 +2173,11 @@ export class BeijingDriveScene {
 
   private buildDrumTower(progress: number, offset: number, scale = 1): void {
     const masonry = this.standard('#38464A', { roughness: 1 });
-    const red = this.standard('#78352D', { roughness: 0.96 });
+    const red = this.standard('#824039', {
+      emissive: '#321310',
+      emissiveIntensity: 0.2,
+      roughness: 0.96,
+    });
     const roof = this.standard('#202B2B', { roughness: 1 });
     const edge = this.standard('#86724B', { roughness: 0.92 });
     const group = new Group();
@@ -2041,10 +2247,9 @@ export class BeijingDriveScene {
   }
 
   private addLamp(progress: number, offset: number, castLight: boolean): void {
-    const metal = this.standard('#3A4144', { metalness: 0.3, roughness: 0.72 });
     const group = new Group();
     this.place(group, progress, offset, 0);
-    const pole = this.cylinder(0.065, 3.6, metal);
+    const pole = this.cylinder(0.065, 3.6, this.streetMetalMaterial);
     pole.position.y = 1.8;
     const bulb = new Mesh(this.unitSphere, this.lampMaterial);
     bulb.scale.setScalar(0.24);
@@ -2068,13 +2273,11 @@ export class BeijingDriveScene {
   }
 
   private addTree(progress: number, offset: number, height: number): void {
-    const trunkMaterial = this.standard('#3B3025', { roughness: 1 });
-    const foliageMaterial = this.standard(PALETTE.foliage, { roughness: 1 });
     const group = new Group();
     this.place(group, progress, offset, 0);
-    const trunk = this.cylinder(0.14, height * 0.58, trunkMaterial);
+    const trunk = this.cylinder(0.14, height * 0.58, this.treeTrunkMaterial);
     trunk.position.y = height * 0.29;
-    const canopy = new Mesh(this.unitSphere, foliageMaterial);
+    const canopy = new Mesh(this.unitSphere, this.foliageMaterial);
     canopy.scale.set(height * 0.38, height * 0.34, height * 0.42);
     canopy.position.y = height * 0.72;
     group.add(trunk, canopy);
@@ -2083,22 +2286,20 @@ export class BeijingDriveScene {
 
   /** Old locust street tree whose canopy leans over the hutong lane. */
   private addLocustTree(progress: number, offset: number): void {
-    const trunkMaterial = this.textured('#39301F', 'bark', { roughness: 1 });
-    const foliageMaterial = this.standard(PALETTE.foliage, { roughness: 1 });
     const group = new Group();
     this.place(group, progress, offset, 0);
     // Lean away from the carriageway so canopy stays over pavement.
     const lean = offset > 0 ? 0.12 : -0.12;
-    const trunk = this.cylinder(0.19, 3.6, trunkMaterial);
+    const trunk = this.cylinder(0.19, 3.6, this.treeBarkMaterial);
     trunk.position.set(0, 1.8, 0);
     trunk.rotation.z = lean;
-    const bough = this.cylinder(0.12, 1.9, trunkMaterial);
+    const bough = this.cylinder(0.12, 1.9, this.treeBarkMaterial);
     bough.position.set(lean * 6, 4.1, 0.4);
     bough.rotation.z = lean * 2.5;
-    const canopy = new Mesh(this.unitSphere, foliageMaterial);
+    const canopy = new Mesh(this.unitSphere, this.foliageMaterial);
     canopy.scale.set(2.6, 1.45, 2.8);
     canopy.position.set(lean * 9, 5.15, 0);
-    const drape = new Mesh(this.unitSphere, foliageMaterial);
+    const drape = new Mesh(this.unitSphere, this.foliageMaterial);
     drape.scale.set(1.3, 0.95, 1.5);
     drape.position.set(lean * 12, 4.55, 1.2);
     group.add(trunk, bough, canopy, drape);
@@ -2107,11 +2308,10 @@ export class BeijingDriveScene {
 
   /** Waterfront willow with a drooping crown. */
   private addWillow(progress: number, offset: number): void {
-    const trunkMaterial = this.standard('#3A3222', { roughness: 1 });
     const foliageMaterial = this.standard('#3C5A42', { roughness: 1 });
     const group = new Group();
     this.place(group, progress, offset, 0);
-    const trunk = this.cylinder(0.16, 4.4, trunkMaterial);
+    const trunk = this.cylinder(0.16, 4.4, this.treeTrunkMaterial);
     trunk.position.y = 2.2;
     trunk.rotation.z = offset < 0 ? 0.1 : -0.1;
     const crown = new Mesh(this.unitSphere, foliageMaterial);
