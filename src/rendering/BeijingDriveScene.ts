@@ -857,6 +857,7 @@ export class BeijingDriveScene {
         if (index % 2 === 0) {
           const board = this.buildVerticalSignBoard(
             signBoards[(index / 2 + (side > 0 ? 1 : 0)) % signBoards.length],
+            side > 0 ? 1 : -1,
           );
           if (board) {
             board.position.set(
@@ -945,7 +946,10 @@ export class BeijingDriveScene {
   }
 
   /** Hanging vertical shop sign with stacked calligraphy. */
-  private buildVerticalSignBoard(text: string): Group | undefined {
+  private buildVerticalSignBoard(
+    text: string,
+    wallSide: -1 | 1,
+  ): Group | undefined {
     const material = this.canvasPlaque(text, {
       width: 128,
       height: 384,
@@ -957,13 +961,17 @@ export class BeijingDriveScene {
     });
     if (!material) return undefined;
     const group = new Group();
-    const backing = this.box(0.56, 2.15, 0.1, this.standard('#242B26', { roughness: 0.95 }));
+    const backingMaterial = this.standard('#242B26', { roughness: 0.95 });
+    const hardwareMaterial = this.standard('#33291C', { roughness: 1 });
+    const backing = this.box(0.56, 2.15, 0.1, backingMaterial);
     const face = new Mesh(this.trackGeometry(new PlaneGeometry(0.5, 2.02)), material);
-    face.position.z = -0.06;
-    face.rotation.y = Math.PI;
-    const bracket = this.box(0.08, 0.4, 0.08, this.standard('#33291C', { roughness: 1 }));
-    bracket.position.y = 1.3;
-    group.add(backing, face, bracket);
+    face.position.z = -wallSide * 0.06;
+    face.rotation.y = wallSide > 0 ? Math.PI : 0;
+    const arm = this.box(0.1, 0.1, 0.62, hardwareMaterial);
+    arm.position.set(0, 0.78, wallSide * 0.22);
+    const wallPlate = this.box(0.18, 0.66, 0.06, hardwareMaterial);
+    wallPlate.position.set(0, 0.78, wallSide * 0.32);
+    group.add(backing, face, arm, wallPlate);
     return group;
   }
 
@@ -1077,12 +1085,14 @@ export class BeijingDriveScene {
     const brick = this.textured('#5A6365', 'brick', { roughness: 1 });
     const darkBrick = this.textured('#484F51', 'brick', { roughness: 1 });
     const roof = this.textured('#4A5352', 'tileRoof', { roughness: 1 });
-    const signNames = ['五道营', '南锣鼓巷', '胡同', '小馆'];
+    const signNames = ['小馆', '茶室', '书店', '杂货'];
 
     for (let index = 0; index < 16; index += 1) {
       const progress = 0.502 + index * 0.005;
       for (const side of [-1, 1]) {
-        if (side < 0 && index >= 11) continue;
+        const opensNanluoEntrance = side > 0 && index >= 2 && index <= 4;
+        const opensWudaoyingEntrance = side < 0 && index >= 11;
+        if (opensNanluoEntrance || opensWudaoyingEntrance) continue;
         const width = 3.5 + hash01(index, side + 51) * 1.4;
         const height = 3.8 + hash01(index, side + 55) * 1.5;
         const depth = 3.8 + hash01(index, side + 59) * 2.2;
@@ -1103,16 +1113,19 @@ export class BeijingDriveScene {
           group.add(pane);
         }
 
-        const board = this.buildVerticalSignBoard(
-          signNames[(index + (side > 0 ? 1 : 0)) % signNames.length],
-        );
-        if (board) {
-          board.position.set(
-            side > 0 ? width / 2 - 0.5 : -width / 2 + 0.5,
-            height - 1.4,
-            side > 0 ? -depth / 2 - 0.28 : depth / 2 + 0.28,
+        if ((index + (side > 0 ? 1 : 0)) % 4 === 0) {
+          const board = this.buildVerticalSignBoard(
+            signNames[(Math.floor(index / 4) + (side > 0 ? 1 : 0)) % signNames.length],
+            side > 0 ? 1 : -1,
           );
-          group.add(board);
+          if (board) {
+            board.position.set(
+              side > 0 ? width / 2 - 0.5 : -width / 2 + 0.5,
+              height - 1.4,
+              side > 0 ? -depth / 2 - 0.28 : depth / 2 + 0.28,
+            );
+            group.add(board);
+          }
         }
 
         if ((index + (side > 0 ? 2 : 0)) % 4 === 0) {
@@ -1129,8 +1142,8 @@ export class BeijingDriveScene {
       }
     }
 
-    this.buildStreetPlaque(0.518, CURB_PLAQUE, '南锣鼓巷', 'NANLUOGU XIANG');
-    this.buildStreetPlaque(0.562, -CURB_PLAQUE, '五道营胡同', 'WUDAOYING HUTONG');
+    this.buildHutongEntranceMarker(0.518, 1, '南锣鼓巷');
+    this.buildHutongEntranceMarker(0.562, -1, '五道营胡同');
     this.addLamp(0.508, -6.4, true);
     this.addLamp(0.545, 6.4, false);
     this.addLamp(0.578, -6.4, true);
@@ -2123,6 +2136,48 @@ export class BeijingDriveScene {
     this.root.add(group);
   }
 
+  private buildHutongEntranceMarker(
+    progress: number,
+    side: -1 | 1,
+    name: string,
+  ): void {
+    const plaque = this.canvasPlaque(name, {
+      width: 640,
+      height: 176,
+      background: '#1C3A2E',
+      border: '#C9A056',
+      color: '#EFD494',
+      font: '700 92px "Songti SC", "STSong", serif',
+    });
+    if (!plaque) return;
+
+    const masonry = this.textured('#555E5C', 'brick', { roughness: 1 });
+    const capMaterial = this.standard('#303A38', { roughness: 1 });
+    const apronMaterial = this.standard('#4A5150', { roughness: 1 });
+    const entrance = new Group();
+    this.place(entrance, progress, side * 7.2, 0);
+
+    const apron = this.box(4.4, 0.05, 4.1, apronMaterial);
+    apron.position.y = 0.035;
+    for (const along of [-1.86, 1.86]) {
+      const pier = this.box(0.48, 2.4, 0.48, masonry);
+      pier.position.set(0, 1.2, along);
+      entrance.add(pier);
+    }
+    const lintel = this.box(0.56, 0.34, 4.2, masonry);
+    lintel.position.y = 2.42;
+    const cap = this.box(0.72, 0.12, 4.5, capMaterial);
+    cap.position.y = 2.65;
+    const panel = new Mesh(
+      this.trackGeometry(new PlaneGeometry(3.1, 0.7)),
+      plaque,
+    );
+    panel.position.set(side * 0.29, 2.42, 0);
+    panel.rotation.y = side > 0 ? Math.PI / 2 : -Math.PI / 2;
+    entrance.add(apron, lintel, cap, panel);
+    this.root.add(entrance);
+  }
+
   /** Reusable textured plaque material with an optional vertical layout. */
   private canvasPlaque(
     text: string,
@@ -2211,12 +2266,12 @@ export class BeijingDriveScene {
     const context = canvas.getContext('2d');
     if (!context) return;
 
-    context.fillStyle = '#155B88';
+    context.fillStyle = '#1B536F';
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.strokeStyle = '#EAF4F5';
     context.lineWidth = 10;
     context.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
-    context.fillStyle = '#FFFFFF';
+    context.fillStyle = '#DDE8E8';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.font = '800 104px "PingFang SC", "Microsoft YaHei", sans-serif';
@@ -2232,17 +2287,29 @@ export class BeijingDriveScene {
     const signMaterial = this.trackMaterial(
       new MeshBasicMaterial({ map: texture, side: DoubleSide, fog: true }),
     );
-    const signGeometry = this.trackGeometry(new PlaneGeometry(7.6, 1.76));
-
     const group = new Group();
     this.place(group, progress, 0, 0, Math.PI);
-    const sign = new Mesh(signGeometry, signMaterial);
-    sign.position.y = 5.05;
-    const leftMount = this.box(0.15, 1.15, 0.15, this.standard('#69727A', { roughness: 1 }));
-    leftMount.position.set(-3, 5.82, 0);
-    const rightMount = leftMount.clone();
-    rightMount.position.x = 3;
-    group.add(sign, leftMount, rightMount);
+    const gantryMaterial = this.standard('#69727A', { roughness: 1 });
+    const backing = this.box(6.9, 1.62, 0.14, gantryMaterial);
+    backing.position.set(-0.25, 5.08, 0);
+    const sign = new Mesh(
+      this.trackGeometry(new PlaneGeometry(6.72, 1.44)),
+      signMaterial,
+    );
+    sign.position.set(-0.25, 5.08, 0.08);
+
+    const support = this.cylinder(0.16, 6.08, gantryMaterial);
+    support.position.set(5.15, 3.04, 0);
+    const foot = this.cylinder(0.34, 0.12, gantryMaterial);
+    foot.position.set(5.15, 0.06, 0);
+    const crossbeam = this.box(8.8, 0.18, 0.22, gantryMaterial);
+    crossbeam.position.set(0.75, 6.08, 0);
+    for (const x of [-2.55, 2.05]) {
+      const hanger = this.box(0.12, 0.42, 0.12, gantryMaterial);
+      hanger.position.set(x, 5.88, 0);
+      group.add(hanger);
+    }
+    group.add(foot, support, crossbeam, backing, sign);
     this.root.add(group);
   }
 
