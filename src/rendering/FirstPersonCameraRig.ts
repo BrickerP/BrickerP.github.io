@@ -11,7 +11,9 @@ export const DRIVE_PATH_SCALE = 0.19;
 export const DRIVE_EYE_HEIGHT = DRIVE.cameraHeight;
 
 const LANDSCAPE_FOV = 58;
-const PORTRAIT_FOV = 72;
+const PORTRAIT_FOV = 70;
+const LANDSCAPE_LOOK_HEIGHT = -0.08;
+const PORTRAIT_LOOK_HEIGHT = -0.15;
 // Normalized path fractions scaled for the 48s circuit so look-ahead metres
 // stay comparable to the earlier 16s / 32s drives.
 const LANDSCAPE_AHEAD_PHASE = 0.0175;
@@ -123,7 +125,11 @@ export class FirstPersonCameraRig {
 
     this.lookTarget.set(
       this.futureFrame.point.x * DRIVE_PATH_SCALE,
-      DRIVE_EYE_HEIGHT - 0.08,
+      DRIVE_EYE_HEIGHT + mix(
+        PORTRAIT_LOOK_HEIGHT,
+        LANDSCAPE_LOOK_HEIGHT,
+        aspectMix,
+      ),
       this.futureFrame.point.z * DRIVE_PATH_SCALE,
     );
     this.lookTarget.addScaledVector(this.futureFrame.normal, laneOffset);

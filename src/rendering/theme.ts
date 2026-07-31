@@ -1,20 +1,24 @@
-/** Shared palette for the stylised blue-hour street drive. */
+/** Shared LOOP roles plus retained, diegetic Beijing material colors. */
 export const PALETTE = {
-  skyTop: '#0E1B2D',
-  skyHorizon: '#315F7B',
-  fog: '#3B5B6D',
-  asphalt: '#28333D',
-  pavement: '#73777A',
+  night: '#07111B',
+  asphalt: '#0B1F2E',
+  warmWhite: '#ECE5D8',
+  steel: '#71828B',
+  signature: '#D9684B',
+  skyTop: '#07111B',
+  skyHorizon: '#27495C',
+  fog: '#405563',
+  pavement: '#53606A',
   stone: '#C8C4B8',
-  wallRed: '#8F2B22',
-  palaceRed: '#B53A2B',
+  wallRed: '#4F292B',
+  palaceRed: '#642B28',
   roof: '#344148',
-  roofEdge: '#C9A056',
-  lane: '#E5DDCC',
+  roofEdge: '#9F7A48',
+  lane: '#71828B',
   lamp: '#FFD38A',
   water: '#2F667A',
   foliage: '#365A43',
-  text: '#F4E7D2',
+  text: '#ECE5D8',
 } as const;
 
 export const DRIVE = {
