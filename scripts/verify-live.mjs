@@ -81,6 +81,7 @@ function expectedContentType(relative) {
   if (relative.endsWith('.css')) return /^text\/css\b/i;
   if (relative.endsWith('.js')) return /^(?:text|application)\/(?:javascript|ecmascript)\b/i;
   if (relative.endsWith('.png')) return /^image\/png\b/i;
+  if (relative.endsWith('.svg')) return /^image\/svg\+xml\b/i;
   if (relative.endsWith('.pdf')) return /^application\/pdf\b/i;
   if (relative.endsWith('.txt')) return /^text\/plain\b/i;
   if (relative.endsWith('.xml')) return /^(?:application|text)\/xml\b/i;

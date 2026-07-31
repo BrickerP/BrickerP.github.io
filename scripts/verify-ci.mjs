@@ -221,5 +221,6 @@ assert.match(liveSmoke, /AbortSignal\.timeout\(requestTimeoutMs\)/, 'live reques
 assert.match(liveSmoke, /sha256\(bytes\)/, 'approved binary assets need byte-level verification');
 assert.match(liveSmoke, /verifyDistParity\(\)/, 'live smoke must compare every deployed file with the immutable dist');
 assert.match(liveSmoke, /deployed bytes differ from immutable dist/, 'live byte drift must fail the deployment job');
+assert.match(liveSmoke, /relative\.endsWith\('\.svg'\)[^\n]+image\\\/svg\\\+xml/, 'live smoke must verify deployed SVG content types');
 
 console.log('CI contract verified: Node pin, dependency review, parallel QA, exact deployment parity, and grouped Dependabot.');
