@@ -1115,7 +1115,9 @@ export class BeijingDriveScene {
 
         if ((index + (side > 0 ? 1 : 0)) % 4 === 0) {
           const board = this.buildVerticalSignBoard(
-            signNames[(Math.floor(index / 4) + (side > 0 ? 1 : 0)) % signNames.length],
+            signNames[
+              (Math.floor(index / 4) + (side > 0 ? 1 : 0)) % signNames.length
+            ],
             side > 0 ? 1 : -1,
           );
           if (board) {
@@ -2300,7 +2302,7 @@ export class BeijingDriveScene {
 
     const support = this.cylinder(0.16, 6.08, gantryMaterial);
     support.position.set(5.15, 3.04, 0);
-    const foot = this.cylinder(0.34, 0.12, gantryMaterial);
+    const foot = this.cylinder(0.28, 0.12, gantryMaterial);
     foot.position.set(5.15, 0.06, 0);
     const crossbeam = this.box(8.8, 0.18, 0.22, gantryMaterial);
     crossbeam.position.set(0.75, 6.08, 0);
