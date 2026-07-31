@@ -143,6 +143,7 @@ export class BeijingDriveScene {
   private readonly unitCylinder: CylinderGeometry;
   private readonly unitSphere: SphereGeometry;
   private readonly unitPitchedRoof: BufferGeometry;
+  private readonly unitTaperedRoof: CylinderGeometry;
   private readonly waterMaterial: MeshStandardMaterial;
   private readonly lampMaterial: MeshStandardMaterial;
   private readonly windowMaterial: MeshStandardMaterial;
@@ -179,6 +180,9 @@ export class BeijingDriveScene {
     this.unitCylinder = this.trackGeometry(new CylinderGeometry(1, 1, 1, 8));
     this.unitSphere = this.trackGeometry(new SphereGeometry(1, 10, 7));
     this.unitPitchedRoof = this.trackGeometry(createPitchedRoofGeometry());
+    this.unitTaperedRoof = this.trackGeometry(
+      new CylinderGeometry(0.16, 1, 1, 16),
+    );
 
     this.waterMaterial = this.standard(PALETTE.water, {
       emissive: '#123745',
@@ -1229,6 +1233,11 @@ export class BeijingDriveScene {
       emissiveIntensity: 0.3,
       roughness: 0.85,
     });
+    const pillarMaterial = this.standard('#7B3B2C', {
+      emissive: '#351411',
+      emissiveIntensity: 0.18,
+      roughness: 0.9,
+    });
     const stone = this.textured(PALETTE.stone, 'stoneGrain', { roughness: 0.96 });
 
     const yonghegong = PASSAGE_HEROES.yonghegong;
@@ -1273,54 +1282,41 @@ export class BeijingDriveScene {
     }
 
     const rearPavilion = new Group();
-    rearPavilion.position.z = 2.5;
+    rearPavilion.position.z = 2.8;
     const plinth = this.box(14.2, 1.6, 10.4, stone);
     plinth.position.y = 0.8;
-    const lowerHall = this.box(11.8, 2.8, 8.2, ochre);
-    lowerHall.position.y = 3;
-    const lowerRoof = new Mesh(this.unitPitchedRoof, yellowRoof);
-    lowerRoof.scale.set(8.2, 1.35, 13.6);
-    lowerRoof.rotation.y = Math.PI / 2;
-    lowerRoof.position.y = 4.45;
-    const lowerEdge = this.box(
+    const mainHall = this.box(12.6, 5.4, 8.4, ochre);
+    mainHall.position.y = 3.5;
+    const mainRoofHeight = 1.7;
+    const mainRoof = new Mesh(this.unitPitchedRoof, yellowRoof);
+    mainRoof.scale.set(
+      9.6,
+      mainRoofHeight,
+      yonghegongModel.solidHalfWidth * 2,
+    );
+    mainRoof.rotation.y = Math.PI / 2;
+    mainRoof.position.y = yonghegongModel.height - mainRoofHeight;
+    const mainEdge = this.box(
       yonghegongModel.solidHalfWidth * 2,
       0.16,
-      10.2,
+      9.6,
       roofEdge,
     );
-    lowerEdge.position.y = 4.48;
+    mainEdge.position.y = mainRoof.position.y + 0.03;
 
-    const midHall = this.box(9.6, 2.4, 6.8, ochre);
-    midHall.position.y = 6.75;
-    const midRoof = new Mesh(this.unitPitchedRoof, yellowRoof);
-    midRoof.scale.set(6.8, 1.25, 11.2);
-    midRoof.rotation.y = Math.PI / 2;
-    midRoof.position.y = 8;
-    const midEdge = this.box(12.2, 0.14, 8.4, roofEdge);
-    midEdge.position.y = 8.03;
+    const facade = new Group();
+    for (const x of [-5, -3, -1, 1, 3, 5]) {
+      const pillar = this.box(0.24, 4.6, 0.24, pillarMaterial);
+      pillar.position.set(x, 3.25, -4.28);
+      facade.add(pillar);
+    }
+    for (const x of [-4, -2, 0, 2, 4]) {
+      const bay = this.box(1.25, 2.1, 0.08, this.shopHardwareMaterial);
+      bay.position.set(x, 2.9, -4.25);
+      facade.add(bay);
+    }
 
-    const upperHall = this.box(7.2, 1.9, 5.2, ochre);
-    upperHall.position.y = 10.1;
-    const upperRoofHeight = 1.2;
-    const upperRoof = new Mesh(this.unitPitchedRoof, yellowRoof);
-    upperRoof.scale.set(5.2, upperRoofHeight, 8.8);
-    upperRoof.rotation.y = Math.PI / 2;
-    upperRoof.position.y = yonghegongModel.height - upperRoofHeight;
-    const upperEdge = this.box(9.4, 0.12, 6.6, roofEdge);
-    upperEdge.position.y = 11.14;
-
-    rearPavilion.add(
-      plinth,
-      lowerHall,
-      lowerRoof,
-      lowerEdge,
-      midHall,
-      midRoof,
-      midEdge,
-      upperHall,
-      upperRoof,
-      upperEdge,
-    );
+    rearPavilion.add(plinth, mainHall, mainRoof, mainEdge, facade);
 
     const plaque = this.canvasPlaque('雍和宫', {
       width: 512,
@@ -1335,7 +1331,7 @@ export class BeijingDriveScene {
         this.trackGeometry(new PlaneGeometry(2.8, 0.96)),
         plaque,
       );
-      panel.position.set(0, 3.15, -4.18);
+      panel.position.set(0, 4.7, -4.34);
       panel.rotation.y = Math.PI;
       rearPavilion.add(panel);
     }
@@ -1671,35 +1667,38 @@ export class BeijingDriveScene {
     const upperTerrace = this.cylinder(6, 0.75, white);
     upperTerrace.position.y = 1.25;
 
-    const lowerRing = this.cylinder(5.8, 3.4, red);
-    lowerRing.position.y = 3.3;
-    const lowerRoof = this.cylinder(6.6, 1.15, blueRoof);
-    lowerRoof.position.y = 5.05;
+    const lowerRing = this.cylinder(5.5, 2.6, red);
+    lowerRing.position.y = 2.95;
+    const lowerRoof = new Mesh(this.unitTaperedRoof, blueRoof);
+    lowerRoof.scale.set(6.8, 1.8, 6.8);
+    lowerRoof.position.y = 4.45;
     const lowerEaves = this.cylinder(
       templeModel.solidHalfWidth,
       0.14,
       roofEdge,
     );
-    lowerEaves.position.y = 5.12;
+    lowerEaves.position.y = 3.56;
 
-    const midRing = this.cylinder(4.6, 3, red);
-    midRing.position.y = 7;
-    const midRoof = this.cylinder(5.4, 1.05, blueRoof);
-    midRoof.position.y = 8.55;
+    const midRing = this.cylinder(4.3, 2.35, red);
+    midRing.position.y = 6.3;
+    const midRoof = new Mesh(this.unitTaperedRoof, blueRoof);
+    midRoof.scale.set(5.5, 1.65, 5.5);
+    midRoof.position.y = 7.45;
     const midEaves = this.cylinder(6, 0.12, roofEdge);
-    midEaves.position.y = 8.62;
+    midEaves.position.y = 6.63;
 
-    const upperRing = this.cylinder(3.4, 2.8, red);
-    upperRing.position.y = 10.4;
-    const upperRoof = this.cylinder(4.2, 1, blueRoof);
-    upperRoof.position.y = 11.85;
+    const upperRing = this.cylinder(3.2, 2.15, red);
+    upperRing.position.y = 9.15;
+    const upperRoof = new Mesh(this.unitTaperedRoof, blueRoof);
+    upperRoof.scale.set(4.4, 1.75, 4.4);
+    upperRoof.position.y = 10.15;
     const upperEaves = this.cylinder(4.8, 0.1, roofEdge);
-    upperEaves.position.y = 11.92;
+    upperEaves.position.y = 9.28;
 
     const finial = new Mesh(this.unitSphere, roofEdge);
-    finial.scale.setScalar(0.42);
-    finial.position.y = 12.65;
-    const spireHeight = 1.5;
+    finial.scale.setScalar(0.4);
+    finial.position.y = 11.4;
+    const spireHeight = 1.45;
     const spire = this.cylinder(0.13, spireHeight, roofEdge);
     spire.position.y = templeModel.height - spireHeight / 2;
 
@@ -1713,7 +1712,7 @@ export class BeijingDriveScene {
     });
     if (plaque) {
       const panel = new Mesh(this.trackGeometry(new PlaneGeometry(3.2, 1.1)), plaque);
-      panel.position.set(0, 3.4, 5.95);
+      panel.position.set(0, 2.95, 5.65);
       hall.add(panel);
     }
 

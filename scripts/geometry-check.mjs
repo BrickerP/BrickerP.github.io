@@ -224,10 +224,27 @@ function cameraSnapshot(aspect, phase) {
   rig.update(phase, true);
   const direction = rig.camera.getWorldDirection(new Vector3());
   return {
+    camera: rig.camera,
     fov: rig.camera.fov,
     position: rig.camera.position.clone(),
     direction,
   };
+}
+
+function legacyCameraSnapshot(phase, aheadPhase, laneOffset, lookHeight) {
+  const frame = drive.samplePathFrame(phase);
+  const futureFrame = drive.samplePathFrame(phase + aheadPhase);
+  const position = frame.point
+    .clone()
+    .multiplyScalar(cameraModule.DRIVE_PATH_SCALE)
+    .addScaledVector(frame.normal, laneOffset);
+  position.y = themeModule.DRIVE.cameraHeight;
+  const target = futureFrame.point
+    .clone()
+    .multiplyScalar(cameraModule.DRIVE_PATH_SCALE)
+    .addScaledVector(futureFrame.normal, laneOffset);
+  target.y = themeModule.DRIVE.cameraHeight + lookHeight;
+  return { position, direction: target.sub(position).normalize() };
 }
 
 const justPortrait = cameraSnapshot(0.999, 0.018);
@@ -272,6 +289,101 @@ if (runsGeometryCase('dynamic-resize')) {
     ) < 0.01,
     'dynamic resize jumps camera heading around square aspect',
   );
+}
+
+if (runsGeometryCase('portrait-landmark-framing')) {
+  const portraitAspect = 390 / 844;
+  const landscapeAspect = 1440 / 900;
+  const portraitMoments = [
+    { phase: 9 / 48, hero: spatialContractModule.PASSAGE_HEROES.whiteDagoba },
+    { phase: 30 / 48, hero: spatialContractModule.PASSAGE_HEROES.yonghegong },
+    { phase: 37.2 / 48, hero: spatialContractModule.PASSAGE_HEROES.templeOfHeaven },
+  ];
+  for (const { phase, hero } of portraitMoments) {
+    const frame = drive.samplePathFrame(phase);
+    const portrait = cameraSnapshot(portraitAspect, phase);
+    const landscape = cameraSnapshot(landscapeAspect, phase);
+    const legacyPortrait = legacyCameraSnapshot(phase, 0.0215, -0.72, -0.15);
+    const legacyLandscape = legacyCameraSnapshot(
+      phase,
+      0.0175,
+      themeModule.DRIVE.laneOffset,
+      -0.08,
+    );
+    const portraitBias = portrait.direction
+      .clone()
+      .sub(legacyPortrait.direction)
+      .dot(frame.normal);
+    assert.ok(
+      portraitBias < -0.01,
+      `portrait camera does not turn toward the left-side hero at phase ${phase}: ${portraitBias}`,
+    );
+    assert.ok(
+      portrait.direction.dot(frame.tangent) > 0,
+      `portrait camera no longer looks forward at phase ${phase}`,
+    );
+    assert.ok(
+      landscape.direction.dot(frame.tangent) > 0,
+      `landscape camera no longer looks forward at phase ${phase}`,
+    );
+    assert.ok(
+      landscape.fov === 58 &&
+        vectorDelta(landscape.position, legacyLandscape.position) < 1e-10 &&
+        vectorDelta(landscape.direction, legacyLandscape.direction) < 1e-10,
+      `portrait focus changed the landscape camera at phase ${phase}`,
+    );
+
+    const roadAheadFrame = drive.samplePathFrame(phase + 0.0215);
+    const roadAhead = roadAheadFrame.point
+      .clone()
+      .multiplyScalar(cameraModule.DRIVE_PATH_SCALE)
+      .addScaledVector(roadAheadFrame.normal, -0.72);
+    roadAhead.y = themeModule.DRIVE.cameraHeight - 0.15;
+    roadAhead.project(portrait.camera);
+    assert.ok(
+      Math.abs(roadAhead.x) <= 0.3,
+      `portrait landmark focus pushes the vanishing point out of contract at phase ${phase}: ${roadAhead.x}`,
+    );
+
+    const heroFrame = drive.samplePathFrame(hero.progress);
+    const heroCentre = heroFrame.point
+      .clone()
+      .multiplyScalar(cameraModule.DRIVE_PATH_SCALE)
+      .addScaledVector(heroFrame.normal, hero.lateralOffset);
+    const visibleHeroSample = [-1, 0, 1].some((lateralStep) =>
+      [0.2, 0.55, 0.9].some((heightStep) => {
+        const sample = heroCentre
+          .clone()
+          .addScaledVector(heroFrame.normal, hero.solidHalfWidth * lateralStep);
+        sample.y = hero.targetHeight * heightStep;
+        sample.project(portrait.camera);
+        return (
+          Math.abs(sample.x) <= 1 &&
+          Math.abs(sample.y) <= 1 &&
+          sample.z >= -1 &&
+          sample.z <= 1
+        );
+      }),
+    );
+    assert.ok(
+      visibleHeroSample,
+      `${hero.id} has no visible portrait sample at phase ${phase}`,
+    );
+  }
+
+  const focusBoundaries = [
+    0.167, 0.184, 0.232, 0.25,
+    0.583, 0.605, 0.648, 0.667,
+    0.75, 0.77, 0.815, 0.833,
+  ];
+  for (const boundary of focusBoundaries) {
+    const before = cameraSnapshot(portraitAspect, boundary - 0.0001).direction;
+    const after = cameraSnapshot(portraitAspect, boundary + 0.0001).direction;
+    assert.ok(
+      vectorDelta(before, after) < 0.01,
+      `portrait landmark focus jumps at phase ${boundary}`,
+    );
+  }
 }
 
 let centralAxisClearanceReport = null;
