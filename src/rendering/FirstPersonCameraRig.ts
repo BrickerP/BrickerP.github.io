@@ -23,7 +23,6 @@ const ASPECT_MIX_END = 1.25;
 const PORTRAIT_LANE_OFFSET = -0.72;
 const PORTRAIT_FOCUS_MIX_START = 0.62;
 const PORTRAIT_FOCUS_MIX_END = 0.9;
-const PORTRAIT_LANDMARK_LOOK_OFFSET = -1;
 const CLEARANCE_LANE_OFFSET = -0.72;
 const CLEARANCE_START_PHASE = 0.988;
 const CLEARANCE_FADE_PHASE = 0.02;
@@ -67,14 +66,18 @@ function focusWindow(
   );
 }
 
-/** Smoothly turn narrow portrait views toward the three left-side passage heroes. */
-function portraitLandmarkLookOffset(progress: number): number {
-  const visibility = Math.max(
-    focusWindow(progress, 0.167, 0.184, 0.232, 0.25),
-    focusWindow(progress, 0.583, 0.605, 0.648, 0.667),
-    focusWindow(progress, 0.75, 0.77, 0.815, 0.833),
+/** Smooth portrait-only framing cues calibrated to each left-side hero. */
+function portraitLandmarkCue(
+  progress: number,
+  whiteDagoba: number,
+  yonghegong: number,
+  templeOfHeaven: number,
+): number {
+  return (
+    focusWindow(progress, 0.167, 0.184, 0.232, 0.25) * whiteDagoba +
+    focusWindow(progress, 0.583, 0.605, 0.648, 0.667) * yonghegong +
+    focusWindow(progress, 0.75, 0.77, 0.815, 0.833) * templeOfHeaven
   );
-  return PORTRAIT_LANDMARK_LOOK_OFFSET * visibility;
 }
 
 /** Pure phase-derived first-person camera for the closed authored drive path. */
@@ -143,6 +146,15 @@ export class FirstPersonCameraRig {
         PORTRAIT_FOCUS_MIX_END,
         this.aspect,
       );
+    const portraitLookOffset =
+      portraitLandmarkCue(progress, -2.4, -1.8, -1) * portraitFocusMix;
+    const portraitFovBoost =
+      portraitLandmarkCue(progress, 8, 14, 0) * portraitFocusMix;
+    const nextFov = this.fovForAspect(this.aspect) + portraitFovBoost;
+    if (this.camera.fov !== nextFov) {
+      this.camera.fov = nextFov;
+      this.camera.updateProjectionMatrix();
+    }
     samplePathFrame(
       progress + aheadPhase,
       this.futureFrame,
@@ -167,7 +179,7 @@ export class FirstPersonCameraRig {
     );
     this.lookTarget.addScaledVector(
       this.futureFrame.normal,
-      laneOffset + portraitLandmarkLookOffset(progress) * portraitFocusMix,
+      laneOffset + portraitLookOffset,
     );
     this.camera.lookAt(this.lookTarget);
     this.camera.updateMatrixWorld();
