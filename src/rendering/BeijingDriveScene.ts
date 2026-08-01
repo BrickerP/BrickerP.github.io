@@ -252,9 +252,11 @@ export class BeijingDriveScene {
     this.buildOpenCircuitSignature();
     this.buildDistantSkyline();
     this.buildCentralAxis();
+    this.buildChangAnStreet();
     this.buildPalaceMoat();
     this.buildWaterfront();
     this.buildDeshengmen();
+    this.buildRingBridge();
     this.buildOlympic();
     this.buildBellDrumPlaza();
     this.buildNanluoWudaoying();
@@ -263,6 +265,7 @@ export class BeijingDriveScene {
     this.buildTempleOfHeaven();
     this.buildQianmenStreet();
     this.buildHutong();
+    this.buildHutongLife();
     this.buildOverpass();
     this.buildStreetScaleDetails();
 
@@ -640,6 +643,24 @@ export class BeijingDriveScene {
         }
       }
     }
+  }
+
+  /** Chang'an Avenue layer: broad ceremonial promenade, plane trees and one legible street sign. */
+  private buildChangAnStreet(): void {
+    const paving = this.textured('#9A9A8E', 'stoneGrain', { roughness: 1 });
+
+    for (const side of [-1, 1] as const) {
+      const promenade = this.box(2.6, 0.06, 18.5, paving);
+      this.place(promenade, 0.043, side * 13.6, 0.045);
+      this.root.add(promenade);
+
+      for (const progress of side < 0 ? [0.015, 0.052] : [0.028, 0.067]) {
+        this.addTree(progress, side * 14.05, 4.5);
+      }
+    }
+
+    this.buildStreetNameSign(0.031, -12.65, '长安街', -1);
+    this.addLanternString(0.022, -12.55, 5, 5.2, 3.7, -0.35);
   }
 
   /** Side-street apron and civic edge that make Tiananmen a set-back vista. */
@@ -1125,6 +1146,66 @@ export class BeijingDriveScene {
     this.addLamp(0.911, -5.25, false);
   }
 
+  /** Quiet human detail at the two named hutong entrances, outside the driving lane. */
+  private buildHutongLife(): void {
+    const skin = this.standard('#B58B68', { roughness: 0.92 });
+    const coat = this.standard('#6B5650', { roughness: 0.98 });
+    const redCoat = this.standard('#8B4740', {
+      emissive: '#2A1110',
+      emissiveIntensity: 0.12,
+      roughness: 0.96,
+    });
+    const trousers = this.standard('#303B3C', { roughness: 1 });
+    const stool = this.standard('#71573B', { roughness: 1 });
+
+    const addPair = (progress: number, side: -1 | 1): void => {
+      const pair = new Group();
+      this.place(pair, progress, side * 7.42, 0);
+
+      const addFigure = (
+        z: number,
+        bodyMaterial: Material,
+        seated: boolean,
+        withCane: boolean,
+      ): void => {
+        const figure = new Group();
+        figure.position.set(side * 0.22, 0, z);
+        const torso = this.box(0.36, seated ? 0.72 : 0.9, 0.34, bodyMaterial);
+        torso.position.y = seated ? 0.76 : 1.0;
+        const head = new Mesh(this.unitSphere, skin);
+        head.scale.setScalar(0.23);
+        head.position.y = seated ? 1.34 : 1.6;
+        const leftLeg = this.box(0.13, seated ? 0.4 : 0.64, 0.13, trousers);
+        leftLeg.position.set(-0.1, seated ? 0.33 : 0.32, -0.08);
+        const rightLeg = leftLeg.clone();
+        rightLeg.position.z = 0.08;
+        figure.add(torso, head, leftLeg, rightLeg);
+
+        if (seated) {
+          const seat = this.box(0.62, 0.12, 0.56, stool);
+          seat.position.y = 0.48;
+          figure.add(seat);
+        }
+        if (withCane) {
+          const cane = this.cylinder(0.035, 1.18, stool);
+          cane.position.set(side * 0.34, 0.62, 0.12);
+          cane.rotation.z = side * -0.08;
+          figure.add(cane);
+        }
+        pair.add(figure);
+      };
+
+      addFigure(-0.48, coat, true, false);
+      addFigure(0.5, redCoat, false, true);
+      this.root.add(pair);
+    };
+
+    addPair(0.518, 1);
+    addPair(0.562, -1);
+    this.addLanternString(0.518, 7.34, 5, 3.8, 2.82, 0.35);
+    this.addLanternString(0.562, -7.34, 5, 3.8, 2.82, -0.35);
+  }
+
   /** 0.500–0.583 — Nanluo / Wudaoying commercial alley. */
   private buildNanluoWudaoying(): void {
     const brick = this.textured('#5A6365', 'brick', { roughness: 1 });
@@ -1286,7 +1367,7 @@ export class BeijingDriveScene {
     temple.scale.setScalar(yonghegong.scale);
     this.addSetbackApron(
       yonghegong.progress,
-      -9.55,
+      -10.7,
       6.2,
       15,
       stone,
@@ -1356,7 +1437,6 @@ export class BeijingDriveScene {
     }
 
     rearPavilion.add(plinth, mainHall, mainRoof, mainEdge, facade);
-
     const plaque = this.canvasPlaque('雍和宫', {
       width: 640,
       height: 224,
@@ -1716,7 +1796,7 @@ export class BeijingDriveScene {
     hall.scale.setScalar(templeOfHeaven.scale);
     this.addSetbackApron(
       templeOfHeaven.progress,
-      -9.65,
+      -9.7,
       6.8,
       16,
       white,
@@ -1817,10 +1897,10 @@ export class BeijingDriveScene {
       if (progress > 0.778 && progress < 0.825) continue;
       const height = 5.5 + hash01(index, 81) * 2.5;
       const trunk = this.cylinder(0.12, height * 0.55, barkMaterial);
-      this.place(trunk, progress, -11.8, height * 0.275);
+      this.place(trunk, progress, -10.4, height * 0.275);
       const canopy = new Mesh(this.unitSphere, cypressMaterial);
       canopy.scale.set(height * 0.22, height * 0.42, height * 0.22);
-      this.place(canopy, progress, -11.8, height * 0.72);
+      this.place(canopy, progress, -10.4, height * 0.72);
       this.root.add(trunk, canopy);
     }
 
@@ -2117,6 +2197,31 @@ export class BeijingDriveScene {
     this.addLamp(0.322, -5.8, false);
   }
 
+  /** A raised circular Second-Ring connector, kept deep in the skyline as a readable city cue. */
+  private buildRingBridge(): void {
+    const deckMaterial = this.standard('#68777D', {
+      emissive: '#273A42',
+      emissiveIntensity: 0.2,
+      roughness: 0.94,
+    });
+    const bridge = new Group();
+    this.place(bridge, 0.307, 17.2, 0, Math.PI / 2);
+    const deck = new Mesh(
+      this.trackGeometry(new TorusGeometry(10.2, 0.78, 6, 64)),
+      deckMaterial,
+    );
+    deck.rotation.x = Math.PI / 2;
+    deck.position.y = 7.25;
+
+    bridge.add(deck);
+    for (const angle of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
+      const support = this.box(0.64, 7.2, 0.64, deckMaterial);
+      support.position.set(Math.cos(angle) * 10.2, 3.6, Math.sin(angle) * 10.2);
+      bridge.add(support);
+    }
+    this.root.add(bridge);
+  }
+
   /** 0.667–0.750 — CBD east skyline hero and Xidan / Financial Street west. */
   private buildCbdFinance(): void {
     const glass = this.textured('#405A6B', 'glassGrid', {
@@ -2329,6 +2434,64 @@ export class BeijingDriveScene {
     const apron = this.box(width, 0.07, depth, material);
     this.place(apron, progress, offset, 0.04);
     this.root.add(apron);
+  }
+
+  private addLanternString(
+    progress: number,
+    offset: number,
+    count: number,
+    span: number,
+    height: number,
+    lateralInset: number,
+  ): void {
+    const string = new Group();
+    this.place(string, progress, offset, 0);
+    const wire = this.box(0.035, 0.035, span, this.shopHardwareMaterial);
+    wire.position.set(lateralInset, height, 0);
+    string.add(wire);
+    for (let index = 0; index < count; index += 1) {
+      const z = (index / Math.max(1, count - 1) - 0.5) * span;
+      const sag = index % 2 === 0 ? 0.08 : 0.2;
+      const hanger = this.box(0.035, 0.32, 0.035, this.shopHardwareMaterial);
+      hanger.position.set(lateralInset, height - 0.16, z);
+      const lantern = new Mesh(this.unitSphere, this.lanternMaterial);
+      lantern.scale.set(0.18, 0.24, 0.18);
+      lantern.position.set(lateralInset, height - 0.42 - sag, z);
+      string.add(hanger, lantern);
+    }
+    this.root.add(string);
+  }
+
+  private buildStreetNameSign(
+    progress: number,
+    offset: number,
+    name: string,
+    side: -1 | 1,
+  ): void {
+    const plaque = this.canvasPlaque(name, {
+      width: 900,
+      height: 210,
+      background: '#1F5E86',
+      border: '#E7F0EE',
+      color: '#F6F7E9',
+      font: '800 86px "PingFang SC", "Microsoft YaHei", sans-serif',
+    });
+    if (!plaque) return;
+
+    const sign = new Group();
+    this.place(sign, progress, offset, 0);
+    const pole = this.cylinder(0.08, 3.05, this.streetMetalMaterial);
+    pole.position.y = 1.52;
+    const backing = this.box(4.65, 1.02, 0.14, this.streetMetalMaterial);
+    backing.position.set(side * 0.16, 3.23, 0);
+    const panel = new Mesh(
+      this.trackGeometry(new PlaneGeometry(4.48, 0.86)),
+      plaque,
+    );
+    panel.position.set(side * 0.16, 3.23, -0.08);
+    panel.rotation.y = Math.PI;
+    sign.add(pole, backing, panel);
+    this.root.add(sign);
   }
 
   private addBench(progress: number, offset: number, wood: Material): void {
