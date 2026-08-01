@@ -22,7 +22,9 @@ import {
   Scene,
   SphereGeometry,
   SRGBColorSpace,
+  TorusGeometry,
   Vector2,
+  Vector3,
   type Material,
   type Object3D,
   type Texture,
@@ -1204,6 +1206,7 @@ export class BeijingDriveScene {
       const progress = 0.42 + index * 0.0069;
       for (const side of [-1, 1]) {
         if (side < 0 && index >= 4) continue; // clear the tower forecourt
+        if (side > 0) continue; // reserve the full right verge for the Water Cube forecourt
         const width = 4 + hash01(index, side + 41) * 1.6;
         const height = 3 + hash01(index, side + 45) * 0.9;
         const depth = 4.4 + hash01(index, side + 49) * 2.2;
@@ -1242,8 +1245,8 @@ export class BeijingDriveScene {
     this.addLamp(0.429, 6.5, true);
     this.addLamp(0.462, -6.4, true);
     this.addLamp(0.491, 6.5, false);
-    this.addTree(0.442, 12.2, 4.6);
-    this.addTree(0.478, 12.4, 4.2);
+    this.addTree(0.442, -13.8, 4.6);
+    this.addTree(0.478, -13.8, 4.2);
   }
 
   /** 0.583–0.667 — Yonghegong courtyard with a low front hall and rear pavilion. */
@@ -1870,56 +1873,90 @@ export class BeijingDriveScene {
     this.place(nest, birdsNest.progress, birdsNest.lateralOffset, 0);
     nest.scale.setScalar(birdsNest.scale);
 
-    const base = this.box(18, 2.2, 16, concrete);
-    base.position.y = 1.1;
-    nest.add(base);
+    // The stadium is an oval bowl, not a stacked rectangular tower. Low
+    // octagonal plinths and an ellipsoid body establish the silhouette first.
+    const base = new Mesh(this.unitCylinder, concrete);
+    base.scale.set(9.7, 1.35, 7.9);
+    base.position.y = 0.7;
+    const bowl = new Mesh(this.unitSphere, nestCore);
+    bowl.scale.set(8.9, 4.9, 7.45);
+    bowl.position.y = 4.45;
+    const innerBowl = new Mesh(this.unitSphere, nestVoid);
+    innerBowl.scale.set(5.9, 1.35, 4.65);
+    innerBowl.position.set(0, 4.9, -5.95);
+    const seatingRing = new Mesh(this.unitCylinder, nestCore);
+    seatingRing.scale.set(6.3, 0.42, 5.05);
+    seatingRing.position.set(0, 4.05, -0.2);
 
-    // The stadium bowl is deliberately visible between the steel members;
-    // a single dark cylinder read as a generic office block at night.
-    const shell = new Mesh(this.unitCylinder, nestCore);
-    shell.scale.set(8.45, 9.1, 7.1);
-    shell.position.y = 6.85;
-    const lowerBand = new Mesh(this.unitCylinder, lattice);
-    lowerBand.scale.set(9.8, 0.7, 8.35);
-    lowerBand.position.y = 2.4;
-    const seatingBowl = new Mesh(this.unitCylinder, nestCore);
-    seatingBowl.scale.set(6.8, 0.42, 5.35);
-    seatingBowl.position.y = 4.15;
-    const rim = new Mesh(this.unitCylinder, lattice);
-    rim.scale.set(9.7, 0.75, 8.3);
-    rim.position.y = 13.6;
+    const ringGeometry = this.trackGeometry(new TorusGeometry(1, 0.09, 6, 28));
+    const lowerRim = new Mesh(ringGeometry, lattice);
+    lowerRim.scale.set(9.35, 0.95, 7.85);
+    lowerRim.position.y = 2.35;
+    const middleRim = new Mesh(ringGeometry, lattice);
+    middleRim.scale.set(8.95, 0.48, 7.45);
+    middleRim.position.y = 5.95;
+    const upperRim = new Mesh(ringGeometry, lattice);
+    upperRim.scale.set(9.25, 1.05, 7.75);
+    upperRim.position.y = 8.25;
     const roofVoid = new Mesh(this.unitCylinder, nestVoid);
-    roofVoid.scale.set(6.4, 0.32, 5.3);
-    roofVoid.position.y = 14.05;
-    const middleBand = new Mesh(this.unitCylinder, lattice);
-    middleBand.scale.set(8.95, 0.16, 7.35);
-    middleBand.position.y = 8.4;
-    nest.add(shell, lowerBand, seatingBowl, rim, middleBand, roofVoid);
+    roofVoid.scale.set(5.65, 0.2, 4.35);
+    roofVoid.position.y = 8.35;
+    nest.add(base, bowl, innerBowl, seatingRing, lowerRim, middleRim, upperRim, roofVoid);
 
-    // Two crossing front trusses make the iconic woven facade legible from
-    // the road instead of reading as a flat wall with a few stripes.
-    for (const direction of [-1, 1]) {
-      for (let index = 0; index < 11; index += 1) {
-        const rib = this.box(0.22, 13.1, 0.22, lattice);
-        rib.position.set(-8.2 + index * 1.64, 7.7, -7.7);
-        rib.rotation.z = direction * 0.38;
-        nest.add(rib);
-      }
+    // Irregular crossing members are authored as individual 3D beams. Their
+    // uneven endpoints and small depth offsets keep the facade woven instead
+    // of turning into the previous flat, evenly spaced matrix.
+    const frontLattice: Array<[
+      number,
+      number,
+      number,
+      number,
+      number,
+      number
+    ]> = [
+      [-8.15, 1.9, -7.1, 5.45, 10.8, -7.65],
+      [-7.3, 2.7, -7.65, 6.85, 9.65, -7.25],
+      [-6.15, 3.85, -7.85, 7.75, 8.45, -7.45],
+      [-4.85, 2.15, -7.35, 4.0, 11.25, -7.85],
+      [-3.05, 3.55, -7.8, 7.15, 10.85, -7.1],
+      [8.05, 2.05, -7.25, -5.75, 10.65, -7.75],
+      [7.35, 2.95, -7.7, -7.05, 9.35, -7.2],
+      [6.2, 4.0, -7.15, -7.65, 8.0, -7.5],
+      [4.65, 2.2, -7.8, -4.25, 11.3, -7.05],
+      [2.75, 3.75, -7.25, -6.55, 10.55, -7.7],
+    ];
+    frontLattice.forEach((coords, index) => {
+      const start = new Vector3(coords[0], coords[1], coords[2]);
+      const end = new Vector3(coords[3], coords[4], coords[5]);
+      nest.add(this.beamBetween(start, end, 0.18 + (index % 3) * 0.035, lattice));
+    });
+
+    // A sparse outer weave wraps the sides of the oval. It is deliberately
+    // staggered in height and angle so the silhouette remains airy in motion.
+    for (let index = 0; index < 12; index += 1) {
+      const angle = (index / 12) * TAU + 0.12;
+      const lower = new Vector3(
+        Math.cos(angle) * 8.35,
+        1.8 + (index % 3) * 0.35,
+        Math.sin(angle) * 6.95,
+      );
+      const upperAngle = angle + (index % 2 === 0 ? 0.18 : -0.14);
+      const upper = new Vector3(
+        Math.cos(upperAngle) * 7.25,
+        9.85 + (index % 4) * 0.32,
+        Math.sin(upperAngle) * 6.05,
+      );
+      nest.add(this.beamBetween(lower, upper, 0.17 + (index % 2) * 0.04, lattice));
     }
 
-    // Continue the lattice around the oval silhouette so side views retain
-    // the Bird's Nest identity as the camera passes the landmark.
-    for (let index = 0; index < 16; index += 1) {
-      const angle = (index / 16) * TAU;
-      const rib = this.box(0.24, 13.3, 0.24, lattice);
-      rib.position.set(Math.cos(angle) * 8.55, 7.7, Math.sin(angle) * 7.05);
-      rib.rotation.x = -Math.sin(angle) * 0.22;
-      rib.rotation.z = Math.cos(angle) * 0.22;
-      nest.add(rib);
-    }
-    for (const y of [5.2, 7.4, 9.6]) {
-      const warmCore = this.box(12.8, 0.24, 0.18, warmCoreMaterial);
-      warmCore.position.set(0, y, -7.82);
+    // Warm inner points hint at the seating bowl without adding another grid.
+    for (let index = 0; index < 7; index += 1) {
+      const warmCore = this.box(0.2, 0.28, 0.16, warmCoreMaterial);
+      warmCore.position.set(
+        -4.3 + index * 1.38,
+        4.35 + (index % 2) * 0.22,
+        -7.42,
+      );
       nest.add(warmCore);
     }
     this.root.add(nest);
@@ -2686,6 +2723,23 @@ export class BeijingDriveScene {
     const mesh = new Mesh(this.unitBox, material);
     mesh.scale.set(width, height, depth);
     return mesh;
+  }
+
+  /** Create a thin structural member between two authored local points. */
+  private beamBetween(
+    start: Vector3,
+    end: Vector3,
+    thickness: number,
+    material: Material,
+  ): Mesh {
+    const delta = end.clone().sub(start);
+    const beam = this.box(thickness, delta.length(), thickness, material);
+    beam.position.copy(start).add(end).multiplyScalar(0.5);
+    beam.quaternion.setFromUnitVectors(
+      new Vector3(0, 1, 0),
+      delta.normalize(),
+    );
+    return beam;
   }
 
   private cylinder(radius: number, height: number, material: Material): Mesh {
