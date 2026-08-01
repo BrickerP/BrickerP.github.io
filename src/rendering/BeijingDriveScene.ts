@@ -12,6 +12,7 @@ import {
   FrontSide,
   Group,
   HemisphereLight,
+  LatheGeometry,
   LinearFilter,
   Mesh,
   MeshBasicMaterial,
@@ -21,6 +22,7 @@ import {
   Scene,
   SphereGeometry,
   SRGBColorSpace,
+  Vector2,
   type Material,
   type Object3D,
   type Texture,
@@ -103,6 +105,24 @@ function createPitchedRoofGeometry(): BufferGeometry {
   return geometry;
 }
 
+/** Stylised Tibetan stupa bowl: broad belly with a tightened crown. */
+function createDagobaBowlGeometry(): LatheGeometry {
+  const geometry = new LatheGeometry(
+    [
+      new Vector2(0.62, -1),
+      new Vector2(0.84, -0.84),
+      new Vector2(0.98, -0.48),
+      new Vector2(1, -0.08),
+      new Vector2(0.92, 0.34),
+      new Vector2(0.7, 0.7),
+      new Vector2(0.4, 1),
+    ],
+    20,
+  );
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 /**
  * Procedural, locally-authored first-person Beijing drive world.
  *
@@ -144,6 +164,8 @@ export class BeijingDriveScene {
   private readonly unitSphere: SphereGeometry;
   private readonly unitPitchedRoof: BufferGeometry;
   private readonly unitTaperedRoof: CylinderGeometry;
+  private readonly unitDagobaBowl: LatheGeometry;
+  private readonly unitTempleDrum: CylinderGeometry;
   private readonly waterMaterial: MeshStandardMaterial;
   private readonly lampMaterial: MeshStandardMaterial;
   private readonly windowMaterial: MeshStandardMaterial;
@@ -173,7 +195,7 @@ export class BeijingDriveScene {
     this.scene = new Scene();
     this.scene.name = 'Beijing endless drive';
     this.scene.background = new Color(PALETTE.skyTop);
-    this.scene.fog = new Fog(PALETTE.fog, 54, 178);
+    this.scene.fog = new Fog(PALETTE.fog, 52, 172);
     this.scene.add(this.root);
 
     this.unitBox = this.trackGeometry(new BoxGeometry(1, 1, 1));
@@ -182,6 +204,10 @@ export class BeijingDriveScene {
     this.unitPitchedRoof = this.trackGeometry(createPitchedRoofGeometry());
     this.unitTaperedRoof = this.trackGeometry(
       new CylinderGeometry(0.16, 1, 1, 16),
+    );
+    this.unitDagobaBowl = this.trackGeometry(createDagobaBowlGeometry());
+    this.unitTempleDrum = this.trackGeometry(
+      new CylinderGeometry(0.88, 1, 1, 20),
     );
 
     this.waterMaterial = this.standard(PALETTE.water, {
@@ -1222,16 +1248,26 @@ export class BeijingDriveScene {
 
   /** 0.583–0.667 — Yonghegong courtyard with a low front hall and rear pavilion. */
   private buildYonghegong(): void {
-    const ochre = this.textured('#C4A040', 'brick', { roughness: 0.9 });
-    const yellowRoof = this.textured('#D4A820', 'tileRoof', {
+    const ochre = this.textured('#A98A3E', 'brick', { roughness: 0.92 });
+    const yellowRoof = this.textured('#B9932A', 'tileRoof', {
       roughness: 0.88,
-      emissive: '#6B480C',
-      emissiveIntensity: 0.34,
+      emissive: '#583B0C',
+      emissiveIntensity: 0.28,
     });
     const roofEdge = this.standard(PALETTE.roofEdge, {
       emissive: '#2A1B09',
-      emissiveIntensity: 0.3,
+      emissiveIntensity: 0.24,
       roughness: 0.85,
+    });
+    const eaveShadow = this.standard('#2C2215', {
+      emissive: '#140D08',
+      emissiveIntensity: 0.08,
+      roughness: 1,
+    });
+    const facadeWarmth = this.standard('#4A3422', {
+      emissive: '#563016',
+      emissiveIntensity: 0.16,
+      roughness: 0.96,
     });
     const pillarMaterial = this.standard('#7B3B2C', {
       emissive: '#351411',
@@ -1298,11 +1334,11 @@ export class BeijingDriveScene {
     mainRoof.position.y = yonghegongModel.height - mainRoofHeight;
     const mainEdge = this.box(
       yonghegongModel.solidHalfWidth * 2,
-      0.16,
-      9.6,
-      roofEdge,
+      0.22,
+      9.45,
+      eaveShadow,
     );
-    mainEdge.position.y = mainRoof.position.y + 0.03;
+    mainEdge.position.y = mainRoof.position.y - 0.11;
 
     const facade = new Group();
     for (const x of [-5, -3, -1, 1, 3, 5]) {
@@ -1311,7 +1347,7 @@ export class BeijingDriveScene {
       facade.add(pillar);
     }
     for (const x of [-4, -2, 0, 2, 4]) {
-      const bay = this.box(1.25, 2.1, 0.08, this.shopHardwareMaterial);
+      const bay = this.box(1.25, 2.1, 0.08, facadeWarmth);
       bay.position.set(x, 2.9, -4.25);
       facade.add(bay);
     }
@@ -1319,16 +1355,16 @@ export class BeijingDriveScene {
     rearPavilion.add(plinth, mainHall, mainRoof, mainEdge, facade);
 
     const plaque = this.canvasPlaque('雍和宫', {
-      width: 512,
-      height: 176,
-      background: '#1C3A2E',
-      border: '#C9A056',
-      color: '#EFD494',
-      font: '700 100px "Songti SC", "STSong", serif',
+      width: 640,
+      height: 224,
+      background: '#163127',
+      border: '#D9B45F',
+      color: PALETTE.warmWhite,
+      font: '700 124px "Songti SC", "STSong", serif',
     });
     if (plaque) {
       const panel = new Mesh(
-        this.trackGeometry(new PlaneGeometry(2.8, 0.96)),
+        this.trackGeometry(new PlaneGeometry(3.8, 1.18)),
         plaque,
       );
       panel.position.set(0, 4.7, -4.34);
@@ -1428,14 +1464,36 @@ export class BeijingDriveScene {
 
     for (let index = 0; index < 20; index += 1) {
       const progress = 0.172 + index * 0.0039;
-      const post = this.box(0.52, 1.5, 0.52, stone);
-      this.place(post, progress, -6.38, 0.77);
+      const opensDagobaSightline = index >= 14;
+      const postHeight = opensDagobaSightline ? 1.16 : 1.5;
+      const post = this.box(0.52, postHeight, 0.52, stone);
+      this.place(post, progress, -6.38, opensDagobaSightline ? 0.6 : 0.77);
       const cap = this.box(0.7, 0.16, 0.7, stone);
-      this.place(cap, progress, -6.38, 1.56);
-      const topRail = this.box(0.3, 0.24, 3.4, stone);
-      this.place(topRail, progress, -6.38, 1.23);
-      const lowerRail = this.box(0.24, 0.18, 3.4, stone);
-      this.place(lowerRail, progress, -6.38, 0.55);
+      this.place(cap, progress, -6.38, opensDagobaSightline ? 1.23 : 1.56);
+      const topRail = this.box(
+        0.3,
+        opensDagobaSightline ? 0.18 : 0.24,
+        3.4,
+        stone,
+      );
+      this.place(
+        topRail,
+        progress,
+        -6.38,
+        opensDagobaSightline ? 0.98 : 1.23,
+      );
+      const lowerRail = this.box(
+        0.24,
+        opensDagobaSightline ? 0.14 : 0.18,
+        3.4,
+        stone,
+      );
+      this.place(
+        lowerRail,
+        progress,
+        -6.38,
+        opensDagobaSightline ? 0.43 : 0.55,
+      );
       this.root.add(post, cap, topRail, lowerRail);
     }
 
@@ -1517,14 +1575,19 @@ export class BeijingDriveScene {
   /** Beihai-style white dagoba, grounded on the far bank of the lake. */
   private buildWhiteDagoba(progress: number, offset: number, scale: number): void {
     const whiteDagobaModel = CALIBRATED_LANDMARK_MODELS.whiteDagoba;
-    const white = this.standard('#C8CBC4', {
-      emissive: '#555A56',
-      emissiveIntensity: 0.12,
+    const white = this.standard(PALETTE.warmWhite, {
+      emissive: '#454E50',
+      emissiveIntensity: 0.1,
       roughness: 0.92,
+    });
+    const baseStone = this.textured('#AEB2AA', 'stoneGrain', {
+      emissive: '#3F4544',
+      emissiveIntensity: 0.08,
+      roughness: 0.98,
     });
     const gold = this.standard(PALETTE.roofEdge, {
       emissive: '#5C431A',
-      emissiveIntensity: 0.18,
+      emissiveIntensity: 0.22,
       roughness: 0.88,
     });
     const islandStone = this.textured('#77766E', 'stoneGrain', {
@@ -1539,23 +1602,23 @@ export class BeijingDriveScene {
     const island = new Mesh(this.unitCylinder, islandStone);
     island.scale.set(whiteDagobaModel.solidHalfWidth, 0.55, 4.1);
     island.position.y = 0.275;
-    const lowerTerrace = this.box(7.6, 0.65, 7, white);
-    lowerTerrace.position.y = 0.75;
-    const upperTerrace = this.box(6.2, 0.65, 5.8, white);
-    upperTerrace.position.y = 1.3;
-    const platform = this.box(5, 1.2, 5, white);
-    platform.position.y = 2.1;
-    const body = new Mesh(this.unitSphere, white);
-    body.scale.set(2.15, 2.55, 2.15);
-    body.position.y = 4.95;
-    const drum = this.cylinder(0.88, 0.72, white);
-    drum.position.y = 7.55;
-    const neck = this.cylinder(0.56, 2, white);
-    neck.position.y = 8.82;
+    const lowerTerrace = this.box(8, 0.42, 7.4, baseStone);
+    lowerTerrace.position.y = 0.76;
+    const upperTerrace = this.box(6.9, 0.48, 6.3, white);
+    upperTerrace.position.y = 1.21;
+    const platform = this.box(5.5, 0.98, 5.3, baseStone);
+    platform.position.y = 1.94;
+    const body = new Mesh(this.unitDagobaBowl, white);
+    body.scale.setScalar(2.35);
+    body.position.y = 4.72;
+    const drum = this.cylinder(1.15, 0.36, white);
+    drum.position.y = 7.22;
+    const neck = this.cylinder(0.54, 2.34, white);
+    neck.position.y = 8.57;
     const canopy = this.cylinder(1.08, 0.24, gold);
     canopy.position.y = 9.86;
     const spireHeight = 1.92;
-    const spire = this.cylinder(0.27, spireHeight, gold);
+    const spire = this.cylinder(0.22, spireHeight, gold);
     spire.position.y = whiteDagobaModel.height - spireHeight / 2;
     group.add(
       island,
@@ -1620,21 +1683,21 @@ export class BeijingDriveScene {
     const blueRoof = this.textured('#2A4F6A', 'tileRoof', {
       roughness: 0.92,
       emissive: '#2F5F82',
-      emissiveIntensity: 0.52,
+      emissiveIntensity: 0.42,
     });
     const red = this.textured(PALETTE.palaceRed, 'brick', {
       roughness: 0.88,
       emissive: '#4A1814',
-      emissiveIntensity: 0.24,
+      emissiveIntensity: 0.18,
     });
     const white = this.standard('#EDE7DA', {
       roughness: 0.9,
       emissive: '#CFC6B4',
-      emissiveIntensity: 0.18,
+      emissiveIntensity: 0.14,
     });
     const roofEdge = this.standard(PALETTE.roofEdge, {
       emissive: '#2A1B09',
-      emissiveIntensity: 0.28,
+      emissiveIntensity: 0.22,
       roughness: 0.85,
     });
 
@@ -1667,33 +1730,42 @@ export class BeijingDriveScene {
     const upperTerrace = this.cylinder(6, 0.75, white);
     upperTerrace.position.y = 1.25;
 
-    const lowerRing = this.cylinder(5.5, 2.6, red);
+    const lowerRing = new Mesh(this.unitTempleDrum, red);
+    lowerRing.scale.set(5.5, 2.6, 5.5);
     lowerRing.position.y = 2.95;
     const lowerRoof = new Mesh(this.unitTaperedRoof, blueRoof);
     lowerRoof.scale.set(6.8, 1.8, 6.8);
     lowerRoof.position.y = 4.45;
-    const lowerEaves = this.cylinder(
+    const lowerEaves = new Mesh(this.unitTaperedRoof, roofEdge);
+    lowerEaves.scale.set(
       templeModel.solidHalfWidth,
-      0.14,
-      roofEdge,
+      0.24,
+      templeModel.solidHalfWidth,
     );
-    lowerEaves.position.y = 3.56;
+    lowerEaves.rotation.x = Math.PI;
+    lowerEaves.position.y = 3.48;
 
-    const midRing = this.cylinder(4.3, 2.35, red);
+    const midRing = new Mesh(this.unitTempleDrum, red);
+    midRing.scale.set(4.3, 2.35, 4.3);
     midRing.position.y = 6.3;
     const midRoof = new Mesh(this.unitTaperedRoof, blueRoof);
     midRoof.scale.set(5.5, 1.65, 5.5);
     midRoof.position.y = 7.45;
-    const midEaves = this.cylinder(6, 0.12, roofEdge);
-    midEaves.position.y = 6.63;
+    const midEaves = new Mesh(this.unitTaperedRoof, roofEdge);
+    midEaves.scale.set(6, 0.22, 6);
+    midEaves.rotation.x = Math.PI;
+    midEaves.position.y = 6.55;
 
-    const upperRing = this.cylinder(3.2, 2.15, red);
+    const upperRing = new Mesh(this.unitTempleDrum, red);
+    upperRing.scale.set(3.2, 2.15, 3.2);
     upperRing.position.y = 9.15;
     const upperRoof = new Mesh(this.unitTaperedRoof, blueRoof);
     upperRoof.scale.set(4.4, 1.75, 4.4);
     upperRoof.position.y = 10.15;
-    const upperEaves = this.cylinder(4.8, 0.1, roofEdge);
-    upperEaves.position.y = 9.28;
+    const upperEaves = new Mesh(this.unitTaperedRoof, roofEdge);
+    upperEaves.scale.set(4.8, 0.2, 4.8);
+    upperEaves.rotation.x = Math.PI;
+    upperEaves.position.y = 9.2;
 
     const finial = new Mesh(this.unitSphere, roofEdge);
     finial.scale.setScalar(0.4);
