@@ -24,6 +24,7 @@ import {
   SRGBColorSpace,
   TorusGeometry,
   Vector2,
+  Vector3,
   type Material,
   type Object3D,
   type Texture,
