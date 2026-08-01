@@ -1917,11 +1917,6 @@ export class BeijingDriveScene {
       roughness: 0.9,
     });
     const concrete = this.standard('#68767B', { roughness: 0.96 });
-    const darkConcrete = this.standard('#2A373D', {
-      emissive: '#142027',
-      emissiveIntensity: 0.18,
-      roughness: 1,
-    });
     const warmSlot = this.standard('#D69B55', {
       emissive: '#A55D2C',
       emissiveIntensity: 0.58,
@@ -1974,16 +1969,6 @@ export class BeijingDriveScene {
       const segmentCap = this.box(5.5, 0.22, 4.02, stone);
       segmentCap.position.y = segmentBody.scale.y + 0.08;
       segment.add(segmentBody, segmentCap);
-      for (const x of [-1.72, 1.72]) {
-        const pier = this.box(0.38, 2.55, 0.46, darkConcrete);
-        pier.position.set(x, 1.3, -1.93);
-        segment.add(pier);
-      }
-      for (const x of [-1.15, 0, 1.15]) {
-        const slot = this.box(0.22, 0.52, 0.08, warmSlot);
-        slot.position.set(x, 2.12, -1.94);
-        segment.add(slot);
-      }
       this.root.add(segment);
     }
 
@@ -2000,7 +1985,6 @@ export class BeijingDriveScene {
 
     this.addLamp(0.345, -6.2, false);
     this.addLamp(0.389, 6.2, true);
-    this.addLamp(0.412, -6.2, false);
   }
 
   /** Forbidden City corner tower silhouette across the moat. */
@@ -2106,7 +2090,7 @@ export class BeijingDriveScene {
     const radius = 9.2;
     const startAngle = -0.96;
     const arc = 1.62;
-    const segmentCount = 10;
+    const segmentCount = 5;
     for (let index = 0; index < segmentCount; index += 1) {
       const angle = startAngle + ((index + 0.5) / segmentCount) * arc;
       const segmentLength = radius * (arc / segmentCount) + 0.08;
