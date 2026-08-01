@@ -129,7 +129,7 @@ export const PASSAGE_HEROES = {
     progress: 0.416,
     lateralOffset: -10.8,
     scale: 0.52,
-    solidHalfWidth: 4.68,
+    solidHalfWidth: 4.9,
   },
   waterCube: {
     id: 'water-cube',

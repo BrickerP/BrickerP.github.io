@@ -1828,17 +1828,35 @@ export class BeijingDriveScene {
 
   /** 0.333–0.417 — Olympic Bird's Nest lattice and Water Cube. */
   private buildOlympic(): void {
-    const lattice = this.textured('#536266', 'lattice', {
-      roughness: 0.85,
-      metalness: 0.18,
-      emissive: '#1B292D',
-      emissiveIntensity: 0.16,
+    const lattice = this.textured('#6B8185', 'lattice', {
+      roughness: 0.78,
+      metalness: 0.28,
+      emissive: '#30494E',
+      emissiveIntensity: 0.28,
     });
-    const bluePanel = this.textured('#2F6F88', 'bluePanel', {
+    const bluePanel = this.textured('#347C98', 'bluePanel', {
       roughness: 0.35,
       metalness: 0.25,
-      emissive: '#1A4050',
-      emissiveIntensity: 0.22,
+      emissive: '#1D5366',
+      emissiveIntensity: 0.3,
+    });
+    const nestCore = this.standard('#4B2D31', {
+      roughness: 0.92,
+      emissive: '#2B1117',
+      emissiveIntensity: 0.28,
+    });
+    const nestVoid = this.standard('#0A1418', { roughness: 1 });
+    const waterGrid = this.standard('#79C8D2', {
+      roughness: 0.4,
+      metalness: 0.12,
+      emissive: '#2A8C9A',
+      emissiveIntensity: 0.72,
+    });
+    const waterBubbles = this.standard('#A0E9EA', {
+      roughness: 0.28,
+      metalness: 0.08,
+      emissive: '#40AAB3',
+      emissiveIntensity: 1.05,
     });
     const concrete = this.standard('#69767C', { roughness: 0.96 });
     const warmCoreMaterial = this.standard('#F0B45D', {
@@ -1856,23 +1874,47 @@ export class BeijingDriveScene {
     base.position.y = 1.1;
     nest.add(base);
 
-    const shell = new Mesh(this.unitCylinder, lattice);
-    shell.scale.set(9.2, 11.5, 7.8);
-    shell.position.y = 7.8;
+    // The stadium bowl is deliberately visible between the steel members;
+    // a single dark cylinder read as a generic office block at night.
+    const shell = new Mesh(this.unitCylinder, nestCore);
+    shell.scale.set(8.45, 9.1, 7.1);
+    shell.position.y = 6.85;
     const lowerBand = new Mesh(this.unitCylinder, lattice);
     lowerBand.scale.set(9.8, 0.7, 8.35);
     lowerBand.position.y = 2.4;
+    const seatingBowl = new Mesh(this.unitCylinder, nestCore);
+    seatingBowl.scale.set(6.8, 0.42, 5.35);
+    seatingBowl.position.y = 4.15;
     const rim = new Mesh(this.unitCylinder, lattice);
     rim.scale.set(9.7, 0.75, 8.3);
     rim.position.y = 13.6;
-    const roofVoid = new Mesh(this.unitCylinder, this.standard('#151E22', { roughness: 1 }));
+    const roofVoid = new Mesh(this.unitCylinder, nestVoid);
     roofVoid.scale.set(6.4, 0.32, 5.3);
     roofVoid.position.y = 14.05;
-    nest.add(shell, lowerBand, rim, roofVoid);
-    for (let index = 0; index < 11; index += 1) {
-      const rib = this.box(0.18, 12.8, 0.24, concrete);
-      rib.position.set(-8 + index * 1.6, 8, -7.95);
-      rib.rotation.z = index % 2 === 0 ? -0.34 : 0.34;
+    const middleBand = new Mesh(this.unitCylinder, lattice);
+    middleBand.scale.set(8.95, 0.16, 7.35);
+    middleBand.position.y = 8.4;
+    nest.add(shell, lowerBand, seatingBowl, rim, middleBand, roofVoid);
+
+    // Two crossing front trusses make the iconic woven facade legible from
+    // the road instead of reading as a flat wall with a few stripes.
+    for (const direction of [-1, 1]) {
+      for (let index = 0; index < 11; index += 1) {
+        const rib = this.box(0.22, 13.1, 0.22, lattice);
+        rib.position.set(-8.2 + index * 1.64, 7.7, -7.7);
+        rib.rotation.z = direction * 0.38;
+        nest.add(rib);
+      }
+    }
+
+    // Continue the lattice around the oval silhouette so side views retain
+    // the Bird's Nest identity as the camera passes the landmark.
+    for (let index = 0; index < 16; index += 1) {
+      const angle = (index / 16) * TAU;
+      const rib = this.box(0.24, 13.3, 0.24, lattice);
+      rib.position.set(Math.cos(angle) * 8.55, 7.7, Math.sin(angle) * 7.05);
+      rib.rotation.x = -Math.sin(angle) * 0.22;
+      rib.rotation.z = Math.cos(angle) * 0.22;
       nest.add(rib);
     }
     for (const y of [5.2, 7.4, 9.6]) {
@@ -1889,6 +1931,61 @@ export class BeijingDriveScene {
     const cubeBody = this.box(12, 8, 12, bluePanel);
     cubeBody.position.y = 4;
     cube.add(cubeBody);
+
+    // Water Cube needs its ETFE bubble-grid silhouette; a blue box alone is
+    // indistinguishable from a generic glass office block in the dark.
+    const face = 6.08;
+    const gridXs = [-4.8, -2.4, 0, 2.4, 4.8];
+    const gridYs = [1.35, 3.25, 5.15, 7.05];
+    for (const z of [-face, face]) {
+      for (const x of gridXs) {
+        const bar = this.box(0.13, 8.15, 0.13, waterGrid);
+        bar.position.set(x, 4, z);
+        cube.add(bar);
+      }
+      for (const y of gridYs) {
+        const bar = this.box(12.15, 0.13, 0.13, waterGrid);
+        bar.position.set(0, y, z);
+        cube.add(bar);
+      }
+    }
+    for (const x of [-face, face]) {
+      for (const z of gridXs) {
+        const bar = this.box(0.13, 8.15, 0.13, waterGrid);
+        bar.position.set(x, 4, z);
+        cube.add(bar);
+      }
+      for (const y of gridYs) {
+        const bar = this.box(0.13, 0.13, 12.15, waterGrid);
+        bar.position.set(x, y, 0);
+        cube.add(bar);
+      }
+    }
+    for (const x of [-face, face]) {
+      for (const z of [-face, face]) {
+        const post = this.box(0.25, 8.35, 0.25, waterGrid);
+        post.position.set(x, 4, z);
+        cube.add(post);
+      }
+    }
+    const bubblePoints: Array<[number, number]> = [
+      [-3.6, 2.1],
+      [-1.2, 5.45],
+      [1.4, 3.35],
+      [3.8, 6.35],
+      [-4.1, 6.9],
+      [3.2, 1.35],
+    ];
+    for (const [x, y] of bubblePoints) {
+      const frontBubble = new Mesh(this.unitSphere, waterBubbles);
+      frontBubble.scale.set(0.62, 0.62, 0.08);
+      frontBubble.position.set(x, y, -6.16);
+      cube.add(frontBubble);
+      const sideBubble = new Mesh(this.unitSphere, waterBubbles);
+      sideBubble.scale.set(0.08, 0.62, 0.62);
+      sideBubble.position.set(6.16, y, x);
+      cube.add(sideBubble);
+    }
     this.root.add(cube);
 
     for (let index = 0; index < 8; index += 1) {
