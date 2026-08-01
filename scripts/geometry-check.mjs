@@ -651,7 +651,11 @@ assert.match(combinedSource, /yonghe/i, 'scene config is missing the Yonghegong 
 assert.match(combinedSource, /water(front)?|shichahai/i, 'scene config is missing the waterfront passage');
 assert.match(combinedSource, /moat|corner\s*tower/i, 'scene config is missing the palace-moat passage');
 assert.match(combinedSource, /temple\s*of\s*heaven|祈年殿|qinian/i, 'scene config is missing the Temple of Heaven passage');
-assert.match(combinedSource, /olympic|bird'?s?\s*nest|water\s*cube|鸟巢|水立方/i, 'scene config is missing the Olympic passage');
+assert.match(
+  combinedSource,
+  /second[-\s]*ring|二环|ring\s*road|flyover/i,
+  'scene config is missing the Second-Ring threshold passage',
+);
 assert.match(combinedSource, /ring\s*road|arrow\s*tower|deshengmen|cbd|guomao/i, 'scene config is missing the ring-road/CBD passage');
 assert.match(combinedSource, /overpass|flyover/i, 'scene config is missing the overpass passage');
 assert.match(
@@ -681,7 +685,7 @@ console.log(
         'palace-moat',
         'shichahai',
         'deshengmen',
-        'olympic',
+        'second-ring-threshold',
         'bell-drum',
         'nanluo-wudaoying',
         'yonghegong',

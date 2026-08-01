@@ -22,9 +22,7 @@ import {
   Scene,
   SphereGeometry,
   SRGBColorSpace,
-  TorusGeometry,
   Vector2,
-  Vector3,
   type Material,
   type Object3D,
   type Texture,
@@ -134,7 +132,7 @@ function createDagobaBowlGeometry(): LatheGeometry {
  *   0.083–0.167  palace moat — red wall and corner tower across water
  *   0.167–0.250  Shichahai — willows, humpback bridge, white dagoba
  *   0.250–0.333  Deshengmen — arrow tower and 二环 gantry
- *   0.333–0.417  Olympic — Bird's Nest lattice and Water Cube (further N)
+ *   0.333–0.417  Second Ring threshold — city wall, supported flyover, and gantry
  *   0.417–0.500  Bell & Drum Tower plaza
  *   0.500–0.583  Nanluo / Wudaoying — 五道营 / 南锣鼓巷
  *   0.583–0.667  Yonghegong — yellow multi-eave temple
@@ -257,7 +255,7 @@ export class BeijingDriveScene {
     this.buildWaterfront();
     this.buildDeshengmen();
     this.buildRingBridge();
-    this.buildOlympic();
+    this.buildSecondRingThreshold();
     this.buildBellDrumPlaza();
     this.buildNanluoWudaoying();
     this.buildYonghegong();
@@ -1287,7 +1285,6 @@ export class BeijingDriveScene {
       const progress = 0.42 + index * 0.0069;
       for (const side of [-1, 1]) {
         if (side < 0 && index >= 4) continue; // clear the tower forecourt
-        if (side > 0) continue; // reserve the full right verge for the Water Cube forecourt
         const width = 4 + hash01(index, side + 41) * 1.6;
         const height = 3 + hash01(index, side + 45) * 0.9;
         const depth = 4.4 + hash01(index, side + 49) * 2.2;
@@ -1909,202 +1906,74 @@ export class BeijingDriveScene {
     this.addLamp(0.825, -6.3, true);
   }
 
-  /** 0.333–0.417 — Olympic Bird's Nest lattice and Water Cube. */
-  private buildOlympic(): void {
-    const lattice = this.textured('#6B8185', 'lattice', {
-      roughness: 0.78,
-      metalness: 0.28,
-      emissive: '#30494E',
-      emissiveIntensity: 0.28,
+  /** 0.333–0.417 — Second-Ring city threshold: wall edge, flyover, and gantry. */
+  private buildSecondRingThreshold(): void {
+    const brick = this.textured('#5A3B3A', 'brick', { roughness: 0.96 });
+    const agedBrick = this.textured('#4A3437', 'brick', { roughness: 1 });
+    const stone = this.textured('#7A8584', 'stoneGrain', { roughness: 0.96 });
+    const roofEdge = this.standard('#9C7A4F', {
+      emissive: '#332714',
+      emissiveIntensity: 0.18,
+      roughness: 0.9,
     });
-    const bluePanel = this.textured('#347C98', 'bluePanel', {
-      roughness: 0.35,
-      metalness: 0.25,
-      emissive: '#1D5366',
-      emissiveIntensity: 0.3,
-    });
-    const nestCore = this.standard('#4B2D31', {
-      roughness: 0.92,
-      emissive: '#2B1117',
-      emissiveIntensity: 0.28,
-    });
-    const nestVoid = this.standard('#0A1418', { roughness: 1 });
-    const waterGrid = this.standard('#79C8D2', {
-      roughness: 0.4,
-      metalness: 0.12,
-      emissive: '#2A8C9A',
-      emissiveIntensity: 0.72,
-    });
-    const waterBubbles = this.standard('#A0E9EA', {
-      roughness: 0.28,
-      metalness: 0.08,
-      emissive: '#40AAB3',
-      emissiveIntensity: 1.05,
-    });
-    const concrete = this.standard('#69767C', { roughness: 0.96 });
-    const warmCoreMaterial = this.standard('#F0B45D', {
-      emissive: '#E9842F',
-      emissiveIntensity: 1.18,
-      roughness: 0.72,
+    const concrete = this.standard('#68767B', { roughness: 0.96 });
+    const warmSlot = this.standard('#D69B55', {
+      emissive: '#A55D2C',
+      emissiveIntensity: 0.58,
+      roughness: 0.8,
     });
 
-    const birdsNest = PASSAGE_HEROES.birdsNest;
-    const nest = new Group();
-    this.place(nest, birdsNest.progress, birdsNest.lateralOffset, 0);
-    nest.scale.setScalar(birdsNest.scale);
+    const wallHero = PASSAGE_HEROES.secondRingWall;
+    const hero = new Group();
+    this.place(hero, wallHero.progress, wallHero.lateralOffset, 0);
+    hero.scale.setScalar(wallHero.scale);
 
-    // The stadium is an oval bowl, not a stacked rectangular tower. Low
-    // octagonal plinths and an ellipsoid body establish the silhouette first.
-    const base = new Mesh(this.unitCylinder, concrete);
-    base.scale.set(9.7, 1.35, 7.9);
-    base.position.y = 0.7;
-    const bowl = new Mesh(this.unitSphere, nestCore);
-    bowl.scale.set(8.9, 4.9, 7.45);
-    bowl.position.y = 4.45;
-    const innerBowl = new Mesh(this.unitSphere, nestVoid);
-    innerBowl.scale.set(5.9, 1.35, 4.65);
-    innerBowl.position.set(0, 4.9, -5.95);
-    const seatingRing = new Mesh(this.unitCylinder, nestCore);
-    seatingRing.scale.set(6.3, 0.42, 5.05);
-    seatingRing.position.set(0, 4.05, -0.2);
+    const footing = this.box(10.8, 1.05, 6.2, stone);
+    footing.position.y = 0.53;
+    const body = this.box(9.6, 4.85, 5.1, brick);
+    body.position.y = 3.45;
+    const parapet = this.box(10.25, 0.28, 5.45, roofEdge);
+    parapet.position.y = 5.92;
+    hero.add(footing, body, parapet);
 
-    const ringGeometry = this.trackGeometry(new TorusGeometry(1, 0.09, 6, 28));
-    const lowerRim = new Mesh(ringGeometry, lattice);
-    lowerRim.scale.set(9.35, 0.95, 7.85);
-    lowerRim.position.y = 2.35;
-    const middleRim = new Mesh(ringGeometry, lattice);
-    middleRim.scale.set(8.95, 0.48, 7.45);
-    middleRim.position.y = 5.95;
-    const upperRim = new Mesh(ringGeometry, lattice);
-    upperRim.scale.set(9.25, 1.05, 7.75);
-    upperRim.position.y = 8.25;
-    const roofVoid = new Mesh(this.unitCylinder, nestVoid);
-    roofVoid.scale.set(5.65, 0.2, 4.35);
-    roofVoid.position.y = 8.35;
-    nest.add(base, bowl, innerBowl, seatingRing, lowerRim, middleRim, upperRim, roofVoid);
+    // The low wall reads as an edge of the old city, not a second postcard
+    // tower. The road-facing side gets restrained buttresses and arrow slots.
+    for (const x of [-4.25, -2.15, 0, 2.15, 4.25]) {
+      const buttress = this.box(0.42, 4.2, 0.48, agedBrick);
+      buttress.position.set(x, 2.6, -2.56);
+      hero.add(buttress);
+    }
+    for (const x of [-3.65, -2.15, -0.72, 0.72, 2.15, 3.65]) {
+      const crenel = this.box(0.8, 0.72, 0.64, brick);
+      crenel.position.set(x, 6.42, -2.24);
+      hero.add(crenel);
+      const slot = this.box(0.34, 0.58, 0.08, warmSlot);
+      slot.position.set(x, 3.65, -2.6);
+      hero.add(slot);
+    }
+    this.root.add(hero);
 
-    // Irregular crossing members are authored as individual 3D beams. Their
-    // uneven endpoints and small depth offsets keep the facade woven instead
-    // of turning into the previous flat, evenly spaced matrix.
-    const frontLattice: Array<[
-      number,
-      number,
-      number,
-      number,
-      number,
-      number
-    ]> = [
-      [-8.15, 1.9, -7.1, 5.45, 10.8, -7.65],
-      [-7.3, 2.7, -7.65, 6.85, 9.65, -7.25],
-      [-6.15, 3.85, -7.85, 7.75, 8.45, -7.45],
-      [-4.85, 2.15, -7.35, 4.0, 11.25, -7.85],
-      [-3.05, 3.55, -7.8, 7.15, 10.85, -7.1],
-      [8.05, 2.05, -7.25, -5.75, 10.65, -7.75],
-      [7.35, 2.95, -7.7, -7.05, 9.35, -7.2],
-      [6.2, 4.0, -7.15, -7.65, 8.0, -7.5],
-      [4.65, 2.2, -7.8, -4.25, 11.3, -7.05],
-      [2.75, 3.75, -7.25, -6.55, 10.55, -7.7],
-    ];
-    frontLattice.forEach((coords, index) => {
-      const start = new Vector3(coords[0], coords[1], coords[2]);
-      const end = new Vector3(coords[3], coords[4], coords[5]);
-      nest.add(this.beamBetween(start, end, 0.18 + (index % 3) * 0.035, lattice));
-    });
-
-    // A sparse outer weave wraps the sides of the oval. It is deliberately
-    // staggered in height and angle so the silhouette remains airy in motion.
-    for (let index = 0; index < 12; index += 1) {
-      const angle = (index / 12) * TAU + 0.12;
-      const lower = new Vector3(
-        Math.cos(angle) * 8.35,
-        1.8 + (index % 3) * 0.35,
-        Math.sin(angle) * 6.95,
+    // A short wall run carries the hero through the whole four-second
+    // passage, so the change feels architectural rather than sign-led.
+    for (let index = 0; index < 8; index += 1) {
+      const progress = 0.338 + index * 0.0097;
+      const segment = new Group();
+      this.place(segment, progress, -10.5, 0);
+      const segmentBody = this.box(
+        5.2,
+        3.35 + (index % 3) * 0.18,
+        3.75,
+        index % 2 === 0 ? agedBrick : brick,
       );
-      const upperAngle = angle + (index % 2 === 0 ? 0.18 : -0.14);
-      const upper = new Vector3(
-        Math.cos(upperAngle) * 7.25,
-        9.85 + (index % 4) * 0.32,
-        Math.sin(upperAngle) * 6.05,
-      );
-      nest.add(this.beamBetween(lower, upper, 0.17 + (index % 2) * 0.04, lattice));
+      segmentBody.position.y = segmentBody.scale.y / 2;
+      const segmentCap = this.box(5.5, 0.22, 4.02, stone);
+      segmentCap.position.y = segmentBody.scale.y + 0.08;
+      segment.add(segmentBody, segmentCap);
+      this.root.add(segment);
     }
 
-    // Warm inner points hint at the seating bowl without adding another grid.
-    for (let index = 0; index < 7; index += 1) {
-      const warmCore = this.box(0.2, 0.28, 0.16, warmCoreMaterial);
-      warmCore.position.set(
-        -4.3 + index * 1.38,
-        4.35 + (index % 2) * 0.22,
-        -7.42,
-      );
-      nest.add(warmCore);
-    }
-    this.root.add(nest);
-
-    const waterCube = PASSAGE_HEROES.waterCube;
-    const cube = new Group();
-    this.place(cube, waterCube.progress, waterCube.lateralOffset, 0);
-    cube.scale.setScalar(waterCube.scale);
-    const cubeBody = this.box(12, 8, 12, bluePanel);
-    cubeBody.position.y = 4;
-    cube.add(cubeBody);
-
-    // Water Cube needs its ETFE bubble-grid silhouette; a blue box alone is
-    // indistinguishable from a generic glass office block in the dark.
-    const face = 6.08;
-    const gridXs = [-4.8, -2.4, 0, 2.4, 4.8];
-    const gridYs = [1.35, 3.25, 5.15, 7.05];
-    for (const z of [-face, face]) {
-      for (const x of gridXs) {
-        const bar = this.box(0.13, 8.15, 0.13, waterGrid);
-        bar.position.set(x, 4, z);
-        cube.add(bar);
-      }
-      for (const y of gridYs) {
-        const bar = this.box(12.15, 0.13, 0.13, waterGrid);
-        bar.position.set(0, y, z);
-        cube.add(bar);
-      }
-    }
-    for (const x of [-face, face]) {
-      for (const z of gridXs) {
-        const bar = this.box(0.13, 8.15, 0.13, waterGrid);
-        bar.position.set(x, 4, z);
-        cube.add(bar);
-      }
-      for (const y of gridYs) {
-        const bar = this.box(0.13, 0.13, 12.15, waterGrid);
-        bar.position.set(x, y, 0);
-        cube.add(bar);
-      }
-    }
-    for (const x of [-face, face]) {
-      for (const z of [-face, face]) {
-        const post = this.box(0.25, 8.35, 0.25, waterGrid);
-        post.position.set(x, 4, z);
-        cube.add(post);
-      }
-    }
-    const bubblePoints: Array<[number, number]> = [
-      [-3.6, 2.1],
-      [-1.2, 5.45],
-      [1.4, 3.35],
-      [3.8, 6.35],
-      [-4.1, 6.9],
-      [3.2, 1.35],
-    ];
-    for (const [x, y] of bubblePoints) {
-      const frontBubble = new Mesh(this.unitSphere, waterBubbles);
-      frontBubble.scale.set(0.62, 0.62, 0.08);
-      frontBubble.position.set(x, y, -6.16);
-      cube.add(frontBubble);
-      const sideBubble = new Mesh(this.unitSphere, waterBubbles);
-      sideBubble.scale.set(0.08, 0.62, 0.62);
-      sideBubble.position.set(6.16, y, x);
-      cube.add(sideBubble);
-    }
-    this.root.add(cube);
-
+    // Low roadside guards preserve the lane opening while the wall and bridge
+    // occupy the middle distance.
     for (let index = 0; index < 8; index += 1) {
       const progress = 0.338 + index * 0.0095;
       for (const side of [-1, 1]) {
@@ -2116,7 +1985,6 @@ export class BeijingDriveScene {
 
     this.addLamp(0.345, -6.2, false);
     this.addLamp(0.389, 6.2, true);
-    this.addLamp(0.412, -6.2, false);
   }
 
   /** Forbidden City corner tower silhouette across the moat. */
@@ -2197,27 +2065,64 @@ export class BeijingDriveScene {
     this.addLamp(0.322, -5.8, false);
   }
 
-  /** A raised circular Second-Ring connector, kept deep in the skyline as a readable city cue. */
+  /** A supported Second-Ring flyover ramp, kept deep in the skyline as a city cue. */
   private buildRingBridge(): void {
     const deckMaterial = this.standard('#68777D', {
       emissive: '#273A42',
       emissiveIntensity: 0.2,
       roughness: 0.94,
     });
+    const edgeMaterial = this.standard('#89979A', {
+      emissive: '#35464B',
+      emissiveIntensity: 0.16,
+      roughness: 0.9,
+    });
+    const undersideMaterial = this.standard('#26343B', {
+      emissive: '#111B21',
+      emissiveIntensity: 0.2,
+      roughness: 1,
+    });
     const bridge = new Group();
-    this.place(bridge, 0.307, 17.2, 0, Math.PI / 2);
-    const deck = new Mesh(
-      this.trackGeometry(new TorusGeometry(10.2, 0.78, 6, 64)),
-      deckMaterial,
-    );
-    deck.rotation.x = Math.PI / 2;
-    deck.position.y = 7.25;
+    this.place(bridge, 0.366, 15.3, 0, Math.PI / 2);
 
-    bridge.add(deck);
-    for (const angle of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
-      const support = this.box(0.64, 7.2, 0.64, deckMaterial);
-      support.position.set(Math.cos(angle) * 10.2, 3.6, Math.sin(angle) * 10.2);
-      bridge.add(support);
+    // Flat overlapping segments read as a real curved road deck instead of a
+    // floating ring. The rails follow the same arc and keep its scale legible.
+    const radius = 9.2;
+    const startAngle = -0.96;
+    const arc = 1.62;
+    const segmentCount = 5;
+    for (let index = 0; index < segmentCount; index += 1) {
+      const angle = startAngle + ((index + 0.5) / segmentCount) * arc;
+      const segmentLength = radius * (arc / segmentCount) + 0.08;
+      const x = Math.cos(angle) * radius;
+      const z = Math.sin(angle) * radius;
+      const deck = this.box(2.12, 0.56, segmentLength, deckMaterial);
+      deck.position.set(x, 6.55, z);
+      deck.rotation.y = -angle;
+
+      const underside = this.box(2.2, 0.24, segmentLength + 0.08, undersideMaterial);
+      underside.position.set(x, 6.12, z);
+      underside.rotation.y = -angle;
+      bridge.add(deck, underside);
+
+      for (const side of [-1, 1]) {
+        const rail = this.box(0.14, 0.56, segmentLength, edgeMaterial);
+        const radialX = Math.cos(angle) * side * 1.02;
+        const radialZ = Math.sin(angle) * side * 1.02;
+        rail.position.set(x + radialX, 6.94, z + radialZ);
+        rail.rotation.y = -angle;
+        bridge.add(rail);
+      }
+    }
+
+    for (const angle of [startAngle, startAngle + arc * 0.5, startAngle + arc]) {
+      const x = Math.cos(angle) * radius;
+      const z = Math.sin(angle) * radius;
+      const support = this.box(0.72, 6.4, 0.72, deckMaterial);
+      support.position.set(x, 3.2, z);
+      const footing = this.box(1.35, 0.28, 1.35, undersideMaterial);
+      footing.position.set(x, 0.14, z);
+      bridge.add(support, footing);
     }
     this.root.add(bridge);
   }
@@ -2886,23 +2791,6 @@ export class BeijingDriveScene {
     const mesh = new Mesh(this.unitBox, material);
     mesh.scale.set(width, height, depth);
     return mesh;
-  }
-
-  /** Create a thin structural member between two authored local points. */
-  private beamBetween(
-    start: Vector3,
-    end: Vector3,
-    thickness: number,
-    material: Material,
-  ): Mesh {
-    const delta = end.clone().sub(start);
-    const beam = this.box(thickness, delta.length(), thickness, material);
-    beam.position.copy(start).add(end).multiplyScalar(0.5);
-    beam.quaternion.setFromUnitVectors(
-      new Vector3(0, 1, 0),
-      delta.normalize(),
-    );
-    return beam;
   }
 
   private cylinder(radius: number, height: number, material: Material): Mesh {

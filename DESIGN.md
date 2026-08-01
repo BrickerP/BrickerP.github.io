@@ -25,7 +25,7 @@ The circuit contains twelve four-second passages in this order:
 2. `4–8s` — Palace moat: long red wall and Forbidden City corner tower across water.
 3. `8–12s` — Shichahai: willows, humpback bridge, lantern string, and a bright white Beihai dagoba across water.
 4. `12–16s` — Deshengmen / Second Ring: arrow tower and 二环 gantry.
-5. `16–20s` — Olympic: Bird's Nest lattice shell and Water Cube skyline.
+5. `16–20s` — Second-Ring city threshold: a low old-city wall, supported curved flyover, and restrained gantry rhythm.
 6. `20–24s` — Bell and Drum Tower plaza: Drum Tower near-field and Bell Tower offset behind.
 7. `24–28s` — Nanluo / Wudaoying: denser alley, warm windows, and 五道营 / 南锣鼓巷 signs.
 8. `28–32s` — Yonghegong: yellow multi-eave temple mass with 雍和宫 plaque.
