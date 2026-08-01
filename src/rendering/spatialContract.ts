@@ -85,10 +85,12 @@ export const CENTRAL_AXIS_LANDMARKS = {
     id: 'tiananmen',
     progress: 0.071,
     lateralOffset: -13.2,
-    scale: 0.58,
+    // Restore a monumental read while keeping the gate nested behind
+    // Zhengyangmen and well outside the carriageway.
+    scale: 0.82,
     headingOffset: Math.PI / 2,
     kind: 'set-back',
-    solidHalfWidth: 3.25,
+    solidHalfWidth: 4.6,
   },
 } as const satisfies Record<
   string,
@@ -111,7 +113,7 @@ export const PASSAGE_HEROES = {
     progress: 0.248,
     lateralOffset: -19,
     modelKey: 'whiteDagoba',
-    targetHeight: 9.6,
+    targetHeight: 11.2,
   }),
   deshengmen: {
     id: 'deshengmen',
@@ -126,16 +128,16 @@ export const PASSAGE_HEROES = {
     passage: 4,
     progress: 0.416,
     lateralOffset: -10.8,
-    scale: 0.42,
-    solidHalfWidth: 3.78,
+    scale: 0.52,
+    solidHalfWidth: 4.68,
   },
   waterCube: {
     id: 'water-cube',
     passage: 4,
     progress: 0.415,
     lateralOffset: 11.5,
-    scale: 0.5,
-    solidHalfWidth: 3,
+    scale: 0.68,
+    solidHalfWidth: 4.08,
   },
   drumTower: {
     id: 'drum-tower',
@@ -173,9 +175,11 @@ export const PASSAGE_HEROES = {
     id: 'temple-of-heaven',
     passage: 9,
     progress: 0.832,
-    lateralOffset: -10.5,
+    // The larger roof needs a small outward reveal to preserve the road
+    // clearance contract without changing the camera or path composition.
+    lateralOffset: -11.1,
     modelKey: 'templeOfHeaven',
-    targetHeight: 7.4,
+    targetHeight: 10.8,
   }),
 } as const satisfies Record<string, PassageHeroContract>;
 
