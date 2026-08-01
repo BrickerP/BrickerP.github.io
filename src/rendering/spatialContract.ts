@@ -84,13 +84,13 @@ export const CENTRAL_AXIS_LANDMARKS = {
   tiananmen: {
     id: 'tiananmen',
     progress: 0.071,
-    lateralOffset: -13.2,
+    lateralOffset: -14.8,
     // Restore a monumental read while keeping the gate nested behind
     // Zhengyangmen and well outside the carriageway.
-    scale: 0.82,
+    scale: 0.94,
     headingOffset: Math.PI / 2,
     kind: 'set-back',
-    solidHalfWidth: 4.6,
+    solidHalfWidth: 5.1,
   },
 } as const satisfies Record<
   string,
@@ -159,9 +159,9 @@ export const PASSAGE_HEROES = {
     id: 'yonghegong',
     passage: 7,
     progress: 0.666,
-    lateralOffset: -11.8,
+    lateralOffset: -13.4,
     modelKey: 'yonghegong',
-    targetHeight: 6.9,
+    targetHeight: 8.4,
   }),
   cbdHero: {
     id: 'cbd-hero',
@@ -177,9 +177,9 @@ export const PASSAGE_HEROES = {
     progress: 0.832,
     // The larger roof needs a small outward reveal to preserve the road
     // clearance contract without changing the camera or path composition.
-    lateralOffset: -11.1,
+    lateralOffset: -11.15,
     modelKey: 'templeOfHeaven',
-    targetHeight: 10.8,
+    targetHeight: 11,
   }),
 } as const satisfies Record<string, PassageHeroContract>;
 
