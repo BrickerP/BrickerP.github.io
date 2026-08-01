@@ -123,21 +123,13 @@ export const PASSAGE_HEROES = {
     scale: 0.72,
     solidHalfWidth: 4.14,
   },
-  birdsNest: {
-    id: 'birds-nest',
+  secondRingWall: {
+    id: 'second-ring-wall',
     passage: 4,
-    progress: 0.416,
-    lateralOffset: -11.1,
-    scale: 0.56,
-    solidHalfWidth: 5.45,
-  },
-  waterCube: {
-    id: 'water-cube',
-    passage: 4,
-    progress: 0.415,
-    lateralOffset: 11.5,
-    scale: 0.68,
-    solidHalfWidth: 4.3,
+    progress: 0.367,
+    lateralOffset: -12.5,
+    scale: 0.82,
+    solidHalfWidth: 4.45,
   },
   drumTower: {
     id: 'drum-tower',

@@ -259,7 +259,7 @@ const passages = [
   { name: 'palace-moat', seconds: 6 },
   { name: 'shichahai', seconds: 9 },
   { name: 'deshengmen', seconds: 14 },
-  { name: 'olympic', seconds: 18 },
+  { name: 'second-ring-threshold', seconds: 18 },
   { name: 'bell-drum', seconds: 22 },
   { name: 'nanluo-wudaoying', seconds: 26 },
   { name: 'yonghegong', seconds: 30 },
