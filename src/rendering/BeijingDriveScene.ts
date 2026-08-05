@@ -1931,8 +1931,6 @@ export class BeijingDriveScene {
       this.root.add(trunk, canopy);
     }
 
-    this.addLamp(0.761, -6.3, true);
-    this.addLamp(0.795, 6.3, false);
     this.addLamp(0.825, -6.3, true);
   }
 
