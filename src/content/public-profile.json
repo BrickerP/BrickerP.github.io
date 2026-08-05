@@ -26,8 +26,8 @@
   "primaryActions": [
     { "linkId": "email", "label": "Email Yupeng", "staticLabel": "Contact Yupeng", "style": "primary", "modalOrder": 1, "staticOrder": 1 },
     { "linkId": "resume", "label": "Resume", "staticLabel": "Read resume", "style": "secondary", "modalOrder": 2, "staticOrder": 2 },
-    { "linkId": "github", "label": "GitHub", "staticLabel": "GitHub", "style": "text", "modalOrder": 4, "staticOrder": 3 },
-    { "linkId": "linkedin", "label": "LinkedIn", "staticLabel": "LinkedIn", "style": "text", "modalOrder": 3, "staticOrder": 4 }
+    { "linkId": "github", "label": "GitHub", "staticLabel": "GitHub", "style": "secondary", "modalOrder": 3, "staticOrder": 3 },
+    { "linkId": "linkedin", "label": "LinkedIn", "staticLabel": "LinkedIn", "style": "secondary", "modalOrder": 4, "staticOrder": 4 }
   ],
   "elsewhere": [
     { "id": "email", "label": "Email", "href": "mailto:yplmicro@gmail.com", "detail": "yplmicro@gmail.com" },
