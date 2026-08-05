@@ -1931,7 +1931,6 @@ export class BeijingDriveScene {
       this.root.add(trunk, canopy);
     }
 
-    this.addLamp(0.825, -6.3, true);
   }
 
   /** 0.333–0.417 — Second-Ring city threshold: wall edge, flyover, and gantry. */
