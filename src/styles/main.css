@@ -545,27 +545,57 @@ canvas {
   margin-top: 14px;
 }
 
-.about-primary-actions a {
+.about-primary-actions .about-action {
   display: inline-flex;
   min-width: 44px;
   min-height: 44px;
   align-items: center;
   justify-content: center;
+  border: 1px solid transparent;
   padding: 8px 10px;
-  border: 1px solid rgba(236, 229, 216, 0.2);
   border-radius: 999px;
   color: var(--text);
+  background: transparent;
+  text-decoration: none;
+  text-transform: none;
   font: 650 10px/1 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   letter-spacing: 0.05em;
-  text-decoration: none;
 }
 
-.about-primary-actions a:hover {
+.about-primary-actions .about-action-primary {
+  border-color: rgba(236, 229, 216, 0.2);
+  background: var(--lamp);
+  color: #050505;
+}
+
+.about-primary-actions .about-action-secondary {
+  border-color: rgba(236, 229, 216, 0.2);
+}
+
+.about-primary-actions .about-action-text {
+  min-width: auto;
+  min-height: 36px;
+  justify-content: flex-start;
+  padding: 8px 4px;
+  border-radius: 0;
+  border: 0;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.about-primary-actions .about-action:hover {
   border-color: var(--lamp);
   color: var(--lamp);
 }
 
-.about-primary-actions a:focus-visible {
+.about-primary-actions .about-action-primary:hover,
+.about-primary-actions .about-action-primary:focus-visible {
+  color: #050505;
+  background: #d57e6a;
+}
+
+.about-primary-actions .about-action:focus-visible {
   outline: 2px solid var(--lamp);
   outline-offset: 2px;
 }
