@@ -2251,9 +2251,7 @@ export class BeijingDriveScene {
     // Distilled contour blocks to emphasize graphic rhythm.
     const baseRibbon = this.box(0.28, 2.35, 11.2, posterBase);
     this.place(baseRibbon, 0.725, 7.2, 0.7);
-    const topRibbon = this.box(0.36, 2.12, 11.4, posterAccent);
-    this.place(topRibbon, 0.74, 7.2, 1.0);
-    this.root.add(baseRibbon, topRibbon);
+    this.root.add(baseRibbon);
     const cbdLampPattern = [false, false, true, false, true];
     for (const [index, phase] of [0.675, 0.702, 0.723, 0.744, 0.765].entries()) {
       this.addLamp(
