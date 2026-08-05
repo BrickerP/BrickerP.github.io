@@ -56,38 +56,6 @@ const OPEN_CIRCUIT_NODE_PHASE = 0.988;
 const OPEN_CIRCUIT_CARRIER_NAME = 'LOOP 01 warm-white road carrier';
 const OPEN_CIRCUIT_NODE_NAME = 'LOOP 01 closure node';
 
-const CINEMATIC_LIGHT = {
-  actOne: 0.028,
-  actTwo: -0.018,
-  actThree: 0.024,
-} as const;
-
-function smoothstep(edge0: number, edge1: number, value: number): number {
-  const normalized = Math.min(1, Math.max(0, (value - edge0) / (edge1 - edge0)));
-  return normalized * normalized * (3 - 2 * normalized);
-}
-
-function focusWindow(
-  progress: number,
-  start: number,
-  full: number,
-  release: number,
-  end: number,
-): number {
-  return (
-    smoothstep(start, full, progress) *
-    (1 - smoothstep(release, end, progress))
-  );
-}
-
-function cinematicLightCue(progress: number): number {
-  return (
-    focusWindow(progress, 0.06, 0.16, 0.22, 0.31) * CINEMATIC_LIGHT.actOne +
-    focusWindow(progress, 0.38, 0.49, 0.58, 0.69) * CINEMATIC_LIGHT.actTwo +
-    focusWindow(progress, 0.73, 0.80, 0.88, 0.96) * CINEMATIC_LIGHT.actThree
-  );
-}
-
 export interface OpenCircuitIdentityState {
   carrierCount: number;
   nodeCount: number;
@@ -319,9 +287,9 @@ export class BeijingDriveScene {
     const cinematicMode = this.animationMode === 'cinematic';
     const posterMode = this.animationMode === 'graphic-poster';
     const breathingMode = this.animationMode === 'breathing-city';
-    const cinematicCue = cinematicMode ? cinematicLightCue(progress) : 0;
     const breath = 0.5 + 0.5 * Math.cos(progress * TAU * 0.45);
     const wave = Math.cos(progress * TAU * 0.31);
+    const cinematicCue = cinematicMode ? wave * 0.3 : 0;
     const posterContrast = posterMode ? 1.07 : 1;
     const breathingScale = breathingMode ? 1 + (breath - 0.5) * 0.08 : 1;
     const cinematicScale = cinematicMode ? 1 + cinematicCue : 1;
