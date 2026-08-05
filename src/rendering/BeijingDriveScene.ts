@@ -2249,14 +2249,9 @@ export class BeijingDriveScene {
     }
 
     // Keep a compact CBD rhythm without extra contour overhead.
-    const cbdLampPattern = [false, false, true];
-    for (const [index, phase] of [0.675, 0.723, 0.765].entries()) {
-      this.addLamp(
-        phase,
-        phase > 0.74 ? -5.8 : 5.8,
-        cbdLampPattern[index] ?? false,
-      );
-    }
+    this.addLamp(0.675, -5.8, false);
+    this.addLamp(0.723, 5.8, false);
+    this.addLamp(0.765, -5.8, true);
   }
 
   /** Deshengmen-style arrow tower with ranked arrow windows. */
