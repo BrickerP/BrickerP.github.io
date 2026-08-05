@@ -2349,7 +2349,6 @@ export class BeijingDriveScene {
     }
 
     this.addLamp(0.925, -5.8, false);
-    this.addLamp(0.958, 5.8, false);
   }
 
   /** Sparse, human-scale props that give the drive a believable metre scale. */
