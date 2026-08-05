@@ -198,29 +198,18 @@ export class FirstPersonCameraRig {
     const acts = blendActProfile(progress);
     const landmarks = blendCues(progress);
     const motionEnergy = Math.min(1, (acts.confidence + landmarks.confidence) * 1.1);
-    const cinematicWeight = mix(0.35, 1, portraitFocusMix);
+    const cinematicWeight = portraitFocusMix;
 
-    const laneAct = mix(acts.lane, acts.lane + landmarks.lane, landmarks.confidence);
-    const lookOffsetAct =
-      mix(acts.lookOffset, acts.lookOffset + landmarks.lookOffset, landmarks.confidence);
-    const lookHeightAct =
-      mix(acts.lookHeight, acts.lookHeight + landmarks.lookHeight, landmarks.confidence);
-    const aheadAct = mix(acts.ahead, acts.ahead + landmarks.ahead, landmarks.confidence);
     const rollAct =
       mix(acts.roll, acts.roll + landmarks.roll, landmarks.confidence);
 
-    const cinematicLane = laneAct * cinematicWeight * motionEnergy;
+    const cinematicLane = 0;
     const landmarkLookOffset = portraitLandmarkCue(progress, -2.4, -1.8, -1);
-    const cinematicLookOffset =
-      lookOffsetAct * cinematicWeight * motionEnergy +
-      landmarkLookOffset * mix(0.24, 1, portraitFocusMix);
-    const cinematicLookHeight = lookHeightAct * cinematicWeight * motionEnergy;
-    const cinematicAhead = aheadAct * cinematicWeight * motionEnergy;
+    const cinematicLookOffset = landmarkLookOffset * portraitFocusMix;
+    const cinematicLookHeight = 0;
+    const cinematicAhead = 0;
     const cinematicRoll = rollAct * cinematicWeight * motionEnergy;
-    const cinematicFov =
-      mix(acts.fov, acts.fov + landmarks.fov, landmarks.confidence) *
-      motionEnergy *
-      cinematicWeight;
+    const cinematicFov = 0;
 
     const baseLaneOffset = mix(
       PORTRAIT_LANE_OFFSET,
@@ -244,7 +233,7 @@ export class FirstPersonCameraRig {
     const nextFov =
       this.fovForAspect(this.aspect) +
       cinematicFov +
-      portraitLandmarkCue(progress, 8, 14, 0) * mix(2, 12, portraitFocusMix);
+      portraitLandmarkCue(progress, 8, 14, 0) * portraitFocusMix;
     if (this.camera.fov !== nextFov) {
       this.camera.fov = nextFov;
       this.camera.updateProjectionMatrix();
