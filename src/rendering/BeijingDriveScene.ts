@@ -2186,58 +2186,8 @@ export class BeijingDriveScene {
     }
     this.root.add(hero);
 
-    // East-side poster blocks with bilingual overlays.
-    for (let index = 0; index < 2; index += 1) {
-      const progress = 0.739 + index * 0.003;
-      const width = 4.6 + hash01(index, 73) * 1.0;
-      const depth = 2.7 + hash01(index, 83) * 1.8;
-      const towerOffset = 10 + hash01(index, 77) * 2.9;
-      const towerGroup = new Group();
-      this.place(towerGroup, progress, towerOffset, 0);
-      const block = this.box(width * 0.9, 4.8, depth, glass);
-      block.position.y = 2.4;
-      const strip = this.box(width * 0.78, 0.14, depth + 0.2, contour);
-      strip.position.set(0, 0.92, -depth / 2 - 0.06);
-      const band = this.box(width * 0.9, 1.05, depth + 0.22, posterBase);
-      band.position.set(0, 4.7, 0.2);
-      towerGroup.add(block, strip, band);
-      if (index < 2) {
-        const poster = this.buildWallStreetPlaque('金融区', 'EXCHANGE HUB');
-        if (poster) {
-          poster.position.set(width * 0.44, 1.8, -(depth / 2 + 0.34));
-          poster.rotation.y = Math.PI;
-          towerGroup.add(poster);
-        }
-      }
-      this.root.add(towerGroup);
-    }
-
     // West-side plate cluster with heavier contour treatment.
-    for (let index = 0; index < 2; index += 1) {
-      const progress = 0.739 + index * 0.003;
-      const width = 4.2 + hash01(index, 91) * 1.6;
-      const height = 4.8 + hash01(index, 93) * 2;
-      const depth = 3.1 + hash01(index, 97) * 1.6;
-      const plateOffset = 10 + hash01(index, 101) * 2.2;
-      const plateGroup = new Group();
-      this.place(plateGroup, progress, -plateOffset, 0);
-      const plate = this.box(width, height, depth, glass);
-      plate.position.y = height / 2;
-      const edge = this.box(width * 0.74, 0.26, depth + 0.72, contour);
-      edge.position.set(0, height * 0.4, -depth / 2 - 0.07);
-      const trim = this.box(width * 0.9, 0.2, depth + 0.18, posterAccent);
-      trim.position.set(0, 1.5, -depth / 2 - 0.08);
-      plateGroup.add(plate, edge, trim);
-      if (index < 2) {
-        const poster = this.buildWallStreetPlaque('金融街', 'FINANCIAL STREET');
-        if (poster) {
-          poster.position.set(-width * 0.41, 2.6, -(depth / 2 + 0.33));
-          poster.rotation.y = Math.PI;
-          plateGroup.add(poster);
-        }
-      }
-      this.root.add(plateGroup);
-    }
+    // West-side plate cluster removed to keep poster rhythm while reducing bundle.
 
     // Distilled contour blocks to emphasize graphic rhythm.
     const baseRibbon = this.box(0.28, 2.35, 11.2, posterBase);

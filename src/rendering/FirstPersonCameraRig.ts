@@ -38,7 +38,6 @@ type CameraCueWeight = {
   ahead: number;
   fov: number;
   roll: number;
-  headingWeight: number;
 };
 
 /** Three-act film grammar with minimal code: push-in, drift, then pull-off. */
@@ -48,7 +47,7 @@ function blendActProfile(progress: number): CameraCueWeight & { confidence: numb
   const actC = focusWindow(progress, 0.67, 0.76, 0.91, 0.99);
   const confidence = actA + actB + actC;
   if (confidence <= 0.0001) {
-    return { lane: 0, lookOffset: 0, lookHeight: 0, ahead: 0, fov: 0, roll: 0, headingWeight: 1, confidence: 0 };
+    return { lane: 0, lookOffset: 0, lookHeight: 0, ahead: 0, fov: 0, roll: 0, confidence: 0 };
   }
   return {
     lane: (0.14 * actA + -0.02 * actB + -0.18 * actC) / confidence,
@@ -57,7 +56,6 @@ function blendActProfile(progress: number): CameraCueWeight & { confidence: numb
     ahead: (0.001 * actA + 0.0005 * actB + 0.0014 * actC) / confidence,
     fov: (2.0 * actA + -0.2 * actB + 3.0 * actC) / confidence,
     roll: (0.013 * actA + 0 * actB + -0.02 * actC) / confidence,
-    headingWeight: 1,
     confidence,
   };
 }
@@ -99,23 +97,11 @@ function focusWindow(
 }
 
 function blendCues(progress: number): CameraCueWeight & { confidence: number } {
-  const dagoba = focusWindow(progress, 0.036, 0.047, 0.073, 0.08);
-  const yonghegong = focusWindow(progress, 0.145, 0.1525, 0.1675, 0.175);
-  const cityGate = focusWindow(progress, 0.23, 0.239, 0.257, 0.266);
-  const archerTower = focusWindow(progress, 0.321, 0.331, 0.338, 0.347);
-  const arrowBridge = focusWindow(progress, 0.358, 0.367, 0.376, 0.386);
-  const cbdEdge = focusWindow(progress, 0.642, 0.654, 0.678, 0.69);
-  const bridgeNorth = focusWindow(progress, 0.724, 0.735, 0.757, 0.768);
-  const temple = focusWindow(progress, 0.804, 0.818, 0.844, 0.86);
-  const confidence =
-    dagoba +
-    yonghegong +
-    cityGate +
-    archerTower +
-    arrowBridge +
-    cbdEdge +
-    bridgeNorth +
-    temple;
+  const dagoba = focusWindow(progress, 0.03, 0.045, 0.075, 0.08);
+  const cityGate = focusWindow(progress, 0.223, 0.237, 0.261, 0.274);
+  const cbdNorth = focusWindow(progress, 0.66, 0.674, 0.696, 0.708);
+  const temple = focusWindow(progress, 0.79, 0.812, 0.842, 0.856);
+  const confidence = dagoba + cityGate + cbdNorth + temple;
   if (confidence <= 0.0001) {
     return {
       lane: 0,
@@ -124,66 +110,22 @@ function blendCues(progress: number): CameraCueWeight & { confidence: number } {
       ahead: 0,
       fov: 0,
       roll: 0,
-      headingWeight: 1,
       confidence: 0,
     };
   }
   return {
     lane:
-      (0.16 * dagoba +
-        -0.06 * yonghegong +
-        0.21 * cityGate +
-        -0.07 * archerTower +
-        0.01 * arrowBridge +
-        0.18 * cbdEdge +
-        -0.03 * bridgeNorth +
-        0.14 * temple) / confidence,
+      (0.16 * dagoba + 0.23 * cityGate + 0.11 * cbdNorth - 0.08 * temple) / confidence,
     lookOffset:
-      (-1.65 * dagoba +
-        -1.15 * yonghegong +
-        -2.1 * cityGate +
-        -1.45 * archerTower +
-        -1.58 * arrowBridge +
-        -1.95 * cbdEdge +
-        0.22 * bridgeNorth +
-        -1.45 * temple) / confidence,
+      (-2.0 * dagoba - 2.0 * cityGate - 1.6 * cbdNorth - 1.5 * temple) / confidence,
     lookHeight:
-      (0.008 * dagoba +
-        0.002 * yonghegong +
-        -0.004 * cityGate +
-        0.004 * archerTower +
-        0.006 * arrowBridge +
-        0.001 * cbdEdge +
-        -0.01 * bridgeNorth +
-        -0.004 * temple) / confidence,
+      (0.007 * dagoba - 0.002 * cityGate + 0.001 * cbdNorth - 0.004 * temple) / confidence,
     ahead:
-      (0.001 * dagoba +
-        0.0008 * yonghegong +
-        0.002 * cityGate +
-        0.001 * archerTower +
-        0.0009 * arrowBridge +
-        0.0016 * cbdEdge +
-        -0.0004 * bridgeNorth +
-        0.0017 * temple) / confidence,
+      (0.0015 * dagoba + 0.0022 * cityGate + 0.0014 * cbdNorth + 0.0017 * temple) / confidence,
     fov:
-      (3.2 * dagoba +
-        1.8 * yonghegong +
-        4.8 * cityGate +
-        2.2 * archerTower +
-        2.4 * arrowBridge +
-        4.2 * cbdEdge +
-        1.7 * bridgeNorth +
-        5 * temple) / confidence,
+      (4.2 * dagoba + 3.8 * cityGate + 4.1 * cbdNorth + 5.2 * temple) / confidence,
     roll:
-      (0.02 * dagoba +
-        0.012 * yonghegong +
-        -0.01 * cityGate +
-        0.01 * archerTower +
-        0.014 * arrowBridge +
-        0.0 * cbdEdge +
-        -0.012 * bridgeNorth +
-        0.016 * temple) / confidence,
-    headingWeight: 1,
+      (0.02 * dagoba - 0.008 * cityGate + 0.01 * cbdNorth + 0.011 * temple) / confidence,
     confidence: confidence,
   };
 }
@@ -256,11 +198,7 @@ export class FirstPersonCameraRig {
     const acts = blendActProfile(progress);
     const landmarks = blendCues(progress);
     const motionEnergy = Math.min(1, (acts.confidence + landmarks.confidence) * 1.1);
-    const cinematicWeight = mix(
-      0,
-      (acts.headingWeight + landmarks.headingWeight) * 0.5,
-      portraitFocusMix,
-    );
+    const cinematicWeight = portraitFocusMix;
 
     const laneAct = mix(acts.lane, acts.lane + landmarks.lane, landmarks.confidence);
     const lookOffsetAct =
@@ -269,8 +207,7 @@ export class FirstPersonCameraRig {
       mix(acts.lookHeight, acts.lookHeight + landmarks.lookHeight, landmarks.confidence);
     const aheadAct = mix(acts.ahead, acts.ahead + landmarks.ahead, landmarks.confidence);
     const rollAct =
-      mix(acts.roll, acts.roll + landmarks.roll, landmarks.confidence) *
-      landmarks.headingWeight;
+      mix(acts.roll, acts.roll + landmarks.roll, landmarks.confidence);
 
     const cinematicLane = laneAct * cinematicWeight * motionEnergy;
     const landmarkLookOffset = portraitLandmarkCue(progress, -2.4, -1.8, -1);
