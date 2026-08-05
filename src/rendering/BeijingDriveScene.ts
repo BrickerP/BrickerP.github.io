@@ -145,6 +145,128 @@ function createDagobaBowlGeometry(): LatheGeometry {
 /** Lateral offsets that keep mass faces off the asphalt corridor. */
 const CURB_BUILDING = 8.4;
 const CURB_TREE = 7.4;
+const CITY_BREATH_AMPLITUDE = 0.035;
+
+interface CityBreathProfile {
+  start: number;
+  full: number;
+  release: number;
+  end: number;
+  waterEmissive: number;
+  windowEmissive: number;
+  lampEmissive: number;
+  keyLight: number;
+  fogFar: number;
+}
+
+const CITY_LIGHT_PROFILES: Array<CityBreathProfile> = [
+  {
+    start: 0,
+    full: 0.09,
+    release: 0.22,
+    end: 0.33,
+    waterEmissive: 0.022,
+    windowEmissive: 0.08,
+    lampEmissive: 0.1,
+    keyLight: 0.16,
+    fogFar: 2,
+  },
+  {
+    start: 0.33,
+    full: 0.44,
+    release: 0.62,
+    end: 0.67,
+    waterEmissive: 0.012,
+    windowEmissive: 0.02,
+    lampEmissive: 0.02,
+    keyLight: 0.03,
+    fogFar: -1,
+  },
+  {
+    start: 0.67,
+    full: 0.78,
+    release: 0.92,
+    end: 0.98,
+    waterEmissive: 0.024,
+    windowEmissive: 0.06,
+    lampEmissive: 0.06,
+    keyLight: 0.12,
+    fogFar: 1.8,
+  },
+];
+
+function smoothstep(edge0: number, edge1: number, value: number): number {
+  const normalized = Math.min(1, Math.max(0, (value - edge0) / (edge1 - edge0)));
+  return normalized * normalized * (3 - 2 * normalized);
+}
+
+function focusWindow(
+  progress: number,
+  start: number,
+  full: number,
+  release: number,
+  end: number,
+): number {
+  return (
+    smoothstep(start, full, progress) *
+    (1 - smoothstep(release, end, progress))
+  );
+}
+
+function blendLightProfiles(
+  progress: number,
+): CityBreathProfile & { confidence: number } {
+  let confidence = 0;
+  const accum: Omit<CityBreathProfile, 'start' | 'full' | 'release' | 'end'> = {
+    waterEmissive: 0,
+    windowEmissive: 0,
+    lampEmissive: 0,
+    keyLight: 0,
+    fogFar: 0,
+  };
+
+  for (const profile of CITY_LIGHT_PROFILES) {
+    const weight = focusWindow(
+      progress,
+      profile.start,
+      profile.full,
+      profile.release,
+      profile.end,
+    );
+    confidence += weight;
+    accum.waterEmissive += profile.waterEmissive * weight;
+    accum.windowEmissive += profile.windowEmissive * weight;
+    accum.lampEmissive += profile.lampEmissive * weight;
+    accum.keyLight += profile.keyLight * weight;
+    accum.fogFar += profile.fogFar * weight;
+  }
+
+  if (confidence <= 0.00001) {
+    return {
+      ...accum,
+      confidence: 0,
+      start: 0,
+      full: 0,
+      release: 0,
+      end: 0,
+    };
+  }
+
+  const invConfidence = 1 / confidence;
+  return {
+    ...accum,
+    confidence,
+    start: 0,
+    full: 0,
+    release: 0,
+    end: 0,
+    waterEmissive: accum.waterEmissive * invConfidence,
+    windowEmissive: accum.windowEmissive * invConfidence,
+    lampEmissive: accum.lampEmissive * invConfidence,
+    keyLight: accum.keyLight * invConfidence,
+    fogFar: accum.fogFar * invConfidence,
+  };
+}
 export class BeijingDriveScene {
   readonly scene: Scene;
 
@@ -278,14 +400,36 @@ export class BeijingDriveScene {
   /** All changing values are reconstructed from phase, including the seam. */
   update(phase: number): void {
     const progress = wrapProgress(phase);
-    const wave = 0.5 + 0.5 * Math.cos(progress * TAU);
-    this.waterMaterial.emissiveIntensity = 0.18 + wave * 0.035;
-    this.lampMaterial.emissiveIntensity = 1.4 + wave * 0.08;
-    this.keyLight.intensity = 1.16 + wave * 0.08;
+    const profile = blendLightProfiles(progress);
+    const baseProfile = Math.max(0, Math.min(1, profile.confidence));
+    const breath = (Math.sin(progress * TAU * 0.45) + 1) * 0.5;
+    const waterMicroPulse = (breath - 0.5) * 0.008;
+
+    const profileWater =
+      profile.waterEmissive * (0.6 + 0.4 * baseProfile);
+    const profileWindow =
+      profile.windowEmissive * (0.6 + 0.4 * baseProfile);
+    const profileLamp = profile.lampEmissive * (0.6 + 0.4 * baseProfile);
+    const profileKey = profile.keyLight * (0.6 + 0.4 * baseProfile);
+    const profileFogFar = profile.fogFar * (0.5 + 0.5 * baseProfile);
+
+    this.waterMaterial.emissiveIntensity =
+      0.18 + profileWater + waterMicroPulse;
+    this.lampMaterial.emissiveIntensity =
+      1.4 + profileLamp + (breath * 0.03);
+    this.windowMaterial.emissiveIntensity = 0.72 + profileWindow + (breath * 0.02);
+    this.keyLight.intensity = 1.16 + profileKey + waterMicroPulse * CITY_BREATH_AMPLITUDE * 10;
+    if (this.scene.fog instanceof Fog) {
+      const baseFog = 172;
+      this.scene.fog.far = baseFog + profileFogFar;
+    }
 
     for (const entry of this.lampLights) {
       entry.light.intensity = entry.baseIntensity * (
-        1 + entry.variation * Math.cos((progress * entry.harmonic + entry.phase) * TAU)
+        1 +
+          entry.variation * Math.cos((progress * entry.harmonic + entry.phase) * TAU) +
+          CITY_BREATH_AMPLITUDE * 0.45 * (breath - 0.5) +
+          0.02 * profileLamp
       );
     }
     if (this.capturePerformanceMode) {
@@ -2129,14 +2273,20 @@ export class BeijingDriveScene {
 
   /** 0.667–0.750 — CBD east skyline hero and Xidan / Financial Street west. */
   private buildCbdFinance(): void {
-    const glass = this.textured('#405A6B', 'glassGrid', {
+    const glass = this.textured('#3B5C72', 'glassGrid', {
       roughness: 0.7,
       metalness: 0.15,
       emissive: '#1C4054',
       emissiveIntensity: 0.38,
     });
-    const concrete = this.standard('#69767C', { roughness: 0.96 });
+    const concrete = this.standard('#6D7B84', { roughness: 0.96 });
+    const contour = this.standard('#8EA0AF', { roughness: 0.78 });
+    const posterBase = this.standard('#2F3E4A', { roughness: 0.95 });
+    const posterAccent = this.standard('#DDAA60', { roughness: 0.74 });
+    const posterMetal = this.standard('#35414B', { roughness: 0.82 });
 
+    // Poster-locked edge fencing keeps the composition cinematic, not
+    // realistic, while still retaining passage clarity.
     for (let index = 0; index < 10; index += 1) {
       const progress = 0.67 + index * 0.007;
       for (const side of [-1, 1]) {
@@ -2146,68 +2296,143 @@ export class BeijingDriveScene {
       }
     }
 
-    // The stepped hero sits within the CBD passage and leaves a clear wedge of
-    // sky above the carriageway.
+    // The CBD hero reads as a stepped poster silhouette with hard edges.
     const cbdHero = PASSAGE_HEROES.cbdHero;
     const hero = new Group();
     this.place(hero, cbdHero.progress, cbdHero.lateralOffset, 0);
     hero.scale.setScalar(cbdHero.scale);
-    const heroShaft = this.box(4.6, 16.5, 5, glass);
-    heroShaft.position.y = 8.25;
-    const heroShoulder = this.box(3.2, 11, 4, glass);
-    heroShoulder.position.set(3.5, 5.5, 0.5);
-    const heroCrown = this.box(5.1, 0.4, 5.5, concrete);
-    heroCrown.position.y = 16.65;
-    hero.add(heroShaft, heroShoulder, heroCrown);
-    for (const y of [3.5, 6.5, 9.5, 12.5]) {
-      const windowBand = this.box(3.6, 0.28, 0.12, this.windowMaterial);
-      windowBand.position.set(0, y, -2.56);
-      hero.add(windowBand);
+    const profile = [
+      { width: 5.6, height: 2.9, depth: 4.8, y: 1.55, material: contour },
+      { width: 4.8, height: 3.4, depth: 4.7, y: 4.72, material: glass },
+      { width: 4.2, height: 3.75, depth: 4.4, y: 8.2, material: posterBase },
+      { width: 3.2, height: 3.9, depth: 4.1, y: 12.6, material: glass },
+      { width: 1.9, height: 2.95, depth: 3.75, y: 16.4, material: concrete },
+      { width: 6.2, height: 0.72, depth: 5.4, y: 18.55, material: posterAccent },
+      { width: 3.1, height: 0.26, depth: 5.4, y: 3.2, material: posterMetal },
+      { width: 3.8, height: 0.26, depth: 5.2, y: 7.3, material: posterMetal },
+      { width: 3, height: 0.24, depth: 4.8, y: 11.2, material: posterMetal },
+    ];
+    for (const layer of profile) {
+      const slab = this.box(layer.width, layer.height, layer.depth, layer.material);
+      slab.position.set(0.2, layer.y, layer.depth < 4.4 ? 0.08 : -0.08);
+      const edge = this.box(
+        layer.width + 0.32,
+        layer.height + 0.04,
+        0.09,
+        contour,
+      );
+      edge.position.set(0.2, layer.y, -layer.depth / 2 - 0.16);
+      hero.add(slab, edge);
     }
     this.root.add(hero);
 
-    // Staggered east-side cluster: fewer, lower masses with road-facing window
-    // ranks read as a skyline instead of featureless black canyon walls.
+    // East-side poster blocks with bilingual overlays.
     for (let index = 0; index < 4; index += 1) {
       const progress = 0.739 + index * 0.003;
-      const height = 6.5 + hash01(index, 71) * 3.5;
-      const width = 4 + hash01(index, 73) * 1.2;
-      const towerOffset = 10 + hash01(index, 77) * 2.5;
+      const width = 4.6 + hash01(index, 73) * 1.0;
+      const depth = 2.7 + hash01(index, 83) * 1.8;
+      const towerOffset = 10 + hash01(index, 77) * 2.9;
       const towerGroup = new Group();
       this.place(towerGroup, progress, towerOffset, 0);
-      const tower = this.box(width, height, width, glass);
-      tower.position.y = height / 2;
-      towerGroup.add(tower);
-      for (const y of [height * 0.35, height * 0.62]) {
-        const band = this.box(width * 0.72, 0.24, 0.1, this.windowMaterial);
-        band.position.set(0, y, -width / 2 - 0.05);
-        towerGroup.add(band);
+      const stageHeights = [2.95, 4.4, 4.6 + hash01(index, 79) * 2.9];
+      for (const [height, stageIndex] of stageHeights.map((value, stageIndex) => [value, stageIndex] as const)) {
+        const plate = this.box(width * 0.68, height * 0.45, depth, glass);
+        plate.position.set(0, height * 0.52 + stageIndex * 0.25, 0.12);
+        const edge = this.box(width * 0.74, 0.16, depth + 0.22, contour);
+        edge.position.set(0, height * 0.52 - height * 0.23 + stageIndex * 0.25, -depth / 2 - 0.06);
+        towerGroup.add(plate, edge);
+      }
+      const block = this.box(width * 0.95, 1.2, depth + 0.32, posterBase);
+      block.position.set(0, 1.05, 0.2);
+      const panel = this.box(width * 0.92, 0.12, depth + 0.22, posterAccent);
+      panel.position.set(0, 0.52, -depth / 2 - 0.09);
+      const band = this.box(width * 0.7, 0.09, depth + 0.36, this.streetMetalMaterial);
+      band.position.set(0, 0.22, -depth / 2 - 0.15);
+      towerGroup.add(block, panel, band);
+      for (const offset of [-0.72, 0.72]) {
+        const stripe = this.box(0.12, 0.7, 0.12, posterMetal);
+        stripe.position.set(
+          offset,
+          2.9 + hash01(index + 1, 87) * 1.2,
+          0,
+        );
+        towerGroup.add(stripe);
+      }
+      if (index % 2 === 0) {
+        const poster = this.buildPosterSign('金融区海报街', 'CBD SKYLINE');
+        if (poster) {
+          poster.position.set(width * 0.48, 3.95, -(depth / 2 + 0.32));
+          poster.rotation.y = Math.PI;
+          towerGroup.add(poster);
+        }
+      } else {
+        const poster = this.buildPosterSign('汇金融街', 'EXCHANGE HUB');
+        if (poster) {
+          poster.position.set(width * 0.48, 2.2, -(depth / 2 + 0.32));
+          poster.rotation.y = Math.PI;
+          towerGroup.add(poster);
+        }
       }
       this.root.add(towerGroup);
     }
 
-    // Xidan / Financial Street — secondary lower glass plate band to the west.
+    // West-side plate cluster with heavier contour treatment.
     for (let index = 0; index < 4; index += 1) {
       const progress = 0.739 + index * 0.003;
-      const height = 5.5 + hash01(index, 91) * 2;
-      const width = 4.5 + hash01(index, 93) * 1.5;
-      const plateOffset = 10 + hash01(index, 97) * 2.5;
+      const width = 4.2 + hash01(index, 91) * 1.6;
+      const height = 4.8 + hash01(index, 93) * 2;
+      const depth = 3.1 + hash01(index, 97) * 1.6;
+      const plateOffset = 10 + hash01(index, 101) * 2.2;
       const plateGroup = new Group();
       this.place(plateGroup, progress, -plateOffset, 0);
-      const plate = this.box(width, height, 5, glass);
+      const plate = this.box(width, height, depth, glass);
       plate.position.y = height / 2;
-      plateGroup.add(plate);
-      for (const y of [height * 0.38, height * 0.68]) {
-        const band = this.box(width * 0.68, 0.22, 0.1, this.windowMaterial);
-        band.position.set(0, y, -2.55);
-        plateGroup.add(band);
+      const topRibbon = this.box(width * 0.74, 0.26, depth + 0.72, contour);
+      topRibbon.position.set(0, height * 0.38, -depth / 2 - 0.07);
+      const base = this.box(width * 0.85, 0.92, depth + 0.14, posterBase);
+      base.position.set(0, 1, 0);
+      const trim = this.box(width * 0.9, 0.13, depth + 0.16, posterAccent);
+      trim.position.set(0, 2.05, -depth / 2 - 0.07);
+      const contourLine = this.box(width + 0.34, 0.08, 0.08, posterMetal);
+      contourLine.position.set(0, height - 0.16, -depth / 2 - 0.02);
+      plateGroup.add(plate, topRibbon, base, trim, contourLine);
+      if (index % 2 === 0) {
+        const poster = this.buildPosterSign('金融街', 'FINANCIAL STREET');
+        if (poster) {
+          poster.position.set(-width * 0.42, 3.35, -(depth / 2 + 0.32));
+          poster.rotation.y = Math.PI;
+          plateGroup.add(poster);
+        }
+      } else {
+        const poster = this.buildPosterSign('西单 / XIDAN', 'XIDAN CITYCORE');
+        if (poster) {
+          poster.position.set(-width * 0.45, 2.25, -(depth / 2 + 0.31));
+          poster.rotation.y = Math.PI;
+          plateGroup.add(poster);
+        }
       }
       this.root.add(plateGroup);
     }
 
-    this.addLamp(0.675, -5.8, false);
-    this.addLamp(0.712, 5.8, true);
-    this.addLamp(0.742, -5.8, false);
+    // Distilled contour blocks to emphasize graphic rhythm.
+    const baseRibbon = this.box(0.28, 2.35, 11.2, posterBase);
+    this.place(baseRibbon, 0.725, 7.2, 0.7);
+    const topRibbon = this.box(0.36, 2.12, 11.4, posterAccent);
+    this.place(topRibbon, 0.74, 7.2, 1.0);
+    this.root.add(baseRibbon, topRibbon);
+    for (const phase of [0.701, 0.73, 0.76, 0.789]) {
+      const marker = this.box(0.1, 0.58, 0.58, contour);
+      this.place(marker, phase, 7.2, 4.0);
+      this.root.add(marker);
+    }
+    const cbdLampPattern = [false, false, true, false, true];
+    for (const [index, phase] of [0.675, 0.702, 0.723, 0.744, 0.765].entries()) {
+      this.addLamp(
+        phase,
+        phase > 0.74 ? -5.8 : 5.8,
+        cbdLampPattern[index] ?? false,
+      );
+    }
   }
 
   /** Deshengmen-style arrow tower with ranked arrow windows. */
@@ -2454,6 +2679,13 @@ export class BeijingDriveScene {
     seat.position.set(0, 0.72, 0);
     shelter.add(rearPane, roof, frontPost, rearPost, seat);
     this.root.add(shelter);
+  }
+
+  private buildPosterSign(
+    china: string,
+    english: string,
+  ): Group | undefined {
+    return this.buildWallStreetPlaque(china, english.toUpperCase());
   }
 
   private buildWallStreetPlaque(
