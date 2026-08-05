@@ -1127,7 +1127,6 @@ export class BeijingDriveScene {
           const plaque = this.buildWallStreetPlaque(
             '前门东河沿街',
             'QIANMEN DONGHEYAN ST',
-            this.isPosterMode,
           );
           if (plaque) {
             plaque.position.set(roadFaceX, 2.2, -depth * 0.06);
@@ -2182,11 +2181,7 @@ export class BeijingDriveScene {
     const posterAccent = this.standard(this.isPosterMode ? '#F2B864' : '#DDAA60', {
       roughness: 0.74,
     });
-    const heroPoster = this.buildWallStreetPlaque(
-      '金融区',
-      'CBD SKYLINE',
-      this.isPosterMode,
-    );
+    const heroPoster = this.buildWallStreetPlaque('金融区', 'CBD SKYLINE');
 
     // Poster-locked edge fencing keeps the composition cinematic, not
     // realistic, while still retaining passage clarity.
@@ -2246,7 +2241,6 @@ export class BeijingDriveScene {
       const poster = this.buildWallStreetPlaque(
         plaqueName,
         plaqueLatin,
-        this.isPosterMode,
       );
       if (poster) {
         poster.position.set(-0.52, 2.06, -(depth / 2 + 0.44));
@@ -2526,7 +2520,6 @@ export class BeijingDriveScene {
   private buildWallStreetPlaque(
     name: string,
     latin: string,
-    posterMode: boolean,
   ): Group | undefined {
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
@@ -2534,7 +2527,7 @@ export class BeijingDriveScene {
     const context = canvas.getContext('2d');
     if (!context) return undefined;
 
-    if (posterMode) {
+    if (this.isPosterMode) {
       context.fillStyle = '#1C3342';
       context.fillRect(0, 0, canvas.width, canvas.height);
       context.fillStyle = '#F0B96B';
@@ -2565,20 +2558,24 @@ export class BeijingDriveScene {
     context.globalAlpha = 1;
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-    context.fillStyle = posterMode ? '#FDF8E9' : '#FFFFFF';
-    context.font = posterMode
+    context.fillStyle = this.isPosterMode ? '#FDF8E9' : '#FFFFFF';
+    context.font = this.isPosterMode
       ? '900 84px "PingFang SC", "Microsoft YaHei", sans-serif'
       : '800 78px "PingFang SC", "Microsoft YaHei", sans-serif';
     context.fillText(name, canvas.width / 2, 78);
-    context.strokeStyle = posterMode ? '#1B2A34' : '#EEF4EE';
-    context.lineWidth = posterMode ? 1.8 : 0;
+    context.strokeStyle = this.isPosterMode ? '#1B2A34' : '#EEF4EE';
+    context.lineWidth = this.isPosterMode ? 1.8 : 0;
     context.strokeText(name, canvas.width / 2, 78);
-    context.fillStyle = posterMode ? '#D9C9A8' : '#FFFFFF';
-    context.font = posterMode
+    context.fillStyle = this.isPosterMode ? '#D9C9A8' : '#FFFFFF';
+    context.font = this.isPosterMode
       ? '700 34px Inter, Arial, sans-serif'
       : '650 27px Inter, Arial, sans-serif';
     context.letterSpacing = '3px';
-    context.fillText(posterMode ? latin.toUpperCase() : latin, canvas.width / 2, 164);
+    context.fillText(
+      this.isPosterMode ? latin.toUpperCase() : latin,
+      canvas.width / 2,
+      164,
+    );
 
     const texture = new CanvasTexture(canvas);
     texture.colorSpace = SRGBColorSpace;
