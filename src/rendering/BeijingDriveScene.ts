@@ -33,7 +33,10 @@ import {
   samplePathFrame,
   wrapProgress,
 } from './drivePath';
-import { DRIVE_PATH_SCALE } from './FirstPersonCameraRig';
+import {
+  DRIVE_PATH_SCALE,
+  type DriveAnimationMode,
+} from './FirstPersonCameraRig';
 import {
   hash01,
   SurfaceAtlasLibrary,
@@ -52,6 +55,38 @@ const OPEN_CIRCUIT_CARRIER_HALF_WIDTH = 0.05;
 const OPEN_CIRCUIT_NODE_PHASE = 0.988;
 const OPEN_CIRCUIT_CARRIER_NAME = 'LOOP 01 warm-white road carrier';
 const OPEN_CIRCUIT_NODE_NAME = 'LOOP 01 closure node';
+
+const CINEMATIC_LIGHT = {
+  actOne: 0.028,
+  actTwo: -0.018,
+  actThree: 0.024,
+} as const;
+
+function smoothstep(edge0: number, edge1: number, value: number): number {
+  const normalized = Math.min(1, Math.max(0, (value - edge0) / (edge1 - edge0)));
+  return normalized * normalized * (3 - 2 * normalized);
+}
+
+function focusWindow(
+  progress: number,
+  start: number,
+  full: number,
+  release: number,
+  end: number,
+): number {
+  return (
+    smoothstep(start, full, progress) *
+    (1 - smoothstep(release, end, progress))
+  );
+}
+
+function cinematicLightCue(progress: number): number {
+  return (
+    focusWindow(progress, 0.06, 0.16, 0.22, 0.31) * CINEMATIC_LIGHT.actOne +
+    focusWindow(progress, 0.38, 0.49, 0.58, 0.69) * CINEMATIC_LIGHT.actTwo +
+    focusWindow(progress, 0.73, 0.80, 0.88, 0.96) * CINEMATIC_LIGHT.actThree
+  );
+}
 
 export interface OpenCircuitIdentityState {
   carrierCount: number;
@@ -187,15 +222,17 @@ export class BeijingDriveScene {
   private readonly atlases: SurfaceAtlasLibrary;
   private openCircuitCarrier!: Mesh;
   private openCircuitNode!: Mesh;
+  private readonly animationMode: DriveAnimationMode;
   private capturePerformanceMode = false;
   private disposed = false;
 
-  constructor() {
+  constructor(animationMode: DriveAnimationMode = 'cinematic') {
+    this.animationMode = animationMode;
     this.atlases = new SurfaceAtlasLibrary();
     this.scene = new Scene();
     this.scene.name = 'Beijing endless drive';
     this.scene.background = new Color(PALETTE.skyTop);
-  this.scene.fog = new Fog(PALETTE.fog, 52, 172);
+    this.scene.fog = new Fog(PALETTE.fog, 52, 172);
     this.scene.add(this.root);
 
     this.unitBox = this.trackGeometry(new BoxGeometry(1, 1, 1));
@@ -279,26 +316,36 @@ export class BeijingDriveScene {
   update(phase: number): void {
     const progress = wrapProgress(phase);
     const baseFog = 172;
-    const breath = 0.5 + 0.5 * Math.cos(progress * TAU * 0.5);
-    const breathPulse = Math.cos(progress * TAU * 0.125);
-    const lampBreath = Math.sin(progress * TAU * 0.25);
-    const laneBreath = 0.5 + 0.5 * Math.cos(progress * TAU * 2);
+    const cinematicMode = this.animationMode === 'cinematic';
+    const posterMode = this.animationMode === 'graphic-poster';
+    const breathingMode = this.animationMode === 'breathing-city';
+    const cinematicCue = cinematicMode ? cinematicLightCue(progress) : 0;
+    const breath = 0.5 + 0.5 * Math.cos(progress * TAU * 0.45);
+    const wave = Math.cos(progress * TAU * 0.31);
+    const posterContrast = posterMode ? 1.07 : 1;
+    const breathingScale = breathingMode ? 1 + (breath - 0.5) * 0.08 : 1;
+    const cinematicScale = cinematicMode ? 1 + cinematicCue : 1;
 
-    this.waterMaterial.emissiveIntensity = 0.18 + breath * 0.028 + breathPulse * 0.006;
+    this.waterMaterial.emissiveIntensity = 0.18 + breath * 0.028 + cinematicCue * 0.012;
     this.lampMaterial.emissiveIntensity =
-      1.4 + breath * 0.08 + lampBreath * 0.014 + laneBreath * 0.004;
-    this.windowMaterial.emissiveIntensity = 0.72 + breath * 0.022 + breathPulse * 0.004;
-    this.keyLight.intensity = 1.16 + breath * 0.07 + breathPulse * 0.01;
+      (1.4 + breath * 0.08 + wave * 0.014) *
+      posterContrast *
+      breathingScale *
+      cinematicScale;
+    this.windowMaterial.emissiveIntensity =
+      (0.72 + breath * 0.022) * posterContrast * breathingScale;
+    this.keyLight.intensity =
+      (1.16 + breath * 0.07 + wave * 0.01) * cinematicScale * breathingScale;
     if (this.scene.fog instanceof Fog) {
-      this.scene.fog.far = baseFog + Math.cos(progress * TAU * 0.25) * 2;
+      this.scene.fog.far = baseFog + wave * 1.6 + cinematicCue * 0.7;
     }
 
     for (const entry of this.lampLights) {
       entry.light.intensity = entry.baseIntensity * (
         1 +
         entry.variation *
-          (Math.cos((progress * entry.harmonic + entry.phase) * TAU) * 0.74 +
-            Math.sin(progress * TAU * 0.06 + entry.phase) * 0.26) +
+          (Math.cos(progress * TAU * entry.harmonic + entry.phase) * 0.74 +
+            Math.cos(progress * TAU * 3 + entry.phase) * 0.26) +
         breath * 0.03
       );
     }
@@ -2143,16 +2190,29 @@ export class BeijingDriveScene {
 
   /** 0.667–0.750 — CBD east skyline hero and Xidan / Financial Street west. */
   private buildCbdFinance(): void {
-    const glass = this.textured('#3B5C72', 'glassGrid', {
-      roughness: 0.7,
-      metalness: 0.15,
-      emissive: '#1C4054',
-      emissiveIntensity: 0.38,
+    const posterMode = this.animationMode === 'graphic-poster';
+    const glass = this.textured(
+      posterMode ? '#37556B' : '#3B5C72',
+      'glassGrid',
+      {
+        roughness: posterMode ? 0.8 : 0.7,
+        metalness: posterMode ? 0.06 : 0.15,
+        emissive: posterMode ? '#1F3A54' : '#1C4054',
+        emissiveIntensity: posterMode ? 0.46 : 0.38,
+      },
+    );
+    const concrete = this.standard(posterMode ? '#5C6F7A' : '#6D7B84', {
+      roughness: posterMode ? 0.98 : 0.96,
     });
-    const concrete = this.standard('#6D7B84', { roughness: 0.96 });
-    const contour = this.standard('#8EA0AF', { roughness: 0.78 });
-    const posterBase = this.standard('#2F3E4A', { roughness: 0.95 });
-    const posterAccent = this.standard('#DDAA60', { roughness: 0.74 });
+    const contour = this.standard(posterMode ? '#9CB0BF' : '#8EA0AF', {
+      roughness: posterMode ? 0.88 : 0.78,
+    });
+    const posterBase = this.standard(posterMode ? '#2A3947' : '#2F3E4A', {
+      roughness: 0.95,
+    });
+    const posterAccent = this.standard(posterMode ? '#F2B864' : '#DDAA60', {
+      roughness: 0.74,
+    });
     const heroPoster = this.buildWallStreetPlaque('金融区', 'CBD SKYLINE');
 
     // Poster-locked edge fencing keeps the composition cinematic, not
@@ -2496,29 +2556,52 @@ export class BeijingDriveScene {
     const context = canvas.getContext('2d');
     if (!context) return undefined;
 
-    context.fillStyle = '#24618A';
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.fillStyle = '#DDAA60';
-    context.fillRect(0, 0, 36, canvas.height);
-    context.fillStyle = '#233D4B';
-    context.fillRect(36, 0, 20, canvas.height);
-    context.strokeStyle = '#EEF4EE';
-    context.lineWidth = 14;
-    context.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
-    context.fillStyle = '#FFFFFF';
-    context.globalAlpha = 0.13;
-    for (let offset = 70; offset <= 170; offset += 24) {
+    const posterMode = this.animationMode === 'graphic-poster';
+    if (posterMode) {
+      context.fillStyle = '#1C3342';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = '#F0B96B';
+      context.fillRect(0, 0, 36, canvas.height);
+      context.fillStyle = '#2C4458';
+      context.fillRect(36, 0, 20, canvas.height);
+      context.strokeStyle = '#F4F0E0';
+      context.lineWidth = 18;
+      context.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
+      context.fillStyle = '#A5BCD0';
+      context.globalAlpha = 0.12;
+    } else {
+      context.fillStyle = '#24618A';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = '#DDAA60';
+      context.fillRect(0, 0, 36, canvas.height);
+      context.fillStyle = '#233D4B';
+      context.fillRect(36, 0, 20, canvas.height);
+      context.strokeStyle = '#EEF4EE';
+      context.lineWidth = 14;
+      context.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
+      context.fillStyle = '#FFFFFF';
+      context.globalAlpha = 0.13;
+    }
+    for (let offset = 70; offset <= 170; offset += 18) {
       context.fillRect(48, offset, canvas.width - 120, 7);
     }
     context.globalAlpha = 1;
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-    context.fillStyle = '#FFFFFF';
-    context.font = '800 78px "PingFang SC", "Microsoft YaHei", sans-serif';
+    context.fillStyle = posterMode ? '#FDF8E9' : '#FFFFFF';
+    context.font = posterMode
+      ? '900 84px "PingFang SC", "Microsoft YaHei", sans-serif'
+      : '800 78px "PingFang SC", "Microsoft YaHei", sans-serif';
     context.fillText(name, canvas.width / 2, 78);
-    context.font = '650 27px Inter, Arial, sans-serif';
+    context.strokeStyle = posterMode ? '#1B2A34' : '#EEF4EE';
+    context.lineWidth = posterMode ? 1.8 : 0;
+    context.strokeText(name, canvas.width / 2, 78);
+    context.fillStyle = posterMode ? '#D9C9A8' : '#FFFFFF';
+    context.font = posterMode
+      ? '700 34px Inter, Arial, sans-serif'
+      : '650 27px Inter, Arial, sans-serif';
     context.letterSpacing = '3px';
-    context.fillText(latin, canvas.width / 2, 164);
+    context.fillText(posterMode ? latin.toUpperCase() : latin, canvas.width / 2, 164);
 
     const texture = new CanvasTexture(canvas);
     texture.colorSpace = SRGBColorSpace;

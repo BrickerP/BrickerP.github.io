@@ -30,6 +30,20 @@ const CLEARANCE_HOLD_PHASE = 0.06;
 const BOB_CYCLES = 24;
 const BOB_HEIGHT = 0.012;
 
+export type DriveAnimationMode = 'cinematic' | 'graphic-poster' | 'breathing-city';
+
+const CINEMATIC_ROLL = {
+  actOne: 0.0065,
+  actTwo: -0.004,
+  actThree: 0.005,
+} as const;
+
+const CINEMATIC_LOOK_OFFSET = {
+  actOne: -0.24,
+  actTwo: -0.1,
+  actThree: 0.2,
+} as const;
+
 function smoothstep(edge0: number, edge1: number, value: number): number {
   const normalized = Math.min(1, Math.max(0, (value - edge0) / (edge1 - edge0)));
   return normalized * normalized * (3 - 2 * normalized);
@@ -80,6 +94,19 @@ function portraitLandmarkCue(
   );
 }
 
+/** Three-act rhythm cue used by the cinematic option. */
+function cinematicActProfile(progress: number): {
+  actOne: number;
+  actTwo: number;
+  actThree: number;
+} {
+  return {
+    actOne: focusWindow(progress, 0.01, 0.10, 0.17, 0.26),
+    actTwo: focusWindow(progress, 0.30, 0.44, 0.54, 0.64),
+    actThree: focusWindow(progress, 0.72, 0.78, 0.88, 0.98),
+  };
+}
+
 /** Pure phase-derived first-person camera for the closed authored drive path. */
 export class FirstPersonCameraRig {
   readonly camera: PerspectiveCamera;
@@ -87,11 +114,13 @@ export class FirstPersonCameraRig {
   private readonly lookTarget = new Vector3();
   private readonly currentFrame = samplePathFrame(0);
   private readonly futureFrame = samplePathFrame(0);
+  private readonly animationMode: DriveAnimationMode;
   private aspect: number;
 
-  constructor(aspect: number) {
+  constructor(aspect: number, animationMode: DriveAnimationMode = 'cinematic') {
     const safeAspect = Math.max(0.01, aspect);
     this.aspect = safeAspect;
+    this.animationMode = animationMode;
     this.camera = new PerspectiveCamera(
       this.fovForAspect(safeAspect),
       safeAspect,
@@ -150,8 +179,41 @@ export class FirstPersonCameraRig {
       portraitLandmarkCue(progress, -2.4, -1.8, -1) * portraitFocusMix;
     const portraitFovBoost =
       portraitLandmarkCue(progress, 8, 14, 0) * portraitFocusMix;
-    const cinematicRoll =
-      portraitFocusMix * Math.sin(progress * Math.PI * 2) * 0.008;
+
+    const { actOne, actTwo, actThree } =
+      this.animationMode === 'cinematic'
+        ? cinematicActProfile(progress)
+        : {
+            actOne: 0,
+            actTwo: 0,
+            actThree: 0,
+          };
+    const cinematicMix = this.animationMode === 'cinematic' ? 1 - this.aspectMix() : 0;
+
+    const cinematicRoll = cinematicMix > 0
+      ? (CINEMATIC_ROLL.actOne * actOne +
+          CINEMATIC_ROLL.actTwo * actTwo +
+          CINEMATIC_ROLL.actThree * actThree) * cinematicMix
+      : 0;
+
+    const cinematicLookOffset = cinematicMix > 0
+      ? mix(
+          mix(
+            CINEMATIC_LOOK_OFFSET.actOne * actOne,
+            CINEMATIC_LOOK_OFFSET.actTwo * actTwo,
+            cinematicMix,
+          ),
+          CINEMATIC_LOOK_OFFSET.actThree * actThree,
+          cinematicMix,
+        )
+      : 0;
+
+    const posterLookBoost = this.animationMode === 'graphic-poster'
+      ? 0.06
+      : 0;
+    const breathingLookBoost = this.animationMode === 'breathing-city'
+      ? Math.sin(progress * Math.PI * 2) * 0.02
+      : 0;
     const nextFov = this.fovForAspect(this.aspect) + portraitFovBoost;
     if (this.camera.fov !== nextFov) {
       this.camera.fov = nextFov;
@@ -181,7 +243,7 @@ export class FirstPersonCameraRig {
     );
     this.lookTarget.addScaledVector(
       this.futureFrame.normal,
-      laneOffset + portraitLookOffset,
+      laneOffset + portraitLookOffset + cinematicLookOffset + posterLookBoost + breathingLookBoost,
     );
     this.camera.lookAt(this.lookTarget);
     this.camera.rotation.z = cinematicRoll;

@@ -1,5 +1,6 @@
 import './styles/main.css';
 import { BeijingLoopApp, type AppState } from './app/BeijingLoopApp';
+import { type DriveAnimationMode } from './rendering/FirstPersonCameraRig';
 import { AboutPanel } from './ui/about';
 import { Controls } from './ui/controls';
 import {
@@ -82,6 +83,21 @@ function fullscreenAvailable(): boolean {
   );
 }
 
+function resolveAnimationMode(): DriveAnimationMode {
+  const mode = new URLSearchParams(window.location.search).get('mode');
+  switch (mode) {
+    case 'poster':
+      return 'graphic-poster';
+    case 'breathing':
+      return 'breathing-city';
+    case 'cinematic':
+    case null:
+      return 'cinematic';
+    default:
+      return 'cinematic';
+  }
+}
+
 function main(): void {
   if (!webglAvailable()) {
     showBootError(
@@ -93,10 +109,11 @@ function main(): void {
 
   const reducedMotion =
     window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+  const animationMode = resolveAnimationMode();
 
   let app: BeijingLoopApp;
   try {
-    app = new BeijingLoopApp(mount, reducedMotion);
+    app = new BeijingLoopApp(mount, reducedMotion, animationMode);
   } catch (error) {
     showBootError(
       'The first-person scene could not start. Try reloading with hardware acceleration enabled. ' +
