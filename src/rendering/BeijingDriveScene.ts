@@ -33,7 +33,10 @@ import {
   samplePathFrame,
   wrapProgress,
 } from './drivePath';
-import { DRIVE_PATH_SCALE } from './FirstPersonCameraRig';
+import {
+  DRIVE_PATH_SCALE,
+  type DriveAnimationMode,
+} from './FirstPersonCameraRig';
 import {
   hash01,
   SurfaceAtlasLibrary,
@@ -187,10 +190,16 @@ export class BeijingDriveScene {
   private readonly atlases: SurfaceAtlasLibrary;
   private openCircuitCarrier!: Mesh;
   private openCircuitNode!: Mesh;
+  private readonly isCinematicMode: boolean;
+  private readonly isPosterMode: boolean;
+  private readonly isBreathingMode: boolean;
   private capturePerformanceMode = false;
   private disposed = false;
 
-  constructor() {
+  constructor(animationMode: DriveAnimationMode = 'cinematic') {
+    this.isCinematicMode = animationMode === 'cinematic';
+    this.isPosterMode = animationMode === 'poster';
+    this.isBreathingMode = animationMode === 'breathing';
     this.atlases = new SurfaceAtlasLibrary();
     this.scene = new Scene();
     this.scene.name = 'Beijing endless drive';
@@ -278,14 +287,35 @@ export class BeijingDriveScene {
   /** All changing values are reconstructed from phase, including the seam. */
   update(phase: number): void {
     const progress = wrapProgress(phase);
-    const wave = 0.5 + 0.5 * Math.cos(progress * TAU);
-    this.waterMaterial.emissiveIntensity = 0.18 + wave * 0.035;
-    this.lampMaterial.emissiveIntensity = 1.4 + wave * 0.08;
-    this.keyLight.intensity = 1.16 + wave * 0.08;
+    const baseFog = 172;
+    const breath = 0.5 + 0.5 * Math.cos(progress * TAU * 0.45);
+    const wave = Math.cos(progress * TAU * 0.31);
+    const cinematicCue = this.isCinematicMode ? wave * 0.3 : 0;
+    const posterContrast = this.isPosterMode ? 1.07 : 1;
+    const breathingScale = this.isBreathingMode ? 1 + (breath - 0.5) * 0.08 : 1;
+    const cinematicScale = this.isCinematicMode ? 1 + cinematicCue : 1;
+
+    this.waterMaterial.emissiveIntensity = 0.18 + breath * 0.028 + cinematicCue * 0.012;
+    this.lampMaterial.emissiveIntensity =
+      (1.4 + breath * 0.08 + wave * 0.014) *
+      posterContrast *
+      breathingScale *
+      cinematicScale;
+    this.windowMaterial.emissiveIntensity =
+      (0.72 + breath * 0.022) * posterContrast * breathingScale;
+    this.keyLight.intensity =
+      (1.16 + breath * 0.07 + wave * 0.01) * cinematicScale * breathingScale;
+    if (this.scene.fog instanceof Fog) {
+      this.scene.fog.far = baseFog + wave * 1.6 + cinematicCue * 0.7;
+    }
 
     for (const entry of this.lampLights) {
       entry.light.intensity = entry.baseIntensity * (
-        1 + entry.variation * Math.cos((progress * entry.harmonic + entry.phase) * TAU)
+        1 +
+        entry.variation *
+          (Math.cos(progress * TAU * entry.harmonic + entry.phase) * 0.74 +
+            Math.cos(progress * TAU * 3 + entry.phase) * 0.26) +
+        breath * 0.03
       );
     }
     if (this.capturePerformanceMode) {
@@ -1901,9 +1931,6 @@ export class BeijingDriveScene {
       this.root.add(trunk, canopy);
     }
 
-    this.addLamp(0.761, -6.3, true);
-    this.addLamp(0.795, 6.3, false);
-    this.addLamp(0.825, -6.3, true);
   }
 
   /** 0.333–0.417 — Second-Ring city threshold: wall edge, flyover, and gantry. */
@@ -2129,14 +2156,32 @@ export class BeijingDriveScene {
 
   /** 0.667–0.750 — CBD east skyline hero and Xidan / Financial Street west. */
   private buildCbdFinance(): void {
-    const glass = this.textured('#405A6B', 'glassGrid', {
-      roughness: 0.7,
-      metalness: 0.15,
-      emissive: '#1C4054',
-      emissiveIntensity: 0.38,
+    const glass = this.textured(
+      this.isPosterMode ? '#37556B' : '#3B5C72',
+      'glassGrid',
+      {
+        roughness: this.isPosterMode ? 0.8 : 0.7,
+        metalness: this.isPosterMode ? 0.06 : 0.15,
+        emissive: this.isPosterMode ? '#1F3A54' : '#1C4054',
+        emissiveIntensity: this.isPosterMode ? 0.46 : 0.38,
+      },
+    );
+    const concrete = this.standard(this.isPosterMode ? '#5C6F7A' : '#6D7B84', {
+      roughness: this.isPosterMode ? 0.98 : 0.96,
     });
-    const concrete = this.standard('#69767C', { roughness: 0.96 });
+    const contour = this.standard(this.isPosterMode ? '#9CB0BF' : '#8EA0AF', {
+      roughness: this.isPosterMode ? 0.88 : 0.78,
+    });
+    const posterBase = this.standard(this.isPosterMode ? '#2A3947' : '#2F3E4A', {
+      roughness: 0.95,
+    });
+    const posterAccent = this.standard(this.isPosterMode ? '#F2B864' : '#DDAA60', {
+      roughness: 0.74,
+    });
+    const heroPoster = this.buildWallStreetPlaque('金融区', 'CBD SKYLINE');
 
+    // Poster-locked edge fencing keeps the composition cinematic, not
+    // realistic, while still retaining passage clarity.
     for (let index = 0; index < 10; index += 1) {
       const progress = 0.67 + index * 0.007;
       for (const side of [-1, 1]) {
@@ -2146,68 +2191,61 @@ export class BeijingDriveScene {
       }
     }
 
-    // The stepped hero sits within the CBD passage and leaves a clear wedge of
-    // sky above the carriageway.
+    // The CBD hero reads as a stepped poster silhouette with hard edges.
     const cbdHero = PASSAGE_HEROES.cbdHero;
     const hero = new Group();
     this.place(hero, cbdHero.progress, cbdHero.lateralOffset, 0);
     hero.scale.setScalar(cbdHero.scale);
-    const heroShaft = this.box(4.6, 16.5, 5, glass);
-    heroShaft.position.y = 8.25;
-    const heroShoulder = this.box(3.2, 11, 4, glass);
-    heroShoulder.position.set(3.5, 5.5, 0.5);
-    const heroCrown = this.box(5.1, 0.4, 5.5, concrete);
-    heroCrown.position.y = 16.65;
-    hero.add(heroShaft, heroShoulder, heroCrown);
-    for (const y of [3.5, 6.5, 9.5, 12.5]) {
-      const windowBand = this.box(3.6, 0.28, 0.12, this.windowMaterial);
-      windowBand.position.set(0, y, -2.56);
-      hero.add(windowBand);
+    const heroBlocks: Array<[number, number, number, number, MeshStandardMaterial]> = [
+      [5.6, 2.9, 4.8, 1.55, contour],
+      [4.8, 3.4, 4.7, 4.72, glass],
+      [4.2, 3.75, 4.4, 8.2, posterBase],
+      [6.2, 0.72, 5.4, 18.55, posterAccent],
+    ];
+    for (const [width, height, depth, y, material] of heroBlocks) {
+      const slab = this.box(width, height, depth, material);
+      slab.position.set(0.2, y, -0.08);
+      const edge = this.box(width + 0.32, height + 0.04, 0.09, contour);
+      edge.position.set(0.2, y, -depth / 2 - 0.16);
+      hero.add(slab, edge);
+    }
+    if (heroPoster) {
+      heroPoster.position.set(0.25, 9.2, -0.3);
+      heroPoster.rotation.y = Math.PI / 2;
+      hero.add(heroPoster);
     }
     this.root.add(hero);
 
-    // Staggered east-side cluster: fewer, lower masses with road-facing window
-    // ranks read as a skyline instead of featureless black canyon walls.
-    for (let index = 0; index < 4; index += 1) {
-      const progress = 0.739 + index * 0.003;
-      const height = 6.5 + hash01(index, 71) * 3.5;
-      const width = 4 + hash01(index, 73) * 1.2;
-      const towerOffset = 10 + hash01(index, 77) * 2.5;
-      const towerGroup = new Group();
-      this.place(towerGroup, progress, towerOffset, 0);
-      const tower = this.box(width, height, width, glass);
-      tower.position.y = height / 2;
-      towerGroup.add(tower);
-      for (const y of [height * 0.35, height * 0.62]) {
-        const band = this.box(width * 0.72, 0.24, 0.1, this.windowMaterial);
-        band.position.set(0, y, -width / 2 - 0.05);
-        towerGroup.add(band);
-      }
-      this.root.add(towerGroup);
-    }
-
-    // Xidan / Financial Street — secondary lower glass plate band to the west.
-    for (let index = 0; index < 4; index += 1) {
-      const progress = 0.739 + index * 0.003;
-      const height = 5.5 + hash01(index, 91) * 2;
-      const width = 4.5 + hash01(index, 93) * 1.5;
-      const plateOffset = 10 + hash01(index, 97) * 2.5;
+    // West-side plate cluster keeps the CBD duality with an abstracted poster rhythm.
+    for (let index = 0; index < 2; index += 1) {
+      const progress = 0.732 + index * 0.012;
+      const width = 4.3 + hash01(index, 91) * 1.1;
+      const height = 4.0 + hash01(index, 93) * 1.6;
+      const depth = 2.8 + hash01(index, 97) * 1.4;
+      const plateOffset = 9.0 + index * 0.42;
       const plateGroup = new Group();
       this.place(plateGroup, progress, -plateOffset, 0);
-      const plate = this.box(width, height, 5, glass);
+      const plate = this.box(width, height, depth, glass);
       plate.position.y = height / 2;
-      plateGroup.add(plate);
-      for (const y of [height * 0.38, height * 0.68]) {
-        const band = this.box(width * 0.68, 0.22, 0.1, this.windowMaterial);
-        band.position.set(0, y, -2.55);
-        plateGroup.add(band);
+      const edge = this.box(width * 0.74, 0.26, depth + 0.72, contour);
+      edge.position.set(0, height * 0.38, -depth / 2 - 0.07);
+      plateGroup.add(plate, edge);
+
+      const plaqueName = index === 0 ? '金融街' : 'XIDAN';
+      const plaqueLatin = index === 0 ? 'FINANCIAL STREET' : 'XIDAN CORE';
+      const poster = this.buildWallStreetPlaque(
+        plaqueName,
+        plaqueLatin,
+      );
+      if (poster) {
+        poster.position.set(-0.52, 2.06, -(depth / 2 + 0.44));
+        poster.rotation.y = Math.PI;
+        plateGroup.add(poster);
       }
       this.root.add(plateGroup);
     }
 
-    this.addLamp(0.675, -5.8, false);
-    this.addLamp(0.712, 5.8, true);
-    this.addLamp(0.742, -5.8, false);
+    // Keep a compact CBD rhythm without extra contour overhead.
   }
 
   /** Deshengmen-style arrow tower with ranked arrow windows. */
@@ -2310,9 +2348,6 @@ export class BeijingDriveScene {
       }
     }
 
-    this.addLamp(0.925, -5.8, false);
-    this.addLamp(0.958, 5.8, false);
-    this.addLamp(0.985, -5.8, false);
   }
 
   /** Sparse, human-scale props that give the drive a believable metre scale. */
@@ -2466,19 +2501,55 @@ export class BeijingDriveScene {
     const context = canvas.getContext('2d');
     if (!context) return undefined;
 
-    context.fillStyle = '#24618A';
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.strokeStyle = '#EEF4EE';
-    context.lineWidth = 12;
-    context.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
+    if (this.isPosterMode) {
+      context.fillStyle = '#1C3342';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = '#F0B96B';
+      context.fillRect(0, 0, 36, canvas.height);
+      context.fillStyle = '#2C4458';
+      context.fillRect(36, 0, 20, canvas.height);
+      context.strokeStyle = '#F4F0E0';
+      context.lineWidth = 18;
+      context.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
+      context.fillStyle = '#A5BCD0';
+      context.globalAlpha = 0.12;
+    } else {
+      context.fillStyle = '#24618A';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = '#DDAA60';
+      context.fillRect(0, 0, 36, canvas.height);
+      context.fillStyle = '#233D4B';
+      context.fillRect(36, 0, 20, canvas.height);
+      context.strokeStyle = '#EEF4EE';
+      context.lineWidth = 14;
+      context.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
+      context.fillStyle = '#FFFFFF';
+      context.globalAlpha = 0.13;
+    }
+    for (let offset = 70; offset <= 170; offset += 18) {
+      context.fillRect(48, offset, canvas.width - 120, 7);
+    }
+    context.globalAlpha = 1;
     context.textAlign = 'center';
     context.textBaseline = 'middle';
-    context.fillStyle = '#FFFFFF';
-    context.font = '800 78px "PingFang SC", "Microsoft YaHei", sans-serif';
+    context.fillStyle = this.isPosterMode ? '#FDF8E9' : '#FFFFFF';
+    context.font = this.isPosterMode
+      ? '900 84px "PingFang SC", "Microsoft YaHei", sans-serif'
+      : '800 78px "PingFang SC", "Microsoft YaHei", sans-serif';
     context.fillText(name, canvas.width / 2, 78);
-    context.font = '650 27px Inter, Arial, sans-serif';
+    context.strokeStyle = this.isPosterMode ? '#1B2A34' : '#EEF4EE';
+    context.lineWidth = this.isPosterMode ? 1.8 : 0;
+    context.strokeText(name, canvas.width / 2, 78);
+    context.fillStyle = this.isPosterMode ? '#D9C9A8' : '#FFFFFF';
+    context.font = this.isPosterMode
+      ? '700 34px Inter, Arial, sans-serif'
+      : '650 27px Inter, Arial, sans-serif';
     context.letterSpacing = '3px';
-    context.fillText(latin, canvas.width / 2, 164);
+    context.fillText(
+      this.isPosterMode ? latin.toUpperCase() : latin,
+      canvas.width / 2,
+      164,
+    );
 
     const texture = new CanvasTexture(canvas);
     texture.colorSpace = SRGBColorSpace;

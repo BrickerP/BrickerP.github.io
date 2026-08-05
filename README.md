@@ -178,6 +178,14 @@ URL='http://127.0.0.1:4173/?qa=1' npm run verify:performance
 VERIFY_LAYOUT=1 URL='http://127.0.0.1:4173/' npm run verify:dist
 ```
 
+The animation can also be switched by URL mode:
+
+- `?mode=cinematic` (default) — three-act camera rhythm + lighting transitions
+- `?mode=poster` — stylized poster palette and sign hierarchy emphasis
+- `?mode=breathing` — subtle ambient city motion and gentle breathing dynamics
+
+Any other value falls back to `cinematic`.
+
 The GitHub Pages workflow builds `dist` once, verifies its static routes and
 binary assets, then sends that same immutable artifact through parallel browser
 and seam lanes. Pull requests stop at the stable `Quality gate`; only verified
