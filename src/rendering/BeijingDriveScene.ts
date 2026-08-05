@@ -2187,7 +2187,7 @@ export class BeijingDriveScene {
     this.root.add(hero);
 
     // East-side poster blocks with bilingual overlays.
-    for (let index = 0; index < 3; index += 1) {
+    for (let index = 0; index < 2; index += 1) {
       const progress = 0.739 + index * 0.003;
       const width = 4.6 + hash01(index, 73) * 1.0;
       const depth = 2.7 + hash01(index, 83) * 1.8;
@@ -2213,7 +2213,7 @@ export class BeijingDriveScene {
     }
 
     // West-side plate cluster with heavier contour treatment.
-    for (let index = 0; index < 3; index += 1) {
+    for (let index = 0; index < 2; index += 1) {
       const progress = 0.739 + index * 0.003;
       const width = 4.2 + hash01(index, 91) * 1.6;
       const height = 4.8 + hash01(index, 93) * 2;
