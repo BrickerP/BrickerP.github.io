@@ -114,7 +114,6 @@ export class FirstPersonCameraRig {
   private readonly lookTarget = new Vector3();
   private readonly currentFrame = samplePathFrame(0);
   private readonly futureFrame = samplePathFrame(0);
-  private readonly animationMode: DriveAnimationMode;
   private readonly isCinematicMode: boolean;
   private readonly isPosterMode: boolean;
   private readonly isBreathingMode: boolean;
@@ -123,7 +122,6 @@ export class FirstPersonCameraRig {
   constructor(aspect: number, animationMode: DriveAnimationMode = 'cinematic') {
     const safeAspect = Math.max(0.01, aspect);
     this.aspect = safeAspect;
-    this.animationMode = animationMode;
     this.isCinematicMode = animationMode === 'cinematic';
     this.isPosterMode = animationMode === 'poster';
     this.isBreathingMode = animationMode === 'breathing';

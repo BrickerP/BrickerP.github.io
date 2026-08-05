@@ -190,7 +190,6 @@ export class BeijingDriveScene {
   private readonly atlases: SurfaceAtlasLibrary;
   private openCircuitCarrier!: Mesh;
   private openCircuitNode!: Mesh;
-  private readonly animationMode: DriveAnimationMode;
   private readonly isCinematicMode: boolean;
   private readonly isPosterMode: boolean;
   private readonly isBreathingMode: boolean;
@@ -198,7 +197,6 @@ export class BeijingDriveScene {
   private disposed = false;
 
   constructor(animationMode: DriveAnimationMode = 'cinematic') {
-    this.animationMode = animationMode;
     this.isCinematicMode = animationMode === 'cinematic';
     this.isPosterMode = animationMode === 'poster';
     this.isBreathingMode = animationMode === 'breathing';
@@ -1129,6 +1127,7 @@ export class BeijingDriveScene {
           const plaque = this.buildWallStreetPlaque(
             '前门东河沿街',
             'QIANMEN DONGHEYAN ST',
+            this.isPosterMode,
           );
           if (plaque) {
             plaque.position.set(roadFaceX, 2.2, -depth * 0.06);
