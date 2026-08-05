@@ -198,7 +198,7 @@ export class FirstPersonCameraRig {
     const acts = blendActProfile(progress);
     const landmarks = blendCues(progress);
     const motionEnergy = Math.min(1, (acts.confidence + landmarks.confidence) * 1.1);
-    const cinematicWeight = portraitFocusMix;
+    const cinematicWeight = mix(0.35, 1, portraitFocusMix);
 
     const laneAct = mix(acts.lane, acts.lane + landmarks.lane, landmarks.confidence);
     const lookOffsetAct =
@@ -213,10 +213,14 @@ export class FirstPersonCameraRig {
     const landmarkLookOffset = portraitLandmarkCue(progress, -2.4, -1.8, -1);
     const cinematicLookOffset =
       lookOffsetAct * cinematicWeight * motionEnergy +
-      landmarkLookOffset * portraitFocusMix;
+      landmarkLookOffset * mix(0.24, 1, portraitFocusMix);
     const cinematicLookHeight = lookHeightAct * cinematicWeight * motionEnergy;
     const cinematicAhead = aheadAct * cinematicWeight * motionEnergy;
     const cinematicRoll = rollAct * cinematicWeight * motionEnergy;
+    const cinematicFov =
+      mix(acts.fov, acts.fov + landmarks.fov, landmarks.confidence) *
+      motionEnergy *
+      cinematicWeight;
 
     const baseLaneOffset = mix(
       PORTRAIT_LANE_OFFSET,
@@ -239,7 +243,8 @@ export class FirstPersonCameraRig {
 
     const nextFov =
       this.fovForAspect(this.aspect) +
-      portraitLandmarkCue(progress, 8, 14, 0) * portraitFocusMix;
+      cinematicFov +
+      portraitLandmarkCue(progress, 8, 14, 0) * mix(2, 12, portraitFocusMix);
     if (this.camera.fov !== nextFov) {
       this.camera.fov = nextFov;
       this.camera.updateProjectionMatrix();

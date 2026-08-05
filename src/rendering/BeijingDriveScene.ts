@@ -279,22 +279,27 @@ export class BeijingDriveScene {
   update(phase: number): void {
     const progress = wrapProgress(phase);
     const baseFog = 172;
-    const breath = 0.5 + 0.5 * Math.cos(progress * TAU * 0.45);
-    const lampBreath = Math.sin(progress * TAU * 0.31);
+    const breath = 0.5 + 0.5 * Math.cos(progress * TAU * 0.5);
+    const breathPulse = Math.cos(progress * TAU * 0.125);
+    const lampBreath = Math.sin(progress * TAU * 0.25);
+    const laneBreath = 0.5 + 0.5 * Math.cos(progress * TAU * 2);
 
-    this.waterMaterial.emissiveIntensity = 0.18 + breath * 0.028;
-    this.lampMaterial.emissiveIntensity = 1.4 + breath * 0.08 + lampBreath * 0.014;
-    this.windowMaterial.emissiveIntensity = 0.72 + breath * 0.022;
-    this.keyLight.intensity = 1.16 + breath * 0.07;
+    this.waterMaterial.emissiveIntensity = 0.18 + breath * 0.028 + breathPulse * 0.006;
+    this.lampMaterial.emissiveIntensity =
+      1.4 + breath * 0.08 + lampBreath * 0.014 + laneBreath * 0.004;
+    this.windowMaterial.emissiveIntensity = 0.72 + breath * 0.022 + breathPulse * 0.004;
+    this.keyLight.intensity = 1.16 + breath * 0.07 + breathPulse * 0.01;
     if (this.scene.fog instanceof Fog) {
-      this.scene.fog.far = baseFog + Math.sin(progress * TAU * 0.19) * 2;
+      this.scene.fog.far = baseFog + Math.cos(progress * TAU * 0.25) * 2;
     }
 
     for (const entry of this.lampLights) {
       entry.light.intensity = entry.baseIntensity * (
         1 +
-          entry.variation * Math.cos((progress * entry.harmonic + entry.phase) * TAU) +
-          breath * 0.03
+        entry.variation *
+          (Math.cos((progress * entry.harmonic + entry.phase) * TAU) * 0.74 +
+            Math.sin(progress * TAU * 0.06 + entry.phase) * 0.26) +
+        breath * 0.03
       );
     }
     if (this.capturePerformanceMode) {
@@ -2186,8 +2191,33 @@ export class BeijingDriveScene {
     }
     this.root.add(hero);
 
-    // West-side plate cluster with heavier contour treatment.
-    // West-side plate cluster removed to keep poster rhythm while reducing bundle.
+    // West-side plate cluster keeps the CBD duality with an abstracted poster rhythm.
+    for (let index = 0; index < 2; index += 1) {
+      const progress = 0.732 + index * 0.012;
+      const width = 4.3 + hash01(index, 91) * 1.1;
+      const height = 4.0 + hash01(index, 93) * 1.6;
+      const depth = 2.8 + hash01(index, 97) * 1.4;
+      const plateOffset = 9.0 + index * 0.42;
+      const plateGroup = new Group();
+      this.place(plateGroup, progress, -plateOffset, 0);
+      const plate = this.box(width, height, depth, glass);
+      plate.position.y = height / 2;
+      const edge = this.box(width * 0.74, 0.26, depth + 0.72, contour);
+      edge.position.set(0, height * 0.38, -depth / 2 - 0.07);
+      const trim = this.box(width * 0.9, 0.2, depth + 0.18, posterAccent);
+      trim.position.set(0, 1.42, -depth / 2 - 0.08);
+      plateGroup.add(plate, edge, trim);
+
+      const plaqueName = index === 0 ? '金融街' : 'XIDAN';
+      const plaqueLatin = index === 0 ? 'FINANCIAL STREET' : 'XIDAN CORE';
+      const poster = this.buildWallStreetPlaque(plaqueName, plaqueLatin);
+      if (poster) {
+        poster.position.set(-0.52, 2.06, -(depth / 2 + 0.44));
+        poster.rotation.y = Math.PI;
+        plateGroup.add(poster);
+      }
+      this.root.add(plateGroup);
+    }
 
     // Distilled contour blocks to emphasize graphic rhythm.
     const baseRibbon = this.box(0.28, 2.35, 11.2, posterBase);
@@ -2468,9 +2498,19 @@ export class BeijingDriveScene {
 
     context.fillStyle = '#24618A';
     context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = '#DDAA60';
+    context.fillRect(0, 0, 36, canvas.height);
+    context.fillStyle = '#233D4B';
+    context.fillRect(36, 0, 20, canvas.height);
     context.strokeStyle = '#EEF4EE';
-    context.lineWidth = 12;
+    context.lineWidth = 14;
     context.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
+    context.fillStyle = '#FFFFFF';
+    context.globalAlpha = 0.13;
+    for (let offset = 70; offset <= 170; offset += 24) {
+      context.fillRect(48, offset, canvas.width - 120, 7);
+    }
+    context.globalAlpha = 1;
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.fillStyle = '#FFFFFF';
