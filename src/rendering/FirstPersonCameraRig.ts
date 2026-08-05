@@ -14,7 +14,6 @@ const LANDSCAPE_FOV = 58;
 const PORTRAIT_FOV = 74;
 const LANDSCAPE_LOOK_HEIGHT = -0.08;
 const PORTRAIT_LOOK_HEIGHT = -0.15;
-
 // Normalized path fractions scaled for the 48s circuit so look-ahead metres
 // stay comparable to the earlier 16s / 32s drives.
 const LANDSCAPE_AHEAD_PHASE = 0.0175;
@@ -30,35 +29,6 @@ const CLEARANCE_FADE_PHASE = 0.02;
 const CLEARANCE_HOLD_PHASE = 0.06;
 const BOB_CYCLES = 24;
 const BOB_HEIGHT = 0.012;
-
-type CameraCueWeight = {
-  lane: number;
-  lookOffset: number;
-  lookHeight: number;
-  ahead: number;
-  fov: number;
-  roll: number;
-};
-
-/** Three-act film grammar with minimal code: push-in, drift, then pull-off. */
-function blendActProfile(progress: number): CameraCueWeight & { confidence: number } {
-  const actA = focusWindow(progress, 0, 0.09, 0.22, 0.33);
-  const actB = focusWindow(progress, 0.33, 0.43, 0.58, 0.67);
-  const actC = focusWindow(progress, 0.67, 0.76, 0.91, 0.99);
-  const confidence = actA + actB + actC;
-  if (confidence <= 0.0001) {
-    return { lane: 0, lookOffset: 0, lookHeight: 0, ahead: 0, fov: 0, roll: 0, confidence: 0 };
-  }
-  return {
-    lane: (0.14 * actA + -0.02 * actB + -0.18 * actC) / confidence,
-    lookOffset: (-0.3 * actA + 0 * actB + 0.2 * actC) / confidence,
-    lookHeight: (0.006 * actA + -0.002 * actB + -0.01 * actC) / confidence,
-    ahead: (0.001 * actA + 0.0005 * actB + 0.0014 * actC) / confidence,
-    fov: (2.0 * actA + -0.2 * actB + 3.0 * actC) / confidence,
-    roll: (0.013 * actA + 0 * actB + -0.02 * actC) / confidence,
-    confidence,
-  };
-}
 
 function smoothstep(edge0: number, edge1: number, value: number): number {
   const normalized = Math.min(1, Math.max(0, (value - edge0) / (edge1 - edge0)));
@@ -94,40 +64,6 @@ function focusWindow(
     smoothstep(start, full, progress) *
     (1 - smoothstep(release, end, progress))
   );
-}
-
-function blendCues(progress: number): CameraCueWeight & { confidence: number } {
-  const dagoba = focusWindow(progress, 0.03, 0.045, 0.075, 0.08);
-  const cityGate = focusWindow(progress, 0.223, 0.237, 0.261, 0.274);
-  const cbdNorth = focusWindow(progress, 0.66, 0.674, 0.696, 0.708);
-  const temple = focusWindow(progress, 0.79, 0.812, 0.842, 0.856);
-  const confidence = dagoba + cityGate + cbdNorth + temple;
-  if (confidence <= 0.0001) {
-    return {
-      lane: 0,
-      lookOffset: 0,
-      lookHeight: 0,
-      ahead: 0,
-      fov: 0,
-      roll: 0,
-      confidence: 0,
-    };
-  }
-  return {
-    lane:
-      (0.16 * dagoba + 0.23 * cityGate + 0.11 * cbdNorth - 0.08 * temple) / confidence,
-    lookOffset:
-      (-2.0 * dagoba - 2.0 * cityGate - 1.6 * cbdNorth - 1.5 * temple) / confidence,
-    lookHeight:
-      (0.007 * dagoba - 0.002 * cityGate + 0.001 * cbdNorth - 0.004 * temple) / confidence,
-    ahead:
-      (0.0015 * dagoba + 0.0022 * cityGate + 0.0014 * cbdNorth + 0.0017 * temple) / confidence,
-    fov:
-      (4.2 * dagoba + 3.8 * cityGate + 4.1 * cbdNorth + 5.2 * temple) / confidence,
-    roll:
-      (0.02 * dagoba - 0.008 * cityGate + 0.01 * cbdNorth + 0.011 * temple) / confidence,
-    confidence: confidence,
-  };
 }
 
 /** Smooth portrait-only framing cues calibrated to each left-side hero. */
@@ -187,6 +123,22 @@ export class FirstPersonCameraRig {
       ? 0
       : Math.sin(progress * Math.PI * 2 * BOB_CYCLES) * BOB_HEIGHT;
     const aspectMix = this.aspectMix();
+    const baseLaneOffset = mix(
+      PORTRAIT_LANE_OFFSET,
+      DRIVE.laneOffset,
+      aspectMix,
+    );
+    const clearanceMix = centralAxisClearanceMix(progress);
+    const laneOffset = mix(
+      baseLaneOffset,
+      CLEARANCE_LANE_OFFSET,
+      clearanceMix,
+    );
+    const aheadPhase = mix(
+      PORTRAIT_AHEAD_PHASE,
+      LANDSCAPE_AHEAD_PHASE,
+      aspectMix,
+    );
     const portraitFocusMix =
       1 -
       smoothstep(
@@ -194,51 +146,21 @@ export class FirstPersonCameraRig {
         PORTRAIT_FOCUS_MIX_END,
         this.aspect,
       );
-
-    const acts = blendActProfile(progress);
-    const landmarks = blendCues(progress);
-    const motionEnergy = Math.min(1, (acts.confidence + landmarks.confidence) * 1.1);
-    const cinematicWeight = portraitFocusMix;
-
-    const rollAct =
-      mix(acts.roll, acts.roll + landmarks.roll, landmarks.confidence);
-
-    const cinematicLane = 0;
-    const landmarkLookOffset = portraitLandmarkCue(progress, -2.4, -1.8, -1);
-    const cinematicLookOffset = landmarkLookOffset * portraitFocusMix;
-    const cinematicLookHeight = 0;
-    const cinematicAhead = 0;
-    const cinematicRoll = rollAct * cinematicWeight * motionEnergy;
-    const cinematicFov = 0;
-
-    const baseLaneOffset = mix(
-      PORTRAIT_LANE_OFFSET,
-      DRIVE.laneOffset,
-      aspectMix,
-    );
-    const clearanceMix = centralAxisClearanceMix(progress);
-    const laneOffsetBase = mix(
-      baseLaneOffset,
-      CLEARANCE_LANE_OFFSET,
-      clearanceMix,
-    );
-    const laneOffset = laneOffsetBase + cinematicLane;
-    const aheadPhase =
-      mix(
-        PORTRAIT_AHEAD_PHASE,
-        LANDSCAPE_AHEAD_PHASE,
-        aspectMix,
-      ) + cinematicAhead;
-
-    const nextFov =
-      this.fovForAspect(this.aspect) +
-      cinematicFov +
+    const portraitLookOffset =
+      portraitLandmarkCue(progress, -2.4, -1.8, -1) * portraitFocusMix;
+    const portraitFovBoost =
       portraitLandmarkCue(progress, 8, 14, 0) * portraitFocusMix;
+    const cinematicRoll =
+      portraitFocusMix * Math.sin(progress * Math.PI * 2) * 0.008;
+    const nextFov = this.fovForAspect(this.aspect) + portraitFovBoost;
     if (this.camera.fov !== nextFov) {
       this.camera.fov = nextFov;
       this.camera.updateProjectionMatrix();
     }
-    samplePathFrame(progress + aheadPhase, this.futureFrame);
+    samplePathFrame(
+      progress + aheadPhase,
+      this.futureFrame,
+    );
 
     this.camera.position
       .set(
@@ -254,12 +176,12 @@ export class FirstPersonCameraRig {
         PORTRAIT_LOOK_HEIGHT,
         LANDSCAPE_LOOK_HEIGHT,
         aspectMix,
-      ) + cinematicLookHeight,
+      ),
       this.futureFrame.point.z * DRIVE_PATH_SCALE,
     );
     this.lookTarget.addScaledVector(
       this.futureFrame.normal,
-      laneOffset + cinematicLookOffset,
+      laneOffset + portraitLookOffset,
     );
     this.camera.lookAt(this.lookTarget);
     this.camera.rotation.z = cinematicRoll;
