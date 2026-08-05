@@ -145,128 +145,6 @@ function createDagobaBowlGeometry(): LatheGeometry {
 /** Lateral offsets that keep mass faces off the asphalt corridor. */
 const CURB_BUILDING = 8.4;
 const CURB_TREE = 7.4;
-const CITY_BREATH_AMPLITUDE = 0.035;
-
-interface CityBreathProfile {
-  start: number;
-  full: number;
-  release: number;
-  end: number;
-  waterEmissive: number;
-  windowEmissive: number;
-  lampEmissive: number;
-  keyLight: number;
-  fogFar: number;
-}
-
-const CITY_LIGHT_PROFILES: Array<CityBreathProfile> = [
-  {
-    start: 0,
-    full: 0.09,
-    release: 0.22,
-    end: 0.33,
-    waterEmissive: 0.022,
-    windowEmissive: 0.08,
-    lampEmissive: 0.1,
-    keyLight: 0.16,
-    fogFar: 2,
-  },
-  {
-    start: 0.33,
-    full: 0.44,
-    release: 0.62,
-    end: 0.67,
-    waterEmissive: 0.012,
-    windowEmissive: 0.02,
-    lampEmissive: 0.02,
-    keyLight: 0.03,
-    fogFar: -1,
-  },
-  {
-    start: 0.67,
-    full: 0.78,
-    release: 0.92,
-    end: 0.98,
-    waterEmissive: 0.024,
-    windowEmissive: 0.06,
-    lampEmissive: 0.06,
-    keyLight: 0.12,
-    fogFar: 1.8,
-  },
-];
-
-function smoothstep(edge0: number, edge1: number, value: number): number {
-  const normalized = Math.min(1, Math.max(0, (value - edge0) / (edge1 - edge0)));
-  return normalized * normalized * (3 - 2 * normalized);
-}
-
-function focusWindow(
-  progress: number,
-  start: number,
-  full: number,
-  release: number,
-  end: number,
-): number {
-  return (
-    smoothstep(start, full, progress) *
-    (1 - smoothstep(release, end, progress))
-  );
-}
-
-function blendLightProfiles(
-  progress: number,
-): CityBreathProfile & { confidence: number } {
-  let confidence = 0;
-  const accum: Omit<CityBreathProfile, 'start' | 'full' | 'release' | 'end'> = {
-    waterEmissive: 0,
-    windowEmissive: 0,
-    lampEmissive: 0,
-    keyLight: 0,
-    fogFar: 0,
-  };
-
-  for (const profile of CITY_LIGHT_PROFILES) {
-    const weight = focusWindow(
-      progress,
-      profile.start,
-      profile.full,
-      profile.release,
-      profile.end,
-    );
-    confidence += weight;
-    accum.waterEmissive += profile.waterEmissive * weight;
-    accum.windowEmissive += profile.windowEmissive * weight;
-    accum.lampEmissive += profile.lampEmissive * weight;
-    accum.keyLight += profile.keyLight * weight;
-    accum.fogFar += profile.fogFar * weight;
-  }
-
-  if (confidence <= 0.00001) {
-    return {
-      ...accum,
-      confidence: 0,
-      start: 0,
-      full: 0,
-      release: 0,
-      end: 0,
-    };
-  }
-
-  const invConfidence = 1 / confidence;
-  return {
-    ...accum,
-    confidence,
-    start: 0,
-    full: 0,
-    release: 0,
-    end: 0,
-    waterEmissive: accum.waterEmissive * invConfidence,
-    windowEmissive: accum.windowEmissive * invConfidence,
-    lampEmissive: accum.lampEmissive * invConfidence,
-    keyLight: accum.keyLight * invConfidence,
-    fogFar: accum.fogFar * invConfidence,
-  };
-}
 export class BeijingDriveScene {
   readonly scene: Scene;
 
@@ -317,7 +195,7 @@ export class BeijingDriveScene {
     this.scene = new Scene();
     this.scene.name = 'Beijing endless drive';
     this.scene.background = new Color(PALETTE.skyTop);
-    this.scene.fog = new Fog(PALETTE.fog, 52, 172);
+  this.scene.fog = new Fog(PALETTE.fog, 52, 172);
     this.scene.add(this.root);
 
     this.unitBox = this.trackGeometry(new BoxGeometry(1, 1, 1));
@@ -400,36 +278,23 @@ export class BeijingDriveScene {
   /** All changing values are reconstructed from phase, including the seam. */
   update(phase: number): void {
     const progress = wrapProgress(phase);
-    const profile = blendLightProfiles(progress);
-    const baseProfile = Math.max(0, Math.min(1, profile.confidence));
-    const breath = (Math.sin(progress * TAU * 0.45) + 1) * 0.5;
-    const waterMicroPulse = (breath - 0.5) * 0.008;
+    const baseFog = 172;
+    const breath = 0.5 + 0.5 * Math.cos(progress * TAU * 0.45);
+    const lampBreath = Math.sin(progress * TAU * 0.31);
 
-    const profileWater =
-      profile.waterEmissive * (0.6 + 0.4 * baseProfile);
-    const profileWindow =
-      profile.windowEmissive * (0.6 + 0.4 * baseProfile);
-    const profileLamp = profile.lampEmissive * (0.6 + 0.4 * baseProfile);
-    const profileKey = profile.keyLight * (0.6 + 0.4 * baseProfile);
-    const profileFogFar = profile.fogFar * (0.5 + 0.5 * baseProfile);
-
-    this.waterMaterial.emissiveIntensity =
-      0.18 + profileWater + waterMicroPulse;
-    this.lampMaterial.emissiveIntensity =
-      1.4 + profileLamp + (breath * 0.03);
-    this.windowMaterial.emissiveIntensity = 0.72 + profileWindow + (breath * 0.02);
-    this.keyLight.intensity = 1.16 + profileKey + waterMicroPulse * CITY_BREATH_AMPLITUDE * 10;
+    this.waterMaterial.emissiveIntensity = 0.18 + breath * 0.028;
+    this.lampMaterial.emissiveIntensity = 1.4 + breath * 0.08 + lampBreath * 0.014;
+    this.windowMaterial.emissiveIntensity = 0.72 + breath * 0.022;
+    this.keyLight.intensity = 1.16 + breath * 0.07;
     if (this.scene.fog instanceof Fog) {
-      const baseFog = 172;
-      this.scene.fog.far = baseFog + profileFogFar;
+      this.scene.fog.far = baseFog + Math.sin(progress * TAU * 0.19) * 2;
     }
 
     for (const entry of this.lampLights) {
       entry.light.intensity = entry.baseIntensity * (
         1 +
           entry.variation * Math.cos((progress * entry.harmonic + entry.phase) * TAU) +
-          CITY_BREATH_AMPLITUDE * 0.45 * (breath - 0.5) +
-          0.02 * profileLamp
+          breath * 0.03
       );
     }
     if (this.capturePerformanceMode) {
@@ -2283,7 +2148,7 @@ export class BeijingDriveScene {
     const contour = this.standard('#8EA0AF', { roughness: 0.78 });
     const posterBase = this.standard('#2F3E4A', { roughness: 0.95 });
     const posterAccent = this.standard('#DDAA60', { roughness: 0.74 });
-    const posterMetal = this.standard('#35414B', { roughness: 0.82 });
+    const heroPoster = this.buildWallStreetPlaque('金融区', 'CBD SKYLINE');
 
     // Poster-locked edge fencing keeps the composition cinematic, not
     // realistic, while still retaining passage clarity.
@@ -2301,74 +2166,45 @@ export class BeijingDriveScene {
     const hero = new Group();
     this.place(hero, cbdHero.progress, cbdHero.lateralOffset, 0);
     hero.scale.setScalar(cbdHero.scale);
-    const profile = [
-      { width: 5.6, height: 2.9, depth: 4.8, y: 1.55, material: contour },
-      { width: 4.8, height: 3.4, depth: 4.7, y: 4.72, material: glass },
-      { width: 4.2, height: 3.75, depth: 4.4, y: 8.2, material: posterBase },
-      { width: 3.2, height: 3.9, depth: 4.1, y: 12.6, material: glass },
-      { width: 1.9, height: 2.95, depth: 3.75, y: 16.4, material: concrete },
-      { width: 6.2, height: 0.72, depth: 5.4, y: 18.55, material: posterAccent },
-      { width: 3.1, height: 0.26, depth: 5.4, y: 3.2, material: posterMetal },
-      { width: 3.8, height: 0.26, depth: 5.2, y: 7.3, material: posterMetal },
-      { width: 3, height: 0.24, depth: 4.8, y: 11.2, material: posterMetal },
+    const heroBlocks: Array<[number, number, number, number, MeshStandardMaterial]> = [
+      [5.6, 2.9, 4.8, 1.55, contour],
+      [4.8, 3.4, 4.7, 4.72, glass],
+      [4.2, 3.75, 4.4, 8.2, posterBase],
+      [6.2, 0.72, 5.4, 18.55, posterAccent],
     ];
-    for (const layer of profile) {
-      const slab = this.box(layer.width, layer.height, layer.depth, layer.material);
-      slab.position.set(0.2, layer.y, layer.depth < 4.4 ? 0.08 : -0.08);
-      const edge = this.box(
-        layer.width + 0.32,
-        layer.height + 0.04,
-        0.09,
-        contour,
-      );
-      edge.position.set(0.2, layer.y, -layer.depth / 2 - 0.16);
+    for (const [width, height, depth, y, material] of heroBlocks) {
+      const slab = this.box(width, height, depth, material);
+      slab.position.set(0.2, y, -0.08);
+      const edge = this.box(width + 0.32, height + 0.04, 0.09, contour);
+      edge.position.set(0.2, y, -depth / 2 - 0.16);
       hero.add(slab, edge);
+    }
+    if (heroPoster) {
+      heroPoster.position.set(0.25, 9.2, -0.3);
+      heroPoster.rotation.y = Math.PI / 2;
+      hero.add(heroPoster);
     }
     this.root.add(hero);
 
     // East-side poster blocks with bilingual overlays.
-    for (let index = 0; index < 4; index += 1) {
+    for (let index = 0; index < 3; index += 1) {
       const progress = 0.739 + index * 0.003;
       const width = 4.6 + hash01(index, 73) * 1.0;
       const depth = 2.7 + hash01(index, 83) * 1.8;
       const towerOffset = 10 + hash01(index, 77) * 2.9;
       const towerGroup = new Group();
       this.place(towerGroup, progress, towerOffset, 0);
-      const stageHeights = [2.95, 4.4, 4.6 + hash01(index, 79) * 2.9];
-      for (const [height, stageIndex] of stageHeights.map((value, stageIndex) => [value, stageIndex] as const)) {
-        const plate = this.box(width * 0.68, height * 0.45, depth, glass);
-        plate.position.set(0, height * 0.52 + stageIndex * 0.25, 0.12);
-        const edge = this.box(width * 0.74, 0.16, depth + 0.22, contour);
-        edge.position.set(0, height * 0.52 - height * 0.23 + stageIndex * 0.25, -depth / 2 - 0.06);
-        towerGroup.add(plate, edge);
-      }
-      const block = this.box(width * 0.95, 1.2, depth + 0.32, posterBase);
-      block.position.set(0, 1.05, 0.2);
-      const panel = this.box(width * 0.92, 0.12, depth + 0.22, posterAccent);
-      panel.position.set(0, 0.52, -depth / 2 - 0.09);
-      const band = this.box(width * 0.7, 0.09, depth + 0.36, this.streetMetalMaterial);
-      band.position.set(0, 0.22, -depth / 2 - 0.15);
-      towerGroup.add(block, panel, band);
-      for (const offset of [-0.72, 0.72]) {
-        const stripe = this.box(0.12, 0.7, 0.12, posterMetal);
-        stripe.position.set(
-          offset,
-          2.9 + hash01(index + 1, 87) * 1.2,
-          0,
-        );
-        towerGroup.add(stripe);
-      }
-      if (index % 2 === 0) {
-        const poster = this.buildPosterSign('金融区海报街', 'CBD SKYLINE');
+      const block = this.box(width * 0.9, 4.8, depth, glass);
+      block.position.y = 2.4;
+      const strip = this.box(width * 0.78, 0.14, depth + 0.2, contour);
+      strip.position.set(0, 0.92, -depth / 2 - 0.06);
+      const band = this.box(width * 0.9, 1.05, depth + 0.22, posterBase);
+      band.position.set(0, 4.7, 0.2);
+      towerGroup.add(block, strip, band);
+      if (index < 2) {
+        const poster = this.buildWallStreetPlaque('金融区', 'EXCHANGE HUB');
         if (poster) {
-          poster.position.set(width * 0.48, 3.95, -(depth / 2 + 0.32));
-          poster.rotation.y = Math.PI;
-          towerGroup.add(poster);
-        }
-      } else {
-        const poster = this.buildPosterSign('汇金融街', 'EXCHANGE HUB');
-        if (poster) {
-          poster.position.set(width * 0.48, 2.2, -(depth / 2 + 0.32));
+          poster.position.set(width * 0.44, 1.8, -(depth / 2 + 0.34));
           poster.rotation.y = Math.PI;
           towerGroup.add(poster);
         }
@@ -2377,7 +2213,7 @@ export class BeijingDriveScene {
     }
 
     // West-side plate cluster with heavier contour treatment.
-    for (let index = 0; index < 4; index += 1) {
+    for (let index = 0; index < 3; index += 1) {
       const progress = 0.739 + index * 0.003;
       const width = 4.2 + hash01(index, 91) * 1.6;
       const height = 4.8 + hash01(index, 93) * 2;
@@ -2387,26 +2223,15 @@ export class BeijingDriveScene {
       this.place(plateGroup, progress, -plateOffset, 0);
       const plate = this.box(width, height, depth, glass);
       plate.position.y = height / 2;
-      const topRibbon = this.box(width * 0.74, 0.26, depth + 0.72, contour);
-      topRibbon.position.set(0, height * 0.38, -depth / 2 - 0.07);
-      const base = this.box(width * 0.85, 0.92, depth + 0.14, posterBase);
-      base.position.set(0, 1, 0);
-      const trim = this.box(width * 0.9, 0.13, depth + 0.16, posterAccent);
-      trim.position.set(0, 2.05, -depth / 2 - 0.07);
-      const contourLine = this.box(width + 0.34, 0.08, 0.08, posterMetal);
-      contourLine.position.set(0, height - 0.16, -depth / 2 - 0.02);
-      plateGroup.add(plate, topRibbon, base, trim, contourLine);
-      if (index % 2 === 0) {
-        const poster = this.buildPosterSign('金融街', 'FINANCIAL STREET');
+      const edge = this.box(width * 0.74, 0.26, depth + 0.72, contour);
+      edge.position.set(0, height * 0.4, -depth / 2 - 0.07);
+      const trim = this.box(width * 0.9, 0.2, depth + 0.18, posterAccent);
+      trim.position.set(0, 1.5, -depth / 2 - 0.08);
+      plateGroup.add(plate, edge, trim);
+      if (index < 2) {
+        const poster = this.buildWallStreetPlaque('金融街', 'FINANCIAL STREET');
         if (poster) {
-          poster.position.set(-width * 0.42, 3.35, -(depth / 2 + 0.32));
-          poster.rotation.y = Math.PI;
-          plateGroup.add(poster);
-        }
-      } else {
-        const poster = this.buildPosterSign('西单 / XIDAN', 'XIDAN CITYCORE');
-        if (poster) {
-          poster.position.set(-width * 0.45, 2.25, -(depth / 2 + 0.31));
+          poster.position.set(-width * 0.41, 2.6, -(depth / 2 + 0.33));
           poster.rotation.y = Math.PI;
           plateGroup.add(poster);
         }
@@ -2679,13 +2504,6 @@ export class BeijingDriveScene {
     seat.position.set(0, 0.72, 0);
     shelter.add(rearPane, roof, frontPost, rearPost, seat);
     this.root.add(shelter);
-  }
-
-  private buildPosterSign(
-    china: string,
-    english: string,
-  ): Group | undefined {
-    return this.buildWallStreetPlaque(china, english.toUpperCase());
   }
 
   private buildWallStreetPlaque(

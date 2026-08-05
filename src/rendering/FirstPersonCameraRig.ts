@@ -41,161 +41,26 @@ type CameraCueWeight = {
   headingWeight: number;
 };
 
-interface CameraCueProfile extends CameraCueWeight {
-  center: number;
-  halfWidth: number;
+/** Three-act film grammar with minimal code: push-in, drift, then pull-off. */
+function blendActProfile(progress: number): CameraCueWeight & { confidence: number } {
+  const actA = focusWindow(progress, 0, 0.09, 0.22, 0.33);
+  const actB = focusWindow(progress, 0.33, 0.43, 0.58, 0.67);
+  const actC = focusWindow(progress, 0.67, 0.76, 0.91, 0.99);
+  const confidence = actA + actB + actC;
+  if (confidence <= 0.0001) {
+    return { lane: 0, lookOffset: 0, lookHeight: 0, ahead: 0, fov: 0, roll: 0, headingWeight: 1, confidence: 0 };
+  }
+  return {
+    lane: (0.14 * actA + -0.02 * actB + -0.18 * actC) / confidence,
+    lookOffset: (-0.3 * actA + 0 * actB + 0.2 * actC) / confidence,
+    lookHeight: (0.006 * actA + -0.002 * actB + -0.01 * actC) / confidence,
+    ahead: (0.001 * actA + 0.0005 * actB + 0.0014 * actC) / confidence,
+    fov: (2.0 * actA + -0.2 * actB + 3.0 * actC) / confidence,
+    roll: (0.013 * actA + 0 * actB + -0.02 * actC) / confidence,
+    headingWeight: 1,
+    confidence,
+  };
 }
-
-interface CameraActProfile extends CameraCueWeight {
-  start: number;
-  full: number;
-  release: number;
-  end: number;
-}
-
-const LANDMARK_PROFILES: Array<CameraCueProfile> = [
-  {
-    center: 0.058,
-    halfWidth: 0.022,
-    lane: 0.16,
-    lookOffset: -1.65,
-    lookHeight: 0.008,
-    ahead: 0.001,
-    fov: 3.2,
-    roll: 0.02,
-    headingWeight: 1,
-  },
-  {
-    center: 0.16,
-    halfWidth: 0.015,
-    lane: -0.06,
-    lookOffset: -1.15,
-    lookHeight: 0.002,
-    ahead: 0.0008,
-    fov: 1.8,
-    roll: 0.012,
-    headingWeight: 0.98,
-  },
-  {
-    center: 0.248,
-    halfWidth: 0.026,
-    lane: 0.21,
-    lookOffset: -2.1,
-    lookHeight: -0.004,
-    ahead: 0.002,
-    fov: 4.8,
-    roll: -0.01,
-    headingWeight: 1,
-  },
-  {
-    center: 0.329,
-    halfWidth: 0.018,
-    lane: -0.07,
-    lookOffset: -1.45,
-    lookHeight: 0.004,
-    ahead: 0.001,
-    fov: 2.2,
-    roll: 0.01,
-    headingWeight: 0.9,
-  },
-  {
-    center: 0.367,
-    halfWidth: 0.018,
-    lane: 0.01,
-    lookOffset: -1.58,
-    lookHeight: 0.006,
-    ahead: 0.0009,
-    fov: 2.4,
-    roll: 0.014,
-    headingWeight: 0.88,
-  },
-  {
-    center: 0.498,
-    halfWidth: 0.02,
-    lane: -0.12,
-    lookOffset: 0.84,
-    lookHeight: -0.002,
-    ahead: 0.001,
-    fov: 2.1,
-    roll: -0.008,
-    headingWeight: 0.82,
-  },
-  {
-    center: 0.666,
-    halfWidth: 0.024,
-    lane: 0.18,
-    lookOffset: -1.95,
-    lookHeight: 0.001,
-    ahead: 0.0016,
-    fov: 4.2,
-    roll: 0.012,
-    headingWeight: 1,
-  },
-  {
-    center: 0.746,
-    halfWidth: 0.022,
-    lane: -0.03,
-    lookOffset: 0.22,
-    lookHeight: -0.01,
-    ahead: -0.0004,
-    fov: 1.7,
-    roll: -0.012,
-    headingWeight: 0.75,
-  },
-  {
-    center: 0.832,
-    halfWidth: 0.028,
-    lane: 0.14,
-    lookOffset: -1.45,
-    lookHeight: -0.004,
-    ahead: 0.0017,
-    fov: 5,
-    roll: 0.016,
-    headingWeight: 0.96,
-  },
-];
-
-const ACT_PROFILES: Array<CameraActProfile> = [
-  {
-    start: 0,
-    full: 0.09,
-    release: 0.22,
-    end: 0.33,
-    lane: 0.14,
-    lookOffset: -0.3,
-    lookHeight: 0.006,
-    ahead: 0.001,
-    fov: 2.0,
-    roll: 0.013,
-    headingWeight: 1,
-  },
-  {
-    start: 0.33,
-    full: 0.43,
-    release: 0.58,
-    end: 0.67,
-    lane: -0.02,
-    lookOffset: 0,
-    lookHeight: -0.002,
-    ahead: 0.0005,
-    fov: -0.2,
-    roll: 0,
-    headingWeight: 1,
-  },
-  {
-    start: 0.67,
-    full: 0.76,
-    release: 0.91,
-    end: 0.99,
-    lane: -0.18,
-    lookOffset: 0.2,
-    lookHeight: -0.01,
-    ahead: 0.0014,
-    fov: 3.0,
-    roll: -0.02,
-    headingWeight: 1,
-  },
-];
 
 function smoothstep(edge0: number, edge1: number, value: number): number {
   const normalized = Math.min(1, Math.max(0, (value - edge0) / (edge1 - edge0)));
@@ -234,49 +99,92 @@ function focusWindow(
 }
 
 function blendCues(progress: number): CameraCueWeight & { confidence: number } {
-  let confidence = 0;
-  const accum: CameraCueWeight = {
-    lane: 0,
-    lookOffset: 0,
-    lookHeight: 0,
-    ahead: 0,
-    fov: 0,
-    roll: 0,
-    headingWeight: 0,
-  };
-
-  for (const cue of LANDMARK_PROFILES) {
-    const weight = focusWindow(
-      progress,
-      cue.center - cue.halfWidth,
-      cue.center - cue.halfWidth * 0.5,
-      cue.center + cue.halfWidth * 0.5,
-      cue.center + cue.halfWidth,
-    );
-    confidence += weight;
-    accum.lane += cue.lane * weight;
-    accum.lookOffset += cue.lookOffset * weight;
-    accum.lookHeight += cue.lookHeight * weight;
-    accum.ahead += cue.ahead * weight;
-    accum.fov += cue.fov * weight;
-    accum.roll += cue.roll * weight;
-    accum.headingWeight += cue.headingWeight * weight;
-  }
-
+  const dagoba = focusWindow(progress, 0.036, 0.047, 0.073, 0.08);
+  const yonghegong = focusWindow(progress, 0.145, 0.1525, 0.1675, 0.175);
+  const cityGate = focusWindow(progress, 0.23, 0.239, 0.257, 0.266);
+  const archerTower = focusWindow(progress, 0.321, 0.331, 0.338, 0.347);
+  const arrowBridge = focusWindow(progress, 0.358, 0.367, 0.376, 0.386);
+  const cbdEdge = focusWindow(progress, 0.642, 0.654, 0.678, 0.69);
+  const bridgeNorth = focusWindow(progress, 0.724, 0.735, 0.757, 0.768);
+  const temple = focusWindow(progress, 0.804, 0.818, 0.844, 0.86);
+  const confidence =
+    dagoba +
+    yonghegong +
+    cityGate +
+    archerTower +
+    arrowBridge +
+    cbdEdge +
+    bridgeNorth +
+    temple;
   if (confidence <= 0.0001) {
-    return { ...accum, headingWeight: 1, confidence: 0 };
+    return {
+      lane: 0,
+      lookOffset: 0,
+      lookHeight: 0,
+      ahead: 0,
+      fov: 0,
+      roll: 0,
+      headingWeight: 1,
+      confidence: 0,
+    };
   }
-
-  const inv = 1 / confidence;
   return {
-    lane: accum.lane * inv,
-    lookOffset: accum.lookOffset * inv,
-    lookHeight: accum.lookHeight * inv,
-    ahead: accum.ahead * inv,
-    fov: accum.fov * inv,
-    roll: accum.roll * inv,
-    headingWeight: accum.headingWeight * inv,
-    confidence,
+    lane:
+      (0.16 * dagoba +
+        -0.06 * yonghegong +
+        0.21 * cityGate +
+        -0.07 * archerTower +
+        0.01 * arrowBridge +
+        0.18 * cbdEdge +
+        -0.03 * bridgeNorth +
+        0.14 * temple) / confidence,
+    lookOffset:
+      (-1.65 * dagoba +
+        -1.15 * yonghegong +
+        -2.1 * cityGate +
+        -1.45 * archerTower +
+        -1.58 * arrowBridge +
+        -1.95 * cbdEdge +
+        0.22 * bridgeNorth +
+        -1.45 * temple) / confidence,
+    lookHeight:
+      (0.008 * dagoba +
+        0.002 * yonghegong +
+        -0.004 * cityGate +
+        0.004 * archerTower +
+        0.006 * arrowBridge +
+        0.001 * cbdEdge +
+        -0.01 * bridgeNorth +
+        -0.004 * temple) / confidence,
+    ahead:
+      (0.001 * dagoba +
+        0.0008 * yonghegong +
+        0.002 * cityGate +
+        0.001 * archerTower +
+        0.0009 * arrowBridge +
+        0.0016 * cbdEdge +
+        -0.0004 * bridgeNorth +
+        0.0017 * temple) / confidence,
+    fov:
+      (3.2 * dagoba +
+        1.8 * yonghegong +
+        4.8 * cityGate +
+        2.2 * archerTower +
+        2.4 * arrowBridge +
+        4.2 * cbdEdge +
+        1.7 * bridgeNorth +
+        5 * temple) / confidence,
+    roll:
+      (0.02 * dagoba +
+        0.012 * yonghegong +
+        -0.01 * cityGate +
+        0.01 * archerTower +
+        0.014 * arrowBridge +
+        0.0 * cbdEdge +
+        -0.012 * bridgeNorth +
+        0.016 * temple) / confidence,
+    headingWeight: 1,
+    confidence: confidence,
   };
 }
 
@@ -292,47 +200,6 @@ function portraitLandmarkCue(
     focusWindow(progress, 0.583, 0.605, 0.648, 0.667) * yonghegong +
     focusWindow(progress, 0.75, 0.77, 0.815, 0.833) * templeOfHeaven
   );
-}
-
-function blendActs(progress: number): CameraCueWeight & { confidence: number } {
-  let confidence = 0;
-  const accum: CameraCueWeight = {
-    lane: 0,
-    lookOffset: 0,
-    lookHeight: 0,
-    ahead: 0,
-    fov: 0,
-    roll: 0,
-    headingWeight: 0,
-  };
-
-  for (const act of ACT_PROFILES) {
-    const weight = focusWindow(progress, act.start, act.full, act.release, act.end);
-    confidence += weight;
-    accum.lane += act.lane * weight;
-    accum.lookOffset += act.lookOffset * weight;
-    accum.lookHeight += act.lookHeight * weight;
-    accum.ahead += act.ahead * weight;
-    accum.fov += act.fov * weight;
-    accum.roll += act.roll * weight;
-    accum.headingWeight += act.headingWeight * weight;
-  }
-
-  if (confidence <= 0.0001) {
-    return { ...accum, confidence: 0, headingWeight: 1 };
-  }
-
-  const inv = 1 / confidence;
-  return {
-    lane: accum.lane * inv,
-    lookOffset: accum.lookOffset * inv,
-    lookHeight: accum.lookHeight * inv,
-    ahead: accum.ahead * inv,
-    fov: accum.fov * inv,
-    roll: accum.roll * inv,
-    headingWeight: accum.headingWeight * inv,
-    confidence,
-  };
 }
 
 /** Pure phase-derived first-person camera for the closed authored drive path. */
@@ -386,7 +253,7 @@ export class FirstPersonCameraRig {
         this.aspect,
       );
 
-    const acts = blendActs(progress);
+    const acts = blendActProfile(progress);
     const landmarks = blendCues(progress);
     const motionEnergy = Math.min(1, (acts.confidence + landmarks.confidence) * 1.1);
     const cinematicWeight = mix(
