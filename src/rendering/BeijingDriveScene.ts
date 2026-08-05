@@ -2232,9 +2232,7 @@ export class BeijingDriveScene {
       plate.position.y = height / 2;
       const edge = this.box(width * 0.74, 0.26, depth + 0.72, contour);
       edge.position.set(0, height * 0.38, -depth / 2 - 0.07);
-      const trim = this.box(width * 0.9, 0.2, depth + 0.18, posterAccent);
-      trim.position.set(0, 1.42, -depth / 2 - 0.08);
-      plateGroup.add(plate, edge, trim);
+      plateGroup.add(plate, edge);
 
       const plaqueName = index === 0 ? '金融街' : 'XIDAN';
       const plaqueLatin = index === 0 ? 'FINANCIAL STREET' : 'XIDAN CORE';
@@ -2256,11 +2254,6 @@ export class BeijingDriveScene {
     const topRibbon = this.box(0.36, 2.12, 11.4, posterAccent);
     this.place(topRibbon, 0.74, 7.2, 1.0);
     this.root.add(baseRibbon, topRibbon);
-    for (const phase of [0.701, 0.73, 0.76, 0.789]) {
-      const marker = this.box(0.1, 0.58, 0.58, contour);
-      this.place(marker, phase, 7.2, 4.0);
-      this.root.add(marker);
-    }
     const cbdLampPattern = [false, false, true, false, true];
     for (const [index, phase] of [0.675, 0.702, 0.723, 0.744, 0.765].entries()) {
       this.addLamp(
