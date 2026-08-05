@@ -191,11 +191,17 @@ export class BeijingDriveScene {
   private openCircuitCarrier!: Mesh;
   private openCircuitNode!: Mesh;
   private readonly animationMode: DriveAnimationMode;
+  private readonly isCinematicMode: boolean;
+  private readonly isPosterMode: boolean;
+  private readonly isBreathingMode: boolean;
   private capturePerformanceMode = false;
   private disposed = false;
 
   constructor(animationMode: DriveAnimationMode = 'cinematic') {
     this.animationMode = animationMode;
+    this.isCinematicMode = animationMode === 'cinematic';
+    this.isPosterMode = animationMode === 'poster';
+    this.isBreathingMode = animationMode === 'breathing';
     this.atlases = new SurfaceAtlasLibrary();
     this.scene = new Scene();
     this.scene.name = 'Beijing endless drive';
@@ -284,15 +290,12 @@ export class BeijingDriveScene {
   update(phase: number): void {
     const progress = wrapProgress(phase);
     const baseFog = 172;
-    const cinematicMode = this.animationMode === 'cinematic';
-    const posterMode = this.animationMode === 'graphic-poster';
-    const breathingMode = this.animationMode === 'breathing-city';
     const breath = 0.5 + 0.5 * Math.cos(progress * TAU * 0.45);
     const wave = Math.cos(progress * TAU * 0.31);
-    const cinematicCue = cinematicMode ? wave * 0.3 : 0;
-    const posterContrast = posterMode ? 1.07 : 1;
-    const breathingScale = breathingMode ? 1 + (breath - 0.5) * 0.08 : 1;
-    const cinematicScale = cinematicMode ? 1 + cinematicCue : 1;
+    const cinematicCue = this.isCinematicMode ? wave * 0.3 : 0;
+    const posterContrast = this.isPosterMode ? 1.07 : 1;
+    const breathingScale = this.isBreathingMode ? 1 + (breath - 0.5) * 0.08 : 1;
+    const cinematicScale = this.isCinematicMode ? 1 + cinematicCue : 1;
 
     this.waterMaterial.emissiveIntensity = 0.18 + breath * 0.028 + cinematicCue * 0.012;
     this.lampMaterial.emissiveIntensity =
@@ -2158,30 +2161,33 @@ export class BeijingDriveScene {
 
   /** 0.667–0.750 — CBD east skyline hero and Xidan / Financial Street west. */
   private buildCbdFinance(): void {
-    const posterMode = this.animationMode === 'graphic-poster';
     const glass = this.textured(
-      posterMode ? '#37556B' : '#3B5C72',
+      this.isPosterMode ? '#37556B' : '#3B5C72',
       'glassGrid',
       {
-        roughness: posterMode ? 0.8 : 0.7,
-        metalness: posterMode ? 0.06 : 0.15,
-        emissive: posterMode ? '#1F3A54' : '#1C4054',
-        emissiveIntensity: posterMode ? 0.46 : 0.38,
+        roughness: this.isPosterMode ? 0.8 : 0.7,
+        metalness: this.isPosterMode ? 0.06 : 0.15,
+        emissive: this.isPosterMode ? '#1F3A54' : '#1C4054',
+        emissiveIntensity: this.isPosterMode ? 0.46 : 0.38,
       },
     );
-    const concrete = this.standard(posterMode ? '#5C6F7A' : '#6D7B84', {
-      roughness: posterMode ? 0.98 : 0.96,
+    const concrete = this.standard(this.isPosterMode ? '#5C6F7A' : '#6D7B84', {
+      roughness: this.isPosterMode ? 0.98 : 0.96,
     });
-    const contour = this.standard(posterMode ? '#9CB0BF' : '#8EA0AF', {
-      roughness: posterMode ? 0.88 : 0.78,
+    const contour = this.standard(this.isPosterMode ? '#9CB0BF' : '#8EA0AF', {
+      roughness: this.isPosterMode ? 0.88 : 0.78,
     });
-    const posterBase = this.standard(posterMode ? '#2A3947' : '#2F3E4A', {
+    const posterBase = this.standard(this.isPosterMode ? '#2A3947' : '#2F3E4A', {
       roughness: 0.95,
     });
-    const posterAccent = this.standard(posterMode ? '#F2B864' : '#DDAA60', {
+    const posterAccent = this.standard(this.isPosterMode ? '#F2B864' : '#DDAA60', {
       roughness: 0.74,
     });
-    const heroPoster = this.buildWallStreetPlaque('金融区', 'CBD SKYLINE');
+    const heroPoster = this.buildWallStreetPlaque(
+      '金融区',
+      'CBD SKYLINE',
+      this.isPosterMode,
+    );
 
     // Poster-locked edge fencing keeps the composition cinematic, not
     // realistic, while still retaining passage clarity.
@@ -2238,7 +2244,11 @@ export class BeijingDriveScene {
 
       const plaqueName = index === 0 ? '金融街' : 'XIDAN';
       const plaqueLatin = index === 0 ? 'FINANCIAL STREET' : 'XIDAN CORE';
-      const poster = this.buildWallStreetPlaque(plaqueName, plaqueLatin);
+      const poster = this.buildWallStreetPlaque(
+        plaqueName,
+        plaqueLatin,
+        this.isPosterMode,
+      );
       if (poster) {
         poster.position.set(-0.52, 2.06, -(depth / 2 + 0.44));
         poster.rotation.y = Math.PI;
@@ -2517,6 +2527,7 @@ export class BeijingDriveScene {
   private buildWallStreetPlaque(
     name: string,
     latin: string,
+    posterMode: boolean,
   ): Group | undefined {
     const canvas = document.createElement('canvas');
     canvas.width = 1024;
@@ -2524,7 +2535,6 @@ export class BeijingDriveScene {
     const context = canvas.getContext('2d');
     if (!context) return undefined;
 
-    const posterMode = this.animationMode === 'graphic-poster';
     if (posterMode) {
       context.fillStyle = '#1C3342';
       context.fillRect(0, 0, canvas.width, canvas.height);

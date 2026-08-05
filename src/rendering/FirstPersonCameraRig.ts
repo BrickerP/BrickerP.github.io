@@ -30,7 +30,7 @@ const CLEARANCE_HOLD_PHASE = 0.06;
 const BOB_CYCLES = 24;
 const BOB_HEIGHT = 0.012;
 
-export type DriveAnimationMode = 'cinematic' | 'graphic-poster' | 'breathing-city';
+export type DriveAnimationMode = 'cinematic' | 'poster' | 'breathing';
 
 const CINEMATIC_ROLL = {
   actOne: 0.0065,
@@ -115,12 +115,18 @@ export class FirstPersonCameraRig {
   private readonly currentFrame = samplePathFrame(0);
   private readonly futureFrame = samplePathFrame(0);
   private readonly animationMode: DriveAnimationMode;
+  private readonly isCinematicMode: boolean;
+  private readonly isPosterMode: boolean;
+  private readonly isBreathingMode: boolean;
   private aspect: number;
 
   constructor(aspect: number, animationMode: DriveAnimationMode = 'cinematic') {
     const safeAspect = Math.max(0.01, aspect);
     this.aspect = safeAspect;
     this.animationMode = animationMode;
+    this.isCinematicMode = animationMode === 'cinematic';
+    this.isPosterMode = animationMode === 'poster';
+    this.isBreathingMode = animationMode === 'breathing';
     this.camera = new PerspectiveCamera(
       this.fovForAspect(safeAspect),
       safeAspect,
@@ -180,15 +186,10 @@ export class FirstPersonCameraRig {
     const portraitFovBoost =
       portraitLandmarkCue(progress, 8, 14, 0) * portraitFocusMix;
 
-    const { actOne, actTwo, actThree } =
-      this.animationMode === 'cinematic'
-        ? cinematicActProfile(progress)
-        : {
-            actOne: 0,
-            actTwo: 0,
-            actThree: 0,
-          };
-    const cinematicMix = this.animationMode === 'cinematic' ? 1 - this.aspectMix() : 0;
+    const { actOne, actTwo, actThree } = this.isCinematicMode
+      ? cinematicActProfile(progress)
+      : { actOne: 0, actTwo: 0, actThree: 0 };
+    const cinematicMix = this.isCinematicMode ? 1 - this.aspectMix() : 0;
 
     const cinematicRoll = cinematicMix > 0
       ? (CINEMATIC_ROLL.actOne * actOne +
@@ -208,10 +209,10 @@ export class FirstPersonCameraRig {
         )
       : 0;
 
-    const posterLookBoost = this.animationMode === 'graphic-poster'
+    const posterLookBoost = this.isPosterMode
       ? 0.06
       : 0;
-    const breathingLookBoost = this.animationMode === 'breathing-city'
+    const breathingLookBoost = this.isBreathingMode
       ? Math.sin(progress * Math.PI * 2) * 0.02
       : 0;
     const nextFov = this.fovForAspect(this.aspect) + portraitFovBoost;

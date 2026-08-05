@@ -85,11 +85,11 @@ function fullscreenAvailable(): boolean {
 
 function resolveAnimationMode(): DriveAnimationMode {
   const mode = new URLSearchParams(window.location.search).get('mode');
-  switch (mode) {
-    case 'poster':
-      return 'graphic-poster';
+    switch (mode) {
+      case 'poster':
+      return 'poster';
     case 'breathing':
-      return 'breathing-city';
+      return 'breathing';
     case 'cinematic':
     case null:
       return 'cinematic';
