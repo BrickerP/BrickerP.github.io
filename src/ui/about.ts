@@ -201,11 +201,10 @@ export class AboutPanel {
       .join('');
     const primaryActions = [...PROFILE.primaryActions]
       .sort((left, right) => left.modalOrder - right.modalOrder)
-      .map(({ linkId, label, style }) => {
+      .map(({ linkId, label }) => {
         const link = PROFILE.elsewhere.find((item) => item.id === linkId);
         if (!link) throw new Error(`missing primary profile link ${linkId}`);
-        const actionClass = style === 'primary' ? 'about-action-primary' : style === 'text' ? 'about-action-text' : 'about-action-secondary';
-        return `<a class="about-action ${actionClass}" href="${escapeAttr(link.href)}" ${externalAttrs(link.href)}>${escapeHtml(label)}</a>`;
+        return `<a href="${escapeAttr(link.href)}" ${externalAttrs(link.href)}>${escapeHtml(label)}</a>`;
       })
       .join('');
     const experience = PROFILE.experience.map((role) => this.roleMarkup(role)).join('');
@@ -260,11 +259,12 @@ export class AboutPanel {
         </header>
 
         <div class="about-scroll">
+          <p class="about-summary" id="about-summary">${escapeHtml(PROFILE.summary)}</p>
+
           <section class="about-section" aria-labelledby="about-proof-title">
             <h3 class="about-section-title" id="about-proof-title">Public proof</h3>
             <ul class="about-list about-proof">${proof}</ul>
           </section>
-          <p class="about-summary" id="about-summary">${escapeHtml(PROFILE.summary)}</p>
 
           <section class="about-section" aria-labelledby="about-experience-title">
             <h3 class="about-section-title" id="about-experience-title">Experience</h3>

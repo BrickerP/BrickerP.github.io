@@ -8,10 +8,7 @@ import {
   BeijingDriveScene,
   type CapturePerformanceState,
 } from '../rendering/BeijingDriveScene';
-import {
-  FirstPersonCameraRig,
-  type DriveAnimationMode,
-} from '../rendering/FirstPersonCameraRig';
+import { FirstPersonCameraRig } from '../rendering/FirstPersonCameraRig';
 import {
   pathHeading,
   samplePathFrame,
@@ -27,7 +24,6 @@ export interface AppState {
   phase: number;
   fps: number;
   angle: number;
-  animationMode: DriveAnimationMode;
 }
 
 export interface RenderTelemetry {
@@ -47,7 +43,7 @@ export class BeijingLoopApp {
   readonly canvas: HTMLCanvasElement;
 
   private readonly renderer: WebGLRenderer;
-  private readonly city: BeijingDriveScene;
+  private readonly city = new BeijingDriveScene();
   private readonly cameraRig: FirstPersonCameraRig;
   private readonly pathFrame = samplePathFrame(0);
   private clock = 0;
@@ -65,7 +61,6 @@ export class BeijingLoopApp {
   constructor(
     mount: HTMLElement,
     reducedMotion: boolean,
-    animationMode: DriveAnimationMode = 'cinematic',
     width = window.innerWidth,
     height = window.innerHeight,
   ) {
@@ -91,11 +86,7 @@ export class BeijingLoopApp {
     this.canvas.style.height = '100%';
     mount.appendChild(this.canvas);
 
-    this.cameraRig = new FirstPersonCameraRig(
-      width / Math.max(1, height),
-      animationMode,
-    );
-    this.city = new BeijingDriveScene(animationMode);
+    this.cameraRig = new FirstPersonCameraRig(width / Math.max(1, height));
     this.state = {
       playing: !reducedMotion,
       debug: false,
@@ -104,8 +95,8 @@ export class BeijingLoopApp {
       phase: 0,
       fps: 0,
       angle: 0,
-      animationMode,
     };
+
     this.resize(width, height, window.devicePixelRatio || 1);
     this.render();
   }
