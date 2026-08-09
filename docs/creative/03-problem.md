@@ -342,3 +342,191 @@ Step 4 journey:
 
 **recognize LOOP / LEDGER → choose a flagship → enter the world or inspect the
 trace → open a line → optionally verify breadth and background.**
+
+## 2026-08-09 Human Zine problem reset
+
+Status: Step 3 awaiting one user validation. This section supersedes the July
+single-world problem, content hierarchy, copy budget, and LOOP / LEDGER journey.
+The older section remains a dated baseline, not the active brief.
+
+### The problem is not “make the Profile look like a zine”
+
+`Human Zine` is an approved medium direction, not the user problem. A more
+art-directed project launcher can still hide the person behind attractive
+covers. Success requires a visitor to form a specific, evidence-based impression
+of the author's interests, judgment, and way of making — not merely notice that
+the projects have different styles.
+
+### Look inward
+
+Assumptions that must not masquerade as facts:
+
+- a zine automatically feels more human than a resume;
+- incompatible project covers automatically communicate creative range;
+- a visitor who likes one artifact wants to learn about its author;
+- `/about/`, GitHub README, and the Loop intro already have inevitable roles;
+- more personal fragments necessarily create more intimacy;
+- a highly expressive surface can remain legible without explicit editorial
+  selection.
+
+The prior solution was bound to ordering, copy budgets, one CTA, paired
+flagships, and a unified LOOP / LEDGER thesis. Those are implementation choices,
+not evidence about the visitor's underlying need.
+
+### Look outward
+
+Primary moments:
+
+- an AI builder arrives from a repository, a shared link, or one artifact and
+  wants to decide whether the person has independent judgment worth following;
+- a creative technologist sees technical finish and wants to understand the
+  taste, interests, and working method behind it;
+- a potential collaborator needs enough concrete material to imagine a useful
+  conversation rather than send a generic greeting;
+- a recruiter needs role, location, resume, and contact, but this is a secondary
+  verification task;
+- a Loop viewer may only want the film and should not be required to enter a
+  personal narrative.
+
+Who benefits from the current state:
+
+- recruiters and automated parsers benefit from familiar structured biography;
+- the author benefits from low maintenance and limited personal exposure;
+- search engines benefit from stable factual copy;
+- film-only visitors benefit from an uninterrupted scene.
+
+The new direction must preserve factual clarity, privacy, low maintenance, and
+the integrity of the film while changing the first impression.
+
+### Jobs to be done
+
+#### Functional
+
+- Quickly judge what this person makes, how they think, and whether the work is
+  worth another minute.
+- Browse a selected set of fragments without following resume chronology.
+- Find a credible next step: enter a work, follow, or start a specific
+  conversation.
+
+#### Social
+
+- Decide whether this is someone I would enjoy exchanging ideas or building
+  with.
+- Gain a concrete conversation hook rather than a generic collaboration pitch.
+- Be able to describe the person to someone else in my own words.
+
+#### Emotional
+
+- Feel that I encountered a specific person, not a personal-brand template.
+- Feel curiosity about range rather than confusion about inconsistency.
+- Sense selection and judgment rather than accumulation or self-promotion.
+
+### Top pains
+
+- The artifacts are strong, but the author remains abstract.
+- Occupational facts define the person before curiosity does.
+- Project difference is not the same thing as understanding creative range.
+- More explanatory copy increases reading without increasing recognition.
+- Repeated summaries across README, personal intro, and About create facts but
+  not a human encounter.
+
+### Expected gains
+
+- A visitor remembers a specific person and at least two different ways that
+  person creates.
+- A visitor can point to one non-resume clue about interest, judgment, or method.
+- A visitor develops a concrete next question or action.
+- Professional facts remain discoverable without becoming the dominant memory.
+
+### Proto-persona — hypothesis, not validated
+
+**Maya, independent AI builder**
+
+- **Entry:** a repository, a friend's link, AI Usage, or a visual artifact.
+- **Trigger:** the work feels authored enough that she wants to judge the person
+  behind it.
+- **Current workaround:** scan GitHub bio, README, pinned repositories, personal
+  site, and social links, then assemble a mental model herself.
+- **Friction:** each surface repeats role facts or exposes only one isolated
+  project.
+- **Success moment:** within 60–90 seconds she can say what kind of person this
+  is, name evidence for that impression, and knows what she would explore or ask
+  next.
+- **Open assumption:** she is willing to spend 60–90 seconds on personal
+  material during a first encounter.
+
+### Problem statement
+
+> When someone interested in AI and creative technology encounters BrickerP
+> through one work, they lack a short but concrete way to understand the
+> author's interests, judgment, and creative range from scattered artifacts and
+> occupational facts, making it difficult to decide whether to continue
+> exploring, follow, or start a conversation.
+
+### How might we
+
+> How might we let an arriving peer form an independent impression of the
+> person through a small, selected set of personal and creative fragments,
+> without explaining why the artifacts are related or allowing professional
+> credentials to own the first impression?
+
+The problem statement intentionally contains no page type, UI, framework,
+animation, card, or routing solution.
+
+### Surface boundary — decision deferred to Step 4
+
+- The Human Zine is the **canonical experience**, but its final URL and container
+  are not yet fixed.
+- `/about/` is a strong candidate because it offers permanent address and full
+  expressive control, but the word “About” may pull it back toward biography.
+- GitHub README cannot be a visual-only poster. It must independently provide
+  minimum identity, reason to continue, contact, and accessible fallback, while
+  avoiding a duplicate zine.
+- Endless Second Ring must remain a self-contained film. It may expose authorship
+  at the edge or after exit, but must not carry the Human Zine encounter inside
+  the scene.
+- AI Usage is out of scope for this Step 3 and retains its independent game
+  direction.
+
+### Observable success signals
+
+Test with five first-time visitors and three entry routes: GitHub, direct
+Profile, and one artifact.
+
+1. After at most 90 seconds, at least four can name two different ways the
+   author creates without only repeating a job title.
+2. At least four can identify one non-resume clue about the author's interest,
+   judgment, or method and point to the fragment that caused it.
+3. At least four describe the artifacts as genuinely different experiences,
+   not one visual system applied three times.
+4. At least three form one specific next action or question; “looks good” does
+   not count.
+5. A recruiter can still find role, location, resume, and contact within 30
+   seconds, but these are not the majority's first memory.
+6. A Loop viewer can complete the film without being interrupted or required to
+   understand the author portfolio.
+7. Six months without editorial maintenance creates no false current claim.
+8. Keyboard, mobile, reduced-motion, and image-unavailable paths still expose
+   the selected meaning and the next action.
+
+### Most dangerous hidden assumption
+
+> Large differences between artifacts automatically mean that a visitor knows
+> a person with creative range.
+
+The prototype fails if testers only remember “game / zine / film.” They must be
+able to infer at least one concrete interest, judgment, or making habit and cite
+the material that supports it.
+
+### Step 3 decision gate
+
+Before wireframing, choose the two non-occupational dimensions that the selected
+fragments should make observable. Current recommendation:
+
+1. **Obsessive craft:** the patience to refine systems, scenes, data boundaries,
+   and tiny interaction details until they become credible.
+2. **World-making curiosity:** the impulse to turn personal interests, records,
+   and memories into things another person can enter, play, or watch.
+
+These dimensions are internal editorial criteria, not visitor-facing brand copy
+and not a requirement that the artifacts resemble one another.

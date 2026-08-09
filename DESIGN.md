@@ -1,5 +1,12 @@
 # Design
 
+## Scope boundary
+
+- This file governs only `LOOP 01 / ENDLESS SECOND RING`, the realtime night film at the root site.
+- The active Personal Profile `Human Zine` brief is the `2026-08-09` section of `docs/creative/04-prototype.md`; it does not inherit this film contract.
+- AI Usage is governed by its independent repository contract.
+- The film, Personal Profile, and AI Usage are separate surfaces; no shared palette, typography, or interaction system is inherited from this file.
+
 ## Source of truth
 
 - Status: Active. The user-approved Visual Ralph refinement direction is the current product contract.
