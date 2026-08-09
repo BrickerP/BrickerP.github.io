@@ -415,8 +415,8 @@ images.
 | Spread | Exact SVG size | Concrete layout | Native fallback below image |
 | --- | ---: | --- | --- |
 | Cover | `1200 × 630` | Fixed paper field. At `(72,72)` place `YUPENG LU`; at `(72,126)` place `FIELD NOTES · ISSUE 00`; set `THINGS I KEEP RETURNING TO` as the large left-aligned title from `(72,220)` through `(760,430)`. Put the misregistered red editorial circle and crop marks in the upper-right quiet field. | No action in the SVG. The cover is followed by the next spread in README order. |
-| Artifact | `1200 × 720` | Left `(0,0)–(824,720)` is a quiet crop of the existing film invitation; right `(872,72)–(1136,648)` is the editorial margin. Show `ENDLESS SECOND RING`, then the exact captions `A 48-SECOND BEIJING NIGHT DRIVE.` and `REAL MODEL HISTORY, MADE PLAYABLE.`. The image remains pure display. | `[WATCH FILM →](https://brickerp.github.io/) · [PLAY ARCHIVE →](https://brickerp.github.io/ai-usage-report/)` |
-| Process | `1200 × 720` | Left `(64,72)–(776,648)` is a paper-and-ink evidence field with `AI USAGE`, `FROM THE FILM`, one headline, and three independent commit receipts; right `(824,72)–(1136,648)` carries attributed `FILM RULE` and `GAME RULE` text. No before/after panel, trait label, live total, or chart is rendered. | No action in the SVG. The artifact links above and contact links below remain the only native routes. |
+| Artifact | `1200 × 720` | Left `(0,0)–(824,720)` is a quiet crop of the existing film invitation; right `(872,72)–(1136,648)` is the editorial margin. Show exactly `ENDLESS SECOND RING`, `A 48-SECOND BEIJING NIGHT DRIVE.`, `AI USAGE`, then `REAL MODEL HISTORY, MADE PLAYABLE.` in that order. The image remains pure display. | `[WATCH FILM →](https://brickerp.github.io/) · [PLAY ARCHIVE →](https://brickerp.github.io/ai-usage-report/)` |
+| Process | `1200 × 720` | Left `(64,72)–(776,648)` is a paper-and-ink evidence field with `FROM THE FILM`, one headline, and three independent commit receipts; right `(824,72)–(1136,648)` carries attributed `FILM RULE` and `GAME RULE` text. `AI USAGE` does not repeat here. No before/after panel, trait label, live total, or chart is rendered. | No action in the SVG. The artifact links above and contact links below remain the only native routes. |
 | Open line | `1200 × 360` | The SVG displays only `OPEN A LINE` centered on the fixed paper field. It contains no email, résumé, GitHub label, button, or drawn link. | `[EMAIL YUPENG →](mailto:yplmicro@gmail.com) · [RESUME →](https://brickerp.github.io/resume.pdf) · [GITHUB →](https://github.com/BrickerP)` |
 
 ### Process evidence, not self-description
@@ -425,7 +425,6 @@ The Process spread freezes the following evidence instead of displaying
 self-awarded traits or a fake before/after story:
 
 ```text
-AI USAGE
 THREE ATTEMPTS. ONE QUESTION: WHAT BELONGS HERE?
 FROM THE FILM
 5E8F667 / RECOGNIZABLE LANDMARKS
@@ -497,8 +496,8 @@ FIELD NOTES · ISSUE 00
 THINGS I KEEP RETURNING TO
 ENDLESS SECOND RING
 A 48-SECOND BEIJING NIGHT DRIVE.
-REAL MODEL HISTORY, MADE PLAYABLE.
 AI USAGE
+REAL MODEL HISTORY, MADE PLAYABLE.
 THREE ATTEMPTS. ONE QUESTION: WHAT BELONGS HERE?
 FROM THE FILM
 5E8F667 / RECOGNIZABLE LANDMARKS
@@ -540,11 +539,11 @@ README content column (one column; four full-width pure-display images)
 │ [ FILM CROP / EDITORIAL MARGIN ]                              │
 │ ENDLESS SECOND RING                                           │
 │ A 48-SECOND BEIJING NIGHT DRIVE.                              │
+│ AI USAGE                                                      │
 │ REAL MODEL HISTORY, MADE PLAYABLE.                            │
 │ [ ARTIFACT SVG — 1200 × 720 — pure display ]                  │
 │ [WATCH FILM →] · [PLAY ARCHIVE →]                             │
 │                                                              │
-│ AI USAGE                                                     │
 │ THREE ATTEMPTS. ONE QUESTION: WHAT BELONGS HERE?              │
 │ FROM THE FILM                                                 │
 │ 5E8F667 / RECOGNIZABLE LANDMARKS                              │
@@ -576,13 +575,13 @@ README content column (one column; four full-width pure-display images)
 │ ENDLESS SECOND RING         │
 │ A 48-SECOND BEIJING NIGHT   │
 │ DRIVE.                      │
+│ AI USAGE                    │
 │ REAL MODEL HISTORY, MADE    │
 │ PLAYABLE.                   │
 │ [ ARTIFACT 1200 × 720 ]     │
 │ [WATCH FILM →]              │
 │ [PLAY ARCHIVE →]            │
 │                              │
-│ AI USAGE                    │
 │ THREE ATTEMPTS. ONE        │
 │ QUESTION: WHAT BELONGS     │
 │ HERE?                      │

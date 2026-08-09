@@ -111,8 +111,8 @@ FIELD NOTES · ISSUE 00
 THINGS I KEEP RETURNING TO
 ENDLESS SECOND RING
 A 48-SECOND BEIJING NIGHT DRIVE.
-REAL MODEL HISTORY, MADE PLAYABLE.
 AI USAGE
+REAL MODEL HISTORY, MADE PLAYABLE.
 THREE ATTEMPTS. ONE QUESTION: WHAT BELONGS HERE?
 FROM THE FILM
 5E8F667 / RECOGNIZABLE LANDMARKS
@@ -124,6 +124,11 @@ GAME RULE
 HISTORY PATTERN. NOT MODEL CAPABILITY.
 OPEN A LINE
 ```
+
+Within Artifact, `ENDLESS SECOND RING`, `A 48-SECOND BEIJING NIGHT DRIVE.`,
+`AI USAGE`, and `REAL MODEL HISTORY, MADE PLAYABLE.` each appear exactly once
+and in that order. Process begins with the question and `FROM THE FILM`; it must
+not repeat `AI USAGE`.
 
 The README plus SVGs contain no more than **85 visible words**, including native
 link labels. Alt text and non-visible accessibility metadata are excluded. No
@@ -174,9 +179,9 @@ is attributed to `src/rendering/BeijingDriveScene.ts` at
 ### Verification and release gate
 
 `scripts/verify-profile.mjs` uses only Node built-ins to fail on any dimension,
-viewBox, asset count/order, copy, alt, link, word-budget, receipt, attribution,
-paper-field, or prohibited-SVG violation above. It must not generate or rewrite
-an asset.
+viewBox, asset count/order, copy order/uniqueness, Process `AI USAGE` repetition,
+alt, link, word-budget, receipt, attribution, paper-field, or prohibited-SVG
+violation above. It must not generate or rewrite an asset.
 
 - Do not install dependencies or run a local compile, build, or test. The only
   local check is `git diff --check`.
