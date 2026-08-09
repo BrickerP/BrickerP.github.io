@@ -1,95 +1,118 @@
-# GitHub Profile refinement — Step 6 dogfood
+# Human Zine — Step 6 dogfood
 
-Status: local acceptance passed on 2026-07-31; public read-back follows release
+Status: **completed on 2026-08-09.**
 
-## Task 1 — recognize and choose
+The live GitHub Profile passed the executable self-dogfood checks below. This
+was operational verification, not participant research: automated self-dogfood
+does **not** validate whether real visitors infer personality or creative
+judgment from the issue.
 
-### Script
-
-1. Open the Profile source at the top.
-2. Read for five seconds.
-3. Identify the creator hook, relationship action, and two primary works.
-
-### Result
-
-Pass.
-
-- `LOOP / LEDGER` and `Strange loops. Open ledgers.` appear before career
-  information.
-- `OPEN A LINE — EMAIL YUPENG` resolves the distinctive phrase into an
-  unambiguous `mailto:` action.
-- LOOP 01 and LEDGER 02 are separate full-width linked chapters.
-
-### Friction found and fixed
-
-The first implementation draft used a newly invented invitation and described
-the Ledger as making practice “accountable.” Both were replaced with the
-approved invitation and the bounded-trace disclosure to avoid expanding the
-evidence claim.
-
-## Task 2 — narrow screen and image-disabled path
+## Script 1 — first visitor, fresh session
 
 ### Script
 
-1. Read the README in canonical single-column order.
-2. Ignore all image contents.
-3. Confirm that every essential meaning and destination remains available.
+1. Open <https://github.com/BrickerP> in a fresh browser session.
+2. Confirm the author is visible in the first viewport.
+3. Scroll once by `701px` and choose each work in turn.
+4. Return to the Profile after the first work, then inspect the four spreads and
+   browser console.
 
-### Result
+### Live result
 
-Pass.
+- The author was visible in the first viewport.
+- One `701px` scroll revealed two visibly distinct works.
+- `WATCH FILM →` returned HTTP `200`, title `Beijing — Endless Second Ring`, in
+  `1772ms`.
+- After returning to the Profile, `PLAY ARCHIVE →` returned HTTP `200` with the
+  title `BrickerP AI Usage Chronicle` in `2304ms`.
+- All four SVG requests returned HTTP `200`; there were no broken images and no
+  console errors.
 
-- No table or two-column dependency remains.
-- Work names, one-sentence meanings, artifact links, email, three breadth
-  links, resume, and LinkedIn remain in ordinary Markdown/HTML.
-- Both image alternatives name the artifact and explain its role without
-  copying a dynamic total or date.
-- Professional facts remain reachable in one disclosure rather than competing
-  with the creator hook.
+Result: **PASS**.
 
-## Task 3 — regenerate and inspect the living card
+## Script 2 — mobile
 
 ### Script
 
-1. Generate cards from a controlled fixture.
-2. Generate cards from the current `usage.json`.
-3. Build the production `docs/` artifact.
-4. Render LOOP, LEDGER light, and LEDGER dark at `560 × 160`.
+1. Open the live Profile at `320 × 844` and `390 × 844`.
+2. Compare `document.documentElement.scrollWidth` with `clientWidth`.
+3. Inspect each SVG's completion state and natural dimensions.
+4. Exercise the artifact links and the Email, Resume, and GitHub actions.
 
-### Result
+### Live result
 
-Pass.
+| Check | `320 × 844` | `390 × 844` |
+| --- | --- | --- |
+| Horizontal geometry | `scrollWidth == clientWidth == 320` | `scrollWidth == clientWidth == 390` |
+| Cover | complete; natural `1200 × 630` | complete; natural `1200 × 630` |
+| Artifact | complete; natural `1200 × 720` | complete; natural `1200 × 720` |
+| Process | complete; natural `1200 × 720` | complete; natural `1200 × 720` |
+| Open line | complete; natural `1200 × 360` | complete; natural `1200 × 360` |
 
-- Six focused generator tests passed.
-- The production AI Usage build passed.
-- Totals, date range, cache amount/share, weekly aggregation, and all four tool
-  series remain derived from report data.
-- Both generated themes contain exactly one vermilion Skyline-origin node.
-- LOOP contains one road/vanishing-point node and no drawn control.
-- Rendered cards remain legible and visually related without requiring an
-  edge-to-edge seam.
+- No horizontal overflow or clipped spread content was observed at either
+  viewport.
+- The native work and contact links remained visible and operable. Email kept
+  its `mailto:` behavior, Resume opened the PDF destination, and GitHub opened
+  the expected profile destination.
+- Browser zoom is **NOT_RUN** because gstack exposes no zoom command; this is a
+  recorded tool limitation, not a passed zoom claim.
 
-### Environment-only retry
+Result: **PASS** for both available viewport scripts.
 
-The first AI Usage build attempt used a read-only `node_modules` symlink in the
-temporary worktree, so TypeScript could not write its build cache. Copying the
-already-installed dependencies into the writable temporary worktree resolved
-the environment issue; the one subsequent production build passed.
+## Script 3 — recruiter route
 
-## P0 status
+### Script
 
-No unresolved P0 remains in the approved Profile journey.
+1. Open the Profile at `1440 × 1000`.
+2. Confirm role and location are available at the top.
+3. Use two `PageDown` actions and inspect the contact row.
+4. Verify Email, Resume, GitHub, and the Website fallback.
 
-Public publication is a release check, not a substitute for these task scripts:
-the Profile README, LOOP card, and both LEDGER themes must still be read back
-from their public URLs before completion is claimed.
+### Live result
+
+- Role and location were visible at the top of the Profile.
+- The contact row was visible after two `PageDown` actions.
+- Email exposed the expected `mailto:yplmicro@gmail.com` href.
+- Resume returned HTTP `200`, `application/pdf`, `50,918` bytes, and `2` pages.
+- GitHub resolved to <https://github.com/BrickerP>.
+- Website retained the structured `personal-intro` fallback.
+
+Result: **PASS**.
+
+## Severity and disposition
+
+There are no P0 or P1 findings, and Step 6 requires no product fix.
+
+| P2 observation | Evidence | Disposition |
+| --- | --- | --- |
+| Native links render about `17px` high, below the `44px` touch-target guidance. | They are underlined, keyboard reachable, and operable in both mobile viewports. | Defer; keep GitHub-native links. |
+| Contact requires two `PageDown` actions at `1440 × 1000`. | Artifact and process evidence intentionally precede contact. | Defer; preserve the approved editorial hierarchy. |
+| AI Usage reports `2 sources delayed`. | The archive discloses its own source freshness rather than hiding it. | Defer as a separate transparency/operations item. |
+| The structured Website fallback takes one icon action to open. | Role, location, Resume, Email, and GitHub remain directly available from the Profile. | Defer; do not duplicate professional prose in the zine. |
 
 ## Cold-start path
 
-The Profile itself is the three-line cold start:
+The existing live flow is the cold start:
 
-> `LOOP / LEDGER`
->
-> **Strange loops. Open ledgers.**
->
-> I build strange AI loops and keep the ledger open.
+**Open Profile → one scroll → choose `WATCH FILM` or `PLAY ARCHIVE` → continue
+to `OPEN A LINE`.**
+
+No new explanatory prose is warranted; adding it would violate the approved
+Human Zine word budget.
+
+Temporary screenshot runtime paths produced during the session are evidence
+for that session only. No screenshot binaries are committed to the repository.
+
+## Completion checklist
+
+- First-visitor live journey: **PASS**
+- `320 × 844` and `390 × 844` responsive geometry: **PASS**
+- Four live SVGs and browser console: **PASS**
+- Artifact/contact links and recruiter route: **PASS**
+- P0/P1 remediation: **PASS — none required**
+- Browser zoom: **NOT_RUN — gstack has no zoom command**
+- Real-human qualitative inference: **NOT_VALIDATED**
+
+All executable Step 6 checks passed. The only unanswered product question is
+whether real first-time visitors infer a specific person, creative judgment,
+and range from the evidence; that requires Step 7 participants.
