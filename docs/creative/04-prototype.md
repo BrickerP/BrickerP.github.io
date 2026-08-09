@@ -362,12 +362,18 @@ transformation rather than a viewport-dependent seam.**
 
 Status: Step 4 approved by the user on 2026-08-09. This section supersedes the
 July unified LOOP / LEDGER diptych as the active Profile brief; the July section
-remains a dated baseline and is not deleted.
+remains a dated baseline and is not deleted. The combined four-spread Artifact
+version was then falsified by creator dogfood because its Markdown text links
+did not make the visual path feel clickable. The clickable-portal correction
+below is the active interaction contract and explicitly supersedes that
+Artifact/link-row portion of this dated baseline.
 
 The approval gate is satisfied. Step 5 product implementation is authorized
-only in `BrickerP/BrickerP`: README content, four static precommitted SVG spreads,
-and the necessary profile verifier. A new repository and product changes to
+only in `BrickerP/BrickerP`: README content, five static precommitted SVG
+spreads, and the necessary profile verifier. A new repository and product changes to
 Endless Second Ring / Loop or AI Usage remain out of scope.
+The former `assets/human-zine-artifact.svg` is deleted in this direction; no
+alias, fallback asset, or compatibility layer is permitted.
 
 ### Canonical surface and boundaries
 
@@ -394,30 +400,39 @@ The GitHub Profile README itself is the canonical Human Zine. Do not create a
 The README has one ordered editorial journey, with no alternate navigation mode:
 
 1. **Cover** — recognize the person and the issue before seeing a résumé.
-2. **Artifact spread** — enter the authored film as a complete work.
-3. **Process spread** — inspect the living trace and the judgment behind it.
-4. **Open artifact / contact** — choose a stable artifact route or open a human
-   conversation.
+2. **Film portal** — enter the authored film as a complete work.
+3. **AI Usage portal** — play the bounded archive as a separate work.
+4. **Process spread** — inspect the living trace and the judgment behind it.
+5. **Open line portal** — open a human conversation.
 
-The sequence is **cover → artifact spread → process spread → open
-artifact/contact**. A visitor may skip to a native link, but the visual order
-must never require a hover, animation, or hidden state to understand the route.
+The sequence is **cover → film portal → AI Usage portal → process spread → open
+line portal**. A visitor may skip to a native anchor, but the visual order must
+never require a hover, animation, or hidden state to understand the route.
 
-### Four static SVG spreads
+### Five static SVG spreads
 
-The README uses exactly four full-width, precommitted SVG spreads. Every SVG has
+The README uses exactly five full-width, precommitted SVG spreads. Every SVG has
 an exact `width`, `height`, and `viewBox`; there is no loading state, runtime
-data, animation, API call, theme query, or generated text. All four SVGs are
+data, animation, API call, theme query, or generated text. All five SVGs are
 pure display: they contain no internal anchor, pointer hit zone, fake button,
-or independently clickable drawing. Actions live in native Markdown below the
-images.
+or independently clickable drawing. Film, AI Usage, and Open line are each
+wrapped by one native README outer anchor; Cover and Process remain plain
+images. There are no separate Markdown text-link rows.
 
-| Spread | Exact SVG size | Concrete layout | Native fallback below image |
+| Spread | Exact SVG size | Concrete layout | README interaction and fallback |
 | --- | ---: | --- | --- |
-| Cover | `1200 × 630` | Fixed paper field. Giant `YUPENG LU` spans the upper half. `FIELD NOTES · ISSUE 00` sits at the lower left; a misregistered signal-red circle containing `THINGS I KEEP RETURNING TO` sits at the lower right. Preserve the approved crop marks and halftone texture across the upper/right field. | No action in the SVG. The cover is followed by the next spread in README order. |
-| Artifact | `1200 × 720` | Left `(0,0)–(824,720)` is a quiet crop of the existing film invitation; right `(872,72)–(1136,648)` is the editorial margin. Show exactly `ENDLESS SECOND RING`, `A 48-SECOND BEIJING NIGHT DRIVE.`, `AI USAGE`, then `REAL MODEL HISTORY, MADE PLAYABLE.` in that order. The image remains pure display. | `[WATCH FILM →](https://brickerp.github.io/) · [PLAY ARCHIVE →](https://brickerp.github.io/ai-usage-report/)` |
-| Process | `1200 × 720` | Left `(64,72)–(776,648)` is a paper-and-ink evidence field with `FROM THE FILM`, one headline, and three independent commit receipts; right `(824,72)–(1136,648)` carries attributed `FILM RULE` and `GAME RULE` text. `AI USAGE` does not repeat here. No before/after panel, trait label, live total, or chart is rendered. | No action in the SVG. The artifact links above and contact links below remain the only native routes. |
-| Open line | `1200 × 360` | Giant `OPEN A LINE` is left-aligned on the fixed paper field. A cobalt brush mark occupies the upper right; the rest remains deliberately open paper. The SVG contains no email, résumé, GitHub label, button, or drawn link. | `[EMAIL YUPENG →](mailto:yplmicro@gmail.com) · [RESUME →](https://brickerp.github.io/resume.pdf) · [GITHUB →](https://github.com/BrickerP)` |
+| Cover | `1200 × 630` | Fixed paper field. Giant `YUPENG LU` spans the upper half. `FIELD NOTES · ISSUE 00` sits at the lower left; a misregistered signal-red circle containing `THINGS I KEEP RETURNING TO` sits at the lower right. Preserve the approved crop marks and halftone texture across the upper/right field. | Plain `<img>` only; no anchor or action. |
+| Film | `1200 × 720` | A complete, independent visual poster for `ENDLESS SECOND RING` and `A 48-SECOND BEIJING NIGHT DRIVE.` Keep the film crop, road/skyline composition, and editorial margin self-contained. Include visible `ENTER` as poster typography, never as a control. | One native outer anchor around the whole image to `https://brickerp.github.io/`; the image `alt` names the film and destination, so the anchor remains the image-failure fallback. |
+| AI Usage | `1200 × 720` | A complete, independent visual poster for `AI USAGE` and `REAL MODEL HISTORY, MADE PLAYABLE.` Keep the archive identity, bounded-history meaning, and editorial margin self-contained. Include visible `PLAY` as poster typography, never as a control. | One native outer anchor around the whole image to `https://brickerp.github.io/ai-usage-report/`; the image `alt` names the archive and destination, so the anchor remains the image-failure fallback. |
+| Process | `1200 × 720` | Left `(64,72)–(776,648)` is a paper-and-ink evidence field with `FROM THE FILM`, one headline, and three independent commit receipts; right `(824,72)–(1136,648)` carries attributed `FILM RULE` and `GAME RULE` text. `AI USAGE` does not repeat here. No before/after panel, trait label, live total, or chart is rendered. | Plain `<img>` only; no anchor or action. |
+| Open line | `1200 × 360` | Giant `OPEN A LINE` is left-aligned on the fixed paper field. A cobalt brush mark occupies the upper right; the rest remains deliberately open paper. The SVG contains no email, résumé, GitHub label, button, or drawn link. Include visible `OPEN A LINE` as poster typography, never as a control. | One native outer anchor around the whole image to `mailto:yplmicro@gmail.com`; the image `alt` states the email action and remains the image-failure fallback. |
+
+The affordance is the combination of poster-internal `ENTER`, `PLAY`, or
+`OPEN A LINE` copy and one native outer anchor around the complete visual. These are
+not buttons and not a shared card: each poster is an independent work and has
+at most one destination. The SVGs remain pure display; only the README anchor
+is interactive. A single image cannot provide two reliable GitHub-native hot
+zones or two keyboard targets, so Film and AI Usage must be separate posters.
 
 ### Process evidence, not self-description
 
@@ -460,7 +475,7 @@ dimensions from actual decisions rather than being told a flattering trait label
 
 ### Fixed zine palette and type roles
 
-All four spreads use an opaque, fixed paper field in both GitHub light and dark
+All five spreads use an opaque, fixed paper field in both GitHub light and dark
 themes. They never switch colors from `prefers-color-scheme` and never inherit
 the surrounding page theme.
 
@@ -496,8 +511,10 @@ FIELD NOTES · ISSUE 00
 THINGS I KEEP RETURNING TO
 ENDLESS SECOND RING
 A 48-SECOND BEIJING NIGHT DRIVE.
+ENTER
 AI USAGE
 REAL MODEL HISTORY, MADE PLAYABLE.
+PLAY
 THREE ATTEMPTS. ONE QUESTION: WHAT BELONGS HERE?
 FROM THE FILM
 5E8F667 / RECOGNIZABLE LANDMARKS
@@ -513,21 +530,26 @@ OPEN A LINE
 README order and frozen fallback are exactly:
 
 1. **Cover SVG** — alt: `Yupeng Lu. Field Notes, Issue 00. Things I keep returning to.`
-2. **Artifact SVG** — alt: `Two independent works: Endless Second Ring, a 48-second Beijing night drive; and AI Usage, real model history made playable.`
-   `[WATCH FILM →](https://brickerp.github.io/) · [PLAY ARCHIVE →](https://brickerp.github.io/ai-usage-report/)`
-3. **Process SVG** — alt: `Three independent film design attempts ask what belongs in one scene, beside two attributed rules: film is artistic composition, not navigation; game history pattern is not model capability.`
-4. **Contact SVG** — alt: `Open a line.`
-   `[EMAIL YUPENG →](mailto:yplmicro@gmail.com) · [RESUME →](https://brickerp.github.io/resume.pdf) · [GITHUB →](https://github.com/BrickerP)`
+2. **Film SVG** — native outer anchor to `https://brickerp.github.io/`; alt: `Enter Endless Second Ring, a 48-second Beijing night drive.`
+3. **AI Usage SVG** — native outer anchor to `https://brickerp.github.io/ai-usage-report/`; alt: `Play AI Usage Chronicle, a bounded AI-tool history with sources, freshness, and limits disclosed.`
+4. **Process SVG** — plain image; alt: `Three independent film design attempts ask what belongs in one scene, beside two attributed rules: film is artistic composition, not navigation; game history pattern is not model capability.`
+5. **Open line SVG** — native outer anchor to `mailto:yplmicro@gmail.com`; alt: `Open a line with Yupeng by email.`
 
-The total visible authored copy is **no more than 85 words**, counting captions
-and native link labels; this remains a deliberately low-text page. Alt text is
-the fixed accessibility fallback and is not additional visible copy. No other
-fallback sentence, internal SVG label, or dynamic metric may be introduced.
+The Film, AI Usage, and Open line anchors wrap the complete `<img>` and are
+the only interactive surfaces. Cover and Process have no anchor. If an image
+fails, its alt text remains the readable link label for the outer anchor; no
+separate text-link row is added.
+
+The total visible authored copy is **no more than 85 words**, counting poster
+copy and the native anchor's image fallback labels; this remains a deliberately
+low-text page. Alt text is the fixed accessibility fallback and is not
+additional visible copy. No other fallback sentence, internal SVG label, or
+dynamic metric may be introduced.
 
 ### Desktop wireframe
 
 ```text
-README content column (one column; four full-width pure-display images)
+README content column (one column; five full-width SVG spreads)
 ┌──────────────────────────────────────────────────────────────┐
 │ YUPENG LU                                  halftone / crop   │
 │ [ giant type spanning the upper half ]                       │
@@ -535,13 +557,12 @@ README content column (one column; four full-width pure-display images)
 │ FIELD NOTES · ISSUE 00       ( THINGS I KEEP RETURNING TO )  │
 │ [ COVER SVG — 1200 × 630 — pure display ]                    │
 │                                                              │
-│ [ FILM CROP / EDITORIAL MARGIN ]                              │
+│ [ FILM POSTER — ENTER / native outer anchor ]                  │
 │ ENDLESS SECOND RING                                           │
 │ A 48-SECOND BEIJING NIGHT DRIVE.                              │
+│ [ AI USAGE POSTER — PLAY / native outer anchor ]              │
 │ AI USAGE                                                      │
 │ REAL MODEL HISTORY, MADE PLAYABLE.                            │
-│ [ ARTIFACT SVG — 1200 × 720 — pure display ]                  │
-│ [WATCH FILM →] · [PLAY ARCHIVE →]                             │
 │                                                              │
 │ THREE ATTEMPTS. ONE QUESTION: WHAT BELONGS HERE?              │
 │ FROM THE FILM                                                 │
@@ -556,8 +577,7 @@ README content column (one column; four full-width pure-display images)
 │                                                              │
 │ OPEN A LINE                              [ cobalt brush ]     │
 │                                                              │
-│ [ OPEN-LINE SVG — 1200 × 360 — pure display ]                 │
-│ [EMAIL YUPENG →] · [RESUME →] · [GITHUB →]                   │
+│ [ OPEN-LINE SVG — 1200 × 360 — native mailto outer anchor ]  │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -576,12 +596,12 @@ README content column (one column; four full-width pure-display images)
 │ ENDLESS SECOND RING         │
 │ A 48-SECOND BEIJING NIGHT   │
 │ DRIVE.                      │
+│ [ FILM 1200 × 720 / ENTER ] │
 │ AI USAGE                    │
 │ REAL MODEL HISTORY, MADE    │
 │ PLAYABLE.                   │
-│ [ ARTIFACT 1200 × 720 ]     │
-│ [WATCH FILM →]              │
-│ [PLAY ARCHIVE →]            │
+│ [ AI USAGE 1200 × 720 /    │
+│   PLAY ]                    │
 │                              │
 │ THREE ATTEMPTS. ONE        │
 │ QUESTION: WHAT BELONGS     │
@@ -604,17 +624,16 @@ README content column (one column; four full-width pure-display images)
 │               [blue brush] │
 │ OPEN A LINE                 │
 │                              │
-│ [ OPEN LINE 1200 × 360 ]    │
-│ [EMAIL YUPENG →]            │
-│ [RESUME →] · [GITHUB →]     │
+│ [ OPEN LINE 1200 × 360 /    │
+│   native mailto anchor ]    │
 └──────────────────────────────┘
 ```
 
 The layout is a single responsive column. Images scale to the available width,
 never crop essential text, and never rely on a desktop two-column table. The
-SVGs remain pure display at every viewport. Native links below the images expose
-the same actions to focus, touch, keyboard, and pointer users; no hover-only
-affordance exists.
+SVGs remain pure display at every viewport. The three native outer anchors expose
+whole-poster actions to focus, touch, keyboard, and pointer users; no hover-only
+affordance or standalone text-link row exists.
 
 The desktop and mobile wireframes use the same Process SVG. At its `1200px`
 source width, the headline, every receipt caption/title (`RECOGNIZABLE
@@ -627,18 +646,20 @@ within this same static SVG rather than ship a mobile-specific asset.
 
 ### Accessibility and degradation
 
-- The four exact alts are frozen in README order: `Yupeng Lu. Field Notes, Issue
-  00. Things I keep returning to.`; `Two independent works: Endless Second
-  Ring, a 48-second Beijing night drive; and AI Usage, real model history made
-  playable.`; `Three independent film design attempts ask what belongs in one
-  scene, beside two attributed rules: film is artistic composition, not
-  navigation; game history pattern is not model capability.`; `Open a line.`
+- The five exact alts are frozen in README order: `Yupeng Lu. Field Notes, Issue
+  00. Things I keep returning to.`; `Enter Endless Second Ring, a 48-second
+  Beijing night drive.`; `Play AI Usage Chronicle, a bounded AI-tool history
+  with sources, freshness, and limits disclosed.`; `Three independent film
+  design attempts ask what belongs in one scene, beside two attributed rules:
+  film is artistic composition, not navigation; game history pattern is not
+  model capability.`; `Open a line with Yupeng by email.`
 - Every SVG is pure display with no internal anchor, hit zone, fake button, or
-  essential action. The exact native Markdown links below Artifact and Contact
-  are the only action surfaces.
-- With images disabled, the README still exposes the frozen issue title, both
-  exact artifact links, `OPEN A LINE`, Email, Resume, and GitHub as ordinary
-  native links.
+  essential action. Film, AI Usage, and Open line each have exactly one native
+  README outer anchor around the whole image; Cover and Process have none.
+- With images disabled, the outer anchors expose their alt text as keyboard- and
+  pointer-reachable fallback labels for the film, archive, and email targets;
+  Cover and Process alts still preserve their meaning. No standalone text-link
+  row is required.
 - No essential information is handwritten-only. Marker annotations are repeated
   in body grotesk or frozen fallback text when they carry meaning.
 - Color never carries the only distinction between an artifact, evidence, rule,
@@ -652,8 +673,9 @@ within this same static SVG rather than ship a mobile-specific asset.
 - No `/zine` route or separate publishing surface.
 - No shared LOOP / LEDGER visual system, matched cards, or repeated road→node
   motif; those belong to the old unified brief or to the existing film/card.
-- No SVG anchor, image hit zone, fake button, or region-click promise. Images are
-  pure display and all actions are native Markdown links below them.
+- No anchor inside an SVG, fake button, or multi-region click promise. The three
+  portal images use one native README outer anchor each; Cover and Process are
+  plain images, and there are no standalone text-link rows.
 - No dynamic service, API, live total, loading state, or automatically changing
   README image.
 - No 3D scene, canvas, hover gallery, carousel, or interaction required to read
@@ -663,8 +685,8 @@ within this same static SVG rather than ship a mobile-specific asset.
 - No edits to Endless Second Ring or AI Usage product code, generated cards, or
   runtime contracts under this Step 4 brief.
 - The referenced local preview is only a mood prototype and contains the old
-  false click affordances. It is not a release asset; Step 5 must redraw the
-  spreads under this pure-display and frozen-fallback contract.
+  false click affordances. It is not a release asset; Step 5 must redraw five
+  independent spreads under this pure-display and frozen-fallback contract.
 
 ### Self-questioning
 
@@ -686,6 +708,29 @@ The film, usage game, and zine are independent media. Forcing their colors,
 cards, or interaction grammar to match would make the index more legible at the
 cost of making each artifact less truthful.
 
+#### Where does the click affordance come from?
+
+Each portal poster carries visible `ENTER`, `PLAY`, or `OPEN A LINE` copy as part of
+its composition, and the README wraps that complete image in one native outer
+anchor. The copy signals an invitation; the anchor supplies the actual route.
+It is not a button and not a shared card, and the SVG itself remains pure
+display.
+
+#### Why is the Film/AI Usage split mandatory?
+
+GitHub Profile Markdown cannot provide two dependable native hot zones or two
+keyboard targets inside one image. A combined poster would force one ambiguous
+destination or return to low-affordance text links. Two independent posters let
+each whole image have one honest destination and make the route testable.
+
+#### What do keyboard, alt, and image-failure users get?
+
+The outer anchors are ordinary focusable links. Their image `alt` text names
+the destination and remains the fallback label if the SVG does not load; Cover
+and Process use plain-image alts because they are intentionally not clickable.
+No internal SVG text is the sole source of meaning, and no hover state is
+required.
+
 #### Why are the process receipts better than author traits?
 
 The three complete SHAs are independent film attempts in this repository, with
@@ -697,15 +742,17 @@ from those materials; the README must not print them as self-congratulation.
 
 #### What is deliberately removed?
 
-The paired LOOP / LEDGER hero, repeated card seam, long role summary, dynamic
-metrics, matched proof cards, résumé wall, hidden hover discovery, image click
-zones, fake buttons, self-labels, and any extra section that asks the visitor to
-understand the portfolio before meeting the person.
+The paired LOOP / LEDGER hero, repeated card seam, combined Film/AI Usage
+poster, low-affordance standalone link rows, long role summary, dynamic
+metrics, matched proof cards, résumé wall, hidden hover discovery, multi-hot-zone
+image promises, fake buttons, self-labels, and any extra section that asks the
+visitor to understand the portfolio before meeting the person.
 
 ### Step 4 approval gate
 
 Status: **approved by the user on 2026-08-09; Step 5 implementation authorized**.
-Step 5 may implement the README, four static SVG spreads, native links, alt text,
+Step 5 may implement the README, five static SVG spreads, three native outer
+anchors (Film, AI Usage, Open line), two plain images (Cover, Process), alt text,
 fallback copy, and the necessary verifier in `BrickerP/BrickerP` only. A new
-route, a dynamic service, and product changes to Loop / Endless Second Ring / AI
-Usage remain out of scope.
+route, a dynamic service, standalone text-link rows, and product changes to
+Loop / Endless Second Ring / AI Usage remain out of scope.

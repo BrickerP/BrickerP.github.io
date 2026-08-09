@@ -1,9 +1,16 @@
 # Human Zine — Step 7 next loop
 
-Status: **ready for the user and real participants as of 2026-08-09. The test
-has not run.**
+Status: **not ready for real participants. Creator dogfood failed the visual
+affordance on 2026-08-09; clickable visual portals are the current next knife.
+The five-person recall test remains queued and has not run.**
 
-## Validated
+The prior next-loop proposal treated a five-person recall study as the next
+action before verifying that the dominant visuals themselves felt clickable.
+Creator dogfood falsified that ordering. This addendum supersedes only the
+active next-knife decision; the participant protocol remains below as the
+post-recovery test.
+
+## Validated — historical baseline
 
 - The live Profile exposes the author in the first viewport and two visually
   distinct works after one scroll.
@@ -14,7 +21,7 @@ has not run.**
 - The existing cold-start route works mechanically: open Profile, choose a work,
   then continue to `OPEN A LINE`.
 
-## Falsified
+## Falsified / superseded for the current path
 
 - A LOOP / LEDGER compatibility layer or shared cross-project visual system is
   not needed for the live Human Zine journey.
@@ -22,6 +29,9 @@ has not run.**
   word budget without answering the qualitative question.
 - Automated link, viewport, and asset checks cannot stand in for evidence about
   a real visitor's memory of the author.
+- The combined Artifact plus standalone text-link row did not provide a strong
+  visual entry affordance in creator dogfood; this is a primary-path failure,
+  not a participant-recall result.
 
 ## Not validated
 
@@ -34,12 +44,32 @@ has not run.**
 
 ## New opportunity
 
-The Process spread can become stronger evidence of judgment if real visitors
-cannot make the intended inference. That opportunity is conditional on a failed
-participant test; it is not authorization to add copy or restore shared
-branding.
+Make each action-bearing visual an honest portal without changing the SVG into
+an interactive document. Film and AI Usage must be independent posters with
+visible `ENTER`/`PLAY` composition and one native outer anchor around each
+whole image; Open line uses the same pattern with `OPEN A LINE`. Cover and
+Process stay plain. This is a correction to affordance, not permission to add
+copy, buttons, shared cards, or SVG hit zones.
 
 ## The one next knife
+
+Ship and live-verify the **clickable visual portals** before any participant
+research.
+
+1. Replace the combined Artifact with independent Film and AI Usage posters;
+   delete the old Artifact asset with no compatibility layer.
+2. Wrap Film, AI Usage, and Open line whole images in native README outer
+   anchors; keep Cover and Process unlinked.
+3. Confirm poster-internal `ENTER`, `PLAY`, and `OPEN A LINE` copy is
+   visible while each SVG remains pure display (no internal anchor or control).
+4. Read back the exact remote Profile commit and verify keyboard focus, alt/image
+   fallback, exact destinations, and no standalone action-link rows.
+
+This knife is complete only when all four checks read back green. Until then,
+the five-person recall test and all real visitor testing are **HOLD**. On
+completion, resume the following participant protocol unchanged.
+
+## Queued after portal recovery — five-person recall
 
 Run a **five-person, 90-second unaided recall test** with first-time AI builders.
 
@@ -56,9 +86,8 @@ Success requires both:
   non-career author trait with evidence; and
 - at least `3/5` form a specific next action or question.
 
-Do not make a code or UI change unless this test fails. If it fails, the next
-design target is the evidence on the **Process spread**—not additional prose and
-not shared branding across the works.
+If the test later fails, the next design target is the evidence on the **Process
+spread**—not additional prose and not shared branding across the works.
 
 ## Backlog, not the next knife
 
@@ -66,5 +95,5 @@ not shared branding across the works.
 - AI Usage's `2 sources delayed` operations state.
 - Two-`PageDown` contact depth.
 
-These remain deferred backlog observations and must not displace the single
-participant-recall test above.
+These remain deferred backlog observations and must not displace the clickable
+portal recovery gate or the participant-recall test that follows it.
