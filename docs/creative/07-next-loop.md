@@ -1,40 +1,70 @@
-# Next Creative Loop — Open Circuit
+# Human Zine — Step 7 next loop
 
-## What the previous loop validated
+Status: **ready for the user and real participants as of 2026-08-09. The test
+has not run.**
 
-- `LOOP 01` and `LEDGER 02` read as one profile system when they share numbering,
-  mono identity labels, a dark field, and one restrained handoff node.
-- The Profile works better when the two signature artifacts carry the story
-  instead of more explanatory text.
-- The fixed LOOP card is already a stronger expression of the new identity than
-  the live animation chrome.
+## Validated
 
-## What the previous loop disproved
+- The live Profile exposes the author in the first viewport and two visually
+  distinct works after one scroll.
+- The four static spreads render without overflow at `320 × 844` and
+  `390 × 844`, and the native artifact/contact routes remain operable.
+- Recruiter facts, Resume, Email, GitHub, and the structured Website fallback
+  remain discoverable without adding résumé prose to the zine.
+- The existing cold-start route works mechanically: open Profile, choose a work,
+  then continue to `OPEN A LINE`.
 
-- More Profile copy is not the next improvement.
-- A dynamic Profile service is unnecessary; LEDGER can update independently.
-- Repeating accent dots, decorative grids, dashboard overlays, or more controls
-  would weaken the artwork.
+## Falsified
+
+- A LOOP / LEDGER compatibility layer or shared cross-project visual system is
+  not needed for the live Human Zine journey.
+- More cold-start copy is not the next improvement; it would exceed the approved
+  word budget without answering the qualitative question.
+- Automated link, viewport, and asset checks cannot stand in for evidence about
+  a real visitor's memory of the author.
+
+## Not validated
+
+- Whether a first-time AI builder can name two different modes of making after
+  an unaided visit.
+- Whether the same visitor infers one non-career author trait and can cite the
+  specific spread evidence behind it.
+- Whether the visit produces a specific next action or question rather than a
+  generic positive reaction.
 
 ## New opportunity
 
-Make the runtime itself recognizable as `LOOP 01` by translating the card's
-warm-white carrier and single vermilion handoff node into the physical road.
+The Process spread can become stronger evidence of judgment if real visitors
+cannot make the intended inference. That opportunity is conditional on a failed
+participant test; it is not authorization to add copy or restore shared
+branding.
 
-## Selected next cut
+## The one next knife
 
-**Carrier Line / Open Circuit**
+Run a **five-person, 90-second unaided recall test** with first-time AI builders.
 
-Success means that with the interface mentally removed, a still frame and a
-short clip still feel related to the LOOP card.
+1. Give each participant the live GitHub Profile with no framing or task hints.
+2. Allow at most `90` seconds of independent browsing.
+3. Hide the page and ask them to name two different modes of making.
+4. Ask for one non-career author trait and the exact page evidence that caused
+   the inference.
+5. Ask what specific action they would take or question they would ask next.
 
-## Explicit exclusions
+Success requires both:
 
-- Profile avatar
-- AI Usage data or generation logic
-- New public actions
-- Route, duration, passage-order, recording, or seam changes
-- Maps, progress HUDs, chapter selectors, glow, particles, or repeated nodes
+- at least `4/5` participants name two different modes of making and one
+  non-career author trait with evidence; and
+- at least `3/5` form a specific next action or question.
 
-The user approved this cut and authorized implementation, push, and deployment
-on 2026-07-31.
+Do not make a code or UI change unless this test fails. If it fails, the next
+design target is the evidence on the **Process spread**—not additional prose and
+not shared branding across the works.
+
+## Backlog, not the next knife
+
+- Native-link touch-target height.
+- AI Usage's `2 sources delayed` operations state.
+- Two-`PageDown` contact depth.
+
+These remain deferred backlog observations and must not displace the single
+participant-recall test above.
