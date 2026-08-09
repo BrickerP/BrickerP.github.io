@@ -3,7 +3,10 @@
 Status: **Step 5 active; implementation authorized by the user on 2026-08-09.**
 
 This is the sole active Step 5 source. The July LOOP / LEDGER implementation
-plan is historical and has no compatibility requirements.
+plan is historical and has no compatibility requirements. The first Human Zine
+draft used one combined Artifact poster and standalone Markdown action rows;
+creator dogfood falsified that interaction path. This source supersedes only
+that active interaction portion while retaining the prior draft in git history.
 
 ## Prompt Architect
 
@@ -22,17 +25,18 @@ work. Recruiter verification remains a secondary route.
 ### Goal
 
 Ship the approved Human Zine as the canonical GitHub Profile experience, using
-one sparse README and four static spreads to make selected work and process
+one sparse README and five static spreads to make selected work and process
 evidence understandable without turning the Profile into a résumé or a runtime.
 
 ### One journey
 
-**cover → artifact spread → process spread → open artifact/contact**
+**cover → film portal → AI Usage portal → process spread → open line portal**
 
 1. Recognize the person and issue.
-2. Encounter the film and playable archive as independent works.
-3. Inspect attributed process evidence.
-4. Open a native artifact or contact link.
+2. Enter the film poster as one independent work.
+3. Play the AI Usage poster as a separate independent work.
+4. Inspect attributed process evidence.
+5. Open the email portal.
 
 ### Product boundary
 
@@ -40,15 +44,18 @@ Product implementation happens only in `BrickerP/BrickerP`:
 
 - `README.md`;
 - `assets/human-zine-cover.svg`;
-- `assets/human-zine-artifact.svg`;
+- `assets/human-zine-film.svg`;
+- `assets/human-zine-ai-usage.svg`;
 - `assets/human-zine-process.svg`;
 - `assets/human-zine-open-line.svg`;
 - `scripts/verify-profile.mjs`, only as necessary to verify this contract.
 
-The four SVGs are hand-authored and precommitted; the script is a verifier, not
+The five SVGs are hand-authored and precommitted; the script is a verifier, not
 a generator. This repository, `BrickerP.github.io`, supplies documentation and
 film evidence only. `BrickerP/ai-usage-report` supplies AI Usage evidence only.
 Neither evidence repository receives Step 5 product changes.
+The former `assets/human-zine-artifact.svg` must be deleted; do not retain an
+alias, fallback asset, or compatibility layer.
 
 ### Non-goals
 
@@ -56,7 +63,9 @@ Neither evidence repository receives Step 5 product changes.
 - No `/zine` route, second site, new repository, service, API, generator,
   dependency, remote font, live metric, or theme-dependent asset.
 - No LOOP / LEDGER compatibility layer, matched card system, dynamic card,
-  animation, hover-only route, image hit zone, or fake SVG control.
+  animation, hover-only route, SVG anchor, multi-region image hit zone, or fake
+  control. Film, AI Usage, and Open line are each one native README outer
+  anchor around the whole poster; Cover and Process are plain images.
 - No extra biography, trait label, chart, before/after story, or generated
   pseudo-diff.
 
@@ -64,8 +73,8 @@ Neither evidence repository receives Step 5 product changes.
 
 ### Keep
 
-- One README, one ordered journey, and exactly four full-width SVG spreads.
-- The exact Step 4 copy, four alt strings, and two native link rows.
+- One README, one ordered journey, and exactly five full-width SVG spreads.
+- The exact Step 4 copy, five alt strings, and three native outer anchors.
 - Three independent film receipts and two attributed medium rules.
 - Fixed-paper rendering, `320px` readability, image-failure fallback, and remote
   verification.
@@ -73,9 +82,9 @@ Neither evidence repository receives Step 5 product changes.
 ### Cut
 
 - The July LOOP / LEDGER plan and all three-repository product coordination.
-- Any internal SVG action, responsive alternate asset, runtime data, or visual
-  reconciliation of the film, game, and zine.
-- Any file outside the six-file `BrickerP/BrickerP` boundary above.
+- Any internal SVG action, responsive alternate asset, runtime data, standalone
+  text-link row, or visual reconciliation of the film, game, and zine.
+- Any file outside the seven-file `BrickerP/BrickerP` boundary above.
 
 ### Defer
 
@@ -86,12 +95,13 @@ Neither evidence repository receives Step 5 product changes.
 
 ## Acceptance contract
 
-### Four precommitted assets
+### Five precommitted assets
 
 | File | Exact dimensions | Exact `viewBox` |
 | --- | ---: | --- |
 | `assets/human-zine-cover.svg` | `1200 × 630` | `0 0 1200 630` |
-| `assets/human-zine-artifact.svg` | `1200 × 720` | `0 0 1200 720` |
+| `assets/human-zine-film.svg` | `1200 × 720` | `0 0 1200 720` |
+| `assets/human-zine-ai-usage.svg` | `1200 × 720` | `0 0 1200 720` |
 | `assets/human-zine-process.svg` | `1200 × 720` | `0 0 1200 720` |
 | `assets/human-zine-open-line.svg` | `1200 × 360` | `0 0 1200 360` |
 
@@ -105,8 +115,16 @@ brush mark at upper right, and generous empty paper; it is never centered.
 Each SVG is self-contained, hand-authored, committed beside the README, and
 embedded full-width in one column. Each is pure display: no `<a>`, `<script>`,
 event handler, animation element or CSS animation, interactive region, fake
-button, `href`, `xlink:href`, or remote resource. There is no build-time or
-runtime generation.
+button, `href`, `xlink:href`, or remote resource. The README wraps the complete
+Film, AI Usage, and Open line `<img>` in exactly one native outer `<a>` each;
+Cover and Process are not anchors. There is no build-time or runtime generation.
+
+The visible poster affordance is composition, not a control: Film includes
+`ENTER`, AI Usage includes `PLAY`, and Open line includes `OPEN A LINE`.
+The outer anchor supplies the route. This is not a button or shared card, and a
+single image never promises two hot zones. Splitting Film and AI Usage is
+required because GitHub Profile Markdown cannot provide two reliable native
+targets or keyboard destinations inside one image.
 
 ### Frozen visible copy
 
@@ -118,8 +136,10 @@ FIELD NOTES · ISSUE 00
 THINGS I KEEP RETURNING TO
 ENDLESS SECOND RING
 A 48-SECOND BEIJING NIGHT DRIVE.
+ENTER
 AI USAGE
 REAL MODEL HISTORY, MADE PLAYABLE.
+PLAY
 THREE ATTEMPTS. ONE QUESTION: WHAT BELONGS HERE?
 FROM THE FILM
 5E8F667 / RECOGNIZABLE LANDMARKS
@@ -132,10 +152,10 @@ HISTORY PATTERN. NOT MODEL CAPABILITY.
 OPEN A LINE
 ```
 
-Within Artifact, `ENDLESS SECOND RING`, `A 48-SECOND BEIJING NIGHT DRIVE.`,
-`AI USAGE`, and `REAL MODEL HISTORY, MADE PLAYABLE.` each appear exactly once
-and in that order. Process begins with the question and `FROM THE FILM`; it must
-not repeat `AI USAGE`.
+Within Film, `ENDLESS SECOND RING`, `A 48-SECOND BEIJING NIGHT DRIVE.`, and
+`ENTER` each appear exactly once. Within AI Usage, `AI USAGE`, `REAL MODEL
+HISTORY, MADE PLAYABLE.`, and `PLAY` each appear exactly once. Process begins
+with the question and `FROM THE FILM`; it must not repeat `AI USAGE`.
 
 The README plus SVGs contain no more than **85 visible words**, including native
 link labels. Alt text and non-visible accessibility metadata are excluded. No
@@ -145,15 +165,23 @@ added.
 ### README order, alts, and native links
 
 1. Cover alt: `Yupeng Lu. Field Notes, Issue 00. Things I keep returning to.`
-2. Artifact alt: `Two independent works: Endless Second Ring, a 48-second Beijing night drive; and AI Usage, real model history made playable.`
-3. Immediately after Artifact: `[WATCH FILM →](https://brickerp.github.io/) · [PLAY ARCHIVE →](https://brickerp.github.io/ai-usage-report/)`
-4. Process alt: `Three independent film design attempts ask what belongs in one scene, beside two attributed rules: film is artistic composition, not navigation; game history pattern is not model capability.`
-5. Open line alt: `Open a line.`
-6. Immediately after Open line: `[EMAIL YUPENG →](mailto:yplmicro@gmail.com) · [RESUME →](https://brickerp.github.io/resume.pdf) · [GITHUB →](https://github.com/BrickerP)`
+2. Film alt: `Enter Endless Second Ring, a 48-second Beijing night drive.` The
+   complete `<img>` is wrapped in one native outer `<a
+   href="https://brickerp.github.io/">`.
+3. AI Usage alt: `Play AI Usage Chronicle, a bounded AI-tool history with
+   sources, freshness, and limits disclosed.` The complete `<img>` is wrapped in
+   one native outer `<a href="https://brickerp.github.io/ai-usage-report/">`.
+4. Process alt: `Three independent film design attempts ask what belongs in one
+   scene, beside two attributed rules: film is artistic composition, not
+   navigation; game history pattern is not model capability.` It is a plain
+   `<img>` with no anchor.
+5. Open line alt: `Open a line with Yupeng by email.` The complete `<img>` is
+   wrapped in one native outer `<a href="mailto:yplmicro@gmail.com">`.
 
-The four alts and both link rows are exact. Images have no enclosing link. If
-images fail, the alts preserve meaning and the ordinary Markdown links preserve
-every artifact and contact destination.
+The three outer anchors are the only action surfaces. Their image `alt` text is
+the keyboard and image-failure fallback; Cover and Process remain meaningful
+plain images. Do not add a standalone text-link row, button, shared card, or
+internal SVG anchor.
 
 ### Evidence integrity
 
@@ -192,14 +220,17 @@ is attributed to `src/rendering/BeijingDriveScene.ts` at
 viewBox, asset count/order, Cover/Open-line layout invariant, Process typography
 minimum, copy order/uniqueness, Process `AI USAGE` repetition, alt, link,
 word-budget, receipt, attribution, paper-field, or prohibited-SVG violation
-above. It must not generate or rewrite an asset.
+above. It must also enforce the five-file order, exactly one outer anchor for
+Film, AI Usage, and Open line, no anchor for Cover or Process, the three exact
+destinations, and no standalone action-link rows. It must not generate or
+rewrite an asset.
 
 - Do not install dependencies or run a local compile, build, or test. The only
   local check is `git diff --check`.
-- Push the exact six-file implementation to a remote branch and open a PR in
+- Push the exact seven-file implementation to a remote branch and open a PR in
   `BrickerP/BrickerP`.
 - Remote CI must run the verifier and finish green for the pushed full SHA.
-- Read back the README and four SVG blobs from that exact remote commit. After
+- Read back the README and five SVG blobs from that exact remote commit. After
   merge/publication, read back the rendered GitHub Profile, verify all native
   destinations, and confirm the fixed paper and readable layout in light and
   dark themes before claiming the Human Zine live.
