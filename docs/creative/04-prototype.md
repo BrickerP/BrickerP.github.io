@@ -414,10 +414,10 @@ images.
 
 | Spread | Exact SVG size | Concrete layout | Native fallback below image |
 | --- | ---: | --- | --- |
-| Cover | `1200 × 630` | Fixed paper field. At `(72,72)` place `YUPENG LU`; at `(72,126)` place `FIELD NOTES · ISSUE 00`; set `THINGS I KEEP RETURNING TO` as the large left-aligned title from `(72,220)` through `(760,430)`. Put the misregistered red editorial circle and crop marks in the upper-right quiet field. | No action in the SVG. The cover is followed by the next spread in README order. |
+| Cover | `1200 × 630` | Fixed paper field. Giant `YUPENG LU` spans the upper half. `FIELD NOTES · ISSUE 00` sits at the lower left; a misregistered signal-red circle containing `THINGS I KEEP RETURNING TO` sits at the lower right. Preserve the approved crop marks and halftone texture across the upper/right field. | No action in the SVG. The cover is followed by the next spread in README order. |
 | Artifact | `1200 × 720` | Left `(0,0)–(824,720)` is a quiet crop of the existing film invitation; right `(872,72)–(1136,648)` is the editorial margin. Show exactly `ENDLESS SECOND RING`, `A 48-SECOND BEIJING NIGHT DRIVE.`, `AI USAGE`, then `REAL MODEL HISTORY, MADE PLAYABLE.` in that order. The image remains pure display. | `[WATCH FILM →](https://brickerp.github.io/) · [PLAY ARCHIVE →](https://brickerp.github.io/ai-usage-report/)` |
 | Process | `1200 × 720` | Left `(64,72)–(776,648)` is a paper-and-ink evidence field with `FROM THE FILM`, one headline, and three independent commit receipts; right `(824,72)–(1136,648)` carries attributed `FILM RULE` and `GAME RULE` text. `AI USAGE` does not repeat here. No before/after panel, trait label, live total, or chart is rendered. | No action in the SVG. The artifact links above and contact links below remain the only native routes. |
-| Open line | `1200 × 360` | The SVG displays only `OPEN A LINE` centered on the fixed paper field. It contains no email, résumé, GitHub label, button, or drawn link. | `[EMAIL YUPENG →](mailto:yplmicro@gmail.com) · [RESUME →](https://brickerp.github.io/resume.pdf) · [GITHUB →](https://github.com/BrickerP)` |
+| Open line | `1200 × 360` | Giant `OPEN A LINE` is left-aligned on the fixed paper field. A cobalt brush mark occupies the upper right; the rest remains deliberately open paper. The SVG contains no email, résumé, GitHub label, button, or drawn link. | `[EMAIL YUPENG →](mailto:yplmicro@gmail.com) · [RESUME →](https://brickerp.github.io/resume.pdf) · [GITHUB →](https://github.com/BrickerP)` |
 
 ### Process evidence, not self-description
 
@@ -529,11 +529,10 @@ fallback sentence, internal SVG label, or dynamic metric may be introduced.
 ```text
 README content column (one column; four full-width pure-display images)
 ┌──────────────────────────────────────────────────────────────┐
-│ YUPENG LU                                                    │
-│ FIELD NOTES · ISSUE 00                    crop marks   ( )   │
+│ YUPENG LU                                  halftone / crop   │
+│ [ giant type spanning the upper half ]                       │
 │                                                              │
-│ THINGS I KEEP RETURNING TO                                   │
-│                                                              │
+│ FIELD NOTES · ISSUE 00       ( THINGS I KEEP RETURNING TO )  │
 │ [ COVER SVG — 1200 × 630 — pure display ]                    │
 │                                                              │
 │ [ FILM CROP / EDITORIAL MARGIN ]                              │
@@ -555,7 +554,8 @@ README content column (one column; four full-width pure-display images)
 │ HISTORY PATTERN. NOT MODEL CAPABILITY.                        │
 │ [ PROCESS SVG — 1200 × 720 — pure display ]                   │
 │                                                              │
-│                         OPEN A LINE                           │
+│ OPEN A LINE                              [ cobalt brush ]     │
+│                                                              │
 │ [ OPEN-LINE SVG — 1200 × 360 — pure display ]                 │
 │ [EMAIL YUPENG →] · [RESUME →] · [GITHUB →]                   │
 └──────────────────────────────────────────────────────────────┘
@@ -565,11 +565,12 @@ README content column (one column; four full-width pure-display images)
 
 ```text
 ┌──────────────────────────────┐
-│ YUPENG LU                   │
-│ FIELD NOTES · ISSUE 00      │
+│ YUPENG LU        halftone   │
+│ [ giant upper-half type ]   │
 │                              │
-│ THINGS I KEEP               │
-│ RETURNING TO                │
+│ FIELD NOTES · ISSUE 00      │
+│       (THINGS I KEEP        │
+│        RETURNING TO)        │
 │ [ COVER 1200 × 630 ]        │
 │                              │
 │ ENDLESS SECOND RING         │
@@ -600,7 +601,9 @@ README content column (one column; four full-width pure-display images)
 │ CAPABILITY.                │
 │ [ PROCESS 1200 × 720 ]      │
 │                              │
+│               [blue brush] │
 │ OPEN A LINE                 │
+│                              │
 │ [ OPEN LINE 1200 × 360 ]    │
 │ [EMAIL YUPENG →]            │
 │ [RESUME →] · [GITHUB →]     │
@@ -614,11 +617,13 @@ the same actions to focus, touch, keyboard, and pointer users; no hover-only
 affordance exists.
 
 The desktop and mobile wireframes use the same Process SVG. At its `1200px`
-source width, the headline, captions, rules, and other body prose use a source
-font size of at least `60px`, which remains `16px` equivalent at a `320px`
-GitHub render. Receipt identifiers use at least `54px` source text; if the host
-cannot preserve the required reading size, Step 5 must use a viewBox/crop within
-this same static SVG rather than ship a mobile-specific asset.
+source width, the headline, every receipt caption/title (`RECOGNIZABLE
+LANDMARKS`, `CLEAR THE FORECOURT`, and `REPLACE THE OLYMPIC SCENE`), both rules,
+and all other body prose use a source font size of at least `60px`, which remains
+`16px` equivalent at a `320px` GitHub render. Only the seven-character SHA
+receipt identifiers (`5E8F667`, `B9EF619`, and `520E83F`) may use `54px`. If the
+host cannot preserve the required reading size, Step 5 must use a viewBox/crop
+within this same static SVG rather than ship a mobile-specific asset.
 
 ### Accessibility and degradation
 

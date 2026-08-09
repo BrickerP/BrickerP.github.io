@@ -95,6 +95,13 @@ Neither evidence repository receives Step 5 product changes.
 | `assets/human-zine-process.svg` | `1200 × 720` | `0 0 1200 720` |
 | `assets/human-zine-open-line.svg` | `1200 × 360` | `0 0 1200 360` |
 
+The Cover composition is fixed: giant `YUPENG LU` across the upper half,
+`FIELD NOTES · ISSUE 00` at lower left, the signal-red circled `THINGS I KEEP
+RETURNING TO` at lower right, and the approved crop/halftone treatment across
+the upper/right field. The issue title must not dominate the left middle. The
+Open-line composition is also fixed: giant left-aligned `OPEN A LINE`, a cobalt
+brush mark at upper right, and generous empty paper; it is never centered.
+
 Each SVG is self-contained, hand-authored, committed beside the README, and
 embedded full-width in one column. Each is pure display: no `<a>`, `<script>`,
 event handler, animation element or CSS animation, interactive region, fake
@@ -168,8 +175,11 @@ is attributed to `src/rendering/BeijingDriveScene.ts` at
 ### Readability and theme behavior
 
 - At a `320px` GitHub render, all essential copy remains readable without a
-  mobile-specific asset; Process body copy is at least `60px` at source size and
-  receipt identifiers are at least `54px`.
+  mobile-specific asset. In Process, every receipt caption/title
+  (`RECOGNIZABLE LANDMARKS`, `CLEAR THE FORECOURT`, and `REPLACE THE OLYMPIC
+  SCENE`), each rule, the headline, and all body prose are at least `60px` at
+  source size. Only the short SHA identifiers `5E8F667`, `B9EF619`, and
+  `520E83F` may use `54px`.
 - Every asset starts with an opaque `#F4F0E3` paper field covering its viewBox.
   Light and dark GitHub themes render the same paper, ink, and contrast.
 - No `prefers-color-scheme`, inherited theme color, animation, hover, or hidden
@@ -179,9 +189,10 @@ is attributed to `src/rendering/BeijingDriveScene.ts` at
 ### Verification and release gate
 
 `scripts/verify-profile.mjs` uses only Node built-ins to fail on any dimension,
-viewBox, asset count/order, copy order/uniqueness, Process `AI USAGE` repetition,
-alt, link, word-budget, receipt, attribution, paper-field, or prohibited-SVG
-violation above. It must not generate or rewrite an asset.
+viewBox, asset count/order, Cover/Open-line layout invariant, Process typography
+minimum, copy order/uniqueness, Process `AI USAGE` repetition, alt, link,
+word-budget, receipt, attribution, paper-field, or prohibited-SVG violation
+above. It must not generate or rewrite an asset.
 
 - Do not install dependencies or run a local compile, build, or test. The only
   local check is `git diff --check`.
