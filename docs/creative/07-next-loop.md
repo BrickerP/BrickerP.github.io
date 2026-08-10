@@ -197,3 +197,54 @@ public-safe detail pages, root-alt destination semantics, the private-history
 verification limitation, and every privacy/prohibition gate. Until then, the
 found experiments are an approved documentation direction, not a live Profile
 feature.
+
+## 2026-08-10 post-release next loop
+
+Status: **validated and stopped — this is the sole active Step 7 contract.**
+The Found Experiments implementation is live on `BrickerP/BrickerP` `main` at
+`1b2d47a817d02cbb8b3c70c23f2c0b2b4ee377cc`; the exact live dogfood evidence is
+recorded in Step 6.
+
+This section supersedes every current-next-knife ordering and the queued
+five-person recall protocol above. That participant protocol is retained only
+as historical design context; it is no longer queued or an active release
+gate.
+
+### Validated
+
+- A six-image root can stay sparse while its memory portal opens a deeper
+  archive containing current issue 001 and two earlier found experiments.
+- Unnumbered, visually distinct found works can coexist with the numbered
+  current issue without creating issue `000`, `002`, or `003`.
+- Static whole-image portals, detail pages, and archive backlinks provide the
+  complete public route without a template, generator, manifest, API, cron job,
+  cadence, or dynamic service.
+
+### Falsified
+
+- Recovering earlier work does not require making the Profile root denser.
+- A historical archive does not require pretending that every experiment was
+  published on a regular schedule.
+- Shipping two found works does not make issue 001 a past fixation; there is no
+  genuine issue 002 yet.
+
+### New opportunity
+
+The next meaningful change is not another archive entry designed to keep the
+page active. It is the moment when a genuinely new thought experiment naturally
+appears and can intrude on the root in its own form. That future intrusion must
+look materially different from both issue 001 and the two Found Experiments;
+otherwise it would turn the archive into a repeated content template.
+
+### The one next knife
+
+**STOP code and UI changes until a genuine new thought experiment exists.**
+
+When that experiment appears, give it a new root-intrusion form rather than
+reusing the torn-memory issue 001 treatment or either Found portal language,
+and move issue 001 into `PAST FIXATIONS`. Until then:
+
+- do not add issue 002;
+- do not add a dynamic update mechanism or publication cadence;
+- do not revise the current Found Experiments; and
+- do not manufacture history to make the archive look more active.

@@ -188,3 +188,46 @@ The feedback closes the need to keep waiting before choosing a next creative
 question; it does not validate a permanent layout. The approved response is the
 `A PROFILE WITH MEMORY` current intrusion and `experiments/` archive recorded in
 Steps 4 and 5, not a fixed `CURRENT OBSESSION` card.
+
+## 2026-08-10 Found experiments live dogfood
+
+Status: **PASS.** The Found Experiments release is merged on
+`BrickerP/BrickerP` `main` at
+`1b2d47a817d02cbb8b3c70c23f2c0b2b4ee377cc` and was checked against the live
+GitHub Profile at desktop width `1440px` and mobile width `320px`.
+
+### Exact live journey
+
+The verified route was:
+
+**Profile root (six images) → memory portal → Thought Experiments archive.**
+
+- The root retained exactly six images, and the existing memory image opened
+  the archive instead of adding another root spread.
+- The archive presented current issue 001 first, followed by Get Date Love and
+  Quant Trading; this records display order, not a click through issue 001.
+- The Get Date Love portal opened its matching detail page and returned through
+  its archive backlink. The Quant Trading portal independently opened its
+  matching detail page and returned through its archive backlink.
+- Both found portal SVGs reported natural dimensions of `1200 × 720`.
+
+### Rendering and runtime checks
+
+- Neither the `1440px` desktop route nor the `320px` mobile route produced
+  horizontal overflow.
+- No image was broken, no checked request returned status `>= 400`, and no
+  product console error appeared.
+- One analytics request was aborted. It did not affect the Profile, archive,
+  portal, detail, or backlink journey and is recorded as a non-product failure.
+- gstack could not start twice because its headless-shell runtime was missing.
+  The live checks therefore used an isolated system Chrome fallback rather than
+  reporting the unavailable gstack run as a pass.
+
+### Severity and disposition
+
+P0: **none.** P1: **none.** P2: **none.** No product correction follows from
+this dogfood pass.
+
+This evidence verifies the shipped navigation and rendering only. It does not
+invent a publication cadence or claim that the private source history is
+publicly verifiable.
