@@ -168,3 +168,23 @@ call the Human Zine ready for participants until the exact remote Profile
 commit proves five spreads, three whole-image outer anchors, two plain images,
 keyboard focus, image-failure alt fallback, exact destinations, and no
 standalone action-link rows.
+
+## 2026-08-10 five-person feedback readback
+
+Five people saw the shipped Profile. The common reaction was positive, with a
+recurring qualification that it felt slightly simple or sparse. This is useful
+directional feedback: the visual portals work well enough to preserve as a
+historical issue, while the next experiment needs a richer idea rather than more
+decoration on the same layout.
+
+This was informal qualitative feedback, not the queued 90-second protocol. No
+per-participant answers, evidence citations, task outcomes, or scored counts were
+recorded. Therefore it does **not** satisfy the earlier `4/5` recall or `3/5`
+specific-action thresholds, and it must not be reported as quantitative
+acceptance. “Generally liked, but slightly simple” is the complete supported
+claim.
+
+The feedback closes the need to keep waiting before choosing a next creative
+question; it does not validate a permanent layout. The approved response is the
+`A PROFILE WITH MEMORY` current intrusion and `experiments/` archive recorded in
+Steps 4 and 5, not a fixed `CURRENT OBSESSION` card.
