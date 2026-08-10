@@ -832,3 +832,77 @@ The user has approved the architecture, first issue, question, evidence chain,
 and torn/misregistered/stitched-history direction. Step 5 is authorized only
 within the five-file boundary recorded in the 2026-08-10 section of
 `05-mvp-prompt.md`.
+
+## 2026-08-10 — Found experiments before issue 001
+
+Status: **Step 4 approved by the user on 2026-08-10.** This section supersedes
+only the archive-entry and portal destination in the preceding Profile-with-
+memory direction. Issue 001 remains the sole numbered current issue, and its
+existing evidence contract remains unchanged.
+
+### One archive, no new Profile spread
+
+The Profile root does not gain another spread. Its existing memory image remains
+the single local portal, but its native outer anchor now opens
+`experiments/README.md` instead of opening issue 001 directly. Its alt changes
+from an issue-001 description to destination semantics that identify the
+`Thought Experiments archive` and its current issue plus found experiments. The
+shipped Film, AI Usage, Process, and Open line surfaces do not change.
+
+The archive index contains:
+
+1. the current numbered issue, `001 — A Profile With Memory`;
+2. one visual portal to the found `Get-Date-Love` experiment; and
+3. one visually distinct portal to the found `quant-trading` experiment.
+
+The two found works sit under the editorial label **FOUND EXPERIMENTS / BEFORE
+ISSUE 001**. They are earlier private works recovered into the public editorial
+record, not newly published issues. They receive no synthetic `000`, `002`, or
+`003` number, and their presence does not make issue 001 past work.
+`PAST FIXATIONS` still waits for a real issue 002.
+
+The archive index states this limitation exactly:
+
+> The before-issue-001 classification is author-reported from private source
+> history and is not independently verifiable from this public page.
+
+### Two distinct portal forms
+
+- **Get-Date-Love** becomes an anonymous-communication case file: layered case
+  paper, redaction, and translation fragments. Its public framing names only
+  the approved classification and privacy boundary; it must not reconstruct a
+  person, conversation, or private system.
+- **quant-trading** becomes a continuous-form, perforated research sheet: a
+  paper hypothesis loop and an audit-trail rhythm. It represents research, not
+  investment performance, realized returns, or a live production system.
+
+These are two editorial portals, not instances of a shared card component. The
+case-file composition must remain recognizably different from the perforated
+research sheet at desktop width and at approximately `320px`.
+
+The revised image-generation previews are mood and composition references only:
+
+- `/Users/yupeng/.codex/generated_images/019fb2f0-8de4-74d2-b95b-a7aa913d5587/exec-80d864bc-d6dc-400a-a8dd-1844651abb76.png`;
+- `/Users/yupeng/.codex/generated_images/019fb2f0-8de4-74d2-b95b-a7aa913d5587/exec-2750de39-6841-433b-b342-fcdf89fc4d0d.png`.
+
+Neither raster is release material, source evidence, or permission to publish
+its incidental texture or labels. Step 5 redraws both portals as self-contained,
+pure-display SVGs with no embedded raster, remote resource, script, interaction,
+or generated text.
+
+### Private-source boundary
+
+Both source repositories remain private. The public archive may use the two
+approved project names and the high-level editorial forms above, but it must not
+publish or encode an original repository link, screenshot, source/configuration
+detail, secret, identity data, conversation content, or metric. The Quant record
+also must not claim revenue, return, profitability, trading performance, or live
+production operation. The archive limitation above prevents the private-history
+classification from being presented as publicly verified provenance.
+
+### Step 4 approval gate
+
+The archive architecture, unnumbered found-work classification, two distinct
+portal forms, privacy boundary, and pure-SVG release direction are approved.
+Step 5 is authorized only within the exact seven-file boundary in the final
+2026-08-10 section of `05-mvp-prompt.md`.
