@@ -141,3 +141,59 @@ complete only after remote CI verifies the pushed commit and the exact remote
 README, SVG, archive index, issue, and portal destination are read back. That
 remote implementation and verification are outside this documentation-only
 update.
+
+## 2026-08-10 superseding next loop — Found experiments
+
+Status: **approved by the user.** `BrickerP/BrickerP` `main` at `e2cb752` has
+the shipped six-spread Profile, one memory portal directly to issue 001, and an
+archive index containing only issue 001. This section supersedes the preceding
+five-file next knife while preserving issue 001 as the only current numbered
+issue.
+
+### Approved opportunity
+
+Recover two earlier private works as **FOUND EXPERIMENTS / BEFORE ISSUE 001**.
+Get-Date-Love is represented by an anonymous-communication case file;
+quant-trading is represented by a continuous-form, perforated research sheet.
+They are unnumbered editorial findings, not issues `000`, `002`, or `003`.
+Their addition does not create an honest past/current issue distinction, so
+`PAST FIXATIONS` remains deferred until issue 002 exists.
+
+The Profile root remains sparse: no new spread is added. Its existing memory
+image becomes the entrance to `experiments/README.md`, where the current issue
+001 entry and the two visually distinct found-work portals coexist. The root
+alt identifies the `Thought Experiments archive` and communicates both current
+and found destinations instead of continuing to describe issue 001 alone.
+
+The archive also states that the before-issue-001 classification is
+author-reported from private source history and is not independently verifiable
+from the public page. The verifier locks those two meanings without treating
+private provenance as public evidence.
+
+### The one next knife
+
+Implement only the exact seven-file boundary in the final 2026-08-10 section of
+`05-mvp-prompt.md`:
+
+1. retarget the existing Profile memory anchor to the archive index without
+   changing the six-spread root composition, and update its alt to the archive's
+   current-plus-found destination semantics;
+2. add the two unnumbered archive-only portals and their public-safe detail
+   pages;
+3. redraw the two approved mood directions as distinct, self-contained pure
+   SVGs; and
+4. extend the read-only verifier to enforce archive topology, classification,
+   privacy, visual-semantic separation, and prohibited automation paths.
+
+Do not add a template, generator, manifest, API, cron job, cadence, migration,
+compatibility layer, source-repository link, screenshot, private configuration,
+identity data, or metric. The Quant record also makes no return, revenue,
+performance, or live-production claim.
+
+This knife is complete only when remote CI is green for the exact pushed Profile
+commit and readback confirms the root anchor, unchanged root spread count,
+archive order, issue 001 route, two found portal routes, pure SVG sources,
+public-safe detail pages, root-alt destination semantics, the private-history
+verification limitation, and every privacy/prohibition gate. Until then, the
+found experiments are an approved documentation direction, not a live Profile
+feature.

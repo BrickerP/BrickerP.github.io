@@ -276,3 +276,152 @@ registration, but it must not invent a Profile state, commit, sequence, or
 receipt. The image-generation preview is mood/reference only and is neither a
 release asset nor proof. The issue README names the evidence plainly enough for
 a visitor to inspect it.
+
+## 2026-08-10 Step 5 override — Found experiments
+
+Status: **implementation authorized by the user on 2026-08-10.** This is the
+sole active Step 5 source. It supersedes the five-file boundary above while
+preserving the shipped issue 001 detail and memory SVG unchanged.
+
+Current implementation baseline: `BrickerP/BrickerP` `main` at
+`e2cb7525eb656a5c4fafbbe87a9e1798eabc6df7`. At that baseline the Profile memory
+portal opens issue 001 directly and `experiments/README.md` contains only the
+issue 001 text entry.
+
+### Exact seven-file implementation boundary
+
+Implementation happens only in `BrickerP/BrickerP` and changes exactly these
+seven files:
+
+| File | Responsibility |
+| --- | --- |
+| `README.md` | Keep the existing six-spread order and existing `assets/human-zine-memory.svg`; change that image's sole local outer-anchor destination to `experiments/README.md` and update its alt to identify the Thought Experiments archive, current issue, and found experiments. Add no spread, image, or second experiment entry on the Profile root. |
+| `experiments/README.md` | Keep issue 001 as the current numbered issue, then present `FOUND EXPERIMENTS / BEFORE ISSUE 001` with exactly two whole-image native portals: Get-Date-Love first and quant-trading second. Include the fixed private-history verification limitation below. Do not add `PAST FIXATIONS`. |
+| `experiments/found/get-date-love/portal.svg` | Hand-author one pure-display anonymous-communication case-file portal. It is not a screenshot or a generated raster wrapper. |
+| `experiments/found/get-date-love/README.md` | Publish only the approved high-level case-file framing and private-source boundary; include no original repository link, conversation, identity, configuration, metric, or claimed result. |
+| `experiments/found/quant-trading/portal.svg` | Hand-author one pure-display continuous-form, perforated research-sheet portal, visually distinct from the case file. |
+| `experiments/found/quant-trading/README.md` | Publish only the approved paper-research framing and private-source boundary; include no original repository link, screenshot, source/configuration detail, identity data, metric, return, revenue, performance, or live-production claim. |
+| `scripts/verify-profile.mjs` | Extend the existing read-only verifier with the archive, classification, privacy, and distinct-portal semantic gates below. It remains a verifier and never creates or rewrites content. |
+
+Do not modify `assets/human-zine-memory.svg`,
+`experiments/001-a-profile-with-memory/README.md`, another existing Human Zine
+asset, a product repository, or a deployment mechanism. Do not add an issue
+directory or label numbered `000`, `002`, or `003`; the found paths above are
+deliberately unnumbered. Delete no shipped issue-001 evidence.
+
+### Archive and visible-copy contract
+
+The archive index keeps one ordinary current entry for
+`001 — A Profile With Memory`. Beneath it, the exact section label is:
+
+```text
+FOUND EXPERIMENTS / BEFORE ISSUE 001
+```
+
+The existing root memory image receives destination-oriented alt text. It must
+include `Thought Experiments archive` and communicate that the destination
+contains current issue 001 plus found experiments. For example:
+
+```text
+Open the Thought Experiments archive: current issue 001 and found experiments
+from before issue 001.
+```
+
+The verifier checks those destination semantics, not the exact full alt string.
+
+Immediately beneath the archive section label, the public index includes this
+exact limitation:
+
+```text
+The before-issue-001 classification is author-reported from private source
+history and is not independently verifiable from this public page.
+```
+
+Each found portal is one complete `<img>` wrapped by one native relative outer
+anchor to its sibling `README.md`. The portal alts identify the work, editorial
+form, and destination without exposing private evidence. There is no internal
+SVG anchor, drawn button, second hot zone, or standalone action-link row.
+
+Each portal is exactly `1200 × 720` with `viewBox="0 0 1200 720"`. The allowed
+portal copy and archive alt are intentionally qualitative:
+
+- Get-Date-Love: `FOUND EXPERIMENT`, `GET-DATE-LOVE`, `ANONYMOUS COMMUNICATION
+  CASE FILE`, and `ENTER THE CASE FILE`; alt: `Enter Get-Date-Love, a found
+  anonymous-communication case file from before issue 001.`
+- quant-trading: `FOUND EXPERIMENT`, `QUANT-TRADING`, `CONTINUOUS-FORM RESEARCH
+  SHEET`, `PAPER RESEARCH. NOT INVESTMENT PERFORMANCE.`, and `ENTER THE
+  RESEARCH SHEET`; alt: `Enter quant-trading, a found paper-research sheet from
+  before issue 001.`
+
+The two detail pages use exactly this public-safe body, with the matching title
+and subsection selected for each file:
+
+```text
+# Get-Date-Love
+[← Thought Experiments](../../README.md)
+## Anonymous communication case file
+An anonymous-communication experiment recovered from before issue 001.
+The source repository remains private. This public case file contains no source
+link, screenshot, conversation, identity, configuration, or metric.
+
+# quant-trading
+[← Thought Experiments](../../README.md)
+## Continuous-form research sheet
+A paper-research experiment recovered from before issue 001.
+The source repository remains private. This public research sheet contains no
+source link, screenshot, source or configuration detail, identity data, metric,
+return, revenue, performance, or live-production claim.
+```
+
+No date, count, percentage, currency, score, account, person, location,
+conversation excerpt, source path, configuration value, or operational state is
+added to either portal or detail page beyond the required `ISSUE 001`
+classification. The approved project names are labels, not links to their
+private repositories.
+
+### Pure-SVG and privacy gate
+
+Both portal SVGs are precommitted, self-contained, fixed-viewBox display
+documents with one `<title>`, one `<desc>`, an opaque background, and readable
+essential copy at approximately `320px`. They contain no `<image>`, `<a>`,
+`<script>`, `<style>`, `<foreignObject>`, animation element, event handler,
+interactive role, remote URL/resource, font import, theme branch, or generated
+text.
+
+The image-generation previews named in Step 4 are review-only mood references.
+They are not copied, embedded, traced as evidence, committed, or served.
+
+### Verifier semantic gate
+
+Using Node built-ins only, `scripts/verify-profile.mjs` must fail unless all of
+the following are true:
+
+1. the Profile root retains its existing six images and order, contains exactly
+   one local experiment anchor, reuses `assets/human-zine-memory.svg`, and sends
+   that anchor to `experiments/README.md`; its alt identifies the Thought
+   Experiments archive and communicates both current issue 001 and found
+   experiments without requiring one exact sentence;
+2. the archive contains exactly one numbered issue entry (`001`) plus exactly
+   two found portals in the approved order and relative destinations, with no
+   issue label/path `000`, `002`, or `003` and no `PAST FIXATIONS`; it states
+   that the classification is author-reported from private source history and
+   is not independently verifiable from the public page;
+3. both found portal targets and both SVG sources resolve inside
+   `experiments/found/`, and each whole image has exactly one outer anchor while
+   neither SVG contains an interactive or embedded element;
+4. Get-Date-Love contains the approved case-file semantics and excludes the
+   Quant-only research-sheet semantics; quant-trading contains the approved
+   perforated research-sheet semantics and excludes the case-file/redaction
+   semantics;
+5. the portal and detail-file public corpus contains only the approved
+   qualitative copy and privacy statements, contains no external URL or
+   embedded image, and contains no private evidence or quantitative/performance
+   claim; the archive limitation preserves both the private-source and
+   not-publicly-verifiable meanings; and
+6. the verifier performs reads and assertions only. It does not create a
+   template, generator, manifest, API, cron path, schedule, migration, or
+   compatibility layer.
+
+Do not install dependencies or run a local compile, build, or test. The local
+documentation check remains `git diff --check`; product verification runs in
+remote CI on the eventual Profile implementation branch.
