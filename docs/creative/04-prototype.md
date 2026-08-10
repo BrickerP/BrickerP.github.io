@@ -756,3 +756,79 @@ anchors (Film, AI Usage, Open line), two plain images (Cover, Process), alt text
 fallback copy, and the necessary verifier in `BrickerP/BrickerP` only. A new
 route, a dynamic service, standalone text-link rows, and product changes to
 Loop / Endless Second Ring / AI Usage remain out of scope.
+
+## 2026-08-10 — A Profile with Memory
+
+Status: **Step 4 approved by the user on 2026-08-10.** This section supersedes
+the clickable-portal correction as the current next-loop direction. The shipped
+five-spread Human Zine and its evidence remain a dated, inspectable baseline;
+they are not rewritten or treated as the new architecture.
+
+### Approved architecture
+
+The Profile gets one free-form **current intrusion** and a durable
+`experiments/` archive. The intrusion may change shape with the question; it is
+not a fixed `CURRENT OBSESSION` card, reusable component, or issue template.
+Clicking the intrusion opens the current issue at
+`experiments/001-a-profile-with-memory/`.
+
+`PAST FIXATIONS` does not appear in the first issue. It becomes useful only when
+a second issue exists and there is real past work to point to. There is no empty
+archive theatre and no placeholder history.
+
+The archive is editorial, not scheduled infrastructure. Do not add a template,
+publishing cadence, API, cron job, generator, dynamic service, or migration
+layer. `experiments/README.md` is a small evolving index; each issue owns its
+question and evidence in its own directory.
+
+### Approved first issue
+
+- **Issue:** `A PROFILE WITH MEMORY`
+- **Question:** `HOW MANY PAST SELVES SHOULD A PROFILE REMEMBER?`
+- **Portal:** the whole current-intrusion image links to
+  `experiments/001-a-profile-with-memory/`.
+- **Evidence:** four real commits in `BrickerP/BrickerP` `main` ancestry, in
+  chronological order:
+  - `91a7a77` — recruiter-scan profile;
+  - `35aa305` — Loop / Ledger profile;
+  - `b130094` — Human Zine profile;
+  - `d71f9f3` — clickable visual portals.
+- **Visual:** torn, deliberately misregistered profile fragments are visibly
+  stitched into one history. The composition should feel repaired and revised,
+  not like four matched cards or a clean timeline.
+
+The image-generation preview is mood and composition reference only. It is not
+release evidence and must not be copied into the product as invented history.
+The shipped intrusion and issue use evidence read from the four commits above;
+any crop, label, or fragment must be traceable to those real Profile states.
+
+### Self-questioning
+
+#### Why reject a permanent `CURRENT OBSESSION` card?
+
+Because the first issue would prematurely harden an editorial experiment into a
+component system. The current question should determine the form; the form must
+not determine every future question.
+
+#### Why make memory the first issue?
+
+The Profile already has multiple materially different, verifiable selves on one
+`main` ancestry line. That makes revision history the strongest available
+subject, not a fabricated theme.
+
+#### Why omit `PAST FIXATIONS` now?
+
+With one issue, it would be an empty label or a duplicate link. The second issue
+creates the first honest contrast between current and past.
+
+#### Why keep the system manual?
+
+The value is selection and interpretation, not publishing frequency. Automation
+would add machinery before there is a repeated workflow to justify it.
+
+### Step 4 approval gate
+
+The user has approved the architecture, first issue, question, evidence chain,
+and torn/misregistered/stitched-history direction. Step 5 is authorized only
+within the five-file boundary recorded in the 2026-08-10 section of
+`05-mvp-prompt.md`.

@@ -234,3 +234,45 @@ rewrite an asset.
   merge/publication, read back the rendered GitHub Profile, verify all native
   destinations, and confirm the fixed paper and readable layout in light and
   dark themes before claiming the Human Zine live.
+
+## 2026-08-10 Step 5 override — A Profile with Memory
+
+Status: **implementation authorized by the user on 2026-08-10.** This section is
+the sole active Step 5 source. It supersedes the seven-file clickable-portal
+implementation above as the next change while retaining that shipped contract
+as history.
+
+### Exact implementation boundary
+
+Implementation happens only in `BrickerP/BrickerP` and changes exactly these
+five files:
+
+| File | Responsibility |
+| --- | --- |
+| `README.md` | Present one free-form current intrusion and wrap the whole image in one native relative link to `experiments/001-a-profile-with-memory/`. Do not add a fixed `CURRENT OBSESSION` card or `PAST FIXATIONS` in issue 001. |
+| `assets/a-profile-with-memory.svg` | One static, pure-display intrusion for issue 001, using torn, misregistered, visibly stitched fragments grounded in the four approved Profile commits. |
+| `experiments/README.md` | Keep the evolving experiment index and link issue 001. It is not a template, feed, schedule, or generated manifest. |
+| `experiments/001-a-profile-with-memory/README.md` | Record `A PROFILE WITH MEMORY`, the question `HOW MANY PAST SELVES SHOULD A PROFILE REMEMBER?`, and the real evidence chain `91a7a77` → `35aa305` → `b130094` → `d71f9f3`. |
+| `scripts/verify-profile.mjs` | Verify the README portal, issue path, one-SVG boundary, exact question and commit identifiers, and prohibited automation/template paths. It remains a verifier, never a generator. |
+
+No other README asset, product repository, runtime, or deployment mechanism is
+in scope. Do not add a compatibility layer for the five-spread layout, a second
+current-entry path, a template, publishing cadence, API, cron job, generator, or
+dynamic service. `PAST FIXATIONS` is deferred until issue 002 creates a real
+past/current distinction.
+
+### Evidence contract
+
+The product must derive its visible history from the four real commits on the
+Profile repository's `main` ancestry:
+
+- `91a7a77faf8492d1aaedd975cca404dc3890657e`;
+- `35aa3052a2765879a5c0973260f11042b81ca55e`;
+- `b130094cb5f273bbb20cec5cff163eafb511f638`;
+- `d71f9f3c92a1c615d6b49a59da9bf1f40ddfffb1`.
+
+The torn/misregistered/stitched treatment may edit scale, crop, overlap, and
+registration, but it must not invent a Profile state, commit, sequence, or
+receipt. The image-generation preview is mood/reference only and is neither a
+release asset nor proof. The issue README names the evidence plainly enough for
+a visitor to inspect it.

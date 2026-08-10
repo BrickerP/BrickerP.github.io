@@ -97,3 +97,47 @@ spread**—not additional prose and not shared branding across the works.
 
 These remain deferred backlog observations and must not displace the clickable
 portal recovery gate or the participant-recall test that follows it.
+
+## 2026-08-10 superseding next loop
+
+Status: **approved by the user.** The clickable visual portals shipped on
+`BrickerP/BrickerP` `main` at `d71f9f3`, and five people subsequently gave
+informal feedback. This section supersedes the current-next-knife and queued-test
+ordering above while preserving both as historical context.
+
+The supported feedback is deliberately narrow: people generally liked the
+Profile but found it slightly simple or sparse. Because the session was not the
+documented 90-second protocol and did not capture participant-level scores, it
+is not a formal quantitative pass and does not meet or falsify the old `4/5` and
+`3/5` thresholds.
+
+### Approved opportunity
+
+Turn revision itself into the next subject. The Profile presents one free-form
+current intrusion and keeps an evolving `experiments/` archive. It does not
+install a permanent `CURRENT OBSESSION` card. `PAST FIXATIONS` first appears
+with issue 002, when a genuinely past fixation exists.
+
+The first issue is **A PROFILE WITH MEMORY** and asks:
+
+> **HOW MANY PAST SELVES SHOULD A PROFILE REMEMBER?**
+
+Its visual language is torn, misregistered, and stitched history grounded in
+four real Profile `main` ancestors: `91a7a77`, `35aa305`, `b130094`, and
+`d71f9f3`. The complete current intrusion links to
+`experiments/001-a-profile-with-memory/`. Image-generation output remains
+mood/reference only; release material must use real evidence from those commits.
+
+### The one next knife
+
+Implement only the five-file Step 5 boundary: `README.md`, one
+`assets/a-profile-with-memory.svg`, `experiments/README.md`, the issue README at
+`experiments/001-a-profile-with-memory/README.md`, and
+`scripts/verify-profile.mjs`.
+
+Do not add a template, issue schedule, API, cron job, generator, dynamic service,
+compatibility layer, or second current-entry mechanism. The implementation is
+complete only after remote CI verifies the pushed commit and the exact remote
+README, SVG, archive index, issue, and portal destination are read back. That
+remote implementation and verification are outside this documentation-only
+update.
