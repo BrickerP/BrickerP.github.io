@@ -67,6 +67,8 @@ Adjacent passages overlap through shared silhouettes, fog occlusion, walls, tree
   - Foliage: `#365A43`
   - Text/accent: `#ECE5D8`
 - One warm-white road carrier resolves at one non-glowing signature vermilion closure node. The node color is exact, appears once in the runtime scene, and is never repeated as a decorative motif.
+- Light is a low fill plus one key that follows the camera. Only landmark masses and the overpass columns cast shadows. The road receives them. Flat shading is not the city look. A short bloom sits on the lamps, and depth of field stays shallow enough that the road remains legible.
+- Repeated shopfronts are the street fabric. Each passage still has one poster subject: a gate, a tower, a hall, one taller hutong bay, or the closing overpass. Do not fill a passage by cloning that subject.
 - Cool navy, blue-grey, charcoal, and fog dominate. Beijing reds remain diegetic and muted; signature vermilion and amber are localized anchors, not global neon accents.
 - Use filled planes, extruded silhouettes, and large tonal masses. Seeded boot-once atlases may add brick, tile, bark, glass, stone, asphalt, lattice, and blue-panel rhythm, but never become photo skins or sticker identity.
 - Prefer a foreground occluder, midground street/structure, and distant skyline. Avoid more than three dominant architectural layers in one frame.
@@ -119,6 +121,7 @@ Adjacent passages overlap through shared silhouettes, fog occlusion, walls, tree
 - `src/main.ts`: boot/error handling, capabilities, shortcuts, visibility/resizing, recording coordination, and explicit QA-hook boundary.
 - `src/app/BeijingLoopApp.ts`: deterministic clock, phase seeking, render lifecycle, playback state, and reduced-motion poster.
 - `src/rendering/BeijingDriveScene.ts`: authored world, twelve passages, lighting, fog, materials, water, and skyline.
+- `src/rendering/passages.ts`: the twelve passage ids and poster sentences. A new passage registers here and in one builder.
 - `src/rendering/surfaceTextures.ts`: deterministic boot-once material atlases.
 - `src/rendering/FirstPersonCameraRig.ts`: phase- and aspect-derived driver-eye camera.
 - `src/rendering/drivePath.ts`: closed authored spline, stable path frame, heading, and ribbon helpers.
