@@ -49,7 +49,7 @@ export class BeijingLoopApp {
   readonly canvas: HTMLCanvasElement;
 
   private readonly renderer: WebGLRenderer;
-  private readonly composer: EffectComposer;
+  private readonly composer: EffectComposer | null;
   private readonly city = new BeijingDriveScene();
   private readonly cameraRig: FirstPersonCameraRig;
   private readonly pathFrame = samplePathFrame(0);
@@ -85,8 +85,6 @@ export class BeijingLoopApp {
     this.renderer.outputColorSpace = SRGBColorSpace;
     this.renderer.toneMapping = ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.08;
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = PCFSoftShadowMap;
     this.renderer.setClearColor(new Color(PALETTE.skyTop), 1);
 
     this.canvas = this.renderer.domElement;
@@ -95,12 +93,22 @@ export class BeijingLoopApp {
     mount.appendChild(this.canvas);
 
     this.cameraRig = new FirstPersonCameraRig(width / Math.max(1, height));
-    const renderPass = new RenderPass(this.city.scene, this.cameraRig.camera);
-    const bloom = new UnrealBloomPass(new Vector2(width, height), 0.18, 0.32, 0.92);
-    this.composer = new EffectComposer(this.renderer);
-    this.composer.addPass(renderPass);
-    this.composer.addPass(bloom);
-    this.composer.addPass(new OutputPass());
+    const gl = this.renderer.getContext();
+    const gpu = String(gl.getParameter(gl.RENDERER));
+    const software = /swiftshader|llvmpipe|softpipe|software/i.test(gpu);
+    if (software) {
+      this.renderer.shadowMap.enabled = false;
+      this.composer = null;
+    } else {
+      this.renderer.shadowMap.enabled = true;
+      this.renderer.shadowMap.type = PCFSoftShadowMap;
+      const renderPass = new RenderPass(this.city.scene, this.cameraRig.camera);
+      const bloom = new UnrealBloomPass(new Vector2(width, height), 0.18, 0.32, 0.92);
+      this.composer = new EffectComposer(this.renderer);
+      this.composer.addPass(renderPass);
+      this.composer.addPass(bloom);
+      this.composer.addPass(new OutputPass());
+    }
     this.state = {
       playing: !reducedMotion,
       debug: false,
@@ -180,8 +188,8 @@ export class BeijingLoopApp {
       // viewport. A small 16:9 buffer sustains real-time software rendering.
       this.renderer.setPixelRatio(1);
       this.renderer.setSize(CAPTURE_WIDTH, CAPTURE_HEIGHT, false);
-      this.composer.setPixelRatio(1);
-      this.composer.setSize(CAPTURE_WIDTH, CAPTURE_HEIGHT);
+      this.composer?.setPixelRatio(1);
+      this.composer?.setSize(CAPTURE_WIDTH, CAPTURE_HEIGHT);
       this.cameraRig.resize(CAPTURE_WIDTH / CAPTURE_HEIGHT);
       return;
     }
@@ -189,8 +197,8 @@ export class BeijingLoopApp {
     const maxRatio = this.state.reducedMotion ? 1 : mobile ? 1.35 : 1.8;
     this.renderer.setPixelRatio(Math.min(this.devicePixelRatio, maxRatio));
     this.renderer.setSize(this.viewportWidth, this.viewportHeight, false);
-    this.composer.setPixelRatio(Math.min(this.devicePixelRatio, maxRatio));
-    this.composer.setSize(this.viewportWidth, this.viewportHeight);
+    this.composer?.setPixelRatio(Math.min(this.devicePixelRatio, maxRatio));
+    this.composer?.setSize(this.viewportWidth, this.viewportHeight);
     this.cameraRig.resize(this.viewportWidth / this.viewportHeight);
   }
 
@@ -223,7 +231,8 @@ export class BeijingLoopApp {
 
     this.city.update(phase);
     this.cameraRig.update(phase, this.state.reducedMotion);
-    this.composer.render();
+    if (this.composer) this.composer.render();
+    else this.renderer.render(this.city.scene, this.cameraRig.camera);
     this.renderTelemetry.renderCount += 1;
     this.renderTelemetry.lastRenderTimestampMs = performance.now();
     this.renderTelemetry.phase = phase;
@@ -231,7 +240,7 @@ export class BeijingLoopApp {
 
   dispose(): void {
     this.city.dispose();
-    this.composer.dispose();
+    this.composer?.dispose();
     this.renderer.dispose();
     this.canvas.remove();
   }
