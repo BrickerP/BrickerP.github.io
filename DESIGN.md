@@ -67,7 +67,7 @@ Adjacent passages overlap through shared silhouettes, fog occlusion, walls, tree
   - Foliage: `#365A43`
   - Text/accent: `#ECE5D8`
 - One warm-white road carrier resolves at one non-glowing signature vermilion closure node. The node color is exact, appears once in the runtime scene, and is never repeated as a decorative motif.
-- Light is a low fill plus one key that follows the camera. Only landmark masses and the overpass columns cast shadows. The road receives them. Flat shading is not the city look. A short bloom sits on the lamps, and depth of field stays shallow enough that the road remains legible.
+- Light is a low-but-readable fill plus one key that follows the camera. Only landmark masses and the overpass columns cast shadows. The road receives them. Flat shading is not the city look. A short bloom sits on the lamps. Depth of field is not in the runtime, because the software QA browser turns that pass into a black frame.
 - Repeated shopfronts are the street fabric. Each passage still has one poster subject: a gate, a tower, a hall, one taller hutong bay, or the closing overpass. Do not fill a passage by cloning that subject.
 - Cool navy, blue-grey, charcoal, and fog dominate. Beijing reds remain diegetic and muted; signature vermilion and amber are localized anchors, not global neon accents.
 - Use filled planes, extruded silhouettes, and large tonal masses. Seeded boot-once atlases may add brick, tile, bark, glass, stone, asphalt, lattice, and blue-panel rhythm, but never become photo skins or sticker identity.

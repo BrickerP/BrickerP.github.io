@@ -244,8 +244,8 @@ export class BeijingDriveScene {
     this.foliageMaterial = this.standard(PALETTE.foliage, { roughness: 1 });
     this.shopHardwareMaterial = this.standard('#33291C', { roughness: 1 });
 
-    this.scene.add(new HemisphereLight('#91AAB7', '#182A36', 0.68));
-    this.keyLight = new DirectionalLight('#E4D2B8', 2.05);
+    this.scene.add(new HemisphereLight('#91AAB7', '#182A36', 1.2));
+    this.keyLight = new DirectionalLight('#E4D2B8', 1.75);
     this.keyLight.position.set(-18, 24, -12);
     this.keyLight.castShadow = true;
     this.keyLight.shadow.mapSize.set(1024, 1024);
@@ -296,7 +296,7 @@ export class BeijingDriveScene {
     const wave = 0.5 + 0.5 * Math.cos(progress * TAU);
     this.waterMaterial.emissiveIntensity = 0.18 + wave * 0.035;
     this.lampMaterial.emissiveIntensity = 1.4 + wave * 0.08;
-    this.keyLight.intensity = 1.92 + wave * 0.16;
+    this.keyLight.intensity = 1.62 + wave * 0.12;
     const frame = samplePathFrame(progress);
     const focusX = frame.point.x * DRIVE_PATH_SCALE + frame.tangent.x * 14;
     const focusZ = frame.point.z * DRIVE_PATH_SCALE + frame.tangent.z * 14;

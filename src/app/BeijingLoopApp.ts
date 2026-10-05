@@ -9,7 +9,6 @@ import {
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import {
   BeijingDriveScene,
@@ -97,16 +96,10 @@ export class BeijingLoopApp {
 
     this.cameraRig = new FirstPersonCameraRig(width / Math.max(1, height));
     const renderPass = new RenderPass(this.city.scene, this.cameraRig.camera);
-    const bloom = new UnrealBloomPass(new Vector2(width, height), 0.22, 0.36, 0.9);
-    const depthOfField = new BokehPass(this.city.scene, this.cameraRig.camera, {
-      focus: 18,
-      aperture: 0.00008,
-      maxblur: 0.004,
-    });
+    const bloom = new UnrealBloomPass(new Vector2(width, height), 0.18, 0.32, 0.92);
     this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(renderPass);
     this.composer.addPass(bloom);
-    this.composer.addPass(depthOfField);
     this.composer.addPass(new OutputPass());
     this.state = {
       playing: !reducedMotion,
