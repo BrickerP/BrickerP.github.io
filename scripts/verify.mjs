@@ -1470,7 +1470,8 @@ for (const viewport of viewports) {
         controlCount: document.querySelectorAll('[data-act]').length,
       };
     });
-    const cappedRatio = viewport.mobile ? 1.35 : 1.8;
+    // Match applyRenderSize: phones stay at 1, desktop at 1.25.
+    const cappedRatio = viewport.mobile ? 1 : 1.25;
     const expectedBacking = [viewport.width * cappedRatio, viewport.height * cappedRatio];
     assert.equal(smoke.hook, true, `${label}: QA hook missing`);
     assert.ok(
