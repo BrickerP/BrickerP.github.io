@@ -248,13 +248,13 @@ export class BeijingDriveScene {
     this.keyLight = new DirectionalLight('#E4D2B8', 2.1);
     this.keyLight.position.set(-18, 24, -12);
     this.keyLight.castShadow = true;
-    this.keyLight.shadow.mapSize.set(1024, 1024);
+    this.keyLight.shadow.mapSize.set(512, 512);
     this.keyLight.shadow.camera.near = 1;
-    this.keyLight.shadow.camera.far = 72;
-    this.keyLight.shadow.camera.left = -26;
-    this.keyLight.shadow.camera.right = 26;
-    this.keyLight.shadow.camera.top = 26;
-    this.keyLight.shadow.camera.bottom = -26;
+    this.keyLight.shadow.camera.far = 64;
+    this.keyLight.shadow.camera.left = -16;
+    this.keyLight.shadow.camera.right = 16;
+    this.keyLight.shadow.camera.top = 16;
+    this.keyLight.shadow.camera.bottom = -16;
     this.keyLight.shadow.bias = -0.00035;
     this.keyLight.shadow.normalBias = 0.045;
     this.scene.add(this.keyLight);
@@ -417,12 +417,13 @@ export class BeijingDriveScene {
     }
   }
 
-  /** Hero masses cast and receive. Repeated street fabric does not. */
+  /** Large hero masses cast. Tiny trim does not, and the ground plane does not receive. */
   private tagHero(object: Object3D): void {
     object.traverse((child) => {
       if (!(child instanceof Mesh)) return;
-      child.castShadow = true;
-      child.receiveShadow = true;
+      const bulk = Math.abs(child.scale.x * child.scale.y * child.scale.z);
+      child.castShadow = bulk >= 6;
+      child.receiveShadow = bulk >= 2;
     });
   }
 
@@ -457,7 +458,6 @@ export class BeijingDriveScene {
     const ground = new Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -0.12;
-    ground.receiveShadow = true;
     this.root.add(ground);
   }
 
