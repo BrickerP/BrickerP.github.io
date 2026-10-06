@@ -50,6 +50,7 @@ export class BeijingLoopApp {
 
   private readonly renderer: WebGLRenderer;
   private readonly composer: EffectComposer;
+  private readonly bloom: UnrealBloomPass;
   private readonly city = new BeijingDriveScene();
   private readonly cameraRig: FirstPersonCameraRig;
   private readonly pathFrame = samplePathFrame(0);
@@ -96,7 +97,8 @@ export class BeijingLoopApp {
 
     this.cameraRig = new FirstPersonCameraRig(width / Math.max(1, height));
     const renderPass = new RenderPass(this.city.scene, this.cameraRig.camera);
-    const bloom = new UnrealBloomPass(new Vector2(width, height), 0.22, 0.4, 0.86);
+    const bloom = new UnrealBloomPass(new Vector2(1, 1), 0.22, 0.4, 0.86);
+    this.bloom = bloom;
     this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(renderPass);
     this.composer.addPass(bloom);
@@ -182,16 +184,27 @@ export class BeijingLoopApp {
       this.renderer.setSize(CAPTURE_WIDTH, CAPTURE_HEIGHT, false);
       this.composer.setPixelRatio(1);
       this.composer.setSize(CAPTURE_WIDTH, CAPTURE_HEIGHT);
+      this.fitBloom(CAPTURE_WIDTH, CAPTURE_HEIGHT);
       this.cameraRig.resize(CAPTURE_WIDTH / CAPTURE_HEIGHT);
       return;
     }
     const mobile = this.viewportWidth < 720;
     const maxRatio = this.state.reducedMotion ? 1 : mobile ? 1.35 : 1.8;
-    this.renderer.setPixelRatio(Math.min(this.devicePixelRatio, maxRatio));
+    const ratio = Math.min(this.devicePixelRatio, maxRatio);
+    this.renderer.setPixelRatio(ratio);
     this.renderer.setSize(this.viewportWidth, this.viewportHeight, false);
-    this.composer.setPixelRatio(Math.min(this.devicePixelRatio, maxRatio));
+    this.composer.setPixelRatio(ratio);
     this.composer.setSize(this.viewportWidth, this.viewportHeight);
+    this.fitBloom(this.viewportWidth, this.viewportHeight);
     this.cameraRig.resize(this.viewportWidth / this.viewportHeight);
+  }
+
+  /** Glow is soft, so half-resolution bloom keeps the halo without a full-screen blur. */
+  private fitBloom(width: number, height: number): void {
+    this.bloom.setSize(
+      Math.max(1, Math.floor(width / 2)),
+      Math.max(1, Math.floor(height / 2)),
+    );
   }
 
   update(dt: number): void {
