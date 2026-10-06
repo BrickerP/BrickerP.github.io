@@ -155,13 +155,7 @@ export class BeijingDriveScene {
   private readonly geometries = new Set<BufferGeometry>();
   private readonly materials = new Set<Material>();
   private readonly textures = new Set<Texture>();
-  private readonly lampLights: Array<{
-    light: PointLight;
-    phase: number;
-    baseIntensity: number;
-    variation: number;
-    harmonic: number;
-  }> = [];
+  private readonly lampLights: PointLight[] = [];
   private readonly unitBox: BoxGeometry;
   private readonly unitCylinder: CylinderGeometry;
   private readonly unitSphere: SphereGeometry;
@@ -169,8 +163,11 @@ export class BeijingDriveScene {
   private readonly unitTaperedRoof: CylinderGeometry;
   private readonly unitDagobaBowl: LatheGeometry;
   private readonly unitTempleDrum: CylinderGeometry;
+  private readonly lampPoleGeometry: CylinderGeometry;
+  private readonly lampBulbGeometry: SphereGeometry;
   private readonly waterMaterial: MeshStandardMaterial;
-  private readonly lampMaterial: MeshStandardMaterial;
+  private readonly lampMaterial: MeshBasicMaterial;
+  private readonly lampPoleMaterial: MeshStandardMaterial;
   private readonly windowMaterial: MeshStandardMaterial;
   private readonly lanternMaterial: MeshStandardMaterial;
   private readonly streetMetalMaterial: MeshStandardMaterial;
@@ -213,6 +210,8 @@ export class BeijingDriveScene {
     this.unitTempleDrum = this.trackGeometry(
       new CylinderGeometry(0.88, 1, 1, 20),
     );
+    this.lampPoleGeometry = this.trackGeometry(new CylinderGeometry(1, 1, 1, 16));
+    this.lampBulbGeometry = this.trackGeometry(new SphereGeometry(1, 20, 14));
 
     this.waterMaterial = this.standard(PALETTE.water, {
       emissive: '#123745',
@@ -221,12 +220,19 @@ export class BeijingDriveScene {
       roughness: 0.08,
     });
     this.waterMaterial.userData.preserveInCapture = true;
-    this.lampMaterial = this.standard(PALETTE.lamp, {
-      emissive: PALETTE.lamp,
-      emissiveIntensity: 2.4,
-      roughness: 0.28,
+    // Unlit and well above the bloom threshold. A shaded low-poly bulb
+    // sparkles as the key sweeps past, and the quarter-res bloom turns each
+    // sparkle into a blink.
+    this.lampMaterial = this.trackMaterial(
+      new MeshBasicMaterial({
+        color: new Color().setRGB(2.4, 1.57, 0.62),
+        fog: true,
+      }),
+    );
+    this.lampPoleMaterial = this.standard('#3A4144', {
+      roughness: 1,
+      metalness: 0,
     });
-    this.lampMaterial.userData.preserveInCapture = true;
     this.windowMaterial = this.standard('#E8B25F', {
       emissive: '#FFC56A',
       emissiveIntensity: 1.25,
@@ -352,7 +358,6 @@ export class BeijingDriveScene {
     const progress = wrapProgress(phase);
     const wave = 0.5 + 0.5 * Math.cos(progress * TAU);
     this.waterMaterial.emissiveIntensity = 0.18 + wave * 0.035;
-    this.lampMaterial.emissiveIntensity = 2.2 + wave * 0.2;
     this.keyLight.intensity = 1.95 + wave * 0.16;
     const frame = samplePathFrame(progress);
     const focusX = frame.point.x * DRIVE_PATH_SCALE + frame.tangent.x * 14;
@@ -362,11 +367,6 @@ export class BeijingDriveScene {
     this.keyLight.target.updateMatrixWorld();
     this.keyLight.updateMatrixWorld();
 
-    for (const entry of this.lampLights) {
-      entry.light.intensity = entry.baseIntensity * (
-        1 + entry.variation * Math.cos((progress * entry.harmonic + entry.phase) * TAU)
-      );
-    }
     if (this.capturePerformanceMode) {
       for (const [source, proxy] of this.captureMaterialProxies) {
         this.applyCaptureColor(source, proxy);
@@ -376,13 +376,14 @@ export class BeijingDriveScene {
 
   /**
    * Software recording still hides point lights and swaps repeated street
-   * meshes to basic proxies so a 48-second capture can finish. Road, water,
-   * and lamp materials stay standard. The live frame is the lit image.
+   * meshes to basic proxies so a 48-second capture can finish. Road and water
+   * stay standard. Lamp heads are already an unlit glow. The live frame is
+   * the lit image.
    */
   setCapturePerformanceMode(active: boolean): void {
     if (this.capturePerformanceMode === active) return;
     this.capturePerformanceMode = active;
-    for (const entry of this.lampLights) entry.light.visible = !active;
+    for (const light of this.lampLights) light.visible = !active;
 
     if (active) {
       try {
@@ -406,7 +407,7 @@ export class BeijingDriveScene {
       } catch (error) {
         this.restoreCaptureMaterials();
         this.capturePerformanceMode = false;
-        for (const entry of this.lampLights) entry.light.visible = true;
+        for (const light of this.lampLights) light.visible = true;
         throw error;
       }
       return;
@@ -431,7 +432,7 @@ export class BeijingDriveScene {
       active: this.capturePerformanceMode,
       proxiedMeshCount: this.captureOriginalMaterials.size,
       cachedProxyMaterialCount: this.captureMaterialProxies.size,
-      visibleLampLightCount: this.lampLights.filter(({ light }) => light.visible).length,
+      visibleLampLightCount: this.lampLights.filter((light) => light.visible).length,
       staticSceneObjectCount,
       sceneMatrixWorldAutoUpdate: this.scene.matrixWorldAutoUpdate,
       matrixWorldDirtyCount,
@@ -2827,25 +2828,21 @@ export class BeijingDriveScene {
   private addLamp(progress: number, offset: number, castLight: boolean): void {
     const group = new Group();
     this.place(group, progress, offset, 0);
-    const pole = this.cylinder(0.065, 3.6, this.streetMetalMaterial);
+    const pole = new Mesh(this.lampPoleGeometry, this.lampPoleMaterial);
+    pole.scale.set(0.065, 3.6, 0.065);
     pole.position.y = 1.8;
-    const bulb = new Mesh(this.unitSphere, this.lampMaterial);
+    const bulb = new Mesh(this.lampBulbGeometry, this.lampMaterial);
     bulb.scale.setScalar(0.24);
-    bulb.position.y = 3.7;
+    // Sit on the pole tip. The old overlap depth-fought and the head shimmered.
+    bulb.position.y = 3.86;
     group.add(pole, bulb);
 
     if (castLight) {
-      const baseIntensity = 8.2 + hash01(Math.round(progress * 10_000), 91) * 1.8;
-      const light = new PointLight(PALETTE.lamp, baseIntensity, 13, 2);
-      light.position.y = 3.58;
+      const intensity = 8.2 + hash01(Math.round(progress * 10_000), 91) * 1.8;
+      const light = new PointLight(PALETTE.lamp, intensity, 13, 2);
+      light.position.y = 3.86;
       group.add(light);
-      this.lampLights.push({
-        light,
-        phase: progress,
-        baseIntensity,
-        variation: 0.025 + hash01(Math.round(progress * 10_000), 92) * 0.035,
-        harmonic: 1 + Math.floor(hash01(Math.round(progress * 10_000), 93) * 3),
-      });
+      this.lampLights.push(light);
     }
     this.root.add(group);
   }
