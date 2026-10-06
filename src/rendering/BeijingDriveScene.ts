@@ -188,6 +188,7 @@ export class BeijingDriveScene {
   private readonly atlases: SurfaceAtlasLibrary;
   private openCircuitCarrier!: Mesh;
   private openCircuitNode!: Mesh;
+  private shadowSnap = Number.NaN;
   private capturePerformanceMode = false;
   private disposed = false;
   private readonly builtPassages = new Set<PassageId>();
@@ -257,6 +258,8 @@ export class BeijingDriveScene {
     this.keyLight.shadow.camera.bottom = -16;
     this.keyLight.shadow.bias = -0.00035;
     this.keyLight.shadow.normalBias = 0.045;
+    this.keyLight.shadow.autoUpdate = false;
+    this.keyLight.shadow.needsUpdate = true;
     this.scene.add(this.keyLight);
 
     this.buildSkyAndGround();
@@ -304,7 +307,12 @@ export class BeijingDriveScene {
     this.keyLight.target.position.set(focusX, 2.4, focusZ);
     this.keyLight.target.updateMatrixWorld();
     this.keyLight.updateMatrixWorld();
-    this.keyLight.shadow.camera.updateProjectionMatrix();
+    const snap = wrapProgress(Math.round(progress * 24) / 24);
+    if (snap !== this.shadowSnap) {
+      this.shadowSnap = snap;
+      this.keyLight.shadow.camera.updateProjectionMatrix();
+      this.keyLight.shadow.needsUpdate = true;
+    }
 
     for (const entry of this.lampLights) {
       entry.light.intensity = entry.baseIntensity * (
