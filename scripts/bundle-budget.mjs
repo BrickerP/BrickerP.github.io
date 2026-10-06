@@ -15,8 +15,7 @@ const OUTPUT = join(
 );
 const BUDGET = {
   javascript: {
-    // Lit image baseline: camera-following key, hero shadows, wet road, short bloom, shallow depth of field.
-    originMainGzipBaselineBytes: 166_491,
+    originMainGzipBaselineBytes: 153_080,
     maximumGrowthRatio: 0.05,
     absoluteGzipMaximumBytes: 170_000,
     rawMaximumBytes: 650_000,

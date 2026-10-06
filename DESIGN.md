@@ -67,7 +67,7 @@ Adjacent passages overlap through shared silhouettes, fog occlusion, walls, tree
   - Foliage: `#365A43`
   - Text/accent: `#ECE5D8`
 - One warm-white road carrier resolves at one non-glowing signature vermilion closure node. The node color is exact, appears once in the runtime scene, and is never repeated as a decorative motif.
-- On a hardware GPU the key follows the camera, landmark masses cast shadows, and a short bloom sits on the lamps. Software GL skips shadows and bloom so the portrait poster does not collapse to black.
+- The fill stays high enough that the reduced-motion portrait is not a black frame. Landmark meshes are marked, but the runtime does not enable shadow maps: the software QA browser turned those shadows into a near-black poster. Lamp bloom is also off for the same reason. The road stays wet, and shading is smooth.
 - Repeated shopfronts are the street fabric. Each passage still has one poster subject: a gate, a tower, a hall, one taller hutong bay, or the closing overpass. Do not fill a passage by cloning that subject.
 - Cool navy, blue-grey, charcoal, and fog dominate. Beijing reds remain diegetic and muted; signature vermilion and amber are localized anchors, not global neon accents.
 - Use filled planes, extruded silhouettes, and large tonal masses. Seeded boot-once atlases may add brick, tile, bark, glass, stone, asphalt, lattice, and blue-panel rhythm, but never become photo skins or sticker identity.
