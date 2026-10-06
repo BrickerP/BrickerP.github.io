@@ -1,15 +1,21 @@
 import {
   ACESFilmicToneMapping,
   Color,
+  DepthFormat,
+  DepthTexture,
+  HalfFloatType,
   PCFSoftShadowMap,
   SRGBColorSpace,
+  UnsignedIntType,
   Vector2,
   WebGLRenderer,
+  WebGLRenderTarget,
 } from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { HeroFocusPass } from '../rendering/focusPass';
 import {
   BeijingDriveScene,
   type CapturePerformanceState,
@@ -99,8 +105,15 @@ export class BeijingLoopApp {
     const renderPass = new RenderPass(this.city.scene, this.cameraRig.camera);
     const bloom = new UnrealBloomPass(new Vector2(1, 1), 0.22, 0.4, 0.86);
     this.bloom = bloom;
-    this.composer = new EffectComposer(this.renderer);
+    const renderTarget = new WebGLRenderTarget(1, 1, {
+      type: HalfFloatType,
+      depthBuffer: true,
+    });
+    renderTarget.depthTexture = new DepthTexture(1, 1, UnsignedIntType);
+    renderTarget.depthTexture.format = DepthFormat;
+    this.composer = new EffectComposer(this.renderer, renderTarget);
     this.composer.addPass(renderPass);
+    this.composer.addPass(new HeroFocusPass(this.cameraRig.camera));
     this.composer.addPass(bloom);
     this.composer.addPass(new OutputPass());
     this.state = {

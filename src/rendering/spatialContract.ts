@@ -173,6 +173,30 @@ export const PASSAGE_HEROES = {
     modelKey: 'templeOfHeaven',
     targetHeight: 11,
   }),
+  nanluoTeaHouse: {
+    id: 'nanluo-tea-house',
+    passage: 6,
+    progress: 0.532,
+    lateralOffset: 8.4,
+    scale: 1,
+    solidHalfWidth: 2.8,
+  },
+  dashilarGate: {
+    id: 'dashilar-gate',
+    passage: 10,
+    progress: 0.868,
+    lateralOffset: -8.4,
+    scale: 1,
+    solidHalfWidth: 3.2,
+  },
+  overpassPier: {
+    id: 'overpass-pier',
+    passage: 11,
+    progress: 0.948,
+    lateralOffset: 13.4,
+    scale: 1,
+    solidHalfWidth: 3.1,
+  },
 } as const satisfies Record<string, PassageHeroContract>;
 
 export const CENTRAL_AXIS_REQUIRED_CLEARANCE =

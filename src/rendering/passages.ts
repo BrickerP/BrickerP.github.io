@@ -36,7 +36,7 @@ export const PASSAGES = [
   },
   {
     id: 'nanluo-wudaoying',
-    poster: 'A low hutong with one taller tea-house bay and two named gates.',
+    poster: 'A low hutong, one moon-gate tea house, and two named gates.',
   },
   {
     id: 'yonghegong',
@@ -52,11 +52,11 @@ export const PASSAGES = [
   },
   {
     id: 'qianmen-hutong',
-    poster: 'The pailou leads; shopfronts stay below it, then the hutong narrows.',
+    poster: 'The pailou leads; one Dashilar gate stands back from the shop row.',
   },
   {
     id: 'overpass',
-    poster: 'Concrete compresses the view and the warm carrier closes the loop.',
+    poster: 'One concrete pier holds the deck, and the warm carrier closes the loop.',
   },
 ] as const satisfies readonly PassageSpec[];
 
