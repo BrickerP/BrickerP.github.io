@@ -307,7 +307,7 @@ export class BeijingDriveScene {
     this.keyLight.target.position.set(focusX, 2.4, focusZ);
     this.keyLight.target.updateMatrixWorld();
     this.keyLight.updateMatrixWorld();
-    const snap = wrapProgress(Math.round(progress * 24) / 24);
+    const snap = Math.floor(progress * 24 + 1e-6) / 24;
     if (snap !== this.shadowSnap) {
       this.shadowSnap = snap;
       this.keyLight.shadow.camera.updateProjectionMatrix();
