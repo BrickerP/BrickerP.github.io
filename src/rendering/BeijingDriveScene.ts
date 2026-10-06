@@ -12,7 +12,6 @@ import {
   FrontSide,
   Group,
   HemisphereLight,
-  LatheGeometry,
   LinearFilter,
   InstancedMesh,
   Matrix4,
@@ -24,7 +23,6 @@ import {
   Scene,
   SphereGeometry,
   SRGBColorSpace,
-  Vector2,
   type Material,
   type Object3D,
   type Texture,
@@ -42,6 +40,17 @@ import {
   type SurfaceAtlasId,
 } from './surfaceTextures';
 import { assertPassageId, PASSAGES, type PassageId } from './passages';
+import {
+  buildDashilarGate,
+  buildNanluoTeaHouse,
+  buildOverpassPier,
+  type FabricKit,
+} from './fabricPassages';
+import {
+  createDagobaBowlGeometry,
+  createPitchedRoofGeometry,
+  createUpturnedEaveGeometry,
+} from './silhouettes';
 import { DRIVE, PALETTE } from './theme';
 import {
   CALIBRATED_LANDMARK_MODELS,
@@ -74,56 +83,6 @@ export interface CapturePerformanceState {
   sceneMatrixWorldAutoUpdate: boolean;
   matrixWorldDirtyCount: number;
   openCircuitIdentity: OpenCircuitIdentityState;
-}
-
-/** Unit triangular-prism roof: pitched in X, with its ridge running along Z. */
-function createPitchedRoofGeometry(): BufferGeometry {
-  const geometry = new BufferGeometry();
-  geometry.setAttribute(
-    'position',
-    new Float32BufferAttribute(
-      [
-        -0.5, 0, -0.5,
-        0.5, 0, -0.5,
-        0, 1, -0.5,
-        -0.5, 0, 0.5,
-        0.5, 0, 0.5,
-        0, 1, 0.5,
-      ],
-      3,
-    ),
-  );
-  geometry.setIndex([
-    0, 2, 1,
-    3, 4, 5,
-    0, 3, 5,
-    0, 5, 2,
-    1, 2, 5,
-    1, 5, 4,
-    0, 1, 4,
-    0, 4, 3,
-  ]);
-  geometry.computeVertexNormals();
-  geometry.computeBoundingSphere();
-  return geometry;
-}
-
-/** Stylised Tibetan stupa bowl: broad belly with a tightened crown. */
-function createDagobaBowlGeometry(): LatheGeometry {
-  const geometry = new LatheGeometry(
-    [
-      new Vector2(0.62, -1),
-      new Vector2(0.84, -0.84),
-      new Vector2(0.98, -0.48),
-      new Vector2(1, -0.08),
-      new Vector2(0.92, 0.34),
-      new Vector2(0.7, 0.7),
-      new Vector2(0.4, 1),
-    ],
-    20,
-  );
-  geometry.computeBoundingSphere();
-  return geometry;
 }
 
 /**
@@ -160,8 +119,9 @@ export class BeijingDriveScene {
   private readonly unitCylinder: CylinderGeometry;
   private readonly unitSphere: SphereGeometry;
   private readonly unitPitchedRoof: BufferGeometry;
+  private readonly unitUpturnedEave: BufferGeometry;
   private readonly unitTaperedRoof: CylinderGeometry;
-  private readonly unitDagobaBowl: LatheGeometry;
+  private readonly unitDagobaBowl: BufferGeometry;
   private readonly unitTempleDrum: CylinderGeometry;
   private readonly lampPoleGeometry: CylinderGeometry;
   private readonly lampBulbGeometry: SphereGeometry;
@@ -203,6 +163,7 @@ export class BeijingDriveScene {
     this.unitCylinder = this.trackGeometry(new CylinderGeometry(1, 1, 1, 8));
     this.unitSphere = this.trackGeometry(new SphereGeometry(1, 10, 7));
     this.unitPitchedRoof = this.trackGeometry(createPitchedRoofGeometry());
+    this.unitUpturnedEave = this.trackGeometry(createUpturnedEaveGeometry());
     this.unitTaperedRoof = this.trackGeometry(
       new CylinderGeometry(0.16, 1, 1, 16),
     );
@@ -825,7 +786,7 @@ export class BeijingDriveScene {
     rightPier.position.set(10.1, 3.2, 0);
     const upperHall = this.box(24.2, 2.25, 4.9, palaceRed);
     upperHall.position.y = 6.45;
-    const roofMass = new Mesh(this.unitPitchedRoof, roof);
+    const roofMass = this.upturnedRoof(7.1, 1.58, 26.4, roof);
     roofMass.scale.set(7.1, 1.58, 26.4);
     roofMass.rotation.y = Math.PI / 2;
     roofMass.position.y = 7.5;
@@ -833,8 +794,7 @@ export class BeijingDriveScene {
     goldEdge.position.y = 7.52;
     const towerHall = this.box(13.2, 1.55, 3.55, palaceRed);
     towerHall.position.y = 9.05;
-    const upperRoof = new Mesh(this.unitPitchedRoof, roof);
-    upperRoof.scale.set(5.35, 1.18, 15.5);
+    const upperRoof = this.upturnedRoof(5.35, 1.18, 15.5, roof);
     upperRoof.rotation.y = Math.PI / 2;
     upperRoof.position.y = 9.82;
     const upperGoldEdge = this.box(15.8, 0.14, 5.55, roofEdge);
@@ -935,16 +895,14 @@ export class BeijingDriveScene {
 
     const upperHall = this.box(24, 2.55, 4.2, palaceRed);
     upperHall.position.y = 7.4;
-    const lowerRoof = new Mesh(this.unitPitchedRoof, roof);
-    lowerRoof.scale.set(6.4, 1.55, 26);
+    const lowerRoof = this.upturnedRoof(6.4, 1.55, 26, roof);
     lowerRoof.rotation.y = Math.PI / 2;
     lowerRoof.position.y = 8.65;
     const lowerGold = this.box(26.5, 0.18, 6.6, roofEdge);
     lowerGold.position.y = 8.68;
     const towerHall = this.box(17.5, 1.7, 3.4, palaceRed);
     towerHall.position.y = 10.25;
-    const upperRoof = new Mesh(this.unitPitchedRoof, roof);
-    upperRoof.scale.set(5.1, 1.2, 19.5);
+    const upperRoof = this.upturnedRoof(5.1, 1.2, 19.5, roof);
     upperRoof.rotation.y = Math.PI / 2;
     upperRoof.position.y = 11.1;
     const upperGold = this.box(20, 0.15, 5.4, roofEdge);
@@ -1008,6 +966,7 @@ export class BeijingDriveScene {
     for (let index = 0; index < 12; index += 1) {
       const progress = 0.842 + index * 0.0052;
       for (const side of [-1, 1]) {
+        if (side < 0 && index === 5) continue;
         const width = 3.7 + hash01(index, side + 21) * 1.5;
         const height = 3.15 + hash01(index, side + 25) * 0.9;
         const depth = 4.2 + hash01(index, side + 29) * 2;
@@ -1057,6 +1016,7 @@ export class BeijingDriveScene {
     }
 
     this.buildPailou(0.902, '大栅栏');
+    buildDashilarGate(this.asFabricKit(), PASSAGE_HEROES.dashilarGate);
 
     this.addLamp(0.8365, -6.5, true);
     this.addLamp(0.851, 6.5, false);
@@ -1090,9 +1050,7 @@ export class BeijingDriveScene {
       [7, 3.3],
     ];
     for (const [x, span] of bays) {
-      const bayRoof = new Mesh(this.unitPitchedRoof, roof);
-      bayRoof.scale.set(1.35, 0.72, span);
-      bayRoof.rotation.y = Math.PI / 2;
+      const bayRoof = this.upturnedRoof(1.35, 0.72, span, roof);
       bayRoof.position.set(x, x === 0 ? 6.45 : 5.5, 0);
       arch.add(bayRoof);
     }
@@ -1190,7 +1148,7 @@ export class BeijingDriveScene {
           doorRight.position.set(roadFaceX, 0.92, 0.33);
           const gateLintel = this.box(0.16, 0.24, 1.7, lintel);
           gateLintel.position.set(roadFaceX, 1.95, 0);
-          const gateRoof = new Mesh(this.unitPitchedRoof, roof);
+          const gateRoof = new Mesh(this.unitUpturnedEave, roof);
           gateRoof.scale.set(0.9, 0.42, 2.1);
           gateRoof.position.set(roadFaceX, 2.07, 0);
           const step = this.box(0.5, 0.12, 1.9, stone);
@@ -1336,9 +1294,12 @@ export class BeijingDriveScene {
         const opensNanluoEntrance = side > 0 && index >= 2 && index <= 4;
         const opensWudaoyingEntrance = side < 0 && index >= 10 && index <= 13;
         if (opensNanluoEntrance || opensWudaoyingEntrance) continue;
-        const landmarkBay = side > 0 && index === 6;
-        const width = landmarkBay ? 5.4 : 3.5 + hash01(index, side + 51) * 1.4;
-        const height = landmarkBay ? 7.4 : 3.05 + hash01(index, side + 55) * 1.15;
+        if (side > 0 && index === 6) {
+          buildNanluoTeaHouse(this.asFabricKit(), PASSAGE_HEROES.nanluoTeaHouse);
+          continue;
+        }
+        const width = 3.5 + hash01(index, side + 51) * 1.4;
+        const height = 3.05 + hash01(index, side + 55) * 1.15;
         const depth = 3.8 + hash01(index, side + 59) * 2.2;
         const group = new Group();
         this.place(group, progress, side * CURB_BUILDING, 0);
@@ -1502,7 +1463,7 @@ export class BeijingDriveScene {
 
     const frontHall = this.box(10.8, 1.9, 4, ochre);
     frontHall.position.set(0, 1.05, -10.5);
-    const frontRoof = new Mesh(this.unitPitchedRoof, yellowRoof);
+    const frontRoof = new Mesh(this.unitUpturnedEave, yellowRoof);
     frontRoof.scale.set(4.7, 0.78, 12.4);
     frontRoof.rotation.y = Math.PI / 2;
     frontRoof.position.set(0, 2.03, -10.5);
@@ -1513,7 +1474,7 @@ export class BeijingDriveScene {
     for (const side of [-1, 1]) {
       const hall = this.box(3.2, 1.8, 6, ochre);
       hall.position.set(side * 5.1, 0.98, -4.8);
-      const roof = new Mesh(this.unitPitchedRoof, yellowRoof);
+      const roof = new Mesh(this.unitUpturnedEave, yellowRoof);
       roof.scale.set(6.8, 0.65, 4);
       roof.rotation.y = Math.PI / 2;
       roof.position.set(side * 5.1, 1.92, -4.8);
@@ -1527,7 +1488,7 @@ export class BeijingDriveScene {
     const mainHall = this.box(12.6, 5.4, 8.4, ochre);
     mainHall.position.y = 3.5;
     const mainRoofHeight = 2;
-    const mainRoof = new Mesh(this.unitPitchedRoof, yellowRoof);
+    const mainRoof = new Mesh(this.unitUpturnedEave, yellowRoof);
     mainRoof.scale.set(
       9.6,
       mainRoofHeight,
@@ -1624,13 +1585,13 @@ export class BeijingDriveScene {
     tower.position.y = 4.5;
     const recess = this.box(1.5, 1.7, 4, roof);
     recess.position.y = 4.2;
-    const lowerRoof = new Mesh(this.unitPitchedRoof, roof);
+    const lowerRoof = new Mesh(this.unitUpturnedEave, roof);
     lowerRoof.scale.set(4.7, 1, 7.3);
     lowerRoof.rotation.y = Math.PI / 2;
     lowerRoof.position.y = 6.2;
     const crown = this.box(3.6, 1, 2.7, body);
     crown.position.y = 7.5;
-    const topRoof = new Mesh(this.unitPitchedRoof, roof);
+    const topRoof = new Mesh(this.unitUpturnedEave, roof);
     topRoof.scale.set(3.4, 0.95, 5.2);
     topRoof.rotation.y = Math.PI / 2;
     topRoof.position.y = 8;
@@ -2144,7 +2105,7 @@ export class BeijingDriveScene {
     let tierY = 4.9;
     for (const [halfSpanX, height, spanZ] of tiers) {
       for (const rotation of [0, Math.PI / 2]) {
-        const eaves = new Mesh(this.unitPitchedRoof, roof);
+        const eaves = new Mesh(this.unitUpturnedEave, roof);
         eaves.scale.set(halfSpanX, height, spanZ);
         eaves.rotation.y = rotation;
         eaves.position.y = tierY;
@@ -2158,7 +2119,7 @@ export class BeijingDriveScene {
       body.position.y = tierY - 0.4;
       group.add(body);
     }
-    const crownRoof = new Mesh(this.unitPitchedRoof, roof);
+    const crownRoof = new Mesh(this.unitUpturnedEave, roof);
     crownRoof.scale.set(3, 1.15, 3);
     crownRoof.position.y = tierY + 0.4;
     const crossCrown = crownRoof.clone();
@@ -2385,7 +2346,7 @@ export class BeijingDriveScene {
       }
     }
 
-    const eaves = new Mesh(this.unitPitchedRoof, roof);
+    const eaves = new Mesh(this.unitUpturnedEave, roof);
     eaves.scale.set(8.6, 1.9, 12.4);
     eaves.rotation.y = Math.PI / 2;
     eaves.position.y = 8.8;
@@ -2448,6 +2409,8 @@ export class BeijingDriveScene {
         this.root.add(guard);
       }
     }
+
+    buildOverpassPier(this.asFabricKit(), PASSAGE_HEROES.overpassPier);
 
     this.addLamp(0.925, -5.8, false);
     this.addLamp(0.958, 5.8, false);
@@ -2756,13 +2719,13 @@ export class BeijingDriveScene {
     terrace.position.y = 3.65;
     const hall = this.box(7.65, 2.45, 4.8, red);
     hall.position.y = 5.05;
-    const lowerRoof = new Mesh(this.unitPitchedRoof, roof);
+    const lowerRoof = new Mesh(this.unitUpturnedEave, roof);
     lowerRoof.scale.set(6.45, 1.25, 10.4);
     lowerRoof.rotation.y = Math.PI / 2;
     lowerRoof.position.y = 6.25;
     const crown = this.box(5.3, 1.35, 3.45, red);
     crown.position.y = 7.72;
-    const crownRoof = new Mesh(this.unitPitchedRoof, roof);
+    const crownRoof = new Mesh(this.unitUpturnedEave, roof);
     crownRoof.scale.set(4.8, 1.08, 7.35);
     crownRoof.rotation.y = Math.PI / 2;
     crownRoof.position.y = 8.38;
@@ -2900,6 +2863,40 @@ export class BeijingDriveScene {
       group.add(drop);
     }
     this.root.add(group);
+  }
+
+  private upturnedRoof(
+    width: number,
+    height: number,
+    depth: number,
+    material: Material,
+  ): Mesh {
+    const mesh = new Mesh(this.unitUpturnedEave, material);
+    mesh.scale.set(width, height, depth);
+    mesh.rotation.y = Math.PI / 2;
+    return mesh;
+  }
+
+  private asFabricKit(): FabricKit {
+    return {
+      place: (object, progress, offset, y, headingOffset) => {
+        this.place(object, progress, offset, y, headingOffset);
+      },
+      box: (width, height, depth, material) => this.box(width, height, depth, material),
+      cylinder: (radius, height, material) => this.cylinder(radius, height, material),
+      standard: (color, options) => this.standard(color, options),
+      textured: (color, atlasId, options) => this.textured(color, atlasId, options),
+      tagHero: (object) => {
+        this.tagHero(object);
+      },
+      add: (object) => {
+        this.root.add(object);
+      },
+      upturnedRoof: (width, height, depth, material) =>
+        this.upturnedRoof(width, height, depth, material),
+      windowMaterial: this.windowMaterial,
+      trackGeometry: (geometry) => this.trackGeometry(geometry),
+    };
   }
 
   private place(

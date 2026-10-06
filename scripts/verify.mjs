@@ -1470,7 +1470,8 @@ for (const viewport of viewports) {
         controlCount: document.querySelectorAll('[data-act]').length,
       };
     });
-    const cappedRatio = viewport.mobile ? 1.35 : 1.8;
+    // Match applyRenderSize: phones stay at 1, desktop at 1.25.
+    const cappedRatio = viewport.mobile ? 1 : 1.25;
     const expectedBacking = [viewport.width * cappedRatio, viewport.height * cappedRatio];
     assert.equal(smoke.hook, true, `${label}: QA hook missing`);
     assert.ok(
@@ -2817,8 +2818,11 @@ assert.equal(
   'capture material mode left point lights visible',
 );
 assert.ok(
-  activeCapturePerformance.staticSceneObjectCount >= 1_850 &&
-    activeCapturePerformance.staticSceneObjectCount < 2_000,
+  // Instancing folds repeated bays into a few meshes. 794 was the capture-mode
+  // graph after that fold; the band rejects a deleted city or a return to
+  // thousands of separate nodes.
+  activeCapturePerformance.staticSceneObjectCount >= 720 &&
+    activeCapturePerformance.staticSceneObjectCount < 980,
   `static scene object count is outside the authored complexity budget: ${activeCapturePerformance.staticSceneObjectCount}`,
 );
 assert.equal(
