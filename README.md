@@ -69,7 +69,7 @@ Second-Ring city wall and supported flyover, Drum and Bell Towers, Nanluo/Wudaoy
 yellow eaves, a CBD skyline with secondary finance-street plates, the Temple of
 Heaven's triple-eave hall, the Dashilar pailou with hutong courtyard gates, and
 the overpass that folds the journey back into its first frame. Mid-tier surface
-atlases add brick, tile, bark and glass rhythm under the same flat-shaded masses.
+atlases add brick, tile, bark and glass rhythm under smooth-shaded masses. The road takes a wet highlight, landmark masses cast shadows, and lamp bloom stays short.
 
 The city palette combines a deep blue-black sky and asphalt with grey brick,
 dark red walls, restrained vermilion, warm amber lamps, stone lane markings and

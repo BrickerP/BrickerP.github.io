@@ -49,7 +49,7 @@ function finishTexture(
   return texture;
 }
 
-/** Boot-once mid-tier surface atlases — subtle rhythm under flat-shaded masses. */
+/** Boot-once mid-tier surface atlases — rhythm under the lit masses, not a photo skin. */
 export class SurfaceAtlasLibrary {
   private readonly atlases = new Map<SurfaceAtlasId, Texture>();
   private readonly owned: Texture[] = [];
