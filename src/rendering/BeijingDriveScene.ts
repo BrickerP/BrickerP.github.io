@@ -197,7 +197,7 @@ export class BeijingDriveScene {
     this.scene = new Scene();
     this.scene.name = 'Beijing endless drive';
     this.scene.background = new Color(PALETTE.skyTop);
-    this.scene.fog = new Fog(PALETTE.fog, 52, 172);
+    this.scene.fog = new Fog(PALETTE.fog, 28, 140);
     this.scene.add(this.root);
 
     this.unitBox = this.trackGeometry(new BoxGeometry(1, 1, 1));
@@ -244,10 +244,19 @@ export class BeijingDriveScene {
     this.foliageMaterial = this.standard(PALETTE.foliage, { roughness: 1 });
     this.shopHardwareMaterial = this.standard('#33291C', { roughness: 1 });
 
-    this.scene.add(new HemisphereLight('#91AAB7', '#182A36', 1.62));
-    this.keyLight = new DirectionalLight('#E4D2B8', 1.35);
+    this.scene.add(new HemisphereLight('#91AAB7', '#182A36', 0.85));
+    this.keyLight = new DirectionalLight('#E4D2B8', 2.1);
     this.keyLight.position.set(-18, 24, -12);
-    this.keyLight.castShadow = false;
+    this.keyLight.castShadow = true;
+    this.keyLight.shadow.mapSize.set(1024, 1024);
+    this.keyLight.shadow.camera.near = 1;
+    this.keyLight.shadow.camera.far = 72;
+    this.keyLight.shadow.camera.left = -26;
+    this.keyLight.shadow.camera.right = 26;
+    this.keyLight.shadow.camera.top = 26;
+    this.keyLight.shadow.camera.bottom = -26;
+    this.keyLight.shadow.bias = -0.00035;
+    this.keyLight.shadow.normalBias = 0.045;
     this.scene.add(this.keyLight);
 
     this.buildSkyAndGround();
@@ -287,7 +296,15 @@ export class BeijingDriveScene {
     const wave = 0.5 + 0.5 * Math.cos(progress * TAU);
     this.waterMaterial.emissiveIntensity = 0.18 + wave * 0.035;
     this.lampMaterial.emissiveIntensity = 1.4 + wave * 0.08;
-    this.keyLight.intensity = 1.28 + wave * 0.08;
+    this.keyLight.intensity = 1.95 + wave * 0.16;
+    const frame = samplePathFrame(progress);
+    const focusX = frame.point.x * DRIVE_PATH_SCALE + frame.tangent.x * 14;
+    const focusZ = frame.point.z * DRIVE_PATH_SCALE + frame.tangent.z * 14;
+    this.keyLight.position.set(focusX - 14, 22, focusZ - 8);
+    this.keyLight.target.position.set(focusX, 2.4, focusZ);
+    this.keyLight.target.updateMatrixWorld();
+    this.keyLight.updateMatrixWorld();
+    this.keyLight.shadow.camera.updateProjectionMatrix();
 
     for (const entry of this.lampLights) {
       entry.light.intensity = entry.baseIntensity * (
@@ -446,8 +463,8 @@ export class BeijingDriveScene {
 
   private buildRoad(): void {
     const roadMaterial = this.textured(PALETTE.asphalt, 'asphaltGrain', {
-      roughness: 0.82,
-      metalness: 0.04,
+      roughness: 0.34,
+      metalness: 0.14,
     });
     roadMaterial.userData.preserveInCapture = true;
     const pavementMaterial = this.standard(PALETTE.pavement, { roughness: 0.86 });

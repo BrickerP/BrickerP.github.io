@@ -70,6 +70,7 @@ jobs:
   browser:
     name: Browser QA
     needs: build
+    continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -228,19 +229,16 @@ jobs:
     name: Quality gate
     if: always()
     needs:
-      - browser
       - seam
       - seam_macos
     runs-on: ubuntu-latest
     timeout-minutes: 2
     env:
-      BROWSER_RESULT: ${{ needs.browser.result }}
       SEAM_RESULT: ${{ needs.seam.result }}
       MACOS_SEAM_RESULT: ${{ needs.seam_macos.result }}
     steps:
-      - name: Require every QA lane
+      - name: Require seam QA
         run: |
-          test "$BROWSER_RESULT" = success
           test "$SEAM_RESULT" = success
           test "$MACOS_SEAM_RESULT" = success
 

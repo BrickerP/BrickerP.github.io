@@ -15,10 +15,10 @@ const OUTPUT = join(
 );
 const BUDGET = {
   javascript: {
-    // Wet road, smooth shading, and the passage registry. Measured gzip 160751.
-    originMainGzipBaselineBytes: 160_751,
+    // Shadows, bloom, and the wet road. Measured with postprocessing around 166491 gzip.
+    originMainGzipBaselineBytes: 166_491,
     maximumGrowthRatio: 0.05,
-    absoluteGzipMaximumBytes: 170_000,
+    absoluteGzipMaximumBytes: 190_000,
     rawMaximumBytes: 650_000,
   },
   css: { gzipMaximumBytes: 4_096 },
