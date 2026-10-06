@@ -14,6 +14,8 @@ import {
   HemisphereLight,
   LatheGeometry,
   LinearFilter,
+  InstancedMesh,
+  Matrix4,
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
@@ -290,7 +292,57 @@ export class BeijingDriveScene {
     // objects to recompute unchanged world matrices on every frame. The camera
     // is intentionally outside this scene and Three.js updates it separately.
     this.scene.updateMatrixWorld(true);
+    this.consolidateRepeatedMeshes();
+    this.scene.updateMatrixWorld(true);
     this.scene.matrixWorldAutoUpdate = false;
+  }
+
+  /**
+   * Repeated boxes, columns, and lamps share one draw each. Unique hero
+   * silhouettes stay as their own meshes.
+   */
+  private consolidateRepeatedMeshes(): void {
+    const shared = new Set<BufferGeometry>([
+      this.unitBox,
+      this.unitCylinder,
+      this.unitSphere,
+    ]);
+    const groups = new Map<string, Mesh[]>();
+    this.root.updateWorldMatrix(true, true);
+    this.root.traverse((object) => {
+      if (!(object instanceof Mesh) || object instanceof InstancedMesh) return;
+      if (!shared.has(object.geometry)) return;
+      if (Array.isArray(object.material)) return;
+      const cast = object.castShadow ? 'c' : 'n';
+      const receive = object.receiveShadow ? 'r' : 'n';
+      const key = `${object.geometry.uuid}:${object.material.uuid}:${cast}:${receive}`;
+      const list = groups.get(key);
+      if (list) list.push(object);
+      else groups.set(key, [object]);
+    });
+
+    for (const meshes of groups.values()) {
+      if (meshes.length < 6) continue;
+      const source = meshes[0];
+      const instanced = new InstancedMesh(
+        source.geometry,
+        source.material,
+        meshes.length,
+      );
+      instanced.castShadow = source.castShadow;
+      instanced.receiveShadow = source.receiveShadow;
+      instanced.frustumCulled = true;
+      const matrix = new Matrix4();
+      for (let index = 0; index < meshes.length; index += 1) {
+        const mesh = meshes[index];
+        matrix.copy(mesh.matrixWorld);
+        instanced.setMatrixAt(index, matrix);
+        mesh.removeFromParent();
+      }
+      instanced.instanceMatrix.needsUpdate = true;
+      instanced.computeBoundingSphere();
+      this.root.add(instanced);
+    }
   }
 
   /** All changing values are reconstructed from phase, including the seam. */
@@ -307,7 +359,7 @@ export class BeijingDriveScene {
     this.keyLight.target.position.set(focusX, 2.4, focusZ);
     this.keyLight.target.updateMatrixWorld();
     this.keyLight.updateMatrixWorld();
-    const snap = Math.floor(progress * 24 + 1e-6) / 24;
+    const snap = Math.floor(progress * 12 + 1e-6) / 12;
     if (snap !== this.shadowSnap) {
       this.shadowSnap = snap;
       this.keyLight.shadow.camera.updateProjectionMatrix();
