@@ -446,8 +446,8 @@ export class BeijingDriveScene {
 
   private buildRoad(): void {
     const roadMaterial = this.textured(PALETTE.asphalt, 'asphaltGrain', {
-      roughness: 0.34,
-      metalness: 0.14,
+      roughness: 0.82,
+      metalness: 0.04,
     });
     roadMaterial.userData.preserveInCapture = true;
     const pavementMaterial = this.standard(PALETTE.pavement, { roughness: 0.86 });
@@ -2873,8 +2873,8 @@ export class BeijingDriveScene {
       new MeshStandardMaterial({
         color,
         flatShading: false,
-        roughness: 0.76,
-        metalness: 0.02,
+        roughness: 1,
+        metalness: 0,
         ...options,
       }),
     );
