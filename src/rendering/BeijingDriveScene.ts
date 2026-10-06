@@ -214,21 +214,21 @@ export class BeijingDriveScene {
 
     this.waterMaterial = this.standard(PALETTE.water, {
       emissive: '#123745',
-      emissiveIntensity: 0.2,
-      metalness: 0.18,
-      roughness: 0.22,
+      emissiveIntensity: 0.28,
+      metalness: 0.55,
+      roughness: 0.08,
     });
     this.waterMaterial.userData.preserveInCapture = true;
     this.lampMaterial = this.standard(PALETTE.lamp, {
       emissive: PALETTE.lamp,
-      emissiveIntensity: 1.45,
-      roughness: 0.42,
+      emissiveIntensity: 2.4,
+      roughness: 0.28,
     });
     this.lampMaterial.userData.preserveInCapture = true;
     this.windowMaterial = this.standard('#E8B25F', {
-      emissive: '#D89A45',
-      emissiveIntensity: 0.72,
-      roughness: 0.8,
+      emissive: '#FFC56A',
+      emissiveIntensity: 1.25,
+      roughness: 0.45,
     });
     this.lanternMaterial = this.standard(PALETTE.palaceRed, {
       emissive: '#7A3029',
@@ -295,7 +295,7 @@ export class BeijingDriveScene {
     const progress = wrapProgress(phase);
     const wave = 0.5 + 0.5 * Math.cos(progress * TAU);
     this.waterMaterial.emissiveIntensity = 0.18 + wave * 0.035;
-    this.lampMaterial.emissiveIntensity = 1.4 + wave * 0.08;
+    this.lampMaterial.emissiveIntensity = 2.2 + wave * 0.2;
     this.keyLight.intensity = 1.95 + wave * 0.16;
     const frame = samplePathFrame(progress);
     const focusX = frame.point.x * DRIVE_PATH_SCALE + frame.tangent.x * 14;
