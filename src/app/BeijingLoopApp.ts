@@ -189,7 +189,7 @@ export class BeijingLoopApp {
       return;
     }
     const mobile = this.viewportWidth < 720;
-    const maxRatio = this.state.reducedMotion ? 1 : mobile ? 1.35 : 1.8;
+    const maxRatio = this.state.reducedMotion ? 1 : mobile ? 1 : 1.25;
     const ratio = Math.min(this.devicePixelRatio, maxRatio);
     this.renderer.setPixelRatio(ratio);
     this.renderer.setSize(this.viewportWidth, this.viewportHeight, false);
@@ -199,11 +199,11 @@ export class BeijingLoopApp {
     this.cameraRig.resize(this.viewportWidth / this.viewportHeight);
   }
 
-  /** Glow is soft, so half-resolution bloom keeps the halo without a full-screen blur. */
+  /** Glow is soft. Quarter-size blur keeps the halo and drops most of its fill cost. */
   private fitBloom(width: number, height: number): void {
     this.bloom.setSize(
-      Math.max(1, Math.floor(width / 2)),
-      Math.max(1, Math.floor(height / 2)),
+      Math.max(1, Math.floor(width / 4)),
+      Math.max(1, Math.floor(height / 4)),
     );
   }
 
