@@ -57,6 +57,7 @@ export class BeijingLoopApp {
   private readonly renderer: WebGLRenderer;
   private readonly composer: EffectComposer;
   private readonly bloom: UnrealBloomPass;
+  private readonly focus: HeroFocusPass;
   private readonly city = new BeijingDriveScene();
   private readonly cameraRig: FirstPersonCameraRig;
   private readonly pathFrame = samplePathFrame(0);
@@ -112,8 +113,9 @@ export class BeijingLoopApp {
     renderTarget.depthTexture = new DepthTexture(1, 1, UnsignedIntType);
     renderTarget.depthTexture.format = DepthFormat;
     this.composer = new EffectComposer(this.renderer, renderTarget);
+    this.focus = new HeroFocusPass(this.cameraRig.camera);
     this.composer.addPass(renderPass);
-    this.composer.addPass(new HeroFocusPass(this.cameraRig.camera));
+    this.composer.addPass(this.focus);
     this.composer.addPass(bloom);
     this.composer.addPass(new OutputPass());
     this.state = {
@@ -153,6 +155,8 @@ export class BeijingLoopApp {
     if (this.deterministicCapture === active) return;
     this.deterministicCapture = active;
     this.city.setCapturePerformanceMode(active);
+    // The recorder already simplifies the city. The focus pass is for the live frame.
+    this.focus.enabled = !active;
     this.applyRenderSize();
     this.render();
   }
