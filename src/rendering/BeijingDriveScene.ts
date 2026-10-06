@@ -190,7 +190,6 @@ export class BeijingDriveScene {
   private readonly atlases: SurfaceAtlasLibrary;
   private openCircuitCarrier!: Mesh;
   private openCircuitNode!: Mesh;
-  private shadowSnap = Number.NaN;
   private capturePerformanceMode = false;
   private disposed = false;
   private readonly builtPassages = new Set<PassageId>();
@@ -260,8 +259,9 @@ export class BeijingDriveScene {
     this.keyLight.shadow.camera.bottom = -16;
     this.keyLight.shadow.bias = -0.00035;
     this.keyLight.shadow.normalBias = 0.045;
-    this.keyLight.shadow.autoUpdate = false;
-    this.keyLight.shadow.needsUpdate = true;
+    // Follow the key every frame. Freezing the map for a whole passage left
+    // this tight volume behind the car, so street light was sliced by a stale
+    // shadow and then jumped. Instancing keeps the shadow pass small.
     this.scene.add(this.keyLight);
 
     this.buildSkyAndGround();
@@ -331,7 +331,9 @@ export class BeijingDriveScene {
       );
       instanced.castShadow = source.castShadow;
       instanced.receiveShadow = source.receiveShadow;
-      instanced.frustumCulled = true;
+      // One batch spans the whole circuit. Culling it would blink every lamp
+      // and window in that batch the moment the bounds leave the view.
+      instanced.frustumCulled = false;
       const matrix = new Matrix4();
       for (let index = 0; index < meshes.length; index += 1) {
         const mesh = meshes[index];
@@ -359,12 +361,6 @@ export class BeijingDriveScene {
     this.keyLight.target.position.set(focusX, 2.4, focusZ);
     this.keyLight.target.updateMatrixWorld();
     this.keyLight.updateMatrixWorld();
-    const snap = Math.floor(progress * 12 + 1e-6) / 12;
-    if (snap !== this.shadowSnap) {
-      this.shadowSnap = snap;
-      this.keyLight.shadow.camera.updateProjectionMatrix();
-      this.keyLight.shadow.needsUpdate = true;
-    }
 
     for (const entry of this.lampLights) {
       entry.light.intensity = entry.baseIntensity * (
