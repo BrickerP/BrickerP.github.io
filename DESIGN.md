@@ -130,7 +130,7 @@ Adjacent passages overlap through shared silhouettes, fog occlusion, walls, tree
 
 The implementation uses Vite, TypeScript, Three.js, and plain CSS. It adds no map SDK, tile service, runtime data service, UI framework, or downloaded font.
 
-The authored world currently contains roughly `1939` scene objects whose transforms become static after construction. The browser regression keeps that count within an `1850–1999` complexity budget: the lower bound catches accidental scene loss, while the upper bound prevents decorative repetition from quietly returning. Construction resolves world matrices once and disables automatic scene world-matrix updates; any future dynamic scene transform must explicitly update its world matrix or deliberately restore automatic updates. The camera remains outside this static scene hierarchy and updates independently.
+Repeated street meshes are instanced after construction, so the live scene graph is no longer the pre-instance count of roughly `1939` objects. The browser regression keeps the instanced graph within `640–1599`: the lower bound catches accidental scene loss, while the upper bound prevents a return to thousands of separate nodes. Construction resolves world matrices once and disables automatic scene world-matrix updates; any future dynamic scene transform must explicitly update its world matrix or deliberately restore automatic updates. The camera remains outside this static scene hierarchy and updates independently.
 
 ## Determinism, lifecycle, and compatibility
 

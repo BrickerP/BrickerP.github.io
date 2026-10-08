@@ -113,6 +113,53 @@ function createPitchedRoofGeometry(): BufferGeometry {
   return geometry;
 }
 
+/**
+ * Hip roof in the same unit box as the prism: corners lift, eave centres dip.
+ * The plan stays inside ±0.5 so an existing hero scale does not enter the road.
+ */
+function createUpturnedEaveGeometry(): BufferGeometry {
+  const geometry = new BufferGeometry();
+  geometry.setAttribute(
+    'position',
+    new Float32BufferAttribute(
+      [
+        0, 1, -0.18,
+        0, 1, 0.18,
+        -0.5, 0.34, -0.5,
+        0.5, 0.34, -0.5,
+        0.5, 0.34, 0.5,
+        -0.5, 0.34, 0.5,
+        0, 0, -0.5,
+        0.5, 0, 0,
+        0, 0, 0.5,
+        -0.5, 0, 0,
+      ],
+      3,
+    ),
+  );
+  geometry.setIndex([
+    0, 2, 6,
+    0, 6, 3,
+    0, 3, 7,
+    1, 0, 7,
+    1, 7, 4,
+    1, 4, 8,
+    1, 8, 5,
+    1, 5, 9,
+    0, 1, 9,
+    0, 9, 2,
+    2, 9, 6,
+    3, 6, 7,
+    4, 7, 8,
+    5, 8, 9,
+    6, 9, 8,
+    6, 8, 7,
+  ]);
+  geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
+
 /** Stylised Tibetan stupa bowl: broad belly with a tightened crown. */
 function createDagobaBowlGeometry(): LatheGeometry {
   const geometry = new LatheGeometry(
@@ -165,6 +212,7 @@ export class BeijingDriveScene {
   private readonly unitCylinder: CylinderGeometry;
   private readonly unitSphere: SphereGeometry;
   private readonly unitPitchedRoof: BufferGeometry;
+  private readonly unitUpturnedEave: BufferGeometry;
   private readonly unitTaperedRoof: CylinderGeometry;
   private readonly unitDagobaBowl: LatheGeometry;
   private readonly unitTempleDrum: CylinderGeometry;
@@ -209,6 +257,7 @@ export class BeijingDriveScene {
     this.unitCylinder = this.trackGeometry(new CylinderGeometry(1, 1, 1, 8));
     this.unitSphere = this.trackGeometry(new SphereGeometry(1, 10, 7));
     this.unitPitchedRoof = this.trackGeometry(createPitchedRoofGeometry());
+    this.unitUpturnedEave = this.trackGeometry(createUpturnedEaveGeometry());
     this.unitTaperedRoof = this.trackGeometry(
       new CylinderGeometry(0.16, 1, 1, 16),
     );
@@ -221,11 +270,12 @@ export class BeijingDriveScene {
 
     this.waterMaterial = this.standard(PALETTE.water, {
       emissive: '#123745',
-      emissiveIntensity: 0.28,
-      metalness: 0.55,
-      roughness: 0.08,
+      emissiveIntensity: 0.22,
+      metalness: 0.4,
+      roughness: 0.2,
     });
     this.waterMaterial.userData.preserveInCapture = true;
+    this.bindWetLampReflections(this.waterMaterial, 'water');
     // Unlit and well above the bloom threshold. A shaded low-poly bulb
     // sparkles as the key sweeps past, and the quarter-res bloom turns each
     // sparkle into a blink.
@@ -315,9 +365,22 @@ export class BeijingDriveScene {
     this.scene.matrixWorldAutoUpdate = false;
   }
 
-  /** Lamp streaks on the asphalt, aimed from each lamp toward the camera. */
-  private bindWetLampReflections(material: MeshStandardMaterial): void {
+  /**
+   * Lamp streaks aimed from each lamp toward the camera.
+   * Asphalt keeps the tuned road weights. Water adds a fixed ripple so the
+   * moat is not a flat sheet. Both are a pure function of position.
+   */
+  private bindWetLampReflections(
+    material: MeshStandardMaterial,
+    surface: 'asphalt' | 'water' = 'asphalt',
+  ): void {
     const wetLamps = this.wetLamps;
+    const shade =
+      surface === 'water'
+        ? `float band = sin(vWetWorld.x * 0.9 + vWetWorld.z * 1.4);
+           float sheen = 0.62 + 0.38 * band * band;
+           outgoingLight += wet * sheen + vec3(0.015, 0.04, 0.05) * sheen;`
+        : 'outgoingLight += wet;';
     material.onBeforeCompile = (shader) => {
       shader.uniforms.wetLamps = { value: wetLamps };
       shader.vertexShader = shader.vertexShader
@@ -351,12 +414,12 @@ export class BeijingDriveScene {
             float falloff = exp(-dist * 0.48);
             wet += vec3(1.0, 0.72, 0.36) * wetLamps[i].w * facing * falloff;
           }
-          outgoingLight += wet;
+          ${shade}
           #include <opaque_fragment>
           `,
         );
     };
-    material.customProgramCacheKey = () => 'wet-asphalt-lamps';
+    material.customProgramCacheKey = () => `wet-${surface}`;
   }
 
   private fillWetLampReflections(): void {
@@ -1200,6 +1263,7 @@ export class BeijingDriveScene {
     for (let index = 0; index < 12; index += 1) {
       const progress = 0.842 + index * 0.0052;
       for (const side of [-1, 1]) {
+        if (side < 0 && index === 5) continue;
         const width = 3.7 + hash01(index, side + 21) * 1.5;
         const height = 3.15 + hash01(index, side + 25) * 0.9;
         const depth = 4.2 + hash01(index, side + 29) * 2;
@@ -1249,6 +1313,7 @@ export class BeijingDriveScene {
     }
 
     this.buildPailou(0.902, '大栅栏');
+    this.buildDashilarGate();
 
     this.addLamp(0.8365, -6.5, true);
     this.addLamp(0.851, 6.5, false);
@@ -1382,7 +1447,7 @@ export class BeijingDriveScene {
           doorRight.position.set(roadFaceX, 0.92, 0.33);
           const gateLintel = this.box(0.16, 0.24, 1.7, lintel);
           gateLintel.position.set(roadFaceX, 1.95, 0);
-          const gateRoof = new Mesh(this.unitPitchedRoof, roof);
+          const gateRoof = new Mesh(this.unitUpturnedEave, roof);
           gateRoof.scale.set(0.9, 0.42, 2.1);
           gateRoof.position.set(roadFaceX, 2.07, 0);
           const step = this.box(0.5, 0.12, 1.9, stone);
@@ -1417,7 +1482,7 @@ export class BeijingDriveScene {
       }
 
       if (index % 4 === 1) {
-        this.addLocustTree(progress + 0.002, index % 8 < 4 ? CURB_TREE : -CURB_TREE);
+        this.addTree(progress + 0.002, index % 8 < 4 ? CURB_TREE : -CURB_TREE, 4.4, 'locust');
       }
     }
 
@@ -1528,9 +1593,12 @@ export class BeijingDriveScene {
         const opensNanluoEntrance = side > 0 && index >= 2 && index <= 4;
         const opensWudaoyingEntrance = side < 0 && index >= 10 && index <= 13;
         if (opensNanluoEntrance || opensWudaoyingEntrance) continue;
-        const landmarkBay = side > 0 && index === 6;
-        const width = landmarkBay ? 5.4 : 3.5 + hash01(index, side + 51) * 1.4;
-        const height = landmarkBay ? 7.4 : 3.05 + hash01(index, side + 55) * 1.15;
+        if (side > 0 && index === 6) {
+          this.buildNanluoTeaHouse();
+          continue;
+        }
+        const width = 3.5 + hash01(index, side + 51) * 1.4;
+        const height = 3.05 + hash01(index, side + 55) * 1.15;
         const depth = 3.8 + hash01(index, side + 59) * 2.2;
         const group = new Group();
         this.place(group, progress, side * CURB_BUILDING, 0);
@@ -1594,10 +1662,9 @@ export class BeijingDriveScene {
     const roof = this.textured('#4B5453', 'tileRoof', { roughness: 1 });
     const civicStone = this.textured('#777B77', 'stoneGrain', { roughness: 1 });
 
-    for (let index = 0; index < 4; index += 1) {
+    for (let index = 0; index < 2; index += 1) {
       const progress = 0.42 + index * 0.0069;
       for (const side of [-1, 1]) {
-        if (side < 0 && index >= 4) continue; // clear the tower forecourt
         const width = 4 + hash01(index, side + 41) * 1.6;
         const height = 3 + hash01(index, side + 45) * 0.9;
         const depth = 4.4 + hash01(index, side + 49) * 2.2;
@@ -1694,7 +1761,7 @@ export class BeijingDriveScene {
 
     const frontHall = this.box(10.8, 1.9, 4, ochre);
     frontHall.position.set(0, 1.05, 8.2);
-    const frontRoof = new Mesh(this.unitPitchedRoof, yellowRoof);
+    const frontRoof = new Mesh(this.unitUpturnedEave, yellowRoof);
     frontRoof.scale.set(3.1, 0.42, 7.2);
     frontRoof.rotation.y = Math.PI / 2;
     frontRoof.position.set(0, 2.03, 12.4);
@@ -1705,7 +1772,7 @@ export class BeijingDriveScene {
     for (const side of [-1, 1]) {
       const hall = this.box(3.2, 1.8, 6, ochre);
       hall.position.set(side * 5.1, 0.98, -4.8);
-      const roof = new Mesh(this.unitPitchedRoof, yellowRoof);
+      const roof = new Mesh(this.unitUpturnedEave, yellowRoof);
       roof.scale.set(6.8, 0.65, 4);
       roof.rotation.y = Math.PI / 2;
       roof.position.set(side * 5.1, 1.92, -4.8);
@@ -1719,7 +1786,7 @@ export class BeijingDriveScene {
     const mainHall = this.box(12.6, 5.4, 8.4, ochre);
     mainHall.position.y = 3.5;
     const mainRoofHeight = 2;
-    const mainRoof = new Mesh(this.unitPitchedRoof, yellowRoof);
+    const mainRoof = new Mesh(this.unitUpturnedEave, yellowRoof);
     mainRoof.scale.set(
       9.6,
       mainRoofHeight,
@@ -1727,6 +1794,10 @@ export class BeijingDriveScene {
     );
     mainRoof.rotation.y = Math.PI / 2;
     mainRoof.position.y = yonghegongModel.height - mainRoofHeight;
+    const crownEave = new Mesh(this.unitUpturnedEave, yellowRoof);
+    crownEave.scale.set(6.4, 1.05, 11.2);
+    crownEave.rotation.y = Math.PI / 2;
+    crownEave.position.y = yonghegongModel.height + 0.35;
     const mainEdge = this.box(
       yonghegongModel.solidHalfWidth * 2,
       0.22,
@@ -1747,7 +1818,7 @@ export class BeijingDriveScene {
       facade.add(bay);
     }
 
-    rearPavilion.add(plinth, mainHall, mainRoof, mainEdge, facade);
+    rearPavilion.add(plinth, mainHall, mainRoof, crownEave, mainEdge, facade);
     const plaque = this.canvasPlaque('雍和宫', {
       width: 640,
       height: 224,
@@ -1776,17 +1847,6 @@ export class BeijingDriveScene {
     this.tagHero(temple);
     this.root.add(temple);
 
-    const vergeBrick = this.textured('#565F60', 'brick', { roughness: 1 });
-    for (let index = 0; index < 4; index += 1) {
-      const progress = 0.592 + index * 0.018;
-      for (const side of [-1, 1]) {
-        if (side < 0 && index >= 1) continue;
-        const wall = this.box(3, 2.4, 3.8, vergeBrick);
-        this.place(wall, progress, side * 9.6, 1.2);
-        this.root.add(wall);
-      }
-    }
-
     this.addLamp(0.591, -6.4, true);
     this.addLamp(0.635, 6.4, false);
     this.addLamp(0.659, -6.4, true);
@@ -1795,17 +1855,21 @@ export class BeijingDriveScene {
   }
 
   private buildBellTower(progress: number, offset: number, scale: number): void {
-    const masonry = this.standard('#66747B', {
-      emissive: '#213039',
-      emissiveIntensity: 0.16,
-      roughness: 1,
+    const masonry = this.standard('#8A969C', {
+      emissive: '#314048',
+      emissiveIntensity: 0.28,
+      roughness: 0.94,
     });
-    const body = this.standard('#59676E', {
-      emissive: '#1C2A31',
-      emissiveIntensity: 0.18,
-      roughness: 1,
+    const body = this.standard('#7A888E', {
+      emissive: '#2A3840',
+      emissiveIntensity: 0.26,
+      roughness: 0.94,
     });
-    const roof = this.standard('#2A3838', { roughness: 1 });
+    const roof = this.standard('#4C5C54', {
+      emissive: '#1A2820',
+      emissiveIntensity: 0.2,
+      roughness: 0.92,
+    });
     const group = new Group();
     this.place(group, progress, offset, 0);
     group.scale.setScalar(scale);
@@ -1816,13 +1880,13 @@ export class BeijingDriveScene {
     tower.position.y = 4.5;
     const recess = this.box(1.5, 1.7, 4, roof);
     recess.position.y = 4.2;
-    const lowerRoof = new Mesh(this.unitPitchedRoof, roof);
+    const lowerRoof = new Mesh(this.unitUpturnedEave, roof);
     lowerRoof.scale.set(4.7, 1, 7.3);
     lowerRoof.rotation.y = Math.PI / 2;
     lowerRoof.position.y = 6.2;
     const crown = this.box(3.6, 1, 2.7, body);
     crown.position.y = 7.5;
-    const topRoof = new Mesh(this.unitPitchedRoof, roof);
+    const topRoof = new Mesh(this.unitUpturnedEave, roof);
     topRoof.scale.set(3.4, 0.95, 5.2);
     topRoof.rotation.y = Math.PI / 2;
     topRoof.position.y = 8;
@@ -1932,7 +1996,7 @@ export class BeijingDriveScene {
       whiteDagoba.scale,
     );
 
-    this.addWillow(0.185, -6.2);
+    this.addTree(0.185, -6.2, 4.8, 'willow');
     this.addLamp(0.19, -5.62, true);
     this.addLamp(0.225, 6.5, false);
     this.addLamp(0.242, 6.5, true);
@@ -2230,12 +2294,16 @@ export class BeijingDriveScene {
   /** 0.333–0.417 — Second-Ring city threshold: wall edge, flyover, and gantry. */
   private buildSecondRingThreshold(): void {
     this.beginPassage('second-ring-threshold');
-    const brick = this.textured('#6A4A46', 'brick', {
-      roughness: 0.96,
-      emissive: '#3A2422',
-      emissiveIntensity: 0.28,
+    const brick = this.textured('#8C6E66', 'brick', {
+      roughness: 0.94,
+      emissive: '#5A3832',
+      emissiveIntensity: 0.4,
     });
-    const agedBrick = this.textured('#4A3437', 'brick', { roughness: 1 });
+    const agedBrick = this.textured('#6E524C', 'brick', {
+      roughness: 0.96,
+      emissive: '#3A2824',
+      emissiveIntensity: 0.22,
+    });
     const stone = this.textured('#7A8584', 'stoneGrain', { roughness: 0.96 });
     const roofEdge = this.standard('#C4A36A', {
       emissive: '#6A4A22',
@@ -2340,7 +2408,7 @@ export class BeijingDriveScene {
     let tierY = 4.9;
     for (const [halfSpanX, height, spanZ] of tiers) {
       for (const rotation of [0, Math.PI / 2]) {
-        const eaves = new Mesh(this.unitPitchedRoof, roof);
+        const eaves = new Mesh(this.unitUpturnedEave, roof);
         eaves.scale.set(halfSpanX, height, spanZ);
         eaves.rotation.y = rotation;
         eaves.position.y = tierY;
@@ -2354,7 +2422,7 @@ export class BeijingDriveScene {
       body.position.y = tierY - 0.4;
       group.add(body);
     }
-    const crownRoof = new Mesh(this.unitPitchedRoof, roof);
+    const crownRoof = new Mesh(this.unitUpturnedEave, roof);
     crownRoof.scale.set(3, 1.15, 3);
     crownRoof.position.y = tierY + 0.4;
     const crossCrown = crownRoof.clone();
@@ -2503,7 +2571,7 @@ export class BeijingDriveScene {
     // Staggered east-side cluster: fewer, lower masses with road-facing window
     // ranks read as a skyline instead of featureless black canyon walls.
     for (let index = 0; index < 4; index += 1) {
-      const progress = 0.742 + index * 0.0018;
+      const progress = 0.704 + index * 0.0018;
       const height = 6.5 + hash01(index, 71) * 3.5;
       const width = 4 + hash01(index, 73) * 1.2;
       const towerOffset = 10 + hash01(index, 77) * 2.5;
@@ -2522,7 +2590,7 @@ export class BeijingDriveScene {
 
     // Xidan / Financial Street — secondary lower glass plate band to the west.
     for (let index = 0; index < 4; index += 1) {
-      const progress = 0.742 + index * 0.0018;
+      const progress = 0.704 + index * 0.0018;
       const height = 5.5 + hash01(index, 91) * 2;
       const width = 4.5 + hash01(index, 93) * 1.5;
       const plateOffset = 10 + hash01(index, 97) * 2.5;
@@ -2651,6 +2719,7 @@ export class BeijingDriveScene {
     const lintel = this.box(14.2, 3.6, 2.2, concrete);
     this.place(lintel, portalProgress, 0, 8.6);
     this.root.add(lintel);
+    this.buildOverpassPier();
 
     this.addLamp(0.925, -5.8, false);
     this.addLamp(0.958, 5.8, false);
@@ -2941,13 +3010,21 @@ export class BeijingDriveScene {
   }
 
   private buildDrumTower(progress: number, offset: number, scale = 1): void {
-    const masonry = this.standard('#38464A', { roughness: 1 });
+    const masonry = this.standard('#6A7672', {
+      emissive: '#24302C',
+      emissiveIntensity: 0.18,
+      roughness: 0.94,
+    });
     const red = this.standard('#824039', {
       emissive: '#321310',
       emissiveIntensity: 0.2,
       roughness: 0.96,
     });
-    const roof = this.standard('#202B2B', { roughness: 1 });
+    const roof = this.standard('#3E4C44', {
+      emissive: '#182420',
+      emissiveIntensity: 0.22,
+      roughness: 0.9,
+    });
     const edge = this.standard('#86724B', { roughness: 0.92 });
     const group = new Group();
     this.place(group, progress, offset, 0);
@@ -2959,13 +3036,13 @@ export class BeijingDriveScene {
     terrace.position.y = 3.65;
     const hall = this.box(7.65, 2.45, 4.8, red);
     hall.position.y = 5.05;
-    const lowerRoof = new Mesh(this.unitPitchedRoof, roof);
+    const lowerRoof = new Mesh(this.unitUpturnedEave, roof);
     lowerRoof.scale.set(6.45, 1.25, 10.4);
     lowerRoof.rotation.y = Math.PI / 2;
     lowerRoof.position.y = 6.25;
     const crown = this.box(5.3, 1.35, 3.45, red);
     crown.position.y = 7.72;
-    const crownRoof = new Mesh(this.unitPitchedRoof, roof);
+    const crownRoof = new Mesh(this.unitUpturnedEave, roof);
     crownRoof.scale.set(4.8, 1.08, 7.35);
     crownRoof.rotation.y = Math.PI / 2;
     crownRoof.position.y = 8.38;
@@ -3050,71 +3127,185 @@ export class BeijingDriveScene {
     this.root.add(group);
   }
 
-  private addTree(progress: number, offset: number, height: number): void {
+  /** Nanluo poster: one tea house above the shop row, with a moon gate. */
+  private buildNanluoTeaHouse(): void {
+    const hero = PASSAGE_HEROES.nanluoTeaHouse;
+    const brick = this.textured('#5A6365', 'brick', { roughness: 1 });
+    const timber = this.standard('#4A3A28', { roughness: 0.94 });
+    const roof = this.textured('#4A5352', 'tileRoof', { roughness: 1 });
+    const opening = this.standard('#14110E', { roughness: 1 });
+    const house = new Group();
+    this.place(house, hero.progress, hero.lateralOffset, 0);
+    house.scale.setScalar(hero.scale);
+
+    const body = this.box(4.4, 4.05, 3.5, brick);
+    body.position.set(0, 2.02, 0);
+    const upper = this.box(4.05, 2.15, 3.15, timber);
+    upper.position.set(0, 5.05, 0);
+    const eave = new Mesh(this.unitUpturnedEave, roof);
+    eave.scale.set(3.6, 1.15, 5.2);
+    eave.rotation.y = Math.PI / 2;
+    eave.position.y = 6.55;
+    const finial = this.cylinder(0.06, 0.7, timber);
+    finial.position.y = 7.45;
+    const road = hero.lateralOffset > 0 ? 1 : -1;
+    const moonGate = new Mesh(
+      this.trackGeometry(new CylinderGeometry(0.78, 0.78, 0.16, 20)),
+      timber,
+    );
+    moonGate.rotation.z = Math.PI / 2;
+    moonGate.position.set(road * 2.22, 1.55, 0);
+    const moonVoid = new Mesh(
+      this.trackGeometry(new CylinderGeometry(0.62, 0.62, 0.2, 20)),
+      opening,
+    );
+    moonVoid.rotation.z = Math.PI / 2;
+    moonVoid.position.set(road * 2.28, 1.55, 0);
+    const upperPane = this.box(0.08, 0.7, 1.5, this.windowMaterial);
+    upperPane.position.set(road * 2.05, 5.05, 0);
+    house.add(body, upper, eave, finial, moonGate, moonVoid, upperPane);
+    this.tagHero(house);
+    this.root.add(house);
+  }
+
+  /** Qianmen poster: the pailou still leads. This gate is the one bay that is not a shop. */
+  private buildDashilarGate(): void {
+    const hero = PASSAGE_HEROES.dashilarGate;
+    const brick = this.textured('#5C4038', 'brick', { roughness: 0.92 });
+    const timber = this.standard('#3F3224', { roughness: 0.95 });
+    const roof = this.textured('#3A4341', 'tileRoof', { roughness: 1 });
+    const voidMat = this.standard('#120E0C', { roughness: 1 });
+    const gate = new Group();
+    this.place(gate, hero.progress, hero.lateralOffset, 0);
+    gate.scale.setScalar(hero.scale);
+
+    const pierL = this.box(0.7, 4.4, 2.4, brick);
+    pierL.position.set(-1.7, 2.2, 0);
+    const pierR = this.box(0.7, 4.4, 2.4, brick);
+    pierR.position.set(1.7, 2.2, 0);
+    const lintel = this.box(4.4, 0.55, 2.6, timber);
+    lintel.position.y = 4.55;
+    const arch = new Mesh(
+      this.trackGeometry(
+        new CylinderGeometry(1.15, 1.15, 0.42, 16, 1, false, 0, Math.PI),
+      ),
+      brick,
+    );
+    arch.rotation.z = Math.PI / 2;
+    arch.rotation.y = Math.PI / 2;
+    arch.position.set(0, 3.35, -1.15);
+    const throat = this.box(1.7, 2.5, 0.2, voidMat);
+    throat.position.set(0, 1.7, -1.25);
+    const eave = new Mesh(this.unitUpturnedEave, roof);
+    eave.scale.set(2.8, 0.85, 5.4);
+    eave.rotation.y = Math.PI / 2;
+    eave.position.y = 5.15;
+    const lantern = this.box(0.08, 0.55, 0.7, this.windowMaterial);
+    lantern.position.set(0, 4.15, -1.35);
+    gate.add(pierL, pierR, lintel, arch, throat, eave, lantern);
+    this.tagHero(gate);
+    this.root.add(gate);
+  }
+
+  /** One battered pier beside the deck, outside the carriageway. */
+  private buildOverpassPier(): void {
+    const hero = PASSAGE_HEROES.overpassPier;
+    const concrete = this.standard('#6E7C84', {
+      emissive: '#24323A',
+      emissiveIntensity: 0.12,
+      roughness: 0.86,
+    });
+    const deep = this.standard('#4E5C64', {
+      emissive: '#1A262C',
+      emissiveIntensity: 0.16,
+      roughness: 0.9,
+    });
+    const pier = new Group();
+    this.place(pier, hero.progress, hero.lateralOffset, 0);
+    pier.scale.setScalar(hero.scale);
+    const footing = this.box(5.4, 0.7, 4.2, deep);
+    footing.position.y = 0.35;
+    const shaft = new Mesh(
+      this.trackGeometry(new CylinderGeometry(0.72, 1, 1, 10)),
+      concrete,
+    );
+    shaft.scale.set(2.3, 8.2, 2.3);
+    shaft.position.y = 4.5;
+    const cap = this.box(5.8, 0.7, 4.6, deep);
+    cap.position.y = 8.85;
+    const slot = this.box(0.16, 1.4, 1.1, this.windowMaterial);
+    slot.position.set(-1.15, 5.4, 0);
+    pier.add(footing, shaft, cap, slot);
+    this.tagHero(pier);
+    this.root.add(pier);
+  }
+
+  /**
+   * One tree builder. Street crowns sit on a fork, locusts lean over the lane,
+   * and the willow hangs. None of them is a sphere on a bare pole.
+   */
+  private addTree(
+    progress: number,
+    offset: number,
+    height: number,
+    kind: 'street' | 'locust' | 'willow' = 'street',
+  ): void {
     const group = new Group();
     this.place(group, progress, offset, 0);
-    const trunkHeight = height * 0.62;
-    const trunk = this.cylinder(0.16, trunkHeight, this.treeTrunkMaterial);
-    trunk.position.y = trunkHeight / 2;
-    const lean = offset > 0 ? 0.08 : -0.08;
-    const masses: Array<[number, number, number, number]> = [
-      [lean * 0.6, height * 0.7, 0.15, 0.34],
-      [lean * 1.5, height * 0.5, -0.45, 0.26],
-      [lean * 0.2, height * 0.42, 0.5, 0.22],
-    ];
-    group.add(trunk);
-    for (const [x, y, z, radius] of masses) {
+    const away = offset > 0 ? 1 : -1;
+    if (kind === 'willow') {
+      const foliage = this.standard('#3C5A42', { roughness: 1 });
+      const trunk = this.cylinder(0.18, 4.2, this.treeTrunkMaterial);
+      trunk.position.y = 2.1;
+      trunk.rotation.z = away * 0.18;
+      const crown = new Mesh(this.unitSphere, foliage);
+      crown.scale.set(2.2, 1.05, 2.1);
+      crown.position.set(away * 0.85, 4.15, 0);
+      group.add(trunk, crown);
+      for (const along of [-1.4, 0, 1.35]) {
+        const drop = new Mesh(this.unitSphere, foliage);
+        drop.scale.set(0.42, 1.85, 0.48);
+        drop.position.set(away * 1.7, 2.55, along);
+        group.add(drop);
+      }
+    } else if (kind === 'locust') {
+      const lean = away * 0.12;
+      const trunk = this.cylinder(0.19, 3.6, this.treeBarkMaterial);
+      trunk.position.set(0, 1.8, 0);
+      trunk.rotation.z = lean;
+      const bough = this.cylinder(0.12, 1.9, this.treeBarkMaterial);
+      bough.position.set(lean * 6, 4.1, 0.4);
+      bough.rotation.z = lean * 2.5;
       const canopy = new Mesh(this.unitSphere, this.foliageMaterial);
-      canopy.scale.set(height * radius * 1.35, height * radius * 0.48, height * radius * 1.1);
-      canopy.position.set(x, y, z);
-      group.add(canopy);
-    }
-    this.root.add(group);
-  }
-
-  /** Old locust street tree whose canopy leans over the hutong lane. */
-  private addLocustTree(progress: number, offset: number): void {
-    const group = new Group();
-    this.place(group, progress, offset, 0);
-    // Lean away from the carriageway so canopy stays over pavement.
-    const lean = offset > 0 ? 0.12 : -0.12;
-    const trunk = this.cylinder(0.19, 3.6, this.treeBarkMaterial);
-    trunk.position.set(0, 1.8, 0);
-    trunk.rotation.z = lean;
-    const bough = this.cylinder(0.12, 1.9, this.treeBarkMaterial);
-    bough.position.set(lean * 6, 4.1, 0.4);
-    bough.rotation.z = lean * 2.5;
-    const canopy = new Mesh(this.unitSphere, this.foliageMaterial);
-    canopy.scale.set(1.7, 0.7, 1.5);
-    canopy.position.set(lean * 1.6, 3.35, 0.15);
-    const sideMass = new Mesh(this.unitSphere, this.foliageMaterial);
-    sideMass.scale.set(1.15, 0.55, 1.2);
-    sideMass.position.set(lean * 2.4, 2.7, -0.55);
-    const drape = new Mesh(this.unitSphere, this.foliageMaterial);
-    drape.scale.set(0.7, 1.15, 0.75);
-    drape.position.set(lean * 2.1, 2.15, 0.7);
-    group.add(trunk, bough, canopy, sideMass, drape);
-    this.root.add(group);
-  }
-
-  /** Waterfront willow with a drooping crown. */
-  private addWillow(progress: number, offset: number): void {
-    const foliageMaterial = this.standard('#3C5A42', { roughness: 1 });
-    const group = new Group();
-    this.place(group, progress, offset, 0);
-    const trunk = this.cylinder(0.18, 4.2, this.treeTrunkMaterial);
-    trunk.position.y = 2.1;
-    const hang = offset < 0 ? -1 : 1;
-    trunk.rotation.z = hang * 0.18;
-    const crown = new Mesh(this.unitSphere, foliageMaterial);
-    crown.scale.set(2.2, 1.05, 2.1);
-    crown.position.set(hang * 0.85, 4.15, 0);
-    group.add(trunk, crown);
-    for (const along of [-1.4, 0, 1.35]) {
-      const drop = new Mesh(this.unitSphere, foliageMaterial);
-      drop.scale.set(0.42, 1.85, 0.48);
-      drop.position.set(hang * 1.7, 2.55, along);
-      group.add(drop);
+      canopy.scale.set(1.7, 0.7, 1.5);
+      canopy.position.set(lean * 1.6, 3.35, 0.15);
+      const sideMass = new Mesh(this.unitSphere, this.foliageMaterial);
+      sideMass.scale.set(1.15, 0.55, 1.2);
+      sideMass.position.set(lean * 2.4, 2.7, -0.55);
+      const drape = new Mesh(this.unitSphere, this.foliageMaterial);
+      drape.scale.set(0.7, 1.15, 0.75);
+      drape.position.set(lean * 2.1, 2.15, 0.7);
+      group.add(trunk, bough, canopy, sideMass, drape);
+    } else {
+      const trunkHeight = height * 0.58;
+      const trunk = this.cylinder(0.2, trunkHeight, this.treeTrunkMaterial);
+      trunk.position.y = trunkHeight / 2;
+      trunk.rotation.z = away * 0.05;
+      const fork = this.cylinder(0.11, height * 0.32, this.treeBarkMaterial);
+      fork.position.set(away * height * 0.08, trunkHeight * 0.86, 0.05);
+      fork.rotation.z = away * 0.62;
+      group.add(trunk, fork);
+      const crowns: Array<[number, number, number, number]> = [
+        [away * 0.2, trunkHeight + height * 0.02, 0.05, 0.46],
+        [away * 0.55, trunkHeight - height * 0.02, -0.28, 0.32],
+        [away * -0.08, trunkHeight, 0.32, 0.28],
+      ];
+      for (const [x, y, z, radius] of crowns) {
+        const canopy = new Mesh(this.unitSphere, this.foliageMaterial);
+        canopy.scale.set(height * radius * 1.55, height * radius * 0.36, height * radius * 1.2);
+        canopy.position.set(x, y, z);
+        group.add(canopy);
+      }
     }
     this.root.add(group);
   }
