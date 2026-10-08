@@ -35,11 +35,18 @@ export function createPodium(options: PodiumOptions): BufferGeometry {
   return mergeParts(parts);
 }
 
-/** Two-tier marble terrace used under a hall. */
+/**
+ * A sumeru base: plinth, guijiao, lower beam, narrow waist, upper beam.
+ * The top stays at `height`, and the spread stays inside width + 0.7.
+ */
 export function createSumeru(width: number, depth: number, height = 1.1): BufferGeometry {
+  const h = height;
   return mergeParts([
-    placedBox(width + 0.8, 0.22, depth + 0.8, 0, 0.11, 0),
-    placedBox(width + 0.35, 0.28, depth + 0.35, 0, 0.36, 0),
-    placedBox(width, height - 0.5, depth, 0, 0.5 + (height - 0.5) / 2, 0),
+    placedBox(width + 0.7, h * 0.16, depth + 0.7, 0, h * 0.08, 0),
+    placedBox(width + 0.42, h * 0.12, depth + 0.42, 0, h * 0.2, 0),
+    placedBox(width + 0.22, h * 0.16, depth + 0.22, 0, h * 0.34, 0),
+    placedBox(width - 0.12, h * 0.2, depth - 0.12, 0, h * 0.52, 0),
+    placedBox(width + 0.18, h * 0.14, depth + 0.18, 0, h * 0.68, 0),
+    placedBox(width, h * 0.24, depth, 0, h * 0.88, 0),
   ]);
 }

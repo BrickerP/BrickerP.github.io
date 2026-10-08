@@ -1,5 +1,5 @@
 import { BufferGeometry, Float32BufferAttribute } from 'three';
-import { mergeParts, placedBox, placedCylinder } from './geom';
+import { mergeParts, placedBox, placedCylinder, placedFrustum } from './geom';
 
 export interface CityWallOptions {
   length: number;
@@ -8,12 +8,22 @@ export interface CityWallOptions {
   merlons?: number;
 }
 
-/** A battered wall body. Crenels are separate so they can read as stone. */
+/** A battered wall body with a waist course. Crenels are separate so they can read as stone. */
 export function createCityWall(options: CityWallOptions): BufferGeometry {
+  const { length, height, depth } = options;
   return mergeParts([
-    placedBox(options.length, options.height * 0.18, options.depth + 0.35, 0, options.height * 0.09, 0),
-    placedBox(options.length * 0.98, options.height * 0.72, options.depth, 0, options.height * 0.5, 0),
-    placedBox(options.length, 0.16, options.depth + 0.12, 0, options.height * 0.9, 0),
+    placedFrustum(length, length * 0.94, depth + 0.42, depth * 0.78, height * 0.82, 0, height * 0.41, 0),
+    placedBox(length * 0.98, 0.12, depth + 0.08, 0, height * 0.62, 0),
+    placedBox(length * 0.96, 0.2, depth * 0.72, 0, height * 0.9, 0),
+  ]);
+}
+
+/** A low courtyard wall with a tiled cap. Length runs along local X. */
+export function createCourtyardWall(length: number, height = 1.45): BufferGeometry {
+  return mergeParts([
+    placedFrustum(length, length * 0.96, 0.42, 0.28, height * 0.86, 0, height * 0.43, 0),
+    placedBox(length + 0.08, 0.1, 0.36, 0, height * 0.9, 0),
+    placedBox(length + 0.02, 0.08, 0.22, 0, height * 0.98, 0),
   ]);
 }
 
@@ -29,9 +39,12 @@ export function createMerlons(options: CityWallOptions): BufferGeometry {
   return mergeParts(parts);
 }
 
-/** A continuous semicircular arch ring, opening along Z, springing on the X axis. */
+/**
+ * An open semicircular vault, springing on the X axis and running through Z.
+ * Ribs stay inside the ring thickness so the carriageway is not pinched.
+ */
 export function createArch(radius: number, depth: number, thickness = 0.28): BufferGeometry {
-  const segments = 16;
+  const segments = 18;
   const positions: number[] = [];
   const indices: number[] = [];
   const inner = Math.max(0.2, radius - thickness / 2);
@@ -57,11 +70,27 @@ export function createArch(radius: number, depth: number, thickness = 0.28): Buf
       n + 4, n + 6, n + 5, n + 6, n + 7, n + 5,
     );
   }
-  const geometry = new BufferGeometry();
-  geometry.setAttribute('position', new Float32BufferAttribute(new Float32Array(positions), 3));
-  geometry.setIndex(indices);
-  geometry.computeVertexNormals();
-  return geometry;
+  const ring = new BufferGeometry();
+  ring.setAttribute('position', new Float32BufferAttribute(new Float32Array(positions), 3));
+  ring.setIndex(indices);
+  ring.computeVertexNormals();
+  const ribs: BufferGeometry[] = [ring];
+  for (let index = 1; index <= 4; index += 1) {
+    const angle = Math.PI * (index / 5);
+    ribs.push(
+      placedBox(
+        thickness * 0.7,
+        0.1,
+        depth * 0.92,
+        Math.cos(angle) * radius,
+        Math.sin(angle) * radius,
+        0,
+        0,
+        angle - Math.PI / 2,
+      ),
+    );
+  }
+  return mergeParts(ribs);
 }
 
 /** Dark vault so a gate opening has depth instead of a flat gap. */

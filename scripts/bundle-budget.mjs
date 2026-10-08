@@ -19,7 +19,7 @@ const BUDGET = {
     originMainGzipBaselineBytes: 166_491,
     maximumGrowthRatio: 0.05,
     absoluteGzipMaximumBytes: 190_000,
-    // Measured 632772 raw after the parametric kit replaced the canvas atlases.
+    // Measured 649885 raw after the joinery pass, including the printed programme.
     rawMaximumBytes: 656_000,
   },
   // Programme redesign (2026-10) shares one stylesheet across the modal and /about/.

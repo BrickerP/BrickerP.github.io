@@ -5,7 +5,9 @@ import {
   Float32BufferAttribute,
   LatheGeometry,
   Matrix4,
+  Quaternion,
   Vector2,
+  Vector3,
 } from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -71,6 +73,80 @@ export function placedLathe(
   matrix.makeScale(scale, scale, scale);
   matrix.setPosition(x, y, z);
   geometry.applyMatrix4(matrix);
+  return geometry;
+}
+
+/** A beam from A to B. Thickness stays off the endpoints by half its section. */
+export function placedBeam(
+  ax: number,
+  ay: number,
+  az: number,
+  bx: number,
+  by: number,
+  bz: number,
+  thickness: number,
+): BufferGeometry {
+  const direction = new Vector3(bx - ax, by - ay, bz - az);
+  const length = direction.length();
+  if (length < 1e-4) return new BoxGeometry(thickness, thickness, thickness);
+  direction.multiplyScalar(1 / length);
+  const geometry = new BoxGeometry(thickness, length, thickness);
+  const quaternion = new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), direction);
+  matrix.makeRotationFromQuaternion(quaternion);
+  matrix.setPosition((ax + bx) / 2, (ay + by) / 2, (az + bz) / 2);
+  geometry.applyMatrix4(matrix);
+  return geometry;
+}
+
+/**
+ * A wall body wider at the base. Y is the centre. Normals point outward
+ * so a FrontSide brick wall stays visible at night.
+ */
+export function placedFrustum(
+  bottomWidth: number,
+  topWidth: number,
+  bottomDepth: number,
+  topDepth: number,
+  height: number,
+  x: number,
+  y: number,
+  z: number,
+): BufferGeometry {
+  const y0 = y - height / 2;
+  const y1 = y + height / 2;
+  const hw0 = bottomWidth / 2;
+  const hw1 = topWidth / 2;
+  const hd0 = bottomDepth / 2;
+  const hd1 = topDepth / 2;
+  const bottom = [
+    [x - hw0, y0, z - hd0],
+    [x + hw0, y0, z - hd0],
+    [x + hw0, y0, z + hd0],
+    [x - hw0, y0, z + hd0],
+  ];
+  const top = [
+    [x - hw1, y1, z - hd1],
+    [x + hw1, y1, z - hd1],
+    [x + hw1, y1, z + hd1],
+    [x - hw1, y1, z + hd1],
+  ];
+  const positions: number[] = [];
+  const indices: number[] = [];
+  const face = (a: number[], b: number[], c: number[], d: number[]) => {
+    const base = positions.length / 3;
+    for (const point of [a, b, c, d]) positions.push(point[0], point[1], point[2]);
+    indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
+  };
+  face(bottom[0], bottom[1], top[1], top[0]);
+  face(bottom[2], bottom[1], top[1], top[2]);
+  face(bottom[3], bottom[2], top[2], top[3]);
+  face(bottom[0], bottom[3], top[3], top[0]);
+  face(top[3], top[2], top[1], top[0]);
+  face(bottom[0], bottom[1], bottom[2], bottom[3]);
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new Float32BufferAttribute(new Float32Array(positions), 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
   return geometry;
 }
 

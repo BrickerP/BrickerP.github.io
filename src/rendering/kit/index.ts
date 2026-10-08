@@ -1,8 +1,16 @@
-export { addBracketRun, createBracketGeometry, bracketOffsets } from './brackets';
-export { createColumnRow, createRailing } from './columns';
-export { mergeParts, placedBox, placedCylinder } from './geom';
+export { addBracketRing, addBracketRun, createBracketGeometry, bracketOffsets } from './brackets';
+export {
+  addBalusterRun,
+  createBalusterGeometry,
+  createCircularRailing,
+  createColumnRing,
+  createColumnRow,
+  createRailPanel,
+  createRailing,
+} from './columns';
+export { mergeParts, placedBeam, placedBox, placedCylinder, placedFrustum, placedLathe } from './geom';
 export { createLampPole } from './lamp';
-export { createArch, createCityWall, createMerlons, createVault } from './wall';
+export { createArch, createCityWall, createCourtyardWall, createMerlons, createVault } from './wall';
 export { createArrowSlit, createDoor, createWindowOpening } from './openings';
 export { createPodium, createSumeru } from './podium';
 export { createRoof, createRoofFrame, createRoofSurface } from './roof';

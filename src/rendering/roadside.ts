@@ -126,6 +126,11 @@ export function dressRoadside(host: CityHost): void {
   }
   scatter(host, placedBox(0.42, 1.2, 0.42, 0, 0.6, 0), mats.stone, bankPosts);
   scatter(host, placedBox(0.22, 0.16, 2.6, 0, 0, 0), mats.stone, bankRails);
+  const shore: Stamp[] = [];
+  for (let index = 0; index < 8; index += 1) {
+    shore.push({ progress: 0.168 + index * 0.009, offset: -5.9, y: 0.06 });
+  }
+  scatter(host, placedBox(5.4, 0.16, 0.7, 0, 0.08, 0), mats.stone, shore);
 
   const bars: Stamp[] = [];
   for (let index = 0; index < 8; index += 1) {

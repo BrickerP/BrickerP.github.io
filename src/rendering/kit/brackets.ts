@@ -46,5 +46,35 @@ export function addBracketRun(
     mesh.setMatrixAt(index, local);
   });
   mesh.instanceMatrix.needsUpdate = true;
+  mesh.userData.shadowRole = 'skip';
+  parent.add(mesh);
+}
+
+/** Brackets around a circular eave. Each one faces outward. */
+export function addBracketRing(
+  parent: Group,
+  geometry: BufferGeometry,
+  material: Material,
+  y: number,
+  radius: number,
+  count = 12,
+): void {
+  const total = Math.max(8, count);
+  const mesh = new InstancedMesh(geometry, material, total);
+  mesh.frustumCulled = false;
+  mesh.userData.shadowRole = 'skip';
+  const local = new Matrix4();
+  const outward = new Vector3();
+  const quaternion = new Quaternion();
+  const scale = new Vector3(1, 1, 1);
+  const forward = new Vector3(0, 0, 1);
+  for (let index = 0; index < total; index += 1) {
+    const angle = (index / total) * Math.PI * 2;
+    outward.set(Math.cos(angle), 0, Math.sin(angle));
+    quaternion.setFromUnitVectors(forward, outward);
+    local.compose(outward.clone().multiplyScalar(radius).setY(y), quaternion, scale);
+    mesh.setMatrixAt(index, local);
+  }
+  mesh.instanceMatrix.needsUpdate = true;
   parent.add(mesh);
 }
