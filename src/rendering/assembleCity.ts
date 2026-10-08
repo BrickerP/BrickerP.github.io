@@ -15,6 +15,7 @@ import { pathHeading, samplePathFrame } from './drivePath';
 import { hash01 } from './surfaceTextures';
 import { CENTRAL_AXIS_LANDMARKS, PASSAGE_HEROES } from './spatialContract';
 import type { PassageId } from './passages';
+import { dressRoadside } from './roadside';
 import { createBracketGeometry, createCityWall, createMerlons, createStoneBridge, createTreeGroup, placedBox, placedCylinder } from './kit';
 import {
   buildArrowTower,
@@ -144,12 +145,13 @@ function faceRoad(offset: number): number {
 
 function scatterShops(
   host: CityHost,
-  bay: { timber: BufferGeometry; roof: BufferGeometry; opening: BufferGeometry },
+  bay: { timber: BufferGeometry; roof: BufferGeometry; opening: BufferGeometry; eave: BufferGeometry },
   stamps: Array<{ progress: number; offset: number }>,
 ): void {
   const placed = stamps.map((stamp) => ({ ...stamp, heading: faceRoad(stamp.offset) }));
   scatter(host, bay.timber, host.mats.timber, placed, true);
   scatter(host, bay.roof, host.mats.tile, placed, true);
+  scatter(host, bay.eave, host.mats.gold, placed, false);
   scatter(host, bay.opening, host.mats.window, placed, false);
 }
 
@@ -360,13 +362,19 @@ export function assembleCity(host: CityHost): void {
     );
   }
 
+  dressRoadside(host);
+
   const skyline: Stamp[] = [];
-  for (let index = 0; index < 18; index += 1) {
-    skyline.push({
-      progress: (index + 0.5) / 18,
-      offset: (index % 2 === 0 ? -1 : 1) * (28 + hash01(index, 4) * 6),
-      scale: 0.85 + hash01(index, 2) * 0.4,
-    });
+  const caps: Stamp[] = [];
+  for (let index = 0; index < 32; index += 1) {
+    const stamp = {
+      progress: (index + 0.5) / 32,
+      offset: (index % 2 === 0 ? -1 : 1) * (32 + hash01(index, 4) * 8),
+      scale: 0.7 + hash01(index, 2) * 0.7,
+    };
+    skyline.push(stamp);
+    if (index % 3 === 0) caps.push(stamp);
   }
-  scatter(host, placedBox(5.5, 16, 5.5, 0, 8, 0), mats.glass, skyline, false);
+  scatter(host, placedBox(5, 12, 5, 0, 6, 0), mats.glass, skyline, false);
+  scatter(host, placedBox(5.6, 0.4, 5.6, 0, 12.4, 0), mats.tile, caps, false);
 }

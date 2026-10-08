@@ -253,6 +253,7 @@ export function createShopBay(windowed: boolean): {
   timber: BufferGeometry;
   roof: BufferGeometry;
   opening: BufferGeometry;
+  eave: BufferGeometry;
 } {
   const roof = createRoof({ width: 3.3, depth: 3.1, rise: 0.72, kind: 'gable', wingLift: 0.08 });
   roof.translate(0, 2.75, 0);
@@ -265,6 +266,7 @@ export function createShopBay(windowed: boolean): {
     ]),
     roof,
     opening,
+    eave: placedBox(3.2, 0.08, 0.18, 0, 2.72, -1.55),
   };
 }
 
