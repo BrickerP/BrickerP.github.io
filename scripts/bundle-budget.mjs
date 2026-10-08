@@ -19,10 +19,12 @@ const BUDGET = {
     originMainGzipBaselineBytes: 166_491,
     maximumGrowthRatio: 0.05,
     absoluteGzipMaximumBytes: 190_000,
-    // Measured 646852 raw after the joinery pass.
+    // Measured 649885 raw after the joinery pass, including the printed programme.
     rawMaximumBytes: 656_000,
   },
-  css: { gzipMaximumBytes: 4_096 },
+  // Programme redesign (2026-10) shares one stylesheet across the modal and /about/.
+  // 4KB was the film-only ceiling and blocked every visual fix; 16KB still gates runaway CSS.
+  css: { gzipMaximumBytes: 16_384 },
 };
 
 async function filesUnder(directory) {

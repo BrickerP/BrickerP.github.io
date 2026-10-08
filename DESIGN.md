@@ -73,7 +73,7 @@ Adjacent passages overlap through shared silhouettes, fog occlusion, walls, tree
 - Use filled planes, extruded silhouettes, and large tonal masses. Seeded boot-once atlases may add brick, tile, bark, glass, stone, asphalt, lattice, and blue-panel rhythm, but never become photo skins or sticker identity.
 - Prefer a foreground occluder, midground street/structure, and distant skyline. Avoid more than three dominant architectural layers in one frame.
 - Preserve deliberate quiet fields of sky, road, fog, and water while keeping foreground, midground, and distance readable.
-- Use system monospace for artifact identity, metadata, controls, and status. System sans is reserved for longer About copy. No downloaded font.
+- Use system monospace for artifact identity, metadata, controls, and status. The About programme sets its copy in system serif, with a system Song face for Chinese. No downloaded font.
 - Motion is limited to forward parallax, subtle phase-derived camera movement, and restrained lamp/water modulation. No random shake, strobe, recursive zoom, or temporal feedback.
 
 ## Composition and responsive contract
@@ -99,7 +99,8 @@ Adjacent passages overlap through shared silhouettes, fog occlusion, walls, tree
 - Recording and fullscreen are progressive enhancements. Unsupported actions remain disabled with an accessible explanation and never block playback.
 - The toolbar personal intro is a modal overlay over the continuing drive. The indexable `/about/` page is its static content counterpart for direct navigation, sharing, no-JavaScript access, and search discovery; it does not replace or alter the artwork runtime.
 - Both About surfaces present the same concise identity, concurrent-role explanation, public work evidence, and Email / Resume / LinkedIn / GitHub primary actions. Public proof must link to inspectable public URLs; an empty profile shell is not evidence.
-- The modal header prioritizes the four primary actions on mobile. Detailed experience stays progressively disclosed below them, and every link or expander exposes at least a `44×44` CSS-pixel target.
+- Both About surfaces are printed as one film programme on warm paper (`#ECE5D8`): two-plate ink and oxblood halftones of the film's own frames, a reel timeline of the experience, and an `ADMIT ONE` stub carrying the four primary actions. Signature vermilion marks only what is current — the `NOW SHOWING` stamp and the timeline's now node — and is never decoration.
+- The stub keeps the four primary actions pinned on every viewport. Detailed experience stays progressively disclosed in native `<details>`, and every link or expander exposes at least a `44×44` CSS-pixel target.
 - `D` toggles private maintainer telemetry. It is not a public toolbar action and must not collide with title, toolbar, or recording status.
 - Forbidden UI and terms: `Plan`, `Map`, `Route`, `Overview`, mini-map, compass, progress map, route selection, and non-diegetic street-name labels. Physical signs inside the 3D streetscape are valid.
 - Preferred visible text includes `LOOP 01`, `ENDLESS SECOND RING`, `BEIJING / 北京 · 48-SECOND GENERATIVE DRIVE`, `PLAY`, `PAUSE`, `FULLSCREEN`, `RECORD LOOP`, `PERSONAL INTRO` / `ABOUT`, and `ARTISTIC COMPOSITION · NOT FOR NAVIGATION`.
@@ -131,6 +132,7 @@ Adjacent passages overlap through shared silhouettes, fog occlusion, walls, tree
 - `src/rendering/drivePath.ts`: closed authored spline, stable path frame, heading, and ribbon helpers.
 - `src/rendering/theme.ts`: duration, road/camera dimensions, and renderer palette.
 - `src/ui/controls.ts`, `src/ui/about.ts`, `src/ui/recorder.ts`: four controls, intro/focus lifecycle, and deterministic capture.
+- `src/ui/programme.ts` and `src/styles/programme.css`: the programme markup and stylesheet both About surfaces share; `scripts/generate-about.mjs` prints them into `/about/` through Node type stripping.
 
 The implementation uses Vite, TypeScript, Three.js, and plain CSS. It adds no map SDK, tile service, runtime data service, UI framework, or downloaded font.
 
@@ -168,8 +170,8 @@ Repeated street bays and bracket rows are instanced after construction. The brow
 - The real `LoopRecorder` gate measures successful render callbacks from its own `requestAnimationFrame` loop and requires an average of at least `28fps`. The test injects a `1.2s` main-thread stall; the maximum callback gap must be at least `1.2s` to prove the injection occurred and no more than `2.5s` to reject an extreme freeze. A fresh browser before this real-time recording is test-harness resource isolation only, not product behavior or a relaxed gate.
 - The downloaded WebM must be non-empty and byte-complete, contain exactly one monotonic video-block timeline, include the single requested terminal frame, begin at `0–0.1s`, end at `47.9–48.3s`, and span `47.8–48.3s`. Encoded block density of `18–65fps` is an artifact-health bound; it is not renderer or recorder render-throughput evidence.
 - Bundle evidence measures the largest emitted production JS and CSS assets with Node `zlib` gzip level 9.
-- Primary JS: raw `<=656000` bytes (measured 646852 after the joinery pass), gzip growth `<=5%` over the Node zlib level-9 `166491`-byte baseline (`<=174815` bytes), and absolute gzip `<=190000` bytes.
-- Primary CSS: gzip `<=4096` bytes.
+- Primary JS: raw `<=656000` bytes (measured 649885 after the joinery pass), gzip growth `<=5%` over the Node zlib level-9 `166491`-byte baseline (`<=174815` bytes), and absolute gzip `<=190000` bytes.
+- Primary CSS: gzip `<=16384` bytes. Raised from `4096` in `2026-10` when the printed programme began sharing one stylesheet across the intro and `/about/`; the gate still catches runaway CSS.
 - Performance and bundle thresholds are release gates. A failing machine result is recorded and investigated; thresholds are not silently relaxed.
 
 ## Release acceptance
