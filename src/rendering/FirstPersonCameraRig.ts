@@ -151,10 +151,10 @@ export class FirstPersonCameraRig {
     // Side heroes sit outside the carriageway. A short look toward them
     // puts the mass in the middle of the frame at the passage midpoint.
     const heroLook =
-      focusWindow(progress, 0.27, 0.288, 0.312, 0.332) * -3.3 +
-      focusWindow(progress, 0.352, 0.372, 0.402, 0.416) * -3.5 +
-      focusWindow(progress, 0.6, 0.622, 0.65, 0.666) * -3.6 +
-      focusWindow(progress, 0.684, 0.708, 0.736, 0.749) * 3.1;
+      this.aspectMix() *
+      (focusWindow(progress, 0.27, 0.288, 0.312, 0.332) * -3.3 +
+        focusWindow(progress, 0.352, 0.372, 0.402, 0.416) * -3.5 +
+        focusWindow(progress, 0.684, 0.708, 0.736, 0.749) * 3.1);
     const portraitFovBoost =
       portraitLandmarkCue(progress, 8, 14, 0) * portraitFocusMix;
     const nextFov = this.fovForAspect(this.aspect) + portraitFovBoost;

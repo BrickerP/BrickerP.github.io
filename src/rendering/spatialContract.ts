@@ -150,7 +150,7 @@ export const PASSAGE_HEROES = {
   yonghegong: withTargetHeight({
     id: 'yonghegong',
     passage: 7,
-    progress: 0.655,
+    progress: 0.666,
     lateralOffset: -13.4,
     modelKey: 'yonghegong',
     targetHeight: 8.4,
