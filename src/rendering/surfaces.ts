@@ -58,13 +58,15 @@ vec2 surfaceUv(vec3 world, vec3 normal) {
   return vec2(dot(world.xz, vec2(-slope.y, slope.x)), dot(world.xz, slope));
 }
 vec3 surfacePattern(vec3 world, vec3 normal, vec2 uv, float kind) {
-  float grazing = max(fwidth(world.x), fwidth(world.z));
-  if (abs(normal.y) > 0.65 || grazing > 0.35) {
-    float grain = surfaceHash(floor(world.xz * 6.0));
-    float edge = length(fwidth(normal));
-    return vec3((0.9 + 0.1 * grain) * mix(1.0, 0.72, smoothstep(0.2, 0.6, edge)));
-  }
   vec2 plane = surfaceUv(world, normal);
+  float feature = 0.08;
+  if (kind < 1.5) feature = 0.065;
+  else if (kind < 2.5) feature = 0.15;
+  else if (kind < 3.5) feature = 0.32;
+  else if (kind < 4.5) feature = 0.6;
+  if (length(fwidth(plane)) > feature * 2.2) {
+    return vec3(0.94);
+  }
   float value = 1.0;
   if (kind < 0.5) value = surfaceBrick(plane, vec2(0.24, 0.065), 0.012);
   else if (kind < 1.5) value = surfaceBrick(plane, vec2(0.32, 0.09), 0.016);
@@ -72,23 +74,22 @@ vec3 surfacePattern(vec3 world, vec3 normal, vec2 uv, float kind) {
     float row = plane.y / 0.15;
     float ridge = abs(fract(row) - 0.72);
     float barrel = 0.5 + 0.5 * sin(plane.x / 0.14 * 6.28318);
-    value = mix(0.82, 1.0, smoothstep(0.0, 0.22, ridge)) * (0.9 + 0.1 * barrel);
+    value = mix(0.86, 1.0, smoothstep(0.0, 0.22, ridge)) * (0.92 + 0.08 * barrel);
   } else if (kind < 3.5) {
-    float block = surfaceBrick(plane, vec2(0.55, 0.32), 0.015);
-    value = mix(0.88, block, 0.55);
+    value = mix(0.9, surfaceBrick(plane, vec2(0.48, 0.28), 0.016), 0.7);
   } else if (kind < 4.5) {
-    float seam = smoothstep(0.02, 0.05, abs(fract(plane.y / 0.6) - 0.5));
-    value = mix(0.9, seam, 0.35);
+    float seam = smoothstep(0.015, 0.04, abs(fract(plane.y / 0.6) - 0.5));
+    value = mix(0.92, seam, 0.4);
   } else if (kind < 5.5) {
-    value = 0.86 + 0.14 * sin(plane.x / 0.065 * 6.28318);
+    value = 0.88 + 0.12 * sin(plane.x / 0.065 * 6.28318);
   } else if (kind < 6.5) {
     vec2 cell = fract(plane * vec2(1.6, 2.2));
     float mullion = step(0.08, cell.x) * step(0.08, cell.y);
     float lit = step(0.72, surfaceHash(floor(plane * vec2(1.6, 2.2))));
-    value = mix(0.55, mix(0.75, 1.2, lit), mullion);
+    value = mix(0.62, mix(0.8, 1.15, lit), mullion);
   }
   float edge = length(fwidth(normal));
-  value *= mix(1.0, 0.78, smoothstep(0.2, 0.55, edge));
+  value *= mix(1.0, 0.82, smoothstep(0.25, 0.6, edge));
   return vec3(value);
 }
 `;
