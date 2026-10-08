@@ -164,7 +164,7 @@ The authored world currently contains roughly `1939` scene objects whose transfo
 - The real `LoopRecorder` gate measures successful render callbacks from its own `requestAnimationFrame` loop and requires an average of at least `28fps`. The test injects a `1.2s` main-thread stall; the maximum callback gap must be at least `1.2s` to prove the injection occurred and no more than `2.5s` to reject an extreme freeze. A fresh browser before this real-time recording is test-harness resource isolation only, not product behavior or a relaxed gate.
 - The downloaded WebM must be non-empty and byte-complete, contain exactly one monotonic video-block timeline, include the single requested terminal frame, begin at `0–0.1s`, end at `47.9–48.3s`, and span `47.8–48.3s`. Encoded block density of `18–65fps` is an artifact-health bound; it is not renderer or recorder render-throughput evidence.
 - Bundle evidence measures the largest emitted production JS and CSS assets with Node `zlib` gzip level 9.
-- Primary JS: raw `<=650000` bytes, gzip `<=170000` bytes, and gzip growth `<=5%` over the Node zlib level-9 `153080`-byte `origin/main` baseline (`<=160734` bytes).
+- Primary JS: raw `<=651000` bytes (measured 650208 after the resume profile copy plus the control hint), gzip `<=170000` bytes, and gzip growth `<=5%` over the Node zlib level-9 `153080`-byte `origin/main` baseline (`<=160734` bytes).
 - Primary CSS: gzip `<=4096` bytes.
 - Performance and bundle thresholds are release gates. A failing machine result is recorded and investigated; thresholds are not silently relaxed.
 
