@@ -296,10 +296,11 @@ const smallTextSelectors = [
 
 const aboutSmallTextSelectors = [
   { name: 'about eyebrow', selector: '.about-eyebrow' },
-  { name: 'about section title', selector: '.about-section-title' },
   { name: 'about status', selector: '.about-status' },
+  { name: 'about credits label', selector: '.about-credits dt' },
   { name: 'about role metadata', selector: '.about-role-meta' },
-  { name: 'about link detail', selector: '.about-link-detail' },
+  { name: 'about fine print', selector: '.about-fine' },
+  { name: 'about colophon', selector: '.about-colophon' },
 ];
 
 function parseCssColor(value, label) {
@@ -1842,6 +1843,8 @@ for (const aboutViewport of [
     const style = getComputedStyle(panel);
     return Number(style.opacity) > 0.95 && panel.getBoundingClientRect().left >= -0.5;
   });
+  await aboutPage.waitForFunction(() => document.querySelector('.about-plate')?.complete === true);
+  await aboutPage.screenshot({ path: `${OUT}/${aboutViewport.name}.png` });
   assert.equal(
     await aboutPage.locator('.about-panel').getAttribute('role'),
     'dialog',
@@ -1881,7 +1884,9 @@ for (const aboutViewport of [
     `${aboutViewport.name}: every background sibling is inert while modal is open`,
   );
 
-  const primaryLabels = await aboutPage.locator('.about-primary-actions a').allTextContents();
+  const primaryLabels = await aboutPage
+    .locator('.about-primary-actions .about-action-label')
+    .allTextContents();
   assert.deepEqual(
     primaryLabels.map((label) => label.trim()),
     ['Email', 'Resume', 'LinkedIn', 'GitHub'],
@@ -1970,7 +1975,7 @@ for (const aboutViewport of [
   const expandCookiy = aboutPage.locator('[data-expand="cookiy"]');
   await expandCookiy.scrollIntoViewIfNeeded();
   for (const target of await aboutPage
-    .locator('.about-expand, .about-primary-actions a, .about-proof a, .about-elsewhere a')
+    .locator('[data-about-close], .about-expand, .about-primary-actions a, .about-proof a, .about-colophon a')
     .all()) {
     const box = await target.boundingBox();
     assert.ok(

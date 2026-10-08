@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#070b12">
+  <meta name="theme-color" content="#07111b">
   <meta name="color-scheme" content="dark">
   <link
     rel="icon"
@@ -61,32 +61,454 @@
     }
   </script>
   <!-- PUBLIC_PROFILE:JSON_LD:END -->
+  <!-- PUBLIC_PROFILE:STYLE:START -->
   <style>
-    :root {
-      color-scheme: dark;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #070b12;
-      color: #f4eadb;
-      --ink: #f4eadb;
-      --muted: #c8bdaf;
-      --line: rgba(244, 234, 219, 0.17);
-      --blue: #68a4cb;
-      --amber: #f2c071;
-      --panel: rgba(13, 20, 31, 0.84);
+    .about-panel {
+      --paper: #ece5d8;
+      --ink: #101a22;
+      --ink-soft: #46525c;
+      --ink-solid: #121e28;
+      --gut: 30px;
+      --serif: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
+      --cjk: "Songti SC", STSong, SimSun, serif;
+      --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr);
+      background: #ece5d8;
+      color: var(--ink);
+      font-family: var(--serif);
     }
+
+    .about-panel :focus-visible {
+      outline: 2px solid currentColor;
+      outline-offset: 2px;
+    }
+
+    .about-spine {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      padding: 20px 0;
+      writing-mode: vertical-rl;
+      background: var(--ink-solid);
+      color: var(--paper);
+      font: 9px var(--mono);
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+    }
+
+    .about-spine [lang] {
+      width: 1em;
+      font: 700 14px/1.3 var(--cjk);
+      text-align: center;
+      writing-mode: horizontal-tb;
+    }
+
+    .about-cover {
+      position: relative;
+      margin: 0;
+      padding-bottom: min(46px, 8vw);
+      background: var(--ink-solid);
+      color: var(--paper);
+    }
+
+    .about-plate {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .about-film,
+    .about-close {
+      position: absolute;
+      top: 10px;
+      margin: 0;
+      padding: 3px 7px;
+      background: var(--ink-solid);
+      font: 10px/1.5 var(--mono);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .about-film {
+      left: min(20px, 4vw);
+    }
+
+    .about-close {
+      right: 6px;
+      min-height: 44px;
+      border: 0;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .about-cjk {
+      position: absolute;
+      top: 58px;
+      right: min(22px, 4vw);
+      width: calc(1em + 6px);
+      margin: 0;
+      padding: 8px 3px;
+      background: var(--ink-solid);
+      font: 700 min(20px, 4vw) / 1.32 var(--cjk);
+      text-align: center;
+    }
+
+    .about-name {
+      position: absolute;
+      bottom: 0;
+      left: min(22px, 3vw);
+      margin: 0;
+      font: 900 min(92px, 16vw) / 1 var(--serif);
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+      transform: translateY(50%);
+      background: linear-gradient(var(--paper) 50%, var(--ink) 0);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .about-ident {
+      position: relative;
+      padding: calc(min(46px, 8vw) + 16px) var(--gut) 16px;
+    }
+
+    .about-eyebrow,
+    .about-status,
+    .about-role-meta,
+    .about-credits dt,
+    .about-colophon,
+    .about-expand,
+    .about-admit,
+    .about-action-label,
+    .about-reel-no small {
+      margin: 0;
+      color: var(--ink-soft);
+      font: 10px/1.5 var(--mono);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .about-role {
+      margin: 4px 0;
+      font: 12.5px var(--mono);
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+    }
+
+    .about-summary {
+      max-width: 420px;
+      margin: 14px 0 0;
+      font: italic 16px/1.42 var(--serif);
+    }
+
+    .about-stamp {
+      position: absolute;
+      top: 34px;
+      right: 20px;
+      width: min(112px, 22vw);
+      color: #d9684b;
+      mix-blend-mode: multiply;
+      transform: rotate(-11deg);
+    }
+
+    .about-credits {
+      margin: 0;
+      padding: 0 var(--gut);
+    }
+
+    .about-credits div {
+      display: flex;
+      align-items: baseline;
+      padding: 3px 0;
+    }
+
+    .about-credits div::before {
+      flex: 1;
+      order: 1;
+      margin: 0 8px;
+      border-bottom: 1px dotted #8f8571;
+      content: "";
+    }
+
+    .about-credits dd {
+      order: 2;
+      margin: 0;
+      font-size: 14.5px;
+    }
+
+    .about-focus {
+      margin: 12px var(--gut) 0;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .about-section {
+      margin: 26px var(--gut) 0;
+    }
+
+    .about-section-title {
+      margin: 0 0 10px;
+      font: 900 30px/1 var(--serif);
+    }
+
+    .about-experience-note {
+      margin: 0 0 12px;
+      font: italic 13px/1.45 var(--serif);
+    }
+
+    .about-strip {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .about-strip-narrow {
+      display: none;
+    }
+
+    .about-reels {
+      margin-top: 14px;
+    }
+
+    .about-reel {
+      display: grid;
+      grid-template-columns: min(96px, 17vw) minmax(0, 1fr);
+      gap: 0 18px;
+      padding: 18px 0;
+    }
+
+    .about-reel + .about-reel {
+      border-top: 1px solid var(--ink);
+    }
+
+    .about-reel-no {
+      margin: 0;
+      font: 900 min(90px, 16vw) / 0.74 var(--serif);
+      letter-spacing: -0.04em;
+    }
+
+    .about-reel-no small {
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .about-reel-title {
+      margin: 0;
+      font: 700 23px/1.05 var(--serif);
+    }
+
+    .about-role-meta {
+      margin-top: 5px;
+    }
+
+    .about-synopsis {
+      margin: 8px 0 0;
+      font-size: 14.5px;
+      line-height: 1.45;
+    }
+
+    .about-expand {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      color: var(--ink);
+      list-style: none;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+      cursor: pointer;
+    }
+
+    .about-expand::-webkit-details-marker {
+      display: none;
+    }
+
+    .about-expand::after {
+      content: "\a0+";
+    }
+
+    [open] > .about-expand::after {
+      content: "\a0\2212";
+    }
+
+    .about-proof,
+    .about-education {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .about-details {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 14.5px;
+      line-height: 1.45;
+      list-style: square;
+    }
+
+    .about-details li {
+      margin-bottom: 6px;
+    }
+
+    .about-proof li + li,
+    .about-education li + li {
+      border-top: 1px solid #b8ad98;
+    }
+
+    .about-proof a {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr) auto;
+      gap: 0 12px;
+      align-items: baseline;
+      min-height: 44px;
+      padding: 10px 0;
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .about-tag {
+      font: 900 24px/1 var(--serif);
+    }
+
+    .about-proof-label {
+      font-size: 17px;
+      font-weight: 700;
+      text-decoration: underline;
+    }
+
+    .about-fine {
+      display: block;
+      margin: 3px 0 0;
+      color: var(--ink-soft);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .about-education li {
+      padding: 8px 0;
+    }
+
+    .about-edu-school {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .about-colophon {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0 18px;
+      margin: 26px var(--gut) 0;
+      padding: 4px 0 14px;
+      border-top: 6px solid var(--ink);
+    }
+
+    .about-colophon a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      color: var(--ink);
+    }
+
+    .about-primary-actions {
+      display: grid;
+      grid-template-columns: 30px repeat(4, minmax(0, 1fr));
+      border-top: 2px dashed rgba(236, 229, 216, 0.6);
+      background: var(--ink-solid);
+      color: var(--paper);
+    }
+
+    .about-admit,
+    .about-primary-actions a {
+      border-right: 1px dotted rgba(236, 229, 216, 0.35);
+    }
+
+    .about-admit {
+      display: grid;
+      place-items: center;
+      font-size: 8px;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+    }
+
+    .about-admit,
+    .about-action-label {
+      color: rgba(236, 229, 216, 0.78);
+    }
+
+    .about-primary-actions a {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+      min-height: 66px;
+      padding: 10px min(14px, 2vw);
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .about-primary-actions a:last-child {
+      border-right: 0;
+    }
+
+    .about-action-label {
+      font-size: 9px;
+    }
+
+    .about-action-note {
+      font: 700 min(18px, 3.2vw) var(--serif);
+    }
+
+    .about-primary-actions a:hover .about-action-note {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    @media (max-width: 700px) {
+      .about-panel {
+        --gut: 18px;
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .about-spine,
+      .about-strip-wide {
+        display: none;
+      }
+
+      .about-strip-narrow {
+        display: block;
+      }
+
+      .about-stamp {
+        position: static;
+        float: right;
+        margin: -8px -6px 0 6px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .about-primary-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .about-admit,
+      .about-film {
+        display: none;
+      }
+    }
+  </style>
+  <!-- PUBLIC_PROFILE:STYLE:END -->
+  <style>
     * { box-sizing: border-box; }
     body {
       min-height: 100vh;
       margin: 0;
-      background:
-        radial-gradient(circle at 82% 8%, rgba(64, 119, 157, 0.25), transparent 30rem),
-        radial-gradient(circle at 8% 90%, rgba(242, 192, 113, 0.12), transparent 28rem),
-        #070b12;
-      line-height: 1.6;
+      background: radial-gradient(80% 50% at 50% 0%, rgba(39, 73, 92, 0.5), transparent 70%), #07111b;
+      color: #ece5d8;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
     }
-    a { color: #a8d8f4; text-underline-offset: 0.22em; }
-    a:hover { color: #fff2d2; }
-    a:focus-visible { outline: 3px solid var(--amber); outline-offset: 4px; border-radius: 0.25rem; }
     .skip-link {
       position: fixed;
       z-index: 2;
@@ -94,70 +516,203 @@
       left: 0.75rem;
       padding: 0.75rem 1rem;
       background: #f2c071;
-      color: #070b12;
-      font-weight: 800;
+      color: #07111b;
+      font-weight: 700;
       transform: translateY(-200%);
     }
     .skip-link:focus { transform: none; }
-    header, main, footer { width: min(72rem, calc(100% - 2rem)); margin-inline: auto; }
-    header {
+    .topbar, .press, .site-foot { width: min(1080px, calc(100% - 2rem)); margin-inline: auto; }
+    .topbar {
       display: flex;
+      flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
-      gap: 1rem;
-      min-height: 5rem;
-      border-bottom: 1px solid var(--line);
+      gap: 0 1rem;
+      min-height: 4.5rem;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
     }
-    .brand { color: var(--ink); font-weight: 850; text-decoration: none; letter-spacing: 0.08em; text-transform: uppercase; }
-    nav { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
-    nav a { min-height: 2.75rem; display: inline-flex; align-items: center; }
-    main { padding-block: clamp(3rem, 8vw, 7rem); }
-    .hero { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(17rem, 0.75fr); gap: clamp(2rem, 7vw, 6rem); align-items: end; }
-    .eyebrow { margin: 0 0 1rem; color: var(--amber); font-size: 0.78rem; font-weight: 850; letter-spacing: 0.16em; text-transform: uppercase; }
-    h1 { max-width: 11ch; margin: 0; font-size: clamp(3.25rem, 10vw, 7rem); line-height: 0.88; letter-spacing: -0.065em; }
-    .role { margin: 1.5rem 0 0; color: var(--blue); font-size: clamp(1.2rem, 3vw, 1.7rem); font-weight: 720; }
-    .summary { max-width: 49rem; margin: 1.25rem 0 0; color: var(--muted); font-size: clamp(1.05rem, 2vw, 1.25rem); }
-    .status { margin: 0; padding: 1.25rem; border: 1px solid rgba(242, 192, 113, 0.35); border-radius: 1rem; background: rgba(242, 192, 113, 0.08); color: #ffe0a5; }
-    .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 2rem; }
-    .button {
-      min-height: 2.75rem;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.75rem 1.05rem;
-      border: 1px solid var(--amber);
-      border-radius: 999px;
-      color: #080c12;
-      background: var(--amber);
-      font-weight: 800;
-      text-decoration: none;
+    .topbar a { display: inline-flex; align-items: center; min-height: 44px; color: #b9c3c8; text-decoration: none; }
+    .topbar a:hover { color: #ece5d8; }
+    .topbar .brand { color: #ece5d8; font-weight: 600; letter-spacing: 0.24em; }
+    .topbar nav { display: flex; flex-wrap: wrap; gap: 0 26px; }
+    .topbar nav a { text-decoration: underline; text-decoration-color: rgba(185, 195, 200, 0.45); text-underline-offset: 6px; }
+    .topbar a:focus-visible, .site-foot a:focus-visible { outline: 3px solid #f2c071; outline-offset: 4px; }
+
+    .press { position: relative; margin-block: 84px 56px; }
+    .press-mark { position: absolute; width: 26px; height: 26px; border: 0 solid rgba(236, 229, 216, 0.55); }
+    .press-mark.tl { top: -40px; left: -40px; border-right-width: 1px; border-bottom-width: 1px; }
+    .press-mark.tr { top: -40px; right: -40px; border-left-width: 1px; border-bottom-width: 1px; }
+    .press-mark.bl { bottom: -40px; left: -40px; border-right-width: 1px; border-top-width: 1px; }
+    .press-mark.br { right: -40px; bottom: -40px; border-left-width: 1px; border-top-width: 1px; }
+    .press-target {
+      position: absolute;
+      left: 50%;
+      width: 22px;
+      height: 22px;
+      margin-left: -11px;
+      border: 1px solid rgba(236, 229, 216, 0.55);
+      border-radius: 50%;
+      background:
+        linear-gradient(rgba(236, 229, 216, 0.55), rgba(236, 229, 216, 0.55)) center / 1px 34px no-repeat,
+        linear-gradient(rgba(236, 229, 216, 0.55), rgba(236, 229, 216, 0.55)) center / 34px 1px no-repeat;
     }
-    .button.secondary { color: var(--ink); background: transparent; border-color: var(--line); }
-    section.proof { margin-top: clamp(4rem, 10vw, 8rem); }
-    h2 { margin: 0 0 1.5rem; font-size: clamp(1.8rem, 5vw, 3rem); letter-spacing: -0.035em; }
-    .proof-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; padding: 0; list-style: none; }
-    .proof-grid li { padding: 0; border: 1px solid var(--line); border-radius: 1rem; background: var(--panel); color: var(--muted); }
-    .proof-link { min-height: 100%; display: block; padding: 1.25rem; border-radius: inherit; color: var(--muted); text-decoration: none; }
-    .proof-link:hover { background: rgba(104, 164, 203, 0.08); color: var(--ink); }
-    .proof-link strong { display: block; margin-bottom: 0.5rem; color: #a8d8f4; font-size: 1.1rem; text-decoration: underline; text-underline-offset: 0.22em; }
-    .proof-link span { display: block; }
-    .focus { max-width: 58rem; margin-top: clamp(3rem, 8vw, 6rem); color: var(--muted); }
-    .experience-note { color: var(--ink); }
-    .experience-note strong { color: #a8d8f4; }
-    footer { padding-block: 2rem 3rem; border-top: 1px solid var(--line); color: var(--muted); }
-    footer p { margin: 0; }
+    .press-target.top { top: -44px; }
+    .press-target.bottom { bottom: -44px; }
+
+    .press .about-panel {
+      --gut: 52px;
+      grid-template-columns: 46px minmax(0, 1fr);
+      box-shadow: 0 60px 140px rgba(0, 0, 0, 0.7), 0 12px 30px rgba(0, 0, 0, 0.45);
+    }
+    .press .about-spine { gap: 30px; padding: 28px 0; font-size: 9.5px; }
+    .press .about-spine [lang] { font-size: 17px; }
+    .programme-content { min-width: 0; }
+    .press .about-film { top: 26px; left: 30px; letter-spacing: 0.22em; }
+    .press .programme-issue { right: 30px; left: auto; text-align: right; }
+    .press .about-cjk { top: 112px; right: 34px; font-size: 30px; }
+    .press .about-cover { padding-bottom: min(83px, 7.5vw); }
+    .press .about-name { left: 34px; font-size: min(166px, 15vw); }
+
+    .programme-title {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      column-gap: 56px;
+      padding: calc(min(83px, 7.5vw) + 34px) var(--gut) 36px;
+    }
+    .press .about-ident { position: static; padding: 0; }
+    .press .about-role { margin-top: 8px; font-size: 15px; letter-spacing: 0.32em; }
+    .press .about-status { margin-top: 10px; }
+    .press .about-summary { max-width: none; margin-top: 26px; font-size: 23px; line-height: 1.38; }
+    .programme-billing { padding-top: 150px; }
+    .press .about-stamp { top: calc(min(83px, 7.5vw) + 20px); right: var(--gut); width: 160px; }
+    .press .about-credits { padding: 0; }
+    .press .about-credits dd { font-size: 16px; }
+    .press .about-focus { margin: 18px 0 0; }
+
+    .programme-rule { margin: 0; border: 0; border-top: 6px solid #101a22; }
+    .programme-block { padding: 34px var(--gut) 40px; }
+    .press .about-section { margin: 0; }
+    .about-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 24px; margin-bottom: 20px; }
+    .press .about-section-title { margin: 0; font-size: 46px; line-height: 0.95; letter-spacing: -0.02em; }
+    .about-section-meta {
+      margin: 0;
+      color: #46525c;
+      font: 10px/1.6 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      letter-spacing: 0.2em;
+      text-align: right;
+      text-transform: uppercase;
+    }
+
+    .programme-circuit { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 18px 14px; margin: 0; padding: 0; list-style: none; }
+    .programme-circuit figure { margin: 0; }
+    .programme-frame { position: relative; border: 1px solid #101a22; background: #ece5d8; }
+    .programme-frame img { display: block; width: 100%; height: auto; }
+    .programme-frame span {
+      position: absolute;
+      top: 0;
+      left: 0;
+      padding: 2px 5px 3px;
+      background: #101a22;
+      color: #ece5d8;
+      font: 8.5px/1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      letter-spacing: 0.12em;
+    }
+    .programme-circuit figcaption { margin-top: 7px; }
+    .programme-circuit figcaption span { display: block; }
+    .programme-circuit [lang] { font: 700 16px/1.3 "Songti SC", STSong, SimSun, serif; letter-spacing: 0.08em; }
+    .programme-circuit [lang] + span {
+      margin-top: 2px;
+      color: #46525c;
+      font: 8.5px/1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .press .about-reels { margin-top: 30px; }
+    .press .about-reel { grid-template-columns: 168px minmax(0, 1fr); column-gap: 28px; padding: 26px 0 28px; }
+    .press .about-reel-no { font-size: 150px; }
+    .press .about-reel-title { font-size: 30px; }
+    .press .about-role-meta { margin-top: 8px; }
+    .press .about-synopsis, .press .about-details { max-width: 640px; font-size: 17px; }
+    .press .about-details { font-size: 15px; }
+
+    .programme-lower { display: grid; grid-template-columns: 1.3fr 1fr; column-gap: 56px; padding: 30px var(--gut) 40px; }
+    .press .about-proof a { grid-template-columns: 54px minmax(0, 1fr) auto; padding: 14px 0; }
+    .press .about-tag { font-size: 30px; }
+    .press .about-proof-label { font-size: 21px; }
+
+    .press .about-primary-actions { position: relative; grid-template-columns: 40px repeat(4, minmax(0, 1fr)); }
+    .press .about-primary-actions::before,
+    .press .about-primary-actions::after {
+      position: absolute;
+      top: -10px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #07111b;
+      content: "";
+    }
+    .press .about-primary-actions::before { left: -9px; }
+    .press .about-primary-actions::after { right: -9px; }
+    .press .about-primary-actions a { min-height: 96px; padding: 16px 22px; }
+    .press .about-action-note { font-size: 24px; }
+    .press .about-colophon { margin: 0; padding: 0 var(--gut); border: 0; background: #e2d8c5; }
+    .programme-swatches { display: flex; }
+    .programme-swatches i { display: block; width: 22px; height: 12px; background: #121e28; }
+    .programme-swatches i:nth-child(2) { background: #56606a; }
+    .programme-swatches i:nth-child(3) { background: #9a3a2c; }
+    .programme-swatches i:nth-child(4) { background: #d9684b; }
+    .programme-swatches i:nth-child(5) { background: #ece5d8; outline: 1px solid #b8ad98; outline-offset: -1px; }
+
+    .site-foot { padding-bottom: 40px; color: rgba(236, 229, 216, 0.62); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; }
+    .site-foot p { margin: 0; }
+    .site-foot a { color: inherit; }
+
     @media (max-width: 760px) {
-      header { align-items: flex-start; flex-direction: column; padding-block: 1rem; }
-      .hero { grid-template-columns: 1fr; }
-      .proof-grid { grid-template-columns: 1fr; }
+      .press { width: 100%; margin-block: 8px 32px; }
+      .press-mark, .press-target, .press .about-spine, .press .programme-issue { display: none; }
+      .press .about-panel { --gut: 18px; grid-template-columns: minmax(0, 1fr); }
+      .press .about-film { top: 12px; left: 14px; }
+      .press .about-cjk { top: 44px; right: 14px; font-size: 18px; }
+      .press .about-name { left: 12px; }
+      .programme-title, .programme-lower { grid-template-columns: minmax(0, 1fr); }
+      .programme-title { padding-top: calc(min(83px, 7.5vw) + 22px); }
+      .press .about-summary { font-size: 19px; }
+      .programme-billing { margin-top: 26px; padding-top: 0; }
+      .press .about-stamp { position: static; float: right; width: 96px; margin: -6px -4px 6px 12px; }
+      .programme-block { padding-block: 26px 30px; }
+      .about-section-head { flex-wrap: wrap; }
+      .about-section-meta { text-align: left; }
+      .press .about-section-title { font-size: 34px; }
+      .programme-circuit { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 10px; }
+      .press .about-reel { grid-template-columns: min(96px, 17vw) minmax(0, 1fr); column-gap: 18px; padding: 18px 0; }
+      .press .about-reel-no { font-size: min(90px, 16vw); }
+      .press .about-reel-title { font-size: 23px; }
+      .press .about-synopsis { font-size: 15px; }
+      .programme-lower { row-gap: 30px; padding-block: 26px 30px; }
+      .press .about-primary-actions { grid-template-columns: 30px repeat(4, minmax(0, 1fr)); }
+      .press .about-primary-actions::before, .press .about-primary-actions::after { display: none; }
+      .press .about-primary-actions a { min-height: 66px; padding: 10px min(14px, 2vw); }
+      .press .about-action-note { font-size: min(18px, 3.4vw); }
+      .press .about-colophon { padding-block: 6px; }
     }
-    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }
-    @media (forced-colors: active) { .button { border: 2px solid ButtonText; } }
+    @media (max-width: 480px) {
+      .programme-circuit { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 360px) {
+      .press .about-primary-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (forced-colors: active) {
+      .press .about-panel { border: 1px solid CanvasText; }
+    }
   </style>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to profile</a>
-  <header>
+  <header class="topbar">
     <a class="brand" href="/">BrickerP</a>
     <!-- PUBLIC_PROFILE:NAV:START -->
     <nav aria-label="Primary navigation">
@@ -167,49 +722,77 @@
     </nav>
     <!-- PUBLIC_PROFILE:NAV:END -->
   </header>
-  <main id="main">
-    <!-- PUBLIC_PROFILE:HERO:START -->
-    <section class="hero" aria-labelledby="profile-name">
-      <div>
-        <p class="eyebrow">Profile · Builder · Engineer</p>
-        <h1 id="profile-name">Yupeng Lu</h1>
-        <p class="role">AI Agent Engineer</p>
-        <p class="summary">Production agent systems and the platforms they run on: MCP/tool-use contracts, agent skills and CLIs, evals and evidence-gated releases, governed agent access to production infrastructure, and the billing and attribution backbone of an AI app builder.</p>
-        <div class="actions" aria-label="Profile links">
-          <a class="button" href="mailto:yplmicro@gmail.com">Contact Yupeng</a>
-          <a class="button secondary" href="/resume.pdf">Read resume</a>
-          <a class="button secondary" href="https://github.com/BrickerP">GitHub</a>
-          <a class="button secondary" href="https://www.linkedin.com/in/yupeng-lu-845a0b411">LinkedIn</a>
+  <div class="press">
+    <i class="press-mark tl" aria-hidden="true"></i><i class="press-mark tr" aria-hidden="true"></i><i class="press-mark bl" aria-hidden="true"></i><i class="press-mark br" aria-hidden="true"></i>
+    <i class="press-target top" aria-hidden="true"></i><i class="press-target bottom" aria-hidden="true"></i>
+    <main id="main" class="about-panel">
+      <!-- PUBLIC_PROFILE:SPINE:START -->
+      <div class="about-spine" aria-hidden="true"><span>Programme № 26/10</span><span lang="zh-CN">北京 · 二环</span></div>
+      <!-- PUBLIC_PROFILE:SPINE:END -->
+      <div class="programme-content">
+        <!-- PUBLIC_PROFILE:HERO:START -->
+        <header class="about-cover">
+          <img class="about-plate" src="/programme/cover-qianmen.png" alt="Two-colour halftone of the Qianmen passage: a Dashilar gateway over the night road, printed from the film." width="2080" height="1120" decoding="async">
+          <p class="about-film">Loop 01 · Endless Second Ring</p>
+          <p class="about-film programme-issue">Programme № 26/10<br>Beijing<br>Passage 11 / 12 · 00:40</p>
+          <p class="about-cjk" lang="zh-CN">前门 · 大栅栏</p>
+          <h1 class="about-name" id="profile-name">Yupeng Lu</h1>
+        </header>
+        <div class="programme-title">
+          <div class="about-ident"><svg class="about-stamp" viewBox="0 0 132 132" aria-hidden="true" focusable="false"><defs><path id="about-arc-top" d="M18 66a48 48 0 0 1 96 0"/><path id="about-arc-bottom" d="M12 66a54 54 0 0 0 108 0"/><filter id="about-ink"><feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="1" seed="4"/><feDisplacementMap in="SourceGraphic" scale="1.8"/></filter></defs><g filter="url(#about-ink)" fill="currentColor" font-family="ui-monospace,Menlo,monospace" text-anchor="middle"><circle cx="66" cy="66" r="62" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="66" cy="66" r="36" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="9.5" cy="66" r="1.7"/><circle cx="122.5" cy="66" r="1.7"/><text font-size="10.5" letter-spacing="2.2"><textPath href="#about-arc-top" startOffset="50%">NOW SHOWING</textPath></text><text font-size="10.5" letter-spacing="2.2"><textPath href="#about-arc-bottom" startOffset="50%">BAIDU · MEDO</textPath></text><text x="66" y="58" font-size="8.5" letter-spacing="2.4">REEL</text><text x="66" y="84" font-family="Iowan Old Style,Palatino,Georgia,serif" font-weight="900" font-size="27">01</text></g></svg><p class="about-eyebrow">Profile · Builder · Engineer</p><p class="about-role">AI Agent Engineer</p><p class="about-status">US Permanent Resident · No sponsorship required</p><p class="about-summary" id="profile-summary">Production agent systems and the platforms they run on: MCP/tool-use contracts, agent skills and CLIs, evals and evidence-gated releases, governed agent access to production infrastructure, and the billing and attribution backbone of an AI app builder.</p></div>
+          <div class="programme-billing"><dl class="about-credits"><div><dt>Now showing</dt><dd>Baidu · MeDo</dd></div><div><dt>Also running</dt><dd>Quant Trading Systems</dd></div><div><dt>Previously</dt><dd>Cookiy AI</dd></div><div><dt>Earlier reels</dt><dd>SMU · Huawei</dd></div></dl><p class="about-focus"><span class="about-eyebrow">Featuring</span> MCP · tool-use contracts · agent skills &amp; CLIs · evals &amp; release gates · Stripe Billing · ads attribution · Java / Spring Boot · TypeScript · Python · AWS · Kubernetes · ClickHouse</p></div>
         </div>
+        <!-- PUBLIC_PROFILE:HERO:END -->
+        <hr class="programme-rule">
+        <section class="programme-block" aria-labelledby="circuit-heading">
+          <div class="about-section-head">
+            <h2 class="about-section-title" id="circuit-heading">The circuit</h2>
+            <p class="about-section-meta">Twelve passages · forty-eight seconds<br>One loop, no cuts</p>
+          </div>
+          <ol class="programme-circuit">
+            <li><figure><div class="programme-frame"><img src="/programme/circuit-01.png" alt="" width="288" height="180" loading="lazy" decoding="async"><span>01 · 00:00</span></div><figcaption><span lang="zh-CN">正阳门</span><span>Central axis</span></figcaption></figure></li>
+            <li><figure><div class="programme-frame"><img src="/programme/circuit-02.png" alt="" width="288" height="180" loading="lazy" decoding="async"><span>02 · 00:04</span></div><figcaption><span lang="zh-CN">筒子河</span><span>Palace moat</span></figcaption></figure></li>
+            <li><figure><div class="programme-frame"><img src="/programme/circuit-03.png" alt="" width="288" height="180" loading="lazy" decoding="async"><span>03 · 00:08</span></div><figcaption><span lang="zh-CN">什刹海</span><span>Shichahai</span></figcaption></figure></li>
+            <li><figure><div class="programme-frame"><img src="/programme/circuit-04.png" alt="" width="288" height="180" loading="lazy" decoding="async"><span>04 · 00:12</span></div><figcaption><span lang="zh-CN">德胜门</span><span>Deshengmen</span></figcaption></figure></li>
+            <li><figure><div class="programme-frame"><img src="/programme/circuit-05.png" alt="" width="288" height="180" loading="lazy" decoding="async"><span>05 · 00:16</span></div><figcaption><span lang="zh-CN">二环</span><span>Second Ring</span></figcaption></figure></li>
+            <li><figure><div class="programme-frame"><img src="/programme/circuit-06.png" alt="" width="288" height="180" loading="lazy" decoding="async"><span>06 · 00:20</span></div><figcaption><span lang="zh-CN">钟鼓楼</span><span>Bell &amp; Drum</span></figcaption></figure></li>
+            <li><figure><div class="programme-frame"><img src="/programme/circuit-07.png" alt="" width="288" height="180" loading="lazy" decoding="async"><span>07 · 00:24</span></div><figcaption><span lang="zh-CN">南锣鼓巷</span><span>Nanluo · Wudaoying</span></figcaption></figure></li>
+            <li><figure><div class="programme-frame"><img src="/programme/circuit-08.png" alt="" width="288" height="180" loading="lazy" decoding="async"><span>08 · 00:28</span></div><figcaption><span lang="zh-CN">雍和宫</span><span>Yonghegong</span></figcaption></figure></li>
+            <li><figure><div class="programme-frame"><img src="/programme/circuit-09.png" alt="" width="288" height="180" loading="lazy" decoding="async"><span>09 · 00:32</span></div><figcaption><span lang="zh-CN">国贸 · 金融街</span><span>CBD · Finance</span></figcaption></figure></li>
+            <li><figure><div class="programme-frame"><img src="/programme/circuit-10.png" alt="" width="288" height="180" loading="lazy" decoding="async"><span>10 · 00:36</span></div><figcaption><span lang="zh-CN">天坛</span><span>Temple of Heaven</span></figcaption></figure></li>
+            <li><figure><div class="programme-frame"><img src="/programme/circuit-11.png" alt="" width="288" height="180" loading="lazy" decoding="async"><span>11 · 00:40</span></div><figcaption><span lang="zh-CN">前门 · 大栅栏</span><span>Qianmen · Dashilar</span></figcaption></figure></li>
+            <li><figure><div class="programme-frame"><img src="/programme/circuit-12.png" alt="" width="288" height="180" loading="lazy" decoding="async"><span>12 · 00:44</span></div><figcaption><span lang="zh-CN">立交</span><span>Overpass return</span></figcaption></figure></li>
+          </ol>
+        </section>
+        <hr class="programme-rule">
+        <div class="programme-block">
+          <!-- PUBLIC_PROFILE:REELS:START -->
+          <section class="about-section" aria-labelledby="reels-heading"><div class="about-section-head"><h2 class="about-section-title" id="reels-heading">The reels</h2><p class="about-section-meta">5 reels · Apr 2023 – now<br>Overlaps are concurrent work</p></div><p class="about-experience-note">Baidu (MeDo) is the primary role; the Quant Trading Systems Venture is a concurrent engineering role.</p>
+          <svg class="about-strip about-strip-wide" viewBox="0 0 930 202" width="930" height="202" aria-hidden="true" focusable="false"><defs><pattern id="about-strip-wide-holes" width="16" height="16" patternUnits="userSpaceOnUse" x="6"><rect y="5" width="9" height="6" rx="1.4" fill="#ece5d8"/></pattern><pattern id="about-strip-wide-quarters" width="63.9" height="1" patternUnits="userSpaceOnUse" x="17.5"><rect width="1" height="1" fill="#ece5d8" fill-opacity=".12"/></pattern></defs><rect width="930" height="176" fill="#121e28"/><rect width="927" height="16" fill="url(#about-strip-wide-holes)"/><rect width="927" height="16" fill="url(#about-strip-wide-holes)" transform="translate(0 160)"/><rect x="17.5" y="21" width="895" height="134" fill="url(#about-strip-wide-quarters)"/><rect x="209.1" y="21" width="1" height="134" fill="#ece5d8" fill-opacity=".3"/><rect x="464.5" y="21" width="1" height="134" fill="#ece5d8" fill-opacity=".3"/><rect x="719.9" y="21" width="1" height="134" fill="#ece5d8" fill-opacity=".3"/><g font-family="ui-monospace,Menlo,monospace" font-size="9.5" letter-spacing="1.6"><rect x="18" y="26" width="212.9" height="20" fill="#ece5d8"/><text x="24" y="39.4" fill="#121e28">HUAWEI</text><rect x="230.9" y="52" width="489.5" height="20" fill="#ece5d8"/><text x="236.9" y="65.4" fill="#121e28">SMU</text><rect x="614" y="78" width="234.1" height="20" fill="#ece5d8"/><text x="620" y="91.4" fill="#121e28">COOKIY AI</text><rect x="784.3" y="104" width="127.7" height="20" fill="#ece5d8"/><text x="777.3" y="117.4" fill="#ece5d8" text-anchor="end">QUANT TRADING SYSTEMS</text><rect x="848.1" y="130" width="63.9" height="20" fill="#ece5d8"/><text x="841.1" y="143.4" fill="#ece5d8" text-anchor="end">BAIDU · MEDO</text><line x1="18" y1="176" x2="18" y2="182" stroke="#121e28"/><text x="18" y="195" text-anchor="start" fill="#46525c">APR 2023</text><line x1="209.6" y1="176" x2="209.6" y2="182" stroke="#121e28"/><text x="209.6" y="195" text-anchor="middle" fill="#46525c">2024</text><line x1="465" y1="176" x2="465" y2="182" stroke="#121e28"/><text x="465" y="195" text-anchor="middle" fill="#46525c">2025</text><line x1="720.4" y1="176" x2="720.4" y2="182" stroke="#121e28"/><text x="720.4" y="195" text-anchor="middle" fill="#46525c">2026</text><line x1="912" y1="176" x2="912" y2="182" stroke="#121e28"/><text x="912" y="195" text-anchor="end" fill="#121e28" font-weight="700">NOW · OCT 2026</text></g><line x1="912" y1="21" x2="912" y2="155" stroke="#d9684b" stroke-width="1.6"/><circle cx="912" cy="140" r="6.5" fill="#d9684b"/></svg>
+          <svg class="about-strip about-strip-narrow" viewBox="0 0 300 139" width="300" height="139" aria-hidden="true" focusable="false"><defs><pattern id="about-strip-narrow-holes" width="12" height="12" patternUnits="userSpaceOnUse" x="6"><rect y="3.75" width="7" height="4.5" rx="1.4" fill="#ece5d8"/></pattern><pattern id="about-strip-narrow-quarters" width="19.7" height="1" patternUnits="userSpaceOnUse" x="11.5"><rect width="1" height="1" fill="#ece5d8" fill-opacity=".12"/></pattern></defs><rect width="300" height="119" fill="#121e28"/><rect width="289" height="12" fill="url(#about-strip-narrow-holes)"/><rect width="289" height="12" fill="url(#about-strip-narrow-holes)" transform="translate(0 107)"/><rect x="11.5" y="15.5" width="277" height="88" fill="url(#about-strip-narrow-quarters)"/><rect x="70.6" y="15.5" width="1" height="88" fill="#ece5d8" fill-opacity=".3"/><rect x="149.5" y="15.5" width="1" height="88" fill="#ece5d8" fill-opacity=".3"/><rect x="228.4" y="15.5" width="1" height="88" fill="#ece5d8" fill-opacity=".3"/><g font-family="ui-monospace,Menlo,monospace" font-size="8" letter-spacing="1.1"><rect x="12" y="19" width="65.7" height="13" fill="#ece5d8"/><text x="18" y="28.4" fill="#121e28">HUAWEI</text><rect x="77.7" y="36" width="151.2" height="13" fill="#ece5d8"/><text x="83.7" y="45.4" fill="#121e28">SMU</text><rect x="196" y="53" width="72.3" height="13" fill="#ece5d8"/><text x="202" y="62.4" fill="#121e28">COOKIY AI</text><rect x="248.6" y="70" width="39.4" height="13" fill="#ece5d8"/><text x="241.6" y="79.4" fill="#ece5d8" text-anchor="end">QUANT TRADING SYSTEMS</text><rect x="268.3" y="87" width="19.7" height="13" fill="#ece5d8"/><text x="261.3" y="96.4" fill="#ece5d8" text-anchor="end">BAIDU · MEDO</text><line x1="12" y1="119" x2="12" y2="123" stroke="#121e28"/><text x="12" y="133" text-anchor="start" fill="#46525c">APR 2023</text><line x1="71.1" y1="119" x2="71.1" y2="123" stroke="#121e28"/><line x1="150" y1="119" x2="150" y2="123" stroke="#121e28"/><text x="150" y="133" text-anchor="middle" fill="#46525c">2025</text><line x1="228.9" y1="119" x2="228.9" y2="123" stroke="#121e28"/><text x="228.9" y="133" text-anchor="middle" fill="#46525c">2026</text><line x1="288" y1="119" x2="288" y2="123" stroke="#121e28"/><text x="288" y="133" text-anchor="end" fill="#121e28" font-weight="700">NOW</text></g><line x1="288" y1="15.5" x2="288" y2="103.5" stroke="#d9684b" stroke-width="1.2"/><circle cx="288" cy="93.5" r="4.5" fill="#d9684b"/></svg>
+          <div class="about-reels"><article class="about-reel"><p class="about-reel-no" aria-hidden="true"><small>Reel</small>01</p><div><h3 class="about-reel-title">Baidu · MeDo</h3><p class="about-role-meta">Software Engineer · Jul 2026 – Present · Beijing</p><p class="about-synopsis">Overseas engineering owner for MeDo, an AI agent app builder: Stripe billing, credits ledger, ads attribution, growth, and SEO, plus the agent tooling the team ships and operates it with.</p><details class="about-more"><summary class="about-expand" data-expand="baidu">Read the full reel</summary><ul class="about-details" data-detail-list="baidu"><li>Authored medo-infra-connect, a coding-agent skill + unified CLI (~5.5K LOC) giving agents governed access to AWS, MySQL, ClickHouse, OpenSearch, Metabase, and ad-platform APIs; read-only by default with a verified prod-write path.</li><li>Evidence snapshot: 600+ merged code changes across 19 repos and 140+ design/RCA/verification docs in under 3 months.</li><li>Billing service extraction: led the move of the overseas credits ledger and Stripe stack (27 webhook event types, ~29K lines) out of the monolith into a new billing service on its own RDS; cut over 40/40 tables with 0 errors.</li><li>Agent workflow guardrails: release-proof skills (code review ↔ deployed bundle ↔ design doc, 14 incident-derived gates) and a policy hook enforcing pipeline-only builds across Claude Code, Codex, Cursor, and OpenCode.</li><li>LLM operations bots: hardened the Discord → LLM-enriched report → intake desk → issue-tracker pipeline and built an IM data-assistant bot over a read-only Metabase proxy.</li><li>Agent sandbox abuse response: contained a cluster-wide outage where bot accounts prompted the coding agent to run crypto-miners; quantified 42× CPU overcommit and reclaimed ~40 cores with zero restarts.</li><li>Subscriptions and pricing: Pro Max and annual plans on a two-phase quote → commit API over Stripe Subscription Schedules (20 countries, 10 currencies), Billing Portal cancellation, and a first-purchase offer A/B (+88% lift).</li><li>Billing correctness: fixed Stripe lifecycle defects (revived canceled subscriptions, unsynced renewals, misread upgrade declines) with terminal-state gates and retry → dead-letter state machines.</li><li>Ads attribution and consent: Meta Pixel + CAPI, Bing UET server-side conversions via a transactional outbox, a first-party CMP with GPC, and an append-only one-winner-per-user attribution model.</li><li>Credits economy and abuse: cut gifted credits 35% without hurting retention or paid conversion; detected 437 inviters farming 20.6K fake accounts and shipped gifted-only clawback.</li><li>Data and SEO: K8s CronJob collectors → ClickHouse → Metabase dashboards, a Next.js 16 blog replacing Ghost (/blog payload −92%), and a 1.9K-URL pSEO site moved onto EKS CI/CD.</li><li>Enterprise and Azure OpenAI: Seat Pool + partner redemption codes across 6 repos and Azure OpenAI resale hosting with per-customer resource isolation.</li></ul></details></div></article>
+          <article class="about-reel"><p class="about-reel-no" aria-hidden="true"><small>Reel</small>02</p><div><h3 class="about-reel-title">Cookiy AI</h3><p class="about-role-meta">AI Agent Engineer · Aug 2025 – Jul 2026 · Silicon Valley HQ / Beijing Engineering Team</p><p class="about-synopsis">Owned 41 tools across 4 MCP servers and 26 Zod/OpenAPI schema files spanning study, interview, quant, billing, recruit, guide, playback, and report workflows.</p><details class="about-more"><summary class="about-expand" data-expand="cookiy">Read the full reel</summary><ul class="about-details" data-detail-list="cookiy"><li>Shipped dual-surface E2E harness with 291 cases (168 SaaS + 123 CLI/MCP) and 7 L0–L6 gate profiles with runtime evidence packets.</li><li>Evidence snapshot: 1,040 Cookiy merged PRs across MCP/API, report synthesis, voice runtime, video clips, billing, and release gates.</li><li>Contract-first agent/API platform: Zod/OpenAPI/MCP-style tool contracts, DTO/runtime validation, pagination/status semantics, CLI payload compatibility, and public API boundaries.</li><li>CLI/skill distribution: published public skill and TypeScript CLI; MCP-first/REST-fallback behavior, token/login flows, and Cursor/Claude deep-link paths.</li><li>Tool-using report/study chat agents: scoped registries, artifact load-before-edit discipline, evidence bundles, locked-fact guards; removed 7 duplicate tools and slimmed prompts by ~2.5k LOC.</li><li>Evidence-bound report synthesis: objective-first multi-pass synthesis, cohort-batch passes, HTML fidelity/readiness gates, report-driven auto clips, and editorial HTML preservation.</li><li>LLM production reliability: OpenAI/Gemini paths with native fetch, preserved auth headers, Cloudflare/401 handling, and preview backports.</li><li>Streaming and long tool work: SSE/WebSocket/MCP streamable-HTTP with heartbeats, abort-cleanup isolation, hard timeouts, and stream-boundary regression tests.</li><li>Realtime interview, avatar, and Report Voice Platform: LiveKit, Deepgram STT, TTS, Gemini/OpenAI LLM paths, Tavus/SpatialReal avatar (~200 ms barge-in), speculative follow-up turn-taking, and VAD barge-in.</li><li>Agent-compatible auth and billing: compact CLI tokens, OAuth/Bearer semantics, wallet-ledger idempotency, StripeEventLog webhook audit, and pay-before-reveal report billing.</li><li>Platform/release operations: Nginx gateway/deploy paths, cross-environment short-link routing, cookie isolation, preview/backport propagation, and Homebrew installer distribution.</li></ul></details></div></article>
+          <article class="about-reel"><p class="about-reel-no" aria-hidden="true"><small>Reel</small>03</p><div><h3 class="about-reel-title">Quant Trading Systems</h3><p class="about-role-meta">Co-Engineer · Apr 2026 – Present · Concurrent venture role</p><p class="about-synopsis">Execution safety: IBKR heartbeat/reconnect, broker + DB startup reconcile, and bracket/OCO fixes, then a shared IBKR/Alpaca execution ledger and a flag-gated migration of live routing to Alpaca.</p><details class="about-more"><summary class="about-expand" data-expand="quant">Read the full reel</summary><ul class="about-details" data-detail-list="quant"><li>Immutable public dashboard: renders as a pure function of content-addressed input snapshots, with Lambda publication, redacted live logs, daily P&amp;L, and CloudFront/S3 OAC hardening.</li><li>Private live-trading system on AWS: intraday scanner → factor filter → broker bracket orders → S3 Parquet warehouse → public research dashboard.</li><li>Rebuilt infra in a new AWS account with a verification checklist; moved live secrets to SSM Parameter Store with SSM-only deploys and an after-close watchdog.</li><li>Reduced scanner/data latency with event-based scanner waits, vectorized reject reasons, warm-cache fast paths, SQLite parse optimization, and lazy-load startup paths.</li></ul></details></div></article>
+          <article class="about-reel"><p class="about-reel-no" aria-hidden="true"><small>Reel</small>04</p><div><h3 class="about-reel-title">SMU</h3><p class="about-role-meta">Software Engineer / 0-to-1 Product Owner · Feb 2024 – Jan 2026 · Los Angeles, CA</p><p class="about-synopsis">Built Python AsyncIO pipelines connecting Amazon Seller Central + Shopify with ERP; processed 500k+ daily orders and cut sync latency from 15 min to 30 s.</p><details class="about-more"><summary class="about-expand" data-expand="smu">Read the full reel</summary><ul class="about-details" data-detail-list="smu"><li>Shipped GetDateLove end to end: FastAPI, Redis asyncio, PostgreSQL, WebSocket messaging, S3 voice notes, PayPal checkout, AWS/Nginx/CloudFront, and CI/Playwright release gates.</li><li>Shipped Redis/Kafka inventory sync, FastAPI/PostgreSQL tariff services, Elasticsearch HS Code lookup, Spark migration jobs, Docker/Jenkins CI/CD on AWS, and Sentry loops.</li><li>Reduced operational and frontend entropy by replacing blocking Redis patterns, consolidating 11 Redis clients, batching SQL, and extracting stable frontend state owners.</li></ul></details></div></article>
+          <article class="about-reel"><p class="about-reel-no" aria-hidden="true"><small>Reel</small>05</p><div><h3 class="about-reel-title">Huawei</h3><p class="about-role-meta">Software Engineer, SPU Development · Apr 2023 – Feb 2024 · Beijing</p><p class="about-synopsis">Built C/C++ SPU/router features for NE40E traffic statistics and NetStream monitoring; fixed 50+ packet-processing, flow-log, URL parsing, HTTP header, and SmartNet resource issues.</p></div></article></div></section>
+          <!-- PUBLIC_PROFILE:REELS:END -->
+        </div>
+        <hr class="programme-rule">
+        <!-- PUBLIC_PROFILE:LOWER:START -->
+        <div class="programme-lower">
+        <section class="about-section" aria-labelledby="proof-heading"><div class="about-section-head"><h2 class="about-section-title" id="proof-heading">Exhibits</h2><p class="about-section-meta">Public work</p></div><ol class="about-proof"><li><a class="proof-link" href="https://github.com/cookiy-ai/user-research-skill" target="_blank" rel="noopener noreferrer"><span class="about-tag" aria-hidden="true">A</span><span><span class="about-proof-label">User-research skill</span><span class="about-fine">Public end-to-end AI interview workflows for Claude, Codex, Cursor, and OpenClaw-style clients.</span></span><span aria-hidden="true">↗</span></a></li><li><a class="proof-link" href="https://github.com/cookiy-ai/cookiy-cli" target="_blank" rel="noopener noreferrer"><span class="about-tag" aria-hidden="true">B</span><span><span class="about-proof-label">TypeScript CLI</span><span class="about-fine">Public interviews, synthetic-user, survey, recruitment, playback, billing, and REST/MCP workflows.</span></span><span aria-hidden="true">↗</span></a></li><li><a class="proof-link" href="https://cookiy.ai" target="_blank" rel="noopener noreferrer"><span class="about-tag" aria-hidden="true">C</span><span><span class="about-proof-label">MCP developer portal</span><span class="about-fine">One-command skill/MCP setup, Redoc/OpenAPI documentation, and public agent onboarding.</span></span><span aria-hidden="true">↗</span></a></li></ol></section>
+        <section class="about-section" aria-labelledby="schooling-heading"><h2 class="about-section-title" id="schooling-heading">Schooling</h2><ul class="about-education"><li><p class="about-edu-school">Boston University</p><p class="about-fine">M.S. Mathematical Finance &amp; FinTech · GPA 3.78 · Computational Methods, Stochastic Calculus, Algorithmic Trading</p></li><li><p class="about-edu-school">The Ohio State University</p><p class="about-fine">B.A. Physics · GPA 3.84 · Dean&#39;s List</p></li></ul></section>
+        </div>
+        <!-- PUBLIC_PROFILE:LOWER:END -->
+        <!-- PUBLIC_PROFILE:STUB:START -->
+        <nav class="about-primary-actions" aria-label="Primary contact links"><span class="about-admit" aria-hidden="true">Admit one</span><a href="mailto:yplmicro@gmail.com"><span class="about-action-label">Email</span><span class="about-action-note" aria-hidden="true">Write ↗</span></a><a href="/resume.pdf"><span class="about-action-label">Resume</span><span class="about-action-note" aria-hidden="true">PDF ↗</span></a><a href="https://www.linkedin.com/in/yupeng-lu-845a0b411" target="_blank" rel="noopener noreferrer"><span class="about-action-label">LinkedIn</span><span class="about-action-note" aria-hidden="true">Profile ↗</span></a><a href="https://github.com/BrickerP" target="_blank" rel="noopener noreferrer"><span class="about-action-label">GitHub</span><span class="about-action-note" aria-hidden="true">BrickerP ↗</span></a></nav>
+        <p class="about-colophon"><span class="programme-swatches" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span>Ink · oxblood · one vermilion spot on warm stock</span><span>Halftones printed from the film · Updated 2026-10-08</span><a href="mailto:yplmicro@gmail.com">yplmicro@gmail.com</a></p>
+        <!-- PUBLIC_PROFILE:STUB:END -->
       </div>
-      <p class="status"><strong>Work status</strong><br>US Permanent Resident · No sponsorship required</p>
-    </section>
-    <!-- PUBLIC_PROFILE:HERO:END -->
-
-    <section class="proof" aria-labelledby="proof-heading">
-      <p class="eyebrow">Selected public proof</p>
-      <h2 id="proof-heading">Systems people can inspect and use</h2>
-      <!-- PUBLIC_PROFILE:PROOF:START -->
-      <ul class="proof-grid">
-        <li><a class="proof-link" href="https://github.com/cookiy-ai/user-research-skill"><strong>User-research skill</strong><span>Public end-to-end AI interview workflows for Claude, Codex, Cursor, and OpenClaw-style clients.</span></a></li>
-        <li><a class="proof-link" href="https://github.com/cookiy-ai/cookiy-cli"><strong>TypeScript CLI</strong><span>Public interviews, synthetic-user, survey, recruitment, playback, billing, and REST/MCP workflows.</span></a></li>
-        <li><a class="proof-link" href="https://cookiy.ai"><strong>MCP developer portal</strong><span>One-command skill/MCP setup, Redoc/OpenAPI documentation, and public agent onboarding.</span></a></li>
-      </ul>
-      <!-- PUBLIC_PROFILE:PROOF:END -->
-    </section>
-
-    <section class="focus" aria-labelledby="focus-heading">
-      <p class="eyebrow">Current focus</p>
-      <h2 id="focus-heading">Reliable agent products, end to end</h2>
-      <!-- PUBLIC_PROFILE:FOCUS:START -->
-      <p class="experience-note"><strong>Current roles:</strong> Baidu (MeDo) is the primary role; the Quant Trading Systems Venture is a concurrent engineering role.</p>
-      <p>MCP · tool-use contracts · agent skills &amp; CLIs · evals &amp; release gates · Stripe Billing · ads attribution · Java / Spring Boot · TypeScript · Python · AWS · Kubernetes · ClickHouse</p>
-      <p>See the full chronology and project evidence in the <a href="/resume.pdf">resume PDF</a>, inspect the public <a href="https://github.com/cookiy-ai/user-research-skill">research skill</a> and <a href="https://github.com/cookiy-ai/cookiy-cli">CLI</a>, or explore the <a href="https://github.com/BrickerP">personal GitHub</a>.</p>
-      <!-- PUBLIC_PROFILE:FOCUS:END -->
-    </section>
-  </main>
+    </main>
+  </div>
   <!-- PUBLIC_PROFILE:FOOTER:START -->
-  <footer><p>© 2026 Yupeng Lu · <a href="/">Beijing — Endless Second Ring</a></p></footer>
+  <footer class="site-foot"><p>© 2026 Yupeng Lu · <a href="/">Beijing — Endless Second Ring</a></p></footer>
   <!-- PUBLIC_PROFILE:FOOTER:END -->
 </body>
 </html>

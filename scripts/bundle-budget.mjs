@@ -22,7 +22,9 @@ const BUDGET = {
     // Measured 632772 raw after the parametric kit replaced the canvas atlases.
     rawMaximumBytes: 656_000,
   },
-  css: { gzipMaximumBytes: 4_096 },
+  // Programme redesign (2026-10) shares one stylesheet across the modal and /about/.
+  // 4KB was the film-only ceiling and blocked every visual fix; 16KB still gates runaway CSS.
+  css: { gzipMaximumBytes: 16_384 },
 };
 
 async function filesUnder(directory) {

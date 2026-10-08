@@ -115,6 +115,7 @@ jobs:
           name: browser-evidence-${{ github.run_attempt }}
           path: |
             .omx/handoff/**
+            docs/verify/about-*.png
             playwright-report/**
             test-results/**
             **/*.webm
