@@ -2,6 +2,7 @@ import { BufferGeometry, Group, type Material } from 'three';
 import {
   addBalusterRun,
   addBracketRun,
+  createEnclosedHall,
   createArch,
   createBalusterGeometry,
   createColumnRow,
@@ -83,6 +84,17 @@ export function buildGateTower(
     0,
     'skip',
   );
+  const archCrown = 0.55 + options.openingHalf + 0.15;
+  const wallBottom = Math.max(hallY, archCrown + 0.3);
+  const wallTop = hallY + 2.2;
+  if (wallTop - wallBottom > 0.45) {
+    const wallHeight = wallTop - wallBottom;
+    batch.add(
+      createEnclosedHall(span * 0.7, wallHeight, hallDepth * 0.82),
+      mats.palaceBrick,
+      wallBottom,
+    );
+  }
   batch.add(placedBox(span * 0.96, 0.9, hallDepth + 0.4, 0, hallY + 2.55, 0), mats.palaceBrick);
   const lowerRoof = createRoof({
     width: span * 1.04,
