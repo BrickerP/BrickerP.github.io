@@ -52,10 +52,10 @@ float surfaceBrick(vec2 uv, vec2 brick, float mortar) {
 }
 vec2 surfaceUv(vec3 world, vec3 normal) {
   vec3 n = abs(normal);
-  if (n.y > 0.72) return world.xz;
-  if (n.y < 0.28) return n.x > n.z ? world.zy : world.xy;
+  if (n.y > 0.96) return world.xz;
+  if (n.y < 0.22) return n.x > n.z ? world.zy : world.xy;
   vec2 slope = normalize(normal.xz + vec2(0.0001));
-  return vec2(dot(world.xz, vec2(-slope.y, slope.x)), dot(world.xz, slope));
+  return vec2(dot(world.xz, vec2(-slope.y, slope.x)), world.y);
 }
 vec3 surfacePattern(vec3 world, vec3 normal, vec2 uv, float kind) {
   vec2 plane = surfaceUv(world, normal);
@@ -76,20 +76,25 @@ vec3 surfacePattern(vec3 world, vec3 normal, vec2 uv, float kind) {
     float barrel = 0.5 + 0.5 * sin(plane.x / 0.14 * 6.28318);
     value = mix(0.86, 1.0, smoothstep(0.0, 0.22, ridge)) * (0.92 + 0.08 * barrel);
   } else if (kind < 3.5) {
-    value = mix(0.9, surfaceBrick(plane, vec2(0.48, 0.28), 0.016), 0.7);
+    value = mix(0.9, surfaceBrick(plane, vec2(0.55, 0.32), 0.016), 0.7);
   } else if (kind < 4.5) {
     float seam = smoothstep(0.015, 0.04, abs(fract(plane.y / 0.6) - 0.5));
-    value = mix(0.92, seam, 0.4);
+    float pore = step(0.93, surfaceHash(floor(plane * 5.5)));
+    value = mix(0.92, seam, 0.4) * mix(1.0, 0.8, pore);
   } else if (kind < 5.5) {
-    value = 0.88 + 0.12 * sin(plane.x / 0.065 * 6.28318);
+    float groove = sin(plane.x / 0.065 * 6.28318);
+    float fine = sin(plane.x / 0.05 * 6.28318 + plane.y * 3.0);
+    value = 0.86 + 0.08 * groove + 0.04 * fine;
   } else if (kind < 6.5) {
     vec2 cell = fract(plane * vec2(1.6, 2.2));
     float mullion = step(0.08, cell.x) * step(0.08, cell.y);
     float lit = step(0.72, surfaceHash(floor(plane * vec2(1.6, 2.2))));
     value = mix(0.62, mix(0.8, 1.15, lit), mullion);
   }
-  float edge = length(fwidth(normal));
-  value *= mix(1.0, 0.82, smoothstep(0.25, 0.6, edge));
+  float metres = length(fwidth(world));
+  float turn = smoothstep(0.12, 0.45, length(fwidth(normal)));
+  float nearCorner = 1.0 - smoothstep(0.08, 0.2, metres);
+  value *= mix(1.0, 0.65, clamp(turn * nearCorner, 0.0, 1.0));
   return vec3(value);
 }
 `;
@@ -102,6 +107,7 @@ export function bindSurface(material: Material, kind: SurfaceKind): void {
   const index = KIND_INDEX[kind];
   typed.onBeforeCompile = (shader) => {
     shader.uniforms.surfaceKind = { value: index };
+    const rough = shader.fragmentShader.includes('#include <roughnessmap_fragment>');
     shader.vertexShader = shader.vertexShader
       .replace(
         '#include <common>',
@@ -118,7 +124,9 @@ export function bindSurface(material: Material, kind: SurfaceKind): void {
            surfaceLocal = instanceMatrix * surfaceLocal;
          #endif
          vSurfaceWorld = (modelMatrix * surfaceLocal).xyz;
-         #ifdef USE_UV
+         #ifdef USE_MAP
+           vSurfaceUv = vMapUv;
+         #elif defined( USE_UV )
            vSurfaceUv = uv;
          #else
            vSurfaceUv = vec2(0.0);
@@ -131,21 +139,33 @@ export function bindSurface(material: Material, kind: SurfaceKind): void {
          varying vec3 vSurfaceWorld;
          varying vec2 vSurfaceUv;
          uniform float surfaceKind;
-         ${PATTERN}`,
+         ${PATTERN}
+         ${rough ? 'float surfaceRoughMul;' : ''}`,
       )
       .replace(
         '#include <color_fragment>',
         `#include <color_fragment>
          if (surfaceKind > 6.5) {
-           vec2 cell = fract(vSurfaceUv * vec2(3.0, 4.0)) - 0.5;
-           float radius = length(cell);
-           if (radius > 0.48 && dot(vSurfaceUv, vSurfaceUv) > 0.0001) discard;
-           diffuseColor.rgb *= 0.8 + 0.25 * (1.0 - radius);
+           vec2 petal = vSurfaceUv - 0.5;
+           float radius = length(petal);
+           float lobe = 0.47 + 0.035 * sin(atan(petal.y, petal.x) * 5.0);
+           if (radius > lobe && dot(vSurfaceUv, vSurfaceUv) > 0.0001) discard;
+           diffuseColor.rgb *= 0.72 + 0.35 * (1.0 - radius);
+           ${rough ? 'surfaceRoughMul = 0.95;' : ''}
          } else {
            vec3 face = normalize(cross(dFdx(vSurfaceWorld), dFdy(vSurfaceWorld)));
-           diffuseColor.rgb *= surfacePattern(vSurfaceWorld, face, vSurfaceUv, surfaceKind);
+           vec3 shade = surfacePattern(vSurfaceWorld, face, vSurfaceUv, surfaceKind);
+           diffuseColor.rgb *= shade;
+           ${rough ? 'surfaceRoughMul = clamp(0.82 + 0.28 * (1.0 - shade.r), 0.7, 1.25);' : ''}
          }`,
       );
+    if (rough) {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <roughnessmap_fragment>',
+        `#include <roughnessmap_fragment>
+         roughnessFactor = clamp(roughnessFactor * surfaceRoughMul, 0.04, 1.0);`,
+      );
+    }
   };
   typed.customProgramCacheKey = () => `surface-${kind}`;
 }

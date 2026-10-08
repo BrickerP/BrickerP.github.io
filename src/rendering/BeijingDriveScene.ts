@@ -307,7 +307,7 @@ export class BeijingDriveScene {
     });
     windowMaterial.userData.preserveInCapture = true;
     bindWindowLattice(windowMaterial);
-    const leaf = this.standard('#3E6A48', {
+    const leaf = this.surface('#3E6A48', 'leaf', {
       roughness: 0.95,
       emissive: '#1A3020',
       emissiveIntensity: 0.28,
@@ -513,10 +513,16 @@ export class BeijingDriveScene {
       const deck = this.box(2.12, 0.56, segmentLength, deckMaterial);
       deck.position.set(Math.cos(angle) * radius, 6.55, Math.sin(angle) * radius);
       deck.rotation.y = -angle;
-      const railNear = this.box(0.14, 0.42, segmentLength, deckMaterial);
-      railNear.position.set(Math.cos(angle) * (radius - 1), 6.9, Math.sin(angle) * (radius - 1));
+      const railNear = this.box(0.16, 0.48, segmentLength, deckMaterial);
+      railNear.position.set(Math.cos(angle) * (radius - 1), 6.95, Math.sin(angle) * (radius - 1));
       railNear.rotation.y = -angle;
-      bridge.add(deck, railNear);
+      const railFar = this.box(0.16, 0.48, segmentLength, deckMaterial);
+      railFar.position.set(Math.cos(angle) * (radius + 1), 6.95, Math.sin(angle) * (radius + 1));
+      railFar.rotation.y = -angle;
+      const cap = this.box(2.3, 0.28, 0.46, deckMaterial);
+      cap.position.set(Math.cos(angle) * radius, 6.15, Math.sin(angle) * radius);
+      cap.rotation.y = -angle;
+      bridge.add(deck, railNear, railFar, cap);
     }
     this.root.add(bridge);
   }
@@ -544,7 +550,14 @@ export class BeijingDriveScene {
         column.castShadow = true;
         this.place(column, progress, side * 8.25, 3.75);
         this.root.add(column);
+        const guard = this.box(0.16, 0.5, 2.3, concrete);
+        this.place(guard, progress, side * 7.15, 6.7);
+        this.root.add(guard);
       }
+      const beam = this.box(15.4, 0.32, 0.55, concrete);
+      beam.castShadow = true;
+      this.place(beam, progress, 0, 5.85);
+      this.root.add(beam);
     }
     const portalProgress = 0.993;
     for (const side of [-1, 1]) {
@@ -694,6 +707,17 @@ export class BeijingDriveScene {
       if (!(child instanceof Mesh)) return;
       if (child instanceof InstancedMesh) {
         child.castShadow = false;
+        child.receiveShadow = true;
+        return;
+      }
+      const role = child.userData.shadowRole;
+      if (role === 'skip') {
+        child.castShadow = false;
+        child.receiveShadow = true;
+        return;
+      }
+      if (role === 'mass') {
+        child.castShadow = true;
         child.receiveShadow = true;
         return;
       }

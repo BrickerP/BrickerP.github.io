@@ -100,6 +100,30 @@ try {
   const bayA = buildings.createShopBay(false);
   const bayB = buildings.createShopBay(false);
   assert.equal(bayA.timber.getAttribute('position').count, bayB.timber.getAttribute('position').count, 'shop bay is not stable');
+  for (const kind of ['door', 'window', 'screen']) {
+    const bay = buildings.createShopBay(kind);
+    assert.ok(bay.timber.getAttribute('position').count > 20, `${kind} bay is empty`);
+    assert.ok(bay.roof.getAttribute('position').count > bay.timber.getAttribute('position').count * 0.05, `${kind} bay is missing its roof`);
+  }
+
+  const xieshan = kit.createRoof({ width: 6, depth: 4, rise: 1.2, kind: 'xieshan', wingLift: 0.16 });
+  const hip = kit.createRoof({ width: 6, depth: 4, rise: 1.2, kind: 'hip', wingLift: 0.16 });
+  assert.ok(xieshan.getAttribute('position').count > hip.getAttribute('position').count, 'xieshan roof is missing its gable boards');
+  assert.ok(Number.isFinite(xieshan.getAttribute('position').getX(0)), 'xieshan roof is not finite');
+
+  const palace = buildings.buildPalaceWallGate(mats, bracketA);
+  const palaceBox = new Box3().setFromObject(palace);
+  const palaceDepth = Math.max(palaceBox.max.z, -palaceBox.min.z);
+  assert.ok(palaceDepth <= 5.43, `tiananmen depth ${palaceDepth} exceeds the set-back half-width`);
+  assert.ok(palaceBox.max.y > 6, 'tiananmen tower is missing its hall');
+
+  const wall = kit.createCityWall({ length: 8, height: 4, depth: 2.4 });
+  const wallNormal = wall.getAttribute('normal');
+  let outward = 0;
+  for (let index = 0; index < wallNormal.count; index += 1) {
+    outward += Math.abs(wallNormal.getY(index)) + Math.abs(wallNormal.getX(index)) + Math.abs(wallNormal.getZ(index));
+  }
+  assert.ok(outward > wallNormal.count * 0.5, 'battered wall normals collapsed');
   console.log('kit check ok');
 } finally {
   rmSync(TEMP, { recursive: true, force: true });

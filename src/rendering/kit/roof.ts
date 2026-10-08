@@ -1,7 +1,7 @@
 import { BufferAttribute, BufferGeometry } from 'three';
-import { mergeParts, placedBox } from './geom';
+import { mergeParts, placedBeam, placedBox, placedCylinder } from './geom';
 
-export type RoofKind = 'hip' | 'gable' | 'pyramid' | 'cone';
+export type RoofKind = 'hip' | 'xieshan' | 'gable' | 'pyramid' | 'cone';
 
 export interface RoofOptions {
   width: number;
@@ -16,23 +16,38 @@ function push(positions: number[], x: number, y: number, z: number): void {
   positions.push(x, y, z);
 }
 
+/** Two or three straight pitches. 0 at the ridge, 1 at the eave. */
+function juzhe(span: number): number {
+  const knots = [0, 0.34, 0.67, 1];
+  const drop = [0, 0.22, 0.55, 1];
+  const t = Math.min(1, Math.max(0, span));
+  for (let index = 0; index < 3; index += 1) {
+    if (t <= knots[index + 1]) {
+      const u = (t - knots[index]) / (knots[index + 1] - knots[index]);
+      return drop[index] + (drop[index + 1] - drop[index]) * u;
+    }
+  }
+  return 1;
+}
+
+function spanAt(ax: number, az: number, kind: RoofKind): number {
+  if (kind === 'gable') return az;
+  if (kind === 'pyramid' || kind === 'cone') return Math.max(ax, az);
+  const ridge = kind === 'xieshan' ? 0.58 : 0.34;
+  if (ax < ridge) return az;
+  return Math.max(az, (ax - ridge) / (1 - ridge));
+}
+
 function heightAt(x: number, z: number, options: Required<RoofOptions>): number {
   const halfW = options.width / 2;
   const halfD = options.depth / 2;
   const ax = Math.min(1, Math.abs(x) / halfW);
   const az = Math.min(1, Math.abs(z) / halfD);
-  let span = 1;
-  if (options.kind === 'gable') span = az;
-  else if (options.kind === 'pyramid' || options.kind === 'cone') span = Math.max(ax, az);
-  else {
-    const ridge = 0.34;
-    span = ax < ridge ? az : Math.max(az, (ax - ridge) / (1 - ridge));
-  }
   const wing = options.wingLift * ax * ax * az * az;
-  return options.rise * (1 - span) + wing;
+  return options.rise * (1 - juzhe(spanAt(ax, az, options.kind))) + wing;
 }
 
-/** A roof surface whose eave sits on y = 0. Ridges are separate beams. */
+/** A roof surface whose eave sits on y = 0. Ridges and drip tiles are separate beams. */
 export function createRoofSurface(options: RoofOptions): BufferGeometry {
   const resolved: Required<RoofOptions> = {
     width: options.width,
@@ -41,8 +56,8 @@ export function createRoofSurface(options: RoofOptions): BufferGeometry {
     kind: options.kind ?? 'hip',
     wingLift: options.wingLift ?? Math.min(0.35, options.rise * 0.18),
   };
-  const columns = resolved.kind === 'cone' ? 14 : 8;
-  const rows = 5;
+  const columns = resolved.kind === 'cone' ? 16 : 10;
+  const rows = 6;
   const positions: number[] = [];
   const indices: number[] = [];
   const halfW = resolved.width / 2;
@@ -51,17 +66,16 @@ export function createRoofSurface(options: RoofOptions): BufferGeometry {
     for (let column = 0; column <= columns; column += 1) {
       const u = column / columns;
       const v = row / rows;
-      let x = 0;
-      let z = 0;
       if (resolved.kind === 'cone') {
         const radius = (1 - v) * Math.max(halfW, halfD);
         const angle = u * Math.PI * 2;
-        x = Math.cos(angle) * radius;
-        z = Math.sin(angle) * radius;
-        push(positions, x, v * resolved.rise, z);
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius;
+        const wing = resolved.wingLift * (1 - v) * (1 - v);
+        push(positions, x, resolved.rise * (1 - juzhe(1 - v)) + wing, z);
       } else {
-        x = -halfW + resolved.width * u;
-        z = -halfD + resolved.depth * v;
+        const x = -halfW + resolved.width * u;
+        const z = -halfD + resolved.depth * v;
         push(positions, x, heightAt(x, z, resolved), z);
       }
     }
@@ -80,30 +94,84 @@ export function createRoofSurface(options: RoofOptions): BufferGeometry {
   return geometry;
 }
 
-/** Ridge, hip beams, and a drip edge under the eave. */
+function dripBand(parts: BufferGeometry[], width: number, depth: number): void {
+  const insetX = Math.max(0.2, width * 0.04);
+  const insetZ = Math.max(0.16, depth * 0.04);
+  const halfW = width / 2 - insetX;
+  const halfD = depth / 2 - insetZ;
+  const step = 0.55;
+  const countX = Math.max(3, Math.round((halfW * 2) / step));
+  for (let index = 0; index < countX; index += 1) {
+    const x = -halfW + ((halfW * 2) / countX) * (index + 0.5);
+    parts.push(placedBox(0.16, 0.12, 0.1, x, -0.04, -halfD));
+    parts.push(placedBox(0.16, 0.12, 0.1, x, -0.04, halfD));
+  }
+  const countZ = Math.max(2, Math.round((halfD * 2) / step));
+  for (let index = 0; index < countZ; index += 1) {
+    const z = -halfD + ((halfD * 2) / countZ) * (index + 0.5);
+    parts.push(placedBox(0.1, 0.12, 0.16, -halfW, -0.04, z));
+    parts.push(placedBox(0.1, 0.12, 0.16, halfW, -0.04, z));
+  }
+}
+
+/** Main ridge, hip or gable ridges, and a drip-tile band under the eave. */
 export function createRoofFrame(options: RoofOptions): BufferGeometry {
   const kind = options.kind ?? 'hip';
   const rise = options.rise;
+  const wing = options.wingLift ?? Math.min(0.35, rise * 0.18);
   const halfW = options.width / 2;
   const halfD = options.depth / 2;
-  const parts: BufferGeometry[] = [
-    placedBox(options.width + 0.3, 0.08, 0.16, 0, 0.02, -halfD),
-    placedBox(options.width + 0.3, 0.08, 0.16, 0, 0.02, halfD),
-    placedBox(0.16, 0.08, options.depth + 0.3, -halfW, 0.02, 0),
-    placedBox(0.16, 0.08, options.depth + 0.3, halfW, 0.02, 0),
-  ];
-  if (kind === 'cone' || kind === 'pyramid') {
-    parts.push(placedBox(0.28, 0.34, 0.28, 0, rise, 0));
-  } else {
-    const ridge = kind === 'gable' ? options.width * 0.92 : options.width * 0.42;
-    parts.push(placedBox(ridge, 0.16, 0.22, 0, rise, 0));
-    if (kind === 'hip') {
+  const parts: BufferGeometry[] = [];
+  const yEave = wing * 0.35;
+  if (kind === 'cone') {
+    parts.push(placedCylinder(0.05, 0.16, 0.42, 0, rise + 0.16, 0, 8));
+  } else if (kind === 'pyramid') {
+    parts.push(
+      placedBeam(-halfW * 0.92, yEave, 0, 0, rise, 0, 0.1),
+      placedBeam(halfW * 0.92, yEave, 0, 0, rise, 0, 0.1),
+      placedBeam(0, rise, 0, 0, yEave, -halfD * 0.92, 0.1),
+      placedBeam(0, rise, 0, 0, yEave, halfD * 0.92, 0.1),
+      placedBox(0.22, 0.34, 0.22, 0, rise + 0.12, 0),
+    );
+  } else if (kind === 'gable') {
+    const ridge = options.width * 0.9;
+    parts.push(placedBeam(-ridge / 2, rise + 0.04, 0, ridge / 2, rise + 0.04, 0, 0.14));
+    for (const side of [-1, 1]) {
       parts.push(
-        placedBox(0.14, 0.12, halfD, -ridge / 2, rise * 0.55, 0),
-        placedBox(0.14, 0.12, halfD, ridge / 2, rise * 0.55, 0),
+        placedBeam(side * ridge / 2, rise, 0, side * halfW * 0.96, yEave, -halfD * 0.96, 0.09),
+        placedBeam(side * ridge / 2, rise, 0, side * halfW * 0.96, yEave, halfD * 0.96, 0.09),
       );
     }
+  } else {
+    const ridge = options.width * (kind === 'xieshan' ? 0.56 : 0.4);
+    parts.push(placedBeam(-ridge / 2, rise + 0.05, 0, ridge / 2, rise + 0.05, 0, 0.14));
+    if (kind === 'xieshan') {
+      const boardHeight = rise * 0.46;
+      parts.push(
+        placedBox(0.08, boardHeight, halfD * 0.55, ridge / 2, rise - boardHeight * 0.35, 0),
+        placedBox(0.08, boardHeight, halfD * 0.55, -ridge / 2, rise - boardHeight * 0.35, 0),
+      );
+      const breakZ = halfD * 0.58;
+      const breakY = rise * 0.5;
+      for (const side of [-1, 1]) {
+        for (const end of [-1, 1]) {
+          parts.push(
+            placedBeam(side * ridge / 2, rise, 0, side * ridge / 2, breakY, end * breakZ, 0.1),
+            placedBeam(side * ridge / 2, breakY, end * breakZ, side * halfW * 0.96, yEave, end * halfD * 0.96, 0.1),
+          );
+        }
+      }
+    } else {
+      for (const side of [-1, 1]) {
+        for (const end of [-1, 1]) {
+          parts.push(
+            placedBeam(side * ridge / 2, rise, 0, side * halfW * 0.96, yEave, end * halfD * 0.96, 0.1),
+          );
+        }
+      }
+    }
   }
+  dripBand(parts, options.width, options.depth);
   return mergeParts(parts);
 }
 

@@ -145,22 +145,32 @@ function faceRoad(offset: number): number {
 
 function scatterShops(
   host: CityHost,
-  bay: { timber: BufferGeometry; roof: BufferGeometry; opening: BufferGeometry; eave: BufferGeometry },
+  bays: Array<{ timber: BufferGeometry; roof: BufferGeometry; opening: BufferGeometry; eave: BufferGeometry }>,
   stamps: Array<{ progress: number; offset: number }>,
 ): void {
-  const placed = stamps.map((stamp) => ({ ...stamp, heading: faceRoad(stamp.offset) }));
-  scatter(host, bay.timber, host.mats.timber, placed, true);
-  scatter(host, bay.roof, host.mats.tile, placed, true);
-  scatter(host, bay.eave, host.mats.gold, placed, false);
-  scatter(host, bay.opening, host.mats.window, placed, false);
+  const rows: Array<Array<{ progress: number; offset: number }>> = [[], [], []];
+  for (const stamp of stamps) {
+    const roll = hash01(Math.round(stamp.progress * 1000), Math.round(Math.abs(stamp.offset) * 10));
+    const slot = roll < 0.34 ? 0 : roll < 0.67 ? 1 : 2;
+    rows[slot].push(stamp);
+  }
+  bays.forEach((bay, index) => {
+    const row = rows[index];
+    const placed = row.map((stamp) => ({ ...stamp, heading: faceRoad(stamp.offset) }));
+    scatter(host, bay.timber, host.mats.timber, placed, true);
+    scatter(host, bay.roof, host.mats.tile, placed, true);
+    scatter(host, bay.eave, host.mats.gold, placed, false);
+    scatter(host, bay.opening, host.mats.window, placed, false);
+  });
 }
 
 /** Twelve passages assembled from the parametric kit. Anchors stay on the spatial contract. */
 export function assembleCity(host: CityHost): void {
   const mats = host.mats;
   const bracket = host.track(createBracketGeometry());
-  const windowBay = createShopBay(true);
-  const doorBay = createShopBay(false);
+  const doorBay = createShopBay('door');
+  const windowBay = createShopBay('window');
+  const screenBay = createShopBay('screen');
   const wallOptions = { length: 8, height: 4.2, depth: 2.5, merlons: 5 };
   const wallRun = createCityWall(wallOptions);
   const wallMerlons = createMerlons(wallOptions);
@@ -180,7 +190,7 @@ export function assembleCity(host: CityHost): void {
 
   const tiananmen = CENTRAL_AXIS_LANDMARKS.tiananmen;
   const palace = buildPalaceWallGate(mats, bracket);
-  hangPlaque(host, palace, '天安门', 0, 7.3, -2.3, 4.6, 1.4);
+  hangPlaque(host, palace, '天安门', 0, 7.05, -2.45, 2.8, 0.95);
   put(host, palace, tiananmen.progress, tiananmen.lateralOffset, tiananmen.scale, tiananmen.headingOffset);
   host.addLamp(0.02, -6.6, false);
   host.addLamp(0.034, -6.6, true);
@@ -240,7 +250,7 @@ export function assembleCity(host: CityHost): void {
   const bell = PASSAGE_HEROES.bellTower;
   put(host, buildPavilion(mats, bracket, true), drum.progress, drum.lateralOffset, drum.scale);
   put(host, buildPavilion(mats, bracket, false), bell.progress, bell.lateralOffset, bell.scale);
-  scatterShops(host, doorBay, [
+  scatterShops(host, [doorBay, windowBay, screenBay], [
     { progress: 0.424, offset: 8.6 },
     { progress: 0.424, offset: -8.6 },
     { progress: 0.432, offset: 8.6 },
@@ -258,7 +268,7 @@ export function assembleCity(host: CityHost): void {
     }
     nanluo.push({ progress, offset: -8.5 });
   }
-  scatterShops(host, windowBay, nanluo);
+  scatterShops(host, [doorBay, windowBay, screenBay], nanluo);
   const tea = PASSAGE_HEROES.nanluoTeaHouse;
   put(host, buildTeaHouse(mats), tea.progress, tea.lateralOffset, tea.scale, faceRoad(tea.lateralOffset));
   host.addLamp(0.508, -6.4, true);
@@ -317,7 +327,7 @@ export function assembleCity(host: CityHost): void {
   for (let index = 0; index < 6; index += 1) {
     qianmen.push({ progress: 0.876 + index * 0.0055, offset: index % 2 === 0 ? 8.2 : -8.2 });
   }
-  scatterShops(host, doorBay, qianmen);
+  scatterShops(host, [doorBay, windowBay, screenBay], qianmen);
   put(host, buildPailou(mats, bracket), 0.902, 0, 0.94);
   const dashilar = PASSAGE_HEROES.dashilarGate;
   put(
