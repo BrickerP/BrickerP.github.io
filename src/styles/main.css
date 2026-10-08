@@ -471,7 +471,7 @@ canvas {
 .about-backdrop {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(3, 5, 8, 0.15), rgba(3, 5, 8, 0.82));
+  background: rgba(3, 5, 8, 0.55);
   opacity: 0;
   transition: opacity 240ms ease;
 }
@@ -513,7 +513,6 @@ canvas {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  overscroll-behavior: contain;
 }
 
 body.is-about-open .ui-brand,
@@ -528,10 +527,6 @@ body.is-about-open .ui-footer {
     bottom: 0;
     left: calc(8px + var(--safe-l));
     width: auto;
-  }
-
-  .about-backdrop {
-    background: rgba(3, 5, 8, 0.6);
   }
 
   .about-primary-actions {
