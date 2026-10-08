@@ -47,8 +47,8 @@ float surfaceBrick(vec2 uv, vec2 brick, float mortar) {
   float mortarY = smoothstep(mortar / brick.y, mortar / brick.y + aa.y, cell.y)
     * smoothstep(mortar / brick.y, mortar / brick.y + aa.y, 1.0 - cell.y);
   float joint = mortarX * mortarY;
-  float tone = 0.78 + 0.22 * surfaceHash(id);
-  return mix(0.42, tone, joint);
+  float tone = 0.9 + 0.1 * surfaceHash(id);
+  return mix(0.78, tone, joint);
 }
 vec2 surfaceUv(vec3 world, vec3 normal) {
   vec3 n = abs(normal);
@@ -58,6 +58,12 @@ vec2 surfaceUv(vec3 world, vec3 normal) {
   return vec2(dot(world.xz, vec2(-slope.y, slope.x)), dot(world.xz, slope));
 }
 vec3 surfacePattern(vec3 world, vec3 normal, vec2 uv, float kind) {
+  float grazing = max(fwidth(world.x), fwidth(world.z));
+  if (abs(normal.y) > 0.65 || grazing > 0.35) {
+    float grain = surfaceHash(floor(world.xz * 6.0));
+    float edge = length(fwidth(normal));
+    return vec3((0.9 + 0.1 * grain) * mix(1.0, 0.72, smoothstep(0.2, 0.6, edge)));
+  }
   vec2 plane = surfaceUv(world, normal);
   float value = 1.0;
   if (kind < 0.5) value = surfaceBrick(plane, vec2(0.24, 0.065), 0.012);
@@ -66,26 +72,23 @@ vec3 surfacePattern(vec3 world, vec3 normal, vec2 uv, float kind) {
     float row = plane.y / 0.15;
     float ridge = abs(fract(row) - 0.72);
     float barrel = 0.5 + 0.5 * sin(plane.x / 0.14 * 6.28318);
-    value = mix(0.55, 1.0, smoothstep(0.0, 0.22, ridge)) * (0.82 + 0.18 * barrel);
+    value = mix(0.82, 1.0, smoothstep(0.0, 0.22, ridge)) * (0.9 + 0.1 * barrel);
   } else if (kind < 3.5) {
     float block = surfaceBrick(plane, vec2(0.55, 0.32), 0.015);
-    float grain = 0.92 + 0.08 * surfaceHash(floor(plane / 0.02));
-    value = block * grain;
+    value = mix(0.88, block, 0.55);
   } else if (kind < 4.5) {
     float seam = smoothstep(0.02, 0.05, abs(fract(plane.y / 0.6) - 0.5));
-    float pore = 0.9 + 0.1 * surfaceHash(floor(plane / 0.03));
-    value = seam * pore;
+    value = mix(0.9, seam, 0.35);
   } else if (kind < 5.5) {
-    float groove = 0.75 + 0.25 * sin(plane.x / 0.065 * 6.28318);
-    value = groove * (0.9 + 0.1 * surfaceHash(floor(plane / 0.04)));
+    value = 0.86 + 0.14 * sin(plane.x / 0.065 * 6.28318);
   } else if (kind < 6.5) {
     vec2 cell = fract(plane * vec2(1.6, 2.2));
     float mullion = step(0.08, cell.x) * step(0.08, cell.y);
     float lit = step(0.72, surfaceHash(floor(plane * vec2(1.6, 2.2))));
-    value = mix(0.35, mix(0.55, 1.15, lit), mullion);
+    value = mix(0.55, mix(0.75, 1.2, lit), mullion);
   }
   float edge = length(fwidth(normal));
-  value *= mix(1.0, 0.65, smoothstep(0.12, 0.48, edge));
+  value *= mix(1.0, 0.78, smoothstep(0.2, 0.55, edge));
   return vec3(value);
 }
 `;
@@ -133,9 +136,10 @@ export function bindSurface(material: Material, kind: SurfaceKind): void {
         '#include <color_fragment>',
         `#include <color_fragment>
          if (surfaceKind > 6.5) {
-           vec2 cell = fract(vSurfaceUv * vec2(4.0, 5.0)) - 0.5;
-           if (length(cell) > 0.4) discard;
-           diffuseColor.rgb *= 0.75 + 0.25 * surfaceHash(floor(vSurfaceUv * vec2(4.0, 5.0)));
+           vec2 cell = fract(vSurfaceUv * vec2(3.0, 4.0)) - 0.5;
+           float radius = length(cell);
+           if (radius > 0.48 && dot(vSurfaceUv, vSurfaceUv) > 0.0001) discard;
+           diffuseColor.rgb *= 0.8 + 0.25 * (1.0 - radius);
          } else {
            vec3 face = normalize(cross(dFdx(vSurfaceWorld), dFdy(vSurfaceWorld)));
            diffuseColor.rgb *= surfacePattern(vSurfaceWorld, face, vSurfaceUv, surfaceKind);

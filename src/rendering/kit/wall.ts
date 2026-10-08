@@ -1,4 +1,4 @@
-import type { BufferGeometry } from 'three';
+import { BufferGeometry, Float32BufferAttribute } from 'three';
 import { mergeParts, placedBox, placedCylinder } from './geom';
 
 export interface CityWallOptions {
@@ -25,17 +25,39 @@ export function createCityWall(options: CityWallOptions): BufferGeometry {
   return mergeParts(parts);
 }
 
-/** A semicircular arch ring standing in the XY plane, opening toward -Z. */
+/** A continuous semicircular arch ring, opening along Z, springing on the X axis. */
 export function createArch(radius: number, depth: number, thickness = 0.28): BufferGeometry {
-  const segments = 8;
-  const parts: BufferGeometry[] = [];
+  const segments = 16;
+  const positions: number[] = [];
+  const indices: number[] = [];
+  const inner = Math.max(0.2, radius - thickness / 2);
+  const outer = radius + thickness / 2;
+  const z0 = -depth / 2;
+  const z1 = depth / 2;
   for (let index = 0; index <= segments; index += 1) {
     const angle = Math.PI * (index / segments);
-    const x = Math.cos(angle) * radius;
-    const y = Math.sin(angle) * radius;
-    parts.push(placedBox(thickness, thickness, depth, x, y, 0, 0, Math.PI / 2 - angle));
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+    positions.push(
+      c * inner, s * inner, z0,
+      c * outer, s * outer, z0,
+      c * inner, s * inner, z1,
+      c * outer, s * outer, z1,
+    );
+    if (index === segments) continue;
+    const n = index * 4;
+    indices.push(
+      n + 1, n + 5, n + 3, n + 1, n + 7, n + 5,
+      n, n + 2, n + 4, n + 2, n + 6, n + 4,
+      n + 1, n + 3, n, n + 3, n + 2, n,
+      n + 4, n + 6, n + 5, n + 6, n + 7, n + 5,
+    );
   }
-  return mergeParts(parts);
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new Float32BufferAttribute(new Float32Array(positions), 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
 }
 
 /** Dark vault so a gate opening has depth instead of a flat gap. */
