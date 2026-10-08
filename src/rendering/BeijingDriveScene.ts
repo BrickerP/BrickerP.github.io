@@ -2,21 +2,19 @@ import {
   BackSide,
   Box3,
   BoxGeometry,
-  CircleGeometry,
   BufferGeometry,
   CanvasTexture,
+  CircleGeometry,
   Color,
   CylinderGeometry,
   DirectionalLight,
   DoubleSide,
   Float32BufferAttribute,
   Fog,
-  FrontSide,
   Group,
   HemisphereLight,
-  LatheGeometry,
-  LinearFilter,
   InstancedMesh,
+  LinearFilter,
   Matrix4,
   Mesh,
   MeshBasicMaterial,
@@ -27,7 +25,6 @@ import {
   Scene,
   SphereGeometry,
   SRGBColorSpace,
-  Vector2,
   Vector3,
   Vector4,
   type Material,
@@ -41,18 +38,13 @@ import {
   wrapProgress,
 } from './drivePath';
 import { DRIVE_PATH_SCALE } from './FirstPersonCameraRig';
-import {
-  hash01,
-  SurfaceAtlasLibrary,
-  type SurfaceAtlasId,
-} from './surfaceTextures';
+import { hash01 } from './surfaceTextures';
 import { assertPassageId, PASSAGES, type PassageId } from './passages';
 import { DRIVE, PALETTE } from './theme';
-import {
-  CALIBRATED_LANDMARK_MODELS,
-  CENTRAL_AXIS_LANDMARKS,
-  PASSAGE_HEROES,
-} from './spatialContract';
+import { bindSurface, bindWetSurface, bindWindowLattice, type SurfaceKind } from './surfaces';
+import { createLampPole } from './kit';
+import { CENTRAL_AXIS_LANDMARKS } from './spatialContract';
+import { assembleCity, type CityMaterials } from './assembleCity';
 
 const TAU = Math.PI * 2;
 const OPEN_CIRCUIT_CARRIER_OFFSET = 0.62;
@@ -81,125 +73,11 @@ export interface CapturePerformanceState {
   openCircuitIdentity: OpenCircuitIdentityState;
 }
 
-/** Unit triangular-prism roof: pitched in X, with its ridge running along Z. */
-function createPitchedRoofGeometry(): BufferGeometry {
-  const geometry = new BufferGeometry();
-  geometry.setAttribute(
-    'position',
-    new Float32BufferAttribute(
-      [
-        -0.5, 0, -0.5,
-        0.5, 0, -0.5,
-        0, 1, -0.5,
-        -0.5, 0, 0.5,
-        0.5, 0, 0.5,
-        0, 1, 0.5,
-      ],
-      3,
-    ),
-  );
-  geometry.setIndex([
-    0, 2, 1,
-    3, 4, 5,
-    0, 3, 5,
-    0, 5, 2,
-    1, 2, 5,
-    1, 5, 4,
-    0, 1, 4,
-    0, 4, 3,
-  ]);
-  geometry.computeVertexNormals();
-  geometry.computeBoundingSphere();
-  return geometry;
-}
-
 /**
- * Hip roof in the same unit box as the prism: corners lift, eave centres dip.
- * The plan stays inside ±0.5 so an existing hero scale does not enter the road.
+ * Procedural first-person Beijing drive.
+ * Buildings come from the parametric kit. This class owns the road, light,
+ * capture path, and the twelve-passage assembly order.
  */
-function createUpturnedEaveGeometry(): BufferGeometry {
-  const geometry = new BufferGeometry();
-  geometry.setAttribute(
-    'position',
-    new Float32BufferAttribute(
-      [
-        0, 1, -0.18,
-        0, 1, 0.18,
-        -0.5, 0.34, -0.5,
-        0.5, 0.34, -0.5,
-        0.5, 0.34, 0.5,
-        -0.5, 0.34, 0.5,
-        0, 0, -0.5,
-        0.5, 0, 0,
-        0, 0, 0.5,
-        -0.5, 0, 0,
-      ],
-      3,
-    ),
-  );
-  geometry.setIndex([
-    0, 2, 6,
-    0, 6, 3,
-    0, 3, 7,
-    1, 0, 7,
-    1, 7, 4,
-    1, 4, 8,
-    1, 8, 5,
-    1, 5, 9,
-    0, 1, 9,
-    0, 9, 2,
-    2, 9, 6,
-    3, 6, 7,
-    4, 7, 8,
-    5, 8, 9,
-    6, 9, 8,
-    6, 8, 7,
-  ]);
-  geometry.computeVertexNormals();
-  geometry.computeBoundingSphere();
-  return geometry;
-}
-
-/** Stylised Tibetan stupa bowl: broad belly with a tightened crown. */
-function createDagobaBowlGeometry(): LatheGeometry {
-  const geometry = new LatheGeometry(
-    [
-      new Vector2(0.62, -1),
-      new Vector2(0.84, -0.84),
-      new Vector2(0.98, -0.48),
-      new Vector2(1, -0.08),
-      new Vector2(0.92, 0.34),
-      new Vector2(0.7, 0.7),
-      new Vector2(0.4, 1),
-    ],
-    20,
-  );
-  geometry.computeBoundingSphere();
-  return geometry;
-}
-
-/**
- * Procedural, locally-authored first-person Beijing drive world.
- *
- * One 48-second circuit crosses twelve authored passages in Second-Ring
- * relative order (artistic, not GPS), each 1/12 of the closed path:
- *   0.000–0.083  central axis — Zhengyangmen → five-arch Tiananmen
- *   0.083–0.167  palace moat — red wall and corner tower across water
- *   0.167–0.250  Shichahai — willows, humpback bridge, white dagoba
- *   0.250–0.333  Deshengmen — arrow tower and 二环 gantry
- *   0.333–0.417  Second Ring threshold — city wall, supported flyover, and gantry
- *   0.417–0.500  Bell & Drum Tower plaza
- *   0.500–0.583  Nanluo / Wudaoying — 五道营 / 南锣鼓巷
- *   0.583–0.667  Yonghegong — yellow multi-eave temple
- *   0.667–0.750  CBD east + Xidan / Financial Street west skyline
- *   0.750–0.833  Temple of Heaven — Hall of Prayer (south return)
- *   0.833–0.917  Qianmen / Dashilar + hutong density (south of axis)
- *   0.917–1.000  overpass return that hides the loop seam
- */
-
-/** Lateral offsets that keep mass faces off the asphalt corridor. */
-const CURB_BUILDING = 8.4;
-const CURB_TREE = 7.4;
 export class BeijingDriveScene {
   readonly scene: Scene;
 
@@ -209,35 +87,14 @@ export class BeijingDriveScene {
   private readonly textures = new Set<Texture>();
   private readonly lampLights: PointLight[] = [];
   private readonly unitBox: BoxGeometry;
-  private readonly unitCylinder: CylinderGeometry;
-  private readonly unitSphere: SphereGeometry;
-  private readonly unitPitchedRoof: BufferGeometry;
-  private readonly unitUpturnedEave: BufferGeometry;
-  private readonly unitTaperedRoof: CylinderGeometry;
-  private readonly unitDagobaBowl: LatheGeometry;
-  private readonly unitTempleDrum: CylinderGeometry;
-  private readonly lampPoleGeometry: CylinderGeometry;
+  private readonly lampPoleGeometry: BufferGeometry;
   private readonly lampBulbGeometry: SphereGeometry;
   private readonly waterMaterial: MeshStandardMaterial;
   private readonly lampMaterial: MeshBasicMaterial;
-  private readonly lampPoleMaterial: MeshStandardMaterial;
-  private readonly windowMaterial: MeshStandardMaterial;
-  private readonly lanternMaterial: MeshStandardMaterial;
-  private readonly streetMetalMaterial: MeshStandardMaterial;
-  private readonly treeTrunkMaterial: MeshStandardMaterial;
-  private readonly treeBarkMaterial: MeshStandardMaterial;
-  private readonly foliageMaterial: MeshStandardMaterial;
-  private readonly shopHardwareMaterial: MeshStandardMaterial;
+  private readonly cityMaterials: CityMaterials & { water: MeshStandardMaterial };
   private readonly keyLight: DirectionalLight;
-  private readonly captureMaterialProxies = new Map<
-    MeshStandardMaterial,
-    MeshBasicMaterial
-  >();
-  private readonly captureOriginalMaterials = new Map<
-    Mesh,
-    Material | Material[]
-  >();
-  private readonly atlases: SurfaceAtlasLibrary;
+  private readonly captureMaterialProxies = new Map<MeshStandardMaterial, MeshBasicMaterial>();
+  private readonly captureOriginalMaterials = new Map<Mesh, Material | Material[]>();
   private openCircuitCarrier!: Mesh;
   private openCircuitNode!: Mesh;
   private readonly wetLamps = Array.from({ length: 24 }, () => new Vector4());
@@ -246,7 +103,6 @@ export class BeijingDriveScene {
   private readonly builtPassages = new Set<PassageId>();
 
   constructor() {
-    this.atlases = new SurfaceAtlasLibrary();
     this.scene = new Scene();
     this.scene.name = 'Beijing endless drive';
     this.scene.background = new Color(PALETTE.skyTop);
@@ -254,63 +110,11 @@ export class BeijingDriveScene {
     this.scene.add(this.root);
 
     this.unitBox = this.trackGeometry(new BoxGeometry(1, 1, 1));
-    this.unitCylinder = this.trackGeometry(new CylinderGeometry(1, 1, 1, 8));
-    this.unitSphere = this.trackGeometry(new SphereGeometry(1, 10, 7));
-    this.unitPitchedRoof = this.trackGeometry(createPitchedRoofGeometry());
-    this.unitUpturnedEave = this.trackGeometry(createUpturnedEaveGeometry());
-    this.unitTaperedRoof = this.trackGeometry(
-      new CylinderGeometry(0.16, 1, 1, 16),
-    );
-    this.unitDagobaBowl = this.trackGeometry(createDagobaBowlGeometry());
-    this.unitTempleDrum = this.trackGeometry(
-      new CylinderGeometry(0.88, 1, 1, 20),
-    );
-    this.lampPoleGeometry = this.trackGeometry(new CylinderGeometry(1, 1, 1, 16));
+    this.lampPoleGeometry = this.trackGeometry(createLampPole());
     this.lampBulbGeometry = this.trackGeometry(new SphereGeometry(1, 20, 14));
-
-    this.waterMaterial = this.standard(PALETTE.water, {
-      emissive: '#123745',
-      emissiveIntensity: 0.22,
-      metalness: 0.4,
-      roughness: 0.2,
-    });
-    this.waterMaterial.userData.preserveInCapture = true;
-    this.bindWetLampReflections(this.waterMaterial, 'water');
-    // Unlit and well above the bloom threshold. A shaded low-poly bulb
-    // sparkles as the key sweeps past, and the quarter-res bloom turns each
-    // sparkle into a blink.
-    this.lampMaterial = this.trackMaterial(
-      new MeshBasicMaterial({
-        color: new Color().setRGB(2.4, 1.57, 0.62),
-        fog: true,
-      }),
-    );
-    this.lampPoleMaterial = this.standard('#3A4144', {
-      roughness: 1,
-      metalness: 0,
-    });
-    const windowPanes = this.atlases.get('windowPanes');
-    this.windowMaterial = this.standard('#1A140E', {
-      map: windowPanes,
-      emissive: '#FFC56A',
-      emissiveMap: windowPanes,
-      emissiveIntensity: 0.35,
-      roughness: 0.72,
-    });
-    this.bindWindowLattice(this.windowMaterial);
-    this.lanternMaterial = this.standard(PALETTE.palaceRed, {
-      emissive: '#7A3029',
-      emissiveIntensity: 0.68,
-      roughness: 0.7,
-    });
-    this.streetMetalMaterial = this.standard('#3A4144', {
-      metalness: 0.3,
-      roughness: 0.72,
-    });
-    this.treeTrunkMaterial = this.standard('#3B3025', { roughness: 1 });
-    this.treeBarkMaterial = this.textured('#39301F', 'bark', { roughness: 1 });
-    this.foliageMaterial = this.standard(PALETTE.foliage, { roughness: 1 });
-    this.shopHardwareMaterial = this.standard('#33291C', { roughness: 1 });
+    this.cityMaterials = this.createCityMaterials();
+    this.waterMaterial = this.cityMaterials.water;
+    this.lampMaterial = this.cityMaterials.lampHead;
 
     this.scene.add(new HemisphereLight('#91AAB7', '#182A36', 0.85));
     this.keyLight = new DirectionalLight('#E4D2B8', 2.1);
@@ -325,38 +129,34 @@ export class BeijingDriveScene {
     this.keyLight.shadow.camera.bottom = -16;
     this.keyLight.shadow.bias = -0.00035;
     this.keyLight.shadow.normalBias = 0.045;
-    // Follow the key every frame. Freezing the map for a whole passage left
-    // this tight volume behind the car, so street light was sliced by a stale
-    // shadow and then jumped. Instancing keeps the shadow pass small.
     this.scene.add(this.keyLight);
+    this.scene.add(this.keyLight.target);
 
     this.buildSkyAndGround();
     this.buildRoad();
+    this.buildWater();
     this.buildOpenCircuitSignature();
-    this.buildDistantSkyline();
-    this.buildCentralAxis();
-    this.buildChangAnStreet();
-    this.buildPalaceMoat();
-    this.buildWaterfront();
-    this.buildDeshengmen();
     this.buildRingBridge();
-    this.buildSecondRingThreshold();
-    this.buildBellDrumPlaza();
-    this.buildNanluoWudaoying();
-    this.buildYonghegong();
-    this.buildCbdFinance();
-    this.buildTempleOfHeaven();
-    this.buildQianmenStreet();
-    this.buildHutong();
-    this.buildHutongLife();
-    this.buildOverpass();
-    this.buildStreetScaleDetails();
+    this.buildOverpassDeck();
+    const zhengyangmen = CENTRAL_AXIS_LANDMARKS.zhengyangmen;
+    const tiananmen = CENTRAL_AXIS_LANDMARKS.tiananmen;
+    void zhengyangmen;
+    void tiananmen;
+    assembleCity({
+      root: this.root,
+      mats: this.cityMaterials,
+      begin: (id) => this.beginPassage(id),
+      place: (object, progress, offset, y, heading) => this.place(object, progress, offset, y, heading),
+      tag: (object) => this.tagHero(object),
+      track: (geometry) => this.trackGeometry(geometry),
+      addLamp: (progress, offset, cast) => this.addLamp(progress, offset, cast),
+      plaque: (text, options) => this.canvasPlaque(text, options),
+    });
     this.assertPassagesBuilt();
+    this.root.traverse((object) => {
+      if (object instanceof Mesh) this.geometries.add(object.geometry);
+    });
 
-    // Every scene transform is authored once during construction. Resolve the
-    // hierarchy now so the renderer does not walk roughly two thousand static
-    // objects to recompute unchanged world matrices on every frame. The camera
-    // is intentionally outside this scene and Three.js updates it separately.
     this.scene.updateMatrixWorld(true);
     this.fillWetLampReflections();
     this.stampGroundContacts();
@@ -365,61 +165,387 @@ export class BeijingDriveScene {
     this.scene.matrixWorldAutoUpdate = false;
   }
 
-  /**
-   * Lamp streaks aimed from each lamp toward the camera.
-   * Asphalt keeps the tuned road weights. Water adds a fixed ripple so the
-   * moat is not a flat sheet. Both are a pure function of position.
-   */
-  private bindWetLampReflections(
-    material: MeshStandardMaterial,
-    surface: 'asphalt' | 'water' = 'asphalt',
-  ): void {
-    const wetLamps = this.wetLamps;
-    const shade =
-      surface === 'water'
-        ? `float band = sin(vWetWorld.x * 0.9 + vWetWorld.z * 1.4);
-           float sheen = 0.62 + 0.38 * band * band;
-           outgoingLight += wet * sheen + vec3(0.015, 0.04, 0.05) * sheen;`
-        : 'outgoingLight += wet;';
-    material.onBeforeCompile = (shader) => {
-      shader.uniforms.wetLamps = { value: wetLamps };
-      shader.vertexShader = shader.vertexShader
-        .replace(
-          '#include <common>',
-          '#include <common>\nvarying vec3 vWetWorld;',
-        )
-        .replace(
-          '#include <project_vertex>',
-          `#include <project_vertex>
-           vWetWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;`,
-        );
-      shader.fragmentShader = shader.fragmentShader
-        .replace(
-          '#include <common>',
-          '#include <common>\nvarying vec3 vWetWorld;\nuniform vec4 wetLamps[24];',
-        )
-        .replace(
-          '#include <opaque_fragment>',
-          `
-          vec3 wet = vec3(0.0);
-          vec2 viewXZ = cameraPosition.xz - vWetWorld.xz;
-          float viewLen = length(viewXZ);
-          vec2 viewDir = viewLen > 0.001 ? viewXZ / viewLen : vec2(0.0, 1.0);
-          for (int i = 0; i < 24; i++) {
-            if (wetLamps[i].w <= 0.0) continue;
-            vec2 toLamp = wetLamps[i].xz - vWetWorld.xz;
-            float dist = length(toLamp);
-            vec2 lampDir = dist > 0.001 ? toLamp / dist : vec2(0.0);
-            float facing = pow(max(dot(lampDir, viewDir), 0.0), 10.0);
-            float falloff = exp(-dist * 0.48);
-            wet += vec3(1.0, 0.72, 0.36) * wetLamps[i].w * facing * falloff;
-          }
-          ${shade}
-          #include <opaque_fragment>
-          `,
-        );
+  update(phase: number): void {
+    const progress = wrapProgress(phase);
+    const wave = 0.5 + 0.5 * Math.cos(progress * TAU);
+    this.waterMaterial.emissiveIntensity = 0.18 + wave * 0.035;
+    this.keyLight.intensity = 1.95 + wave * 0.16;
+    const frame = samplePathFrame(progress);
+    const focusX = frame.point.x * DRIVE_PATH_SCALE + frame.tangent.x * 14;
+    const focusZ = frame.point.z * DRIVE_PATH_SCALE + frame.tangent.z * 14;
+    this.keyLight.position.set(focusX - 14, 22, focusZ - 8);
+    this.keyLight.target.position.set(focusX, 2.4, focusZ);
+    this.keyLight.target.updateMatrixWorld();
+    this.keyLight.updateMatrixWorld();
+
+    if (this.capturePerformanceMode) {
+      for (const [source, proxy] of this.captureMaterialProxies) {
+        this.applyCaptureColor(source, proxy);
+      }
+    }
+  }
+
+  setCapturePerformanceMode(active: boolean): void {
+    if (this.capturePerformanceMode === active) return;
+    this.capturePerformanceMode = active;
+    for (const light of this.lampLights) light.visible = !active;
+    if (active) {
+      try {
+        this.root.traverse((object) => {
+          if (!(object instanceof Mesh)) return;
+          const original = object.material;
+          const proxy = Array.isArray(original)
+            ? original.map((material) => this.captureProxy(material))
+            : this.captureProxy(original);
+          if (proxy === original) return;
+          this.captureOriginalMaterials.set(object, original);
+          object.material = proxy;
+        });
+      } catch (error) {
+        this.restoreCaptureMaterials();
+        this.capturePerformanceMode = false;
+        for (const light of this.lampLights) light.visible = true;
+        throw error;
+      }
+      return;
+    }
+    this.restoreCaptureMaterials();
+  }
+
+  readCapturePerformanceState(): CapturePerformanceState {
+    let staticSceneObjectCount = 0;
+    let matrixWorldDirtyCount = 0;
+    let carrierCount = 0;
+    let nodeCount = 0;
+    this.scene.traverse((object) => {
+      staticSceneObjectCount += 1;
+      if (object.matrixWorldNeedsUpdate) matrixWorldDirtyCount += 1;
+      if (object.name === OPEN_CIRCUIT_CARRIER_NAME) carrierCount += 1;
+      if (object.name === OPEN_CIRCUIT_NODE_NAME) nodeCount += 1;
+    });
+    return {
+      active: this.capturePerformanceMode,
+      proxiedMeshCount: this.captureOriginalMaterials.size,
+      cachedProxyMaterialCount: this.captureMaterialProxies.size,
+      visibleLampLightCount: this.lampLights.filter((light) => light.visible).length,
+      staticSceneObjectCount,
+      sceneMatrixWorldAutoUpdate: this.scene.matrixWorldAutoUpdate,
+      matrixWorldDirtyCount,
+      openCircuitIdentity: {
+        carrierCount,
+        nodeCount,
+        carrierColor: this.readMeshColor(this.openCircuitCarrier),
+        nodeColor: this.readMeshColor(this.openCircuitNode),
+        carrierVisible: this.openCircuitCarrier.visible,
+        nodeVisible: this.openCircuitNode.visible,
+      },
     };
-    material.customProgramCacheKey = () => `wet-${surface}`;
+  }
+
+  dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.setCapturePerformanceMode(false);
+    for (const texture of this.textures) texture.dispose();
+    for (const material of this.materials) material.dispose();
+    for (const geometry of this.geometries) geometry.dispose();
+    this.scene.clear();
+  }
+
+  private createCityMaterials(): CityMaterials & { water: MeshStandardMaterial } {
+    const streetBrick = this.surface(PALETTE.wallRed, 'streetBrick', { roughness: 0.92 });
+    const palaceBrick = this.surface(PALETTE.palaceRed, 'palaceBrick', { roughness: 0.88 });
+    const tile = this.surface(PALETTE.roof, 'tile', { roughness: 0.74 });
+    const stone = this.surface(PALETTE.stone, 'stone', { roughness: 0.94 });
+    const concrete = this.surface('#6E7C84', 'concrete', { roughness: 0.86 });
+    const bark = this.surface('#3B3025', 'bark', { roughness: 0.96 });
+    const glass = this.surface('#405A6B', 'glass', {
+      roughness: 0.42,
+      metalness: 0.18,
+      emissive: '#1C4054',
+      emissiveIntensity: 0.28,
+    });
+    const timber = this.standard('#5A4630', { roughness: 0.9 });
+    const gold = this.standard(PALETTE.roofEdge, {
+      emissive: '#2A1B09',
+      emissiveIntensity: 0.2,
+      roughness: 0.72,
+    });
+    const white = this.surface('#EDE7DA', 'stone', {
+      roughness: 0.9,
+      emissive: '#CFC6B4',
+      emissiveIntensity: 0.1,
+    });
+    const windowMaterial = this.standard('#1A140E', {
+      emissive: '#FFC56A',
+      emissiveIntensity: 0.35,
+      roughness: 0.72,
+    });
+    windowMaterial.userData.preserveInCapture = true;
+    bindWindowLattice(windowMaterial);
+    const leaf = this.surface(PALETTE.foliage, 'leaf', { roughness: 0.95 });
+    leaf.side = DoubleSide;
+    leaf.alphaTest = 0.5;
+    const niche = this.standard('#1A1410', { roughness: 0.95 });
+    const lampPole = this.surface('#3A4144', 'concrete', { roughness: 1, metalness: 0 });
+    const lampHead = this.trackMaterial(
+      new MeshBasicMaterial({
+        color: new Color().setRGB(2.4, 1.57, 0.62),
+        fog: true,
+      }),
+    );
+    const lantern = this.standard(PALETTE.palaceRed, {
+      emissive: '#7A3029',
+      emissiveIntensity: 0.68,
+      roughness: 0.7,
+    });
+    const water = this.standard(PALETTE.water, {
+      emissive: '#123745',
+      emissiveIntensity: 0.22,
+      metalness: 0.4,
+      roughness: 0.2,
+    });
+    water.userData.preserveInCapture = true;
+    bindWetSurface(water, this.wetLamps, 'water');
+    return {
+      streetBrick,
+      palaceBrick,
+      tile,
+      stone,
+      concrete,
+      bark,
+      glass,
+      timber,
+      gold,
+      white,
+      window: windowMaterial,
+      leaf,
+      niche,
+      lampPole,
+      lampHead,
+      lantern,
+      water,
+    };
+  }
+
+  private buildSkyAndGround(): void {
+    const skyGeometry = this.trackGeometry(new SphereGeometry(360, 32, 14));
+    const position = skyGeometry.getAttribute('position');
+    const colors: number[] = [];
+    const horizon = new Color(PALETTE.skyHorizon);
+    const zenith = new Color(PALETTE.skyTop);
+    const sample = new Color();
+    for (let index = 0; index < position.count; index += 1) {
+      const height = position.getY(index);
+      const mix = Math.max(0, Math.min(1, (height + 22) / 190));
+      sample.copy(horizon).lerp(zenith, mix * mix * (3 - 2 * mix));
+      colors.push(sample.r, sample.g, sample.b);
+    }
+    skyGeometry.setAttribute('color', new Float32BufferAttribute(colors, 3));
+    const sky = new Mesh(
+      skyGeometry,
+      this.trackMaterial(
+        new MeshBasicMaterial({
+          vertexColors: true,
+          side: BackSide,
+          fog: false,
+          depthWrite: false,
+        }),
+      ),
+    );
+    sky.renderOrder = -100;
+    this.root.add(sky);
+    const ground = new Mesh(
+      this.trackGeometry(new PlaneGeometry(320, 320)),
+      this.cityMaterials.concrete,
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.12;
+    this.root.add(ground);
+  }
+
+  private buildRoad(): void {
+    const roadMaterial = this.standard(PALETTE.asphalt, {
+      roughness: 0.34,
+      metalness: 0.22,
+    });
+    roadMaterial.userData.preserveInCapture = true;
+    bindWetSurface(roadMaterial, this.wetLamps, 'asphalt');
+    const road = new Mesh(
+      this.trackGeometry(
+        createPathRibbon(-DRIVE.roadHalfWidth, DRIVE.roadHalfWidth, 0, {
+          centerScale: DRIVE_PATH_SCALE,
+          segments: 960,
+        }),
+      ),
+      roadMaterial,
+    );
+    road.receiveShadow = true;
+    this.root.add(road);
+    const pavement = this.cityMaterials.stone;
+    this.root.add(
+      new Mesh(
+        this.trackGeometry(
+          createPathRibbon(-6.35, -DRIVE.roadHalfWidth - 0.16, 0.04, {
+            centerScale: DRIVE_PATH_SCALE,
+            segments: 480,
+          }),
+        ),
+        pavement,
+      ),
+      new Mesh(
+        this.trackGeometry(
+          createPathRibbon(DRIVE.roadHalfWidth + 0.16, 6.35, 0.04, {
+            centerScale: DRIVE_PATH_SCALE,
+            segments: 480,
+          }),
+        ),
+        pavement,
+      ),
+    );
+    const laneMaterial = this.standard(PALETTE.lane, {
+      emissive: '#D5CBB4',
+      emissiveIntensity: 0.32,
+      roughness: 0.28,
+      metalness: 0.08,
+    });
+    const laneSheen = this.trackMaterial(
+      new MeshBasicMaterial({
+        color: '#E7D7B0',
+        transparent: true,
+        opacity: 0.14,
+        depthWrite: false,
+      }),
+    );
+    for (let index = 0; index < 140; index += 1) {
+      const progress = (index + 0.3) / 140;
+      const sheen = this.box(0.22, 0.008, 2.45, laneSheen);
+      this.place(sheen, progress, 0, 0.022);
+      const dash = this.box(0.12, 0.025, 2.25, laneMaterial);
+      this.place(dash, progress, 0, 0.04);
+      this.root.add(sheen, dash);
+    }
+  }
+
+  private buildWater(): void {
+    const water = new Mesh(
+      this.trackGeometry(
+        createPathRibbon(-22, -6.45, -0.06, {
+          from: 0.085,
+          to: 0.248,
+          centerScale: DRIVE_PATH_SCALE,
+          segments: 180,
+        }),
+      ),
+      this.waterMaterial,
+    );
+    this.root.add(water);
+  }
+
+  private buildOpenCircuitSignature(): void {
+    const carrierMaterial = this.trackMaterial(
+      new MeshBasicMaterial({ color: PALETTE.warmWhite, fog: true }),
+    );
+    this.openCircuitCarrier = new Mesh(
+      this.trackGeometry(
+        createPathRibbon(
+          OPEN_CIRCUIT_CARRIER_OFFSET - OPEN_CIRCUIT_CARRIER_HALF_WIDTH,
+          OPEN_CIRCUIT_CARRIER_OFFSET + OPEN_CIRCUIT_CARRIER_HALF_WIDTH,
+          0.058,
+          { centerScale: DRIVE_PATH_SCALE, segments: 960 },
+        ),
+      ),
+      carrierMaterial,
+    );
+    this.openCircuitCarrier.name = OPEN_CIRCUIT_CARRIER_NAME;
+    this.openCircuitCarrier.renderOrder = 2;
+    this.root.add(this.openCircuitCarrier);
+
+    this.openCircuitNode = new Mesh(
+      this.trackGeometry(new CylinderGeometry(0.22, 0.22, 0.016, 28)),
+      this.standard(PALETTE.signature, { metalness: 0, roughness: 0.88 }),
+    );
+    this.openCircuitNode.name = OPEN_CIRCUIT_NODE_NAME;
+    this.place(this.openCircuitNode, OPEN_CIRCUIT_NODE_PHASE, OPEN_CIRCUIT_CARRIER_OFFSET, 0.04);
+    this.openCircuitNode.renderOrder = 3;
+    this.root.add(this.openCircuitNode);
+  }
+
+  /** Curved second-ring flyover kept outside the carriageway. */
+  private buildRingBridge(): void {
+    const deckMaterial = this.cityMaterials.concrete;
+    const bridge = new Group();
+    this.place(bridge, 0.392, 14.8, 0, Math.PI / 2);
+    const radius = 9.2;
+    const startAngle = -0.96;
+    const arc = 1.62;
+    const segmentCount = 5;
+    for (let index = 0; index < segmentCount; index += 1) {
+      const angle = startAngle + ((index + 0.5) / segmentCount) * arc;
+      const segmentLength = radius * (arc / segmentCount) + 0.08;
+      const deck = this.box(2.12, 0.56, segmentLength, deckMaterial);
+      deck.position.set(Math.cos(angle) * radius, 6.55, Math.sin(angle) * radius);
+      deck.rotation.y = -angle;
+      const railNear = this.box(0.14, 0.42, segmentLength, deckMaterial);
+      railNear.position.set(Math.cos(angle) * (radius - 1), 6.9, Math.sin(angle) * (radius - 1));
+      railNear.rotation.y = -angle;
+      bridge.add(deck, railNear);
+    }
+    this.root.add(bridge);
+  }
+
+  /** Deck and portal that hide the loop seam. The battered pier is assembled with the kit. */
+  private buildOverpassDeck(): void {
+    const concrete = this.cityMaterials.concrete;
+    const underside = new Mesh(
+      this.trackGeometry(
+        createPathRibbon(-7.6, 7.6, 6.4, {
+          from: 0.918,
+          to: 0.999,
+          centerScale: DRIVE_PATH_SCALE,
+          segments: 110,
+        }),
+      ),
+      concrete,
+    );
+    underside.receiveShadow = true;
+    this.root.add(underside);
+    for (let index = 0; index < 5; index += 1) {
+      const progress = 0.928 + index * 0.013;
+      for (const side of [-1, 1]) {
+        const column = this.box(0.58, 7.5, 0.58, concrete);
+        column.castShadow = true;
+        this.place(column, progress, side * 8.25, 3.75);
+        this.root.add(column);
+      }
+    }
+    const portalProgress = 0.993;
+    for (const side of [-1, 1]) {
+      const cheek = this.box(0.7, 8.4, 2.4, concrete);
+      this.place(cheek, portalProgress, side * 6.5, 4.2);
+      this.root.add(cheek);
+    }
+    const lintel = this.box(14.2, 3.6, 2.2, concrete);
+    this.place(lintel, portalProgress, 0, 8.6);
+    this.root.add(lintel);
+  }
+
+  private addLamp(progress: number, offset: number, castLight: boolean): void {
+    const group = new Group();
+    this.place(group, progress, offset, 0);
+    const pole = new Mesh(this.lampPoleGeometry, this.cityMaterials.lampPole);
+    const bulb = new Mesh(this.lampBulbGeometry, this.lampMaterial);
+    bulb.scale.setScalar(0.24);
+    bulb.position.set(0.32, 3.62, 0);
+    group.add(pole, bulb);
+    if (castLight) {
+      const intensity = 8.2 + hash01(Math.round(progress * 10_000), 91) * 1.8;
+      const light = new PointLight(PALETTE.lamp, intensity, 13, 2);
+      light.position.set(0.32, 3.62, 0);
+      group.add(light);
+      this.lampLights.push(light);
+    }
+    this.root.add(group);
   }
 
   private fillWetLampReflections(): void {
@@ -432,49 +558,6 @@ export class BeijingDriveScene {
     });
   }
 
-  /**
-   * Pane grid in world metres. A shared texture stretched across a wide
-   * shopfront becomes a light strip; this keeps mortar and dark panes.
-   */
-  private bindWindowLattice(material: MeshStandardMaterial): void {
-    material.onBeforeCompile = (shader) => {
-      shader.vertexShader = shader.vertexShader
-        .replace(
-          '#include <common>',
-          '#include <common>\nvarying vec3 vWindowWorld;',
-        )
-        .replace(
-          '#include <project_vertex>',
-          `#include <project_vertex>
-           vWindowWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;`,
-        );
-      shader.fragmentShader = shader.fragmentShader
-        .replace(
-          '#include <common>',
-          '#include <common>\nvarying vec3 vWindowWorld;',
-        )
-        .replace(
-          '#include <opaque_fragment>',
-          `
-          vec3 face = abs(normalize(cross(dFdx(vWindowWorld), dFdy(vWindowWorld))));
-          vec2 paneUv = face.x > face.z ? vWindowWorld.zy : vWindowWorld.xy;
-          if (face.y > face.x && face.y > face.z) paneUv = vWindowWorld.xz;
-          paneUv *= vec2(2.6, 3.4);
-          vec2 cell = fract(paneUv);
-          vec2 paneId = floor(paneUv);
-          float mortar = step(0.18, cell.x) * step(0.18, cell.y);
-          float seed = fract(sin(dot(paneId, vec2(12.9898, 78.233))) * 43758.5453);
-          float lit = step(0.68, seed);
-          vec3 glow = vec3(1.0, 0.74, 0.4) * mortar * lit;
-          outgoingLight = mix(outgoingLight * 0.22, glow, mortar * lit);
-          #include <opaque_fragment>
-          `,
-        );
-    };
-    material.customProgramCacheKey = () => 'window-lattice';
-  }
-
-  /** A dark ellipse under masses that meet the ground, so they stop floating. */
   private stampGroundContacts(): void {
     const material = this.trackMaterial(
       new MeshBasicMaterial({
@@ -490,13 +573,7 @@ export class BeijingDriveScene {
     const geometry = this.trackGeometry(new CircleGeometry(1, 8));
     geometry.rotateX(-Math.PI / 2);
     const bounds = new Box3();
-    const stamps: Array<{
-      x: number;
-      z: number;
-      sx: number;
-      sz: number;
-      rotation: Quaternion;
-    }> = [];
+    const stamps: Array<{ x: number; z: number; sx: number; sz: number; rotation: Quaternion }> = [];
     const worldPosition = new Vector3();
     const worldRotation = new Quaternion();
     this.root.traverse((object) => {
@@ -542,42 +619,24 @@ export class BeijingDriveScene {
     this.root.add(contacts);
   }
 
-  /**
-   * Repeated boxes, columns, and lamps share one draw each. Unique hero
-   * silhouettes stay as their own meshes.
-   */
   private consolidateRepeatedMeshes(): void {
-    const shared = new Set<BufferGeometry>([
-      this.unitBox,
-      this.unitCylinder,
-      this.unitSphere,
-    ]);
     const groups = new Map<string, Mesh[]>();
     this.root.updateWorldMatrix(true, true);
     this.root.traverse((object) => {
       if (!(object instanceof Mesh) || object instanceof InstancedMesh) return;
-      if (!shared.has(object.geometry)) return;
+      if (object.geometry !== this.unitBox && object.geometry !== this.lampPoleGeometry) return;
       if (Array.isArray(object.material)) return;
-      const cast = object.castShadow ? 'c' : 'n';
-      const receive = object.receiveShadow ? 'r' : 'n';
-      const key = `${object.geometry.uuid}:${object.material.uuid}:${cast}:${receive}`;
+      const key = `${object.geometry.uuid}:${object.material.uuid}`;
       const list = groups.get(key);
       if (list) list.push(object);
       else groups.set(key, [object]);
     });
-
     for (const meshes of groups.values()) {
       if (meshes.length < 6) continue;
       const source = meshes[0];
-      const instanced = new InstancedMesh(
-        source.geometry,
-        source.material,
-        meshes.length,
-      );
+      const instanced = new InstancedMesh(source.geometry, source.material, meshes.length);
       instanced.castShadow = source.castShadow;
       instanced.receiveShadow = source.receiveShadow;
-      // One batch spans the whole circuit. Culling it would blink every lamp
-      // and window in that batch the moment the bounds leave the view.
       instanced.frustumCulled = false;
       const matrix = new Matrix4();
       for (let index = 0; index < meshes.length; index += 1) {
@@ -587,2381 +646,36 @@ export class BeijingDriveScene {
         mesh.removeFromParent();
       }
       instanced.instanceMatrix.needsUpdate = true;
-      instanced.computeBoundingSphere();
       this.root.add(instanced);
     }
   }
 
-  /** All changing values are reconstructed from phase, including the seam. */
-  update(phase: number): void {
-    const progress = wrapProgress(phase);
-    const wave = 0.5 + 0.5 * Math.cos(progress * TAU);
-    this.waterMaterial.emissiveIntensity = 0.18 + wave * 0.035;
-    this.keyLight.intensity = 1.95 + wave * 0.16;
-    const frame = samplePathFrame(progress);
-    const focusX = frame.point.x * DRIVE_PATH_SCALE + frame.tangent.x * 14;
-    const focusZ = frame.point.z * DRIVE_PATH_SCALE + frame.tangent.z * 14;
-    this.keyLight.position.set(focusX - 14, 22, focusZ - 8);
-    this.keyLight.target.position.set(focusX, 2.4, focusZ);
-    this.keyLight.target.updateMatrixWorld();
-    this.keyLight.updateMatrixWorld();
-
-    if (this.capturePerformanceMode) {
-      for (const [source, proxy] of this.captureMaterialProxies) {
-        this.applyCaptureColor(source, proxy);
-      }
-    }
-  }
-
-  /**
-   * Software recording still hides point lights and swaps repeated street
-   * meshes to basic proxies so a 48-second capture can finish. Road and water
-   * stay standard. Lamp heads are already an unlit glow. The live frame is
-   * the lit image.
-   */
-  setCapturePerformanceMode(active: boolean): void {
-    if (this.capturePerformanceMode === active) return;
-    this.capturePerformanceMode = active;
-    for (const light of this.lampLights) light.visible = !active;
-
-    if (active) {
-      try {
-        this.root.traverse((object) => {
-          if (!(object instanceof Mesh)) return;
-          const original = object.material;
-          const proxy = Array.isArray(original)
-            ? original.map((material) => this.captureProxy(material))
-            : this.captureProxy(original);
-          if (proxy === original) return;
-          if (
-            Array.isArray(original) &&
-            Array.isArray(proxy) &&
-            proxy.every((material, index) => material === original[index])
-          ) {
-            return;
-          }
-          this.captureOriginalMaterials.set(object, original);
-          object.material = proxy;
-        });
-      } catch (error) {
-        this.restoreCaptureMaterials();
-        this.capturePerformanceMode = false;
-        for (const light of this.lampLights) light.visible = true;
-        throw error;
-      }
-      return;
-    }
-
-    this.restoreCaptureMaterials();
-  }
-
-  /** QA evidence that capture-only simplifications are active and reversible. */
-  readCapturePerformanceState(): CapturePerformanceState {
-    let staticSceneObjectCount = 0;
-    let matrixWorldDirtyCount = 0;
-    let carrierCount = 0;
-    let nodeCount = 0;
-    this.scene.traverse((object) => {
-      staticSceneObjectCount += 1;
-      if (object.matrixWorldNeedsUpdate) matrixWorldDirtyCount += 1;
-      if (object.name === OPEN_CIRCUIT_CARRIER_NAME) carrierCount += 1;
-      if (object.name === OPEN_CIRCUIT_NODE_NAME) nodeCount += 1;
-    });
-    return {
-      active: this.capturePerformanceMode,
-      proxiedMeshCount: this.captureOriginalMaterials.size,
-      cachedProxyMaterialCount: this.captureMaterialProxies.size,
-      visibleLampLightCount: this.lampLights.filter((light) => light.visible).length,
-      staticSceneObjectCount,
-      sceneMatrixWorldAutoUpdate: this.scene.matrixWorldAutoUpdate,
-      matrixWorldDirtyCount,
-      openCircuitIdentity: {
-        carrierCount,
-        nodeCount,
-        carrierColor: this.readMeshColor(this.openCircuitCarrier),
-        nodeColor: this.readMeshColor(this.openCircuitNode),
-        carrierVisible: this.openCircuitCarrier.visible,
-        nodeVisible: this.openCircuitNode.visible,
-      },
-    };
-  }
-
-  dispose(): void {
-    if (this.disposed) return;
-    this.disposed = true;
-    this.setCapturePerformanceMode(false);
-    this.atlases.dispose();
-    for (const texture of this.textures) texture.dispose();
-    for (const material of this.materials) material.dispose();
-    for (const geometry of this.geometries) geometry.dispose();
-    this.scene.clear();
-  }
-
   private beginPassage(id: PassageId): void {
     assertPassageId(id);
-    if (this.builtPassages.has(id)) {
-      throw new Error(`Passage built twice: ${id}`);
-    }
+    if (this.builtPassages.has(id)) throw new Error(`Passage built twice: ${id}`);
     this.builtPassages.add(id);
   }
 
   private assertPassagesBuilt(): void {
     for (const passage of PASSAGES) {
-      if (!this.builtPassages.has(passage.id)) {
-        throw new Error(`Passage was not built: ${passage.id}`);
-      }
+      if (!this.builtPassages.has(passage.id)) throw new Error(`Passage was not built: ${passage.id}`);
     }
   }
 
-  /** Large hero masses cast. Tiny trim does not, and the ground plane does not receive. */
   private tagHero(object: Object3D): void {
     object.traverse((child) => {
       if (!(child instanceof Mesh)) return;
+      if (child instanceof InstancedMesh) {
+        child.castShadow = false;
+        child.receiveShadow = true;
+        return;
+      }
       const bulk = Math.abs(child.scale.x * child.scale.y * child.scale.z);
-      child.castShadow = bulk >= 6;
-      child.receiveShadow = bulk >= 2;
+      child.castShadow = bulk >= 6 || child.geometry.attributes.position.count > 40;
+      child.receiveShadow = bulk >= 2 || child.geometry.attributes.position.count > 20;
     });
   }
 
-  private buildSkyAndGround(): void {
-    const skyGeometry = this.trackGeometry(new SphereGeometry(360, 32, 14));
-    const position = skyGeometry.getAttribute('position');
-    const colors: number[] = [];
-    const horizon = new Color(PALETTE.skyHorizon);
-    const zenith = new Color(PALETTE.skyTop);
-    const sample = new Color();
-    for (let index = 0; index < position.count; index += 1) {
-      const height = position.getY(index);
-      const mix = Math.max(0, Math.min(1, (height + 22) / 190));
-      sample.copy(horizon).lerp(zenith, mix * mix * (3 - 2 * mix));
-      colors.push(sample.r, sample.g, sample.b);
-    }
-    skyGeometry.setAttribute('color', new Float32BufferAttribute(colors, 3));
-    const skyMaterial = this.trackMaterial(
-      new MeshBasicMaterial({
-        vertexColors: true,
-        side: BackSide,
-        fog: false,
-        depthWrite: false,
-      }),
-    );
-    const sky = new Mesh(skyGeometry, skyMaterial);
-    sky.renderOrder = -100;
-    this.root.add(sky);
-
-    const groundMaterial = this.standard('#122430', { roughness: 1 });
-    const groundGeometry = this.trackGeometry(new PlaneGeometry(320, 320));
-    const ground = new Mesh(groundGeometry, groundMaterial);
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -0.12;
-    this.root.add(ground);
-  }
-
-  private buildRoad(): void {
-    const roadMaterial = this.textured(PALETTE.asphalt, 'asphaltGrain', {
-      roughness: 0.34,
-      metalness: 0.22,
-    });
-    roadMaterial.userData.preserveInCapture = true;
-    this.bindWetLampReflections(roadMaterial);
-    const pavementMaterial = this.standard(PALETTE.pavement, { roughness: 0.86 });
-    const laneMaterial = this.standard(PALETTE.lane, {
-      emissive: '#D5CBB4',
-      emissiveIntensity: 0.32,
-      roughness: 0.28,
-      metalness: 0.08,
-    });
-    const laneSheen = this.trackMaterial(
-      new MeshBasicMaterial({
-        color: '#E7D7B0',
-        transparent: true,
-        opacity: 0.14,
-        depthWrite: false,
-      }),
-    );
-
-    const road = new Mesh(
-      this.trackGeometry(
-        createPathRibbon(-DRIVE.roadHalfWidth, DRIVE.roadHalfWidth, 0, {
-          centerScale: DRIVE_PATH_SCALE,
-          segments: 960,
-        }),
-      ),
-      roadMaterial,
-    );
-    road.receiveShadow = true;
-    this.root.add(road);
-    this.root.add(
-      new Mesh(
-        this.trackGeometry(
-          createPathRibbon(-6.35, -DRIVE.roadHalfWidth - 0.16, 0.04, {
-            centerScale: DRIVE_PATH_SCALE,
-            segments: 960,
-          }),
-        ),
-        pavementMaterial,
-      ),
-      new Mesh(
-        this.trackGeometry(
-          createPathRibbon(DRIVE.roadHalfWidth + 0.16, 6.35, 0.04, {
-            centerScale: DRIVE_PATH_SCALE,
-            segments: 960,
-          }),
-        ),
-        pavementMaterial,
-      ),
-    );
-
-    for (let index = 0; index < 140; index += 1) {
-      const progress = (index + 0.3) / 140;
-      const sheen = this.box(0.22, 0.008, 2.45, laneSheen);
-      this.place(sheen, progress, 0, 0.022);
-      const dash = this.box(0.12, 0.025, 2.25, laneMaterial);
-      this.place(dash, progress, 0, 0.04);
-      this.root.add(sheen, dash);
-    }
-  }
-
-  /**
-   * LOOP 01's scene-native signature: one continuous warm-white carrier and
-   * one non-emissive closure node encountered during the overpass return.
-   * The carrier uses an unlit material for legibility; the node deliberately
-   * remains a standard, non-glowing surface. Both remain present when capture
-   * mode swaps standard materials for lightweight proxies.
-   */
-  private buildOpenCircuitSignature(): void {
-    const carrierMaterial = this.trackMaterial(
-      new MeshBasicMaterial({
-        color: PALETTE.warmWhite,
-        fog: true,
-      }),
-    );
-    this.openCircuitCarrier = new Mesh(
-      this.trackGeometry(
-        createPathRibbon(
-          OPEN_CIRCUIT_CARRIER_OFFSET - OPEN_CIRCUIT_CARRIER_HALF_WIDTH,
-          OPEN_CIRCUIT_CARRIER_OFFSET + OPEN_CIRCUIT_CARRIER_HALF_WIDTH,
-          0.058,
-          {
-            centerScale: DRIVE_PATH_SCALE,
-            segments: 960,
-          },
-        ),
-      ),
-      carrierMaterial,
-    );
-    this.openCircuitCarrier.name = OPEN_CIRCUIT_CARRIER_NAME;
-    this.openCircuitCarrier.renderOrder = 2;
-    this.root.add(this.openCircuitCarrier);
-
-    const nodeMaterial = this.standard(PALETTE.signature, {
-      metalness: 0,
-      roughness: 0.88,
-    });
-    this.openCircuitNode = new Mesh(
-      this.trackGeometry(new CylinderGeometry(0.22, 0.22, 0.016, 28)),
-      nodeMaterial,
-    );
-    this.openCircuitNode.name = OPEN_CIRCUIT_NODE_NAME;
-    this.place(
-      this.openCircuitNode,
-      OPEN_CIRCUIT_NODE_PHASE,
-      OPEN_CIRCUIT_CARRIER_OFFSET,
-      0.04,
-    );
-    this.openCircuitNode.renderOrder = 3;
-    this.root.add(this.openCircuitNode);
-  }
-
-  private readMeshColor(mesh: Mesh): string | null {
-    const material = Array.isArray(mesh.material)
-      ? mesh.material[0]
-      : mesh.material;
-    if (
-      !(material instanceof MeshBasicMaterial) &&
-      !(material instanceof MeshStandardMaterial)
-    ) {
-      return null;
-    }
-    return `#${material.color.getHexString().toUpperCase()}`;
-  }
-
-  private buildDistantSkyline(): void {
-    const material = this.textured('#3A4851', 'glassGrid', {
-      emissive: '#152832',
-      emissiveIntensity: 0.12,
-      metalness: 0.03,
-      roughness: 0.92,
-    });
-    const roofMaterial = this.textured(PALETTE.roof, 'tileRoof', { roughness: 1 });
-    for (let index = 0; index < 32; index += 1) {
-      const progress = (index + 0.5) / 32;
-      const side = index % 2 === 0 ? -1 : 1;
-      const width = 4.5 + hash01(index, 1) * 5.5;
-      const height = 5 + hash01(index, 2) * 10;
-      const depth = 5 + hash01(index, 3) * 7;
-      // Far band: keeps the authored passage anchors in front of the skyline.
-      const offset = side * (34 + hash01(index, 4) * 8);
-      const block = this.box(width, height, depth, material);
-      this.place(block, progress, offset, height / 2 - 0.02);
-      this.root.add(block);
-
-      if (index % 3 === 0) {
-        const cap = this.box(width + 0.7, 0.45, depth + 0.7, roofMaterial);
-        this.place(cap, progress, offset, height + 0.18);
-        this.root.add(cap);
-      }
-    }
-  }
-
-  /** 0.000–0.083 — Zhengyangmen, then a distinct Tiananmen wall/rostrum. */
-  private buildCentralAxis(): void {
-    this.beginPassage('central-axis');
-    const red = this.standard(PALETTE.wallRed, { roughness: 0.92 });
-    const brick = this.textured('#5C6466', 'brick', { roughness: 1 });
-    const stone = this.textured(PALETTE.stone, 'stoneGrain', { roughness: 0.96 });
-
-    for (let index = 0; index < 7; index += 1) {
-      const progress = 0.012 + index * 0.0102;
-      for (const side of [-1, 1]) {
-        const wall = this.box(3.4, 2.15, 4.8, index % 2 === 0 ? brick : red);
-        this.place(wall, progress, side * 10.2, 1.07);
-        this.root.add(wall);
-      }
-    }
-
-    const zhengyangmen = CENTRAL_AXIS_LANDMARKS.zhengyangmen;
-    const tiananmen = CENTRAL_AXIS_LANDMARKS.tiananmen;
-
-    // Zhengyangmen remains a generous threshold. Tiananmen is deliberately a
-    // side reveal across a forecourt, so the drive reads as passing the square
-    // rather than entering a solid palace wall.
-    this.buildAxisGate(zhengyangmen.progress, zhengyangmen.scale, '正阳门');
-    this.buildCentralAxisForecourt(
-      tiananmen.progress,
-      tiananmen.lateralOffset,
-    );
-    this.buildTiananmen(
-      tiananmen.progress,
-      tiananmen.lateralOffset,
-      tiananmen.scale,
-      tiananmen.headingOffset,
-    );
-
-    for (const [phaseDelta, along] of [[-0.0058, -3.7], [0.0058, 3.7]] as const) {
-      const huabiao = new Group();
-      this.place(
-        huabiao,
-        tiananmen.progress + phaseDelta,
-        tiananmen.lateralOffset + 4.75,
-        0,
-      );
-      const column = this.cylinder(0.26, 6.4, stone);
-      column.position.y = 3.2;
-      const capital = this.box(1.15, 0.22, 0.55, stone);
-      capital.position.y = 5.85;
-      const crown = new Mesh(this.unitSphere, stone);
-      crown.scale.set(0.36, 0.44, 0.36);
-      crown.position.set(0, 6.58, along * 0.02);
-      huabiao.add(column, capital, crown);
-      this.root.add(huabiao);
-    }
-    for (let index = 0; index < 14; index += 1) {
-      const progress = 0.048 + index * 0.00155;
-      for (const side of [-1, 1]) {
-        const post = this.box(0.28, 1.05, 0.28, stone);
-        this.place(post, progress, side * 7.1, 0.55);
-        const rail = this.box(0.18, 0.16, 1.7, stone);
-        this.place(rail, progress, side * 7.1, 1.02);
-        this.root.add(post, rail);
-      }
-    }
-
-    for (const progress of [0.018, 0.034, 0.052, 0.072]) {
-      this.addLamp(progress, -6.6, progress === 0.034);
-      this.addLamp(progress, 6.6, progress === 0.052);
-    }
-    this.addTree(0.024, -12.3, 4.5);
-    this.addTree(0.05, 12.1, 4.8);
-    this.addTree(0.078, -12.5, 4.3);
-
-    // Soft exit corridor so the palace moat grows through instead of popping.
-    for (let index = 0; index < 7; index += 1) {
-      const progress = 0.068 + index * 0.0024;
-      const taper = 1 - index * 0.08;
-      for (const side of [-1, 1]) {
-        if (side < 0 && index < 5) continue;
-        const wall = this.box(
-          3.6,
-          2.4 + taper * 1.4,
-          3.8,
-          index % 2 === 0 ? brick : red,
-        );
-        this.place(wall, progress, side * (8.2 + index * 0.35), 1.2 + taper * 0.5);
-        this.root.add(wall);
-        if (index >= 2) {
-          const pane = this.box(0.08, 0.55, 0.7, this.windowMaterial);
-          this.place(
-            pane,
-            progress,
-            side * (8.2 + index * 0.35 - 1.7),
-            1.35,
-          );
-          this.root.add(pane);
-        }
-      }
-    }
-  }
-
-  /** Chang'an Avenue layer: broad ceremonial promenade, plane trees and one legible street sign. */
-  private buildChangAnStreet(): void {
-    const paving = this.textured('#9A9A8E', 'stoneGrain', { roughness: 1 });
-
-    for (const side of [-1, 1] as const) {
-      const promenade = this.box(2.6, 0.06, 18.5, paving);
-      this.place(promenade, 0.043, side * 13.6, 0.045);
-      this.root.add(promenade);
-
-      for (const progress of side < 0 ? [0.015, 0.052] : [0.028, 0.067]) {
-        this.addTree(progress, side * 14.05, 4.5);
-      }
-    }
-
-    this.buildStreetNameSign(0.031, -12.65, '长安街', -1);
-    this.addLanternString(0.022, -12.55, 5, 5.2, 3.7, -0.35);
-  }
-
-  /** Side-street apron and civic edge that make Tiananmen a set-back vista. */
-  private buildCentralAxisForecourt(progress: number, landmarkOffset: number): void {
-    const stone = this.textured('#A7A397', 'stoneGrain', { roughness: 0.98 });
-    const inset = this.standard('#6E7778', { roughness: 1 });
-    const bronze = this.standard('#4B4233', { metalness: 0.18, roughness: 0.82 });
-
-    const apron = this.box(7.2, 0.08, 13.8, stone);
-    this.place(apron, progress, landmarkOffset + 3.65, 0.045);
-    this.root.add(apron);
-
-    // A restrained transverse crossing tells the viewer that this is a civic
-    // junction. It also breaks the previous visual funnel into the monument.
-    for (let index = 0; index < 5; index += 1) {
-      const stripe = this.box(7.35, 0.018, 0.3, inset);
-      this.place(stripe, progress - 0.009 + index * 0.0007, 0, 0.064);
-      this.root.add(stripe);
-    }
-
-    for (const phaseDelta of [-0.0062, -0.0031, 0, 0.0031, 0.0062]) {
-      const bollard = this.cylinder(0.11, 0.7, bronze);
-      this.place(
-        bollard,
-        progress + phaseDelta,
-        landmarkOffset + 7.15,
-        0.39,
-      );
-      this.root.add(bollard);
-    }
-  }
-
-  /** Gate-tower silhouette for Zhengyangmen (drive-through piers). */
-  private buildAxisGate(progress: number, scale: number, plaqueText?: string): void {
-    const palaceRed = this.textured(PALETTE.palaceRed, 'brick', { roughness: 0.86 });
-    const roof = this.textured(PALETTE.roof, 'tileRoof', { roughness: 1 });
-    const roofEdge = this.standard(PALETTE.roofEdge, {
-      emissive: '#2A1B09',
-      emissiveIntensity: 0.15,
-      roughness: 0.85,
-    });
-
-    const gate = new Group();
-    this.place(gate, progress, 0, 0);
-    gate.scale.setScalar(scale);
-    const leftPier = this.box(4.5, 6.4, 4.8, palaceRed);
-    leftPier.position.set(-10.1, 3.2, 0);
-    const rightPier = this.box(4.5, 6.4, 4.8, palaceRed);
-    rightPier.position.set(10.1, 3.2, 0);
-    const upperHall = this.box(24.2, 2.25, 4.9, palaceRed);
-    upperHall.position.y = 6.45;
-    const roofMass = new Mesh(this.unitPitchedRoof, roof);
-    roofMass.scale.set(7.1, 1.58, 26.4);
-    roofMass.rotation.y = Math.PI / 2;
-    roofMass.position.y = 7.5;
-    const goldEdge = this.box(26.4, 0.18, 6.9, roofEdge);
-    goldEdge.position.y = 7.52;
-    const towerHall = this.box(13.2, 1.55, 3.55, palaceRed);
-    towerHall.position.y = 9.05;
-    const upperRoof = new Mesh(this.unitPitchedRoof, roof);
-    upperRoof.scale.set(5.35, 1.18, 15.5);
-    upperRoof.rotation.y = Math.PI / 2;
-    upperRoof.position.y = 9.82;
-    const upperGoldEdge = this.box(15.8, 0.14, 5.55, roofEdge);
-    upperGoldEdge.position.y = 9.82;
-
-    gate.add(
-      leftPier,
-      rightPier,
-      upperHall,
-      roofMass,
-      goldEdge,
-      towerHall,
-      upperRoof,
-      upperGoldEdge,
-    );
-
-    // Warm portal reveals separate the near gate from the nested Tiananmen layer without adding point lights.
-    for (const x of [-8, 8]) {
-      const reveal = this.box(0.16, 3.6, 0.14, this.windowMaterial);
-      reveal.position.set(x, 2.45, -2.48);
-      gate.add(reveal);
-    }
-
-    if (plaqueText) {
-      const plaque = this.canvasPlaque(plaqueText, {
-        width: 640,
-        height: 224,
-        background: '#123E46',
-        border: '#D4AD5C',
-        color: '#F3D78D',
-        font: '700 112px "Songti SC", "STSong", serif',
-      });
-      if (plaque) {
-        const panel = new Mesh(
-          this.trackGeometry(new PlaneGeometry(3.8, 1.34)),
-          plaque,
-        );
-        panel.position.set(0, 6.45, -2.48);
-        panel.rotation.y = Math.PI;
-        gate.add(panel);
-      }
-    }
-    this.tagHero(gate);
-    this.root.add(gate);
-  }
-
-  /**
-   * Tiananmen as a broad palace wall with five arch openings and a double-eave
-   * upper hall — deliberately unlike Zhengyangmen's drive-through gate tower.
-   */
-  private buildTiananmen(
-    progress: number,
-    offset: number,
-    scale: number,
-    headingOffset: number,
-  ): void {
-    const palaceRed = this.textured(PALETTE.palaceRed, 'brick', { roughness: 0.86 });
-    const wallRed = this.textured(PALETTE.wallRed, 'brick', { roughness: 0.9 });
-    const roof = this.textured(PALETTE.roof, 'tileRoof', { roughness: 1 });
-    const roofEdge = this.standard(PALETTE.roofEdge, {
-      emissive: '#2A1B09',
-      emissiveIntensity: 0.18,
-      roughness: 0.85,
-    });
-    const stone = this.textured(PALETTE.stone, 'stoneGrain', { roughness: 0.96 });
-    const niche = this.standard('#1A1410', { roughness: 0.95 });
-
-    const gate = new Group();
-    this.place(gate, progress, offset, 0, headingOffset);
-    gate.scale.setScalar(scale);
-
-    // The full five-opening wall is now safely beyond the forecourt instead of
-    // spanning the carriageway.
-    const depth = 4.2;
-    const podium = this.box(26, 1.05, depth + 0.6, stone);
-    podium.position.y = 0.52;
-    const lintel = this.box(26, 2.35, depth, wallRed);
-    lintel.position.y = 5.45;
-    gate.add(podium, lintel);
-
-    const pierXs = [-10.6, -6.5, -2.55, 2.55, 6.5, 10.6];
-    for (const x of pierXs) {
-      const pier = this.box(2.15, 4.4, depth + 0.2, wallRed);
-      pier.position.set(x, 3.3, 0);
-      gate.add(pier);
-    }
-    for (const side of [-1, 1]) {
-      const wing = this.box(3.8, 5.3, depth, wallRed);
-      wing.position.set(side * 14.4, 3.75, 0);
-      gate.add(wing);
-    }
-
-    for (const x of [-8.55, -4.5, 0, 4.5, 8.55]) {
-      const archCap = this.box(x === 0 ? 4.4 : 3.2, 0.55, depth + 0.1, wallRed);
-      archCap.position.set(x, 5.0, 0);
-      gate.add(archCap);
-    }
-
-    const upperHall = this.box(24, 2.55, 4.2, palaceRed);
-    upperHall.position.y = 7.4;
-    const lowerRoof = new Mesh(this.unitPitchedRoof, roof);
-    lowerRoof.scale.set(6.4, 1.55, 26);
-    lowerRoof.rotation.y = Math.PI / 2;
-    lowerRoof.position.y = 8.65;
-    const lowerGold = this.box(26.5, 0.18, 6.6, roofEdge);
-    lowerGold.position.y = 8.68;
-    const towerHall = this.box(17.5, 1.7, 3.4, palaceRed);
-    towerHall.position.y = 10.25;
-    const upperRoof = new Mesh(this.unitPitchedRoof, roof);
-    upperRoof.scale.set(5.1, 1.2, 19.5);
-    upperRoof.rotation.y = Math.PI / 2;
-    upperRoof.position.y = 11.1;
-    const upperGold = this.box(20, 0.15, 5.4, roofEdge);
-    upperGold.position.y = 11.1;
-    gate.add(upperHall, lowerRoof, lowerGold, towerHall, upperRoof, upperGold);
-
-    // Five restrained arch sills keep the far Tiananmen layer legible through
-    // Zhengyangmen's opening instead of merging into one dark mass.
-    for (const x of [-8.55, -4.5, 0, 4.5, 8.55]) {
-      const sill = this.box(x === 0 ? 2.5 : 1.75, 0.14, 0.12, this.windowMaterial);
-      sill.position.set(x, 1.22, -(depth / 2 + 0.08));
-      gate.add(sill);
-    }
-
-    // Abstract portrait niche — dark framed panel, no likeness.
-    const portraitFrame = this.box(2.1, 2.6, 0.16, this.standard('#6A5230', { roughness: 0.9 }));
-    portraitFrame.position.set(0, 3.55, -(depth / 2 + 0.08));
-    const portrait = this.box(1.75, 2.2, 0.1, niche);
-    portrait.position.set(0, 3.55, -(depth / 2 + 0.18));
-    gate.add(portraitFrame, portrait);
-
-    // Keep plaque readable but low-contrast so the near-field approach
-    // does not spike the seam MAD when the facade fills the frame.
-    const plaque = this.canvasPlaque('天安门', {
-      width: 900,
-      height: 280,
-      background: '#4A221C',
-      border: '#A8844A',
-      color: '#E8C878',
-      font: '700 148px "Songti SC", "STSong", "PingFang SC", serif',
-    });
-    if (plaque) {
-      const panel = new Mesh(
-        this.trackGeometry(new PlaneGeometry(4.8, 1.5)),
-        plaque,
-      );
-      panel.position.set(0, 7.25, -(depth / 2 + 0.05));
-      panel.rotation.y = Math.PI;
-      gate.add(panel);
-    }
-
-    // Dark vestibule masses in front of the wall soften the near-field pop.
-    for (const side of [-1, 1]) {
-      const vestibule = this.box(3.2, 4.8, 3.6, wallRed);
-      vestibule.position.set(side * 6.8, 2.9, -3.8);
-      gate.add(vestibule);
-    }
-
-    this.tagHero(gate);
-    this.root.add(gate);
-  }
-
-  /** 0.833–0.875 — Qianmen / Dashilar shopping street (south return). */
-  private buildQianmenStreet(): void {
-    this.beginPassage('qianmen-hutong');
-    const brick = this.textured('#5C6466', 'brick', { roughness: 1 });
-    const darkBrick = this.textured('#495254', 'brick', { roughness: 1 });
-    const roof = this.textured('#3A4341', 'tileRoof', { roughness: 1 });
-    const signBoards = ['茶莊', '綢緞', '書局', '醬園'];
-
-    for (let index = 0; index < 12; index += 1) {
-      const progress = 0.842 + index * 0.0052;
-      for (const side of [-1, 1]) {
-        if (side < 0 && index === 5) continue;
-        const width = 3.7 + hash01(index, side + 21) * 1.5;
-        const height = 3.15 + hash01(index, side + 25) * 0.9;
-        const depth = 4.2 + hash01(index, side + 29) * 2;
-        const group = new Group();
-        this.place(group, progress, side * CURB_BUILDING, 0);
-
-        const wall = this.box(width, height, depth, index % 3 === 2 ? darkBrick : brick);
-        wall.position.y = height / 2;
-        const roofCap = new Mesh(this.unitPitchedRoof, roof);
-        roofCap.scale.set(width + 0.8, 0.8, depth + 1);
-        roofCap.position.y = height + 0.04;
-        const roadFaceX = side > 0 ? width / 2 + 0.05 : -width / 2 - 0.05;
-        group.add(wall, roofCap);
-        // Mullioned shopfront: separate panes read as windows, not billboards.
-        const paneSpan = Math.min(1.05, depth * 0.22);
-        for (const along of [-paneSpan, 0.12, paneSpan]) {
-          const pane = this.box(0.06, 0.78, paneSpan * 0.72, this.windowMaterial);
-          pane.position.set(roadFaceX, 1.32, along);
-          group.add(pane);
-        }
-
-        if (index % 2 === 0) {
-          const board = this.buildVerticalSignBoard(
-            signBoards[(index / 2 + (side > 0 ? 1 : 0)) % signBoards.length],
-          );
-          if (board) {
-            board.position.set(
-              side > 0 ? width / 2 - 0.55 : -width / 2 + 0.55,
-              height - 1.6,
-              -depth / 2 - 0.32,
-            );
-            group.add(board);
-          }
-        }
-        if (index % 2 === 1) {
-          for (const along of [-0.9, 0.9]) {
-            const hanger = this.box(0.3, 0.05, 0.05, this.shopHardwareMaterial);
-            hanger.position.set(roadFaceX + (side > 0 ? 0.17 : -0.17), height - 0.62, along);
-            const lantern = new Mesh(this.unitSphere, this.lanternMaterial);
-            lantern.scale.set(0.19, 0.23, 0.19);
-            lantern.position.set(roadFaceX + (side > 0 ? 0.34 : -0.34), height - 0.92, along);
-            group.add(hanger, lantern);
-          }
-        }
-        this.root.add(group);
-      }
-    }
-
-    this.buildPailou(0.902, '大栅栏');
-    this.buildDashilarGate();
-
-    this.addLamp(0.8365, -6.5, true);
-    this.addLamp(0.851, 6.5, false);
-    this.addLamp(0.8655, -6.5, true);
-    this.addTree(0.8415, 11.9, 4.2);
-    this.addTree(0.86, -11.8, 4.4);
-  }
-
-  /** Wooden pailou archway spanning the full street. */
-  private buildPailou(progress: number, plaqueText?: string): void {
-    const palaceRed = this.textured(PALETTE.palaceRed, 'brick', { roughness: 0.86 });
-    const roof = this.textured(PALETTE.roof, 'tileRoof', { roughness: 1 });
-    const timber = this.standard('#5A4630', { roughness: 0.92 });
-
-    const arch = new Group();
-    this.place(arch, progress, 0, 0);
-    arch.scale.setScalar(0.94);
-    for (const x of [-8.5, -5.5, 5.5, 8.5]) {
-      const column = this.cylinder(0.22, 6, palaceRed);
-      column.position.set(x, 3, 0);
-      arch.add(column);
-    }
-    const lowBeam = this.box(17.9, 0.5, 0.62, palaceRed);
-    lowBeam.position.y = 5.05;
-    const highBeam = this.box(18.2, 0.42, 0.58, timber);
-    highBeam.position.y = 6.02;
-    arch.add(lowBeam, highBeam);
-    const bays: Array<[number, number]> = [
-      [-7, 3.3],
-      [0, 10.8],
-      [7, 3.3],
-    ];
-    for (const [x, span] of bays) {
-      const bayRoof = new Mesh(this.unitPitchedRoof, roof);
-      bayRoof.scale.set(1.35, 0.72, span);
-      bayRoof.rotation.y = Math.PI / 2;
-      bayRoof.position.set(x, x === 0 ? 6.45 : 5.5, 0);
-      arch.add(bayRoof);
-    }
-
-    if (plaqueText) {
-      const plaque = this.canvasPlaque(plaqueText, {
-        width: 512,
-        height: 176,
-        background: '#1C3A2E',
-        border: '#C9A056',
-        color: '#EFD494',
-        font: '700 100px "Songti SC", "STSong", serif',
-      });
-      if (plaque) {
-        const panel = new Mesh(
-          this.trackGeometry(new PlaneGeometry(2.9, 1)),
-          plaque,
-        );
-        panel.position.set(0, 5.55, -0.34);
-        panel.rotation.y = Math.PI;
-        arch.add(panel);
-      }
-    }
-    this.root.add(arch);
-  }
-
-  /** Hanging vertical shop sign with stacked calligraphy. */
-  private buildVerticalSignBoard(
-    text: string,
-  ): Group | undefined {
-    const material = this.canvasPlaque(text, {
-      width: 128,
-      height: 384,
-      background: '#20291F',
-      border: '#B98F45',
-      color: '#E4C377',
-      font: '700 84px "Songti SC", "STSong", serif',
-      vertical: true,
-    });
-    if (!material) return undefined;
-    material.side = FrontSide;
-    const group = new Group();
-    const backingMaterial = this.standard('#242B26', { roughness: 0.95 });
-    const hardwareMaterial = this.standard('#33291C', { roughness: 1 });
-    const backing = this.box(0.56, 2.15, 0.1, backingMaterial);
-    const face = new Mesh(this.trackGeometry(new PlaneGeometry(0.5, 2.02)), material);
-    face.position.z = -0.06;
-    face.rotation.y = Math.PI;
-    const arm = this.box(0.1, 0.1, 0.62, hardwareMaterial);
-    arm.position.set(0, 0.78, 0.22);
-    const wallPlate = this.box(0.18, 0.66, 0.06, hardwareMaterial);
-    wallPlate.position.set(0, 0.78, 0.32);
-    group.add(backing, face, arm, wallPlate);
-    return group;
-  }
-
-  /** 0.875–0.917 — deep residential hutong (south return). */
-  private buildHutong(): void {
-    const brick = this.textured('#596162', 'brick', { roughness: 1 });
-    const darkBrick = this.textured('#454E50', 'brick', { roughness: 1 });
-    const roof = this.textured('#515A59', 'tileRoof', { roughness: 1 });
-    const eave = this.standard('#303735', { roughness: 1 });
-    const door = this.standard(PALETTE.wallRed, {
-      emissive: '#260604',
-      emissiveIntensity: 0.14,
-      roughness: 0.9,
-    });
-    const stone = this.textured(PALETTE.stone, 'stoneGrain', { roughness: 1 });
-    const lintel = this.standard('#2C3230', { roughness: 1 });
-
-    for (let index = 0; index < 17; index += 1) {
-      const progress = 0.876012 + index * 0.0048;
-      for (const side of [-1, 1]) {
-        const width = 3.3 + hash01(index, side + 4) * 1.8;
-        const depth = 4.1 + hash01(index, side + 8) * 2.9;
-        const height = 2.7 + hash01(index, side + 12) * 1.35;
-        const group = new Group();
-        this.place(group, progress, side * CURB_BUILDING, 0);
-        const roadFaceX = side > 0 ? width / 2 + 0.045 : -width / 2 - 0.045;
-
-        const wall = this.box(width, height, depth, index % 4 === 0 ? darkBrick : brick);
-        wall.position.y = height / 2;
-        const roofCap = new Mesh(this.unitPitchedRoof, roof);
-        roofCap.scale.set(width + 0.78, 0.86, depth + 0.98);
-        roofCap.position.y = height + 0.04;
-        const roofEave = this.box(width + 0.98, 0.16, depth + 1.12, eave);
-        roofEave.position.y = height + 0.06;
-        group.add(wall, roofCap, roofEave);
-
-        if ((index + (side > 0 ? 0 : 2)) % 3 === 1) {
-          // Courtyard gate bay: recessed double door, lintel and door piers.
-          const doorLeft = this.box(0.08, 1.78, 0.6, door);
-          doorLeft.position.set(roadFaceX, 0.92, -0.33);
-          const doorRight = this.box(0.08, 1.78, 0.6, door);
-          doorRight.position.set(roadFaceX, 0.92, 0.33);
-          const gateLintel = this.box(0.16, 0.24, 1.7, lintel);
-          gateLintel.position.set(roadFaceX, 1.95, 0);
-          const gateRoof = new Mesh(this.unitUpturnedEave, roof);
-          gateRoof.scale.set(0.9, 0.42, 2.1);
-          gateRoof.position.set(roadFaceX, 2.07, 0);
-          const step = this.box(0.5, 0.12, 1.9, stone);
-          step.position.set(roadFaceX + (side > 0 ? 0.22 : -0.22), 0.06, 0);
-          group.add(doorLeft, doorRight, gateLintel, gateRoof, step);
-          for (const along of [-0.78, 0.78]) {
-            const pier = this.box(0.26, 0.4, 0.26, stone);
-            pier.position.set(roadFaceX + (side > 0 ? 0.24 : -0.24), 0.2, along);
-            group.add(pier);
-          }
-        } else {
-          const doorPanel = this.box(0.08, 1.75, 1.05, door);
-          doorPanel.position.set(roadFaceX, 0.9, depth * 0.12);
-          group.add(doorPanel);
-          if (index % 3 === 0) {
-            const litWindow = this.box(0.06, 0.62, 0.9, this.windowMaterial);
-            litWindow.position.set(roadFaceX, 1.45, -depth * 0.22);
-            group.add(litWindow);
-          }
-        }
-        if (index === 0 && side < 0) {
-          const plaque = this.buildWallStreetPlaque(
-            '前门东河沿街',
-            'QIANMEN DONGHEYAN ST',
-          );
-          if (plaque) {
-            plaque.position.set(roadFaceX, 2.2, -depth * 0.06);
-            group.add(plaque);
-          }
-        }
-        this.root.add(group);
-      }
-
-      if (index % 4 === 1) {
-        this.addTree(progress + 0.002, index % 8 < 4 ? CURB_TREE : -CURB_TREE, 4.4, 'locust');
-      }
-    }
-
-    // Leaning power poles with long catenary spans.
-    const poleMaterial = this.standard('#2E2A24', { roughness: 1 });
-    const polePositions: Array<[number, number]> = [
-      [0.884, -5.25],
-      [0.895, -5.25],
-      [0.892, 5.25],
-      [0.904, 5.25],
-    ];
-    for (const [progress, offset] of polePositions) {
-      const group = new Group();
-      this.place(group, progress, offset, 0);
-      const pole = this.cylinder(0.09, 6, poleMaterial);
-      pole.position.y = 3;
-      pole.rotation.z = offset > 0 ? -0.03 : 0.03;
-      const crossarm = this.box(0.6, 0.09, 0.09, poleMaterial);
-      crossarm.position.y = 5.35;
-      group.add(pole, crossarm);
-      this.root.add(group);
-    }
-    for (const [fromProgress, toProgress, offset] of [
-      [0.884, 0.895, -5.25],
-      [0.892, 0.904, 5.25],
-    ] as const) {
-      const mid = (fromProgress + toProgress) / 2;
-      const wire = this.box(0.035, 0.035, 6.4, poleMaterial);
-      this.place(wire, mid, offset, 5.18);
-      this.root.add(wire);
-    }
-
-    this.addLamp(0.897, 5.25, true);
-    this.addLamp(0.911, -5.25, false);
-  }
-
-  /** Quiet human detail at the two named hutong entrances, outside the driving lane. */
-  private buildHutongLife(): void {
-    const skin = this.standard('#B58B68', { roughness: 0.92 });
-    const coat = this.standard('#6B5650', { roughness: 0.98 });
-    const redCoat = this.standard('#8B4740', {
-      emissive: '#2A1110',
-      emissiveIntensity: 0.12,
-      roughness: 0.96,
-    });
-    const trousers = this.standard('#303B3C', { roughness: 1 });
-    const stool = this.standard('#71573B', { roughness: 1 });
-
-    const addPair = (progress: number, side: -1 | 1): void => {
-      const pair = new Group();
-      this.place(pair, progress, side * 7.42, 0);
-
-      const addFigure = (
-        z: number,
-        bodyMaterial: Material,
-        seated: boolean,
-        withCane: boolean,
-      ): void => {
-        const figure = new Group();
-        figure.position.set(side * 0.22, 0, z);
-        const torso = this.box(0.36, seated ? 0.72 : 0.9, 0.34, bodyMaterial);
-        torso.position.y = seated ? 0.76 : 1.0;
-        const head = new Mesh(this.unitSphere, skin);
-        head.scale.setScalar(0.23);
-        head.position.y = seated ? 1.34 : 1.6;
-        const leftLeg = this.box(0.13, seated ? 0.4 : 0.64, 0.13, trousers);
-        leftLeg.position.set(-0.1, seated ? 0.33 : 0.32, -0.08);
-        const rightLeg = leftLeg.clone();
-        rightLeg.position.z = 0.08;
-        figure.add(torso, head, leftLeg, rightLeg);
-
-        if (seated) {
-          const seat = this.box(0.62, 0.12, 0.56, stool);
-          seat.position.y = 0.48;
-          figure.add(seat);
-        }
-        if (withCane) {
-          const cane = this.cylinder(0.035, 1.18, stool);
-          cane.position.set(side * 0.34, 0.62, 0.12);
-          cane.rotation.z = side * -0.08;
-          figure.add(cane);
-        }
-        pair.add(figure);
-      };
-
-      addFigure(-0.48, coat, true, false);
-      addFigure(0.5, redCoat, false, true);
-      this.root.add(pair);
-    };
-
-    addPair(0.518, 1);
-    addPair(0.562, -1);
-    this.addLanternString(0.518, 7.34, 5, 3.8, 2.82, 0.35);
-    this.addLanternString(0.562, -7.34, 5, 3.8, 2.82, -0.35);
-  }
-
-  /** 0.500–0.583 — Nanluo / Wudaoying commercial alley. */
-  private buildNanluoWudaoying(): void {
-    this.beginPassage('nanluo-wudaoying');
-    const brick = this.textured('#5A6365', 'brick', { roughness: 1 });
-    const darkBrick = this.textured('#484F51', 'brick', { roughness: 1 });
-    const roof = this.textured('#4A5352', 'tileRoof', { roughness: 1 });
-    const signNames = ['小馆', '茶室', '书店', '杂货'];
-
-    for (let index = 0; index < 16; index += 1) {
-      const progress = 0.502 + index * 0.005;
-      for (const side of [-1, 1]) {
-        const opensNanluoEntrance = side > 0 && index >= 2 && index <= 4;
-        const opensWudaoyingEntrance = side < 0 && index >= 10 && index <= 13;
-        if (opensNanluoEntrance || opensWudaoyingEntrance) continue;
-        if (side > 0 && index === 6) {
-          this.buildNanluoTeaHouse();
-          continue;
-        }
-        const width = 3.5 + hash01(index, side + 51) * 1.4;
-        const height = 3.05 + hash01(index, side + 55) * 1.15;
-        const depth = 3.8 + hash01(index, side + 59) * 2.2;
-        const group = new Group();
-        this.place(group, progress, side * CURB_BUILDING, 0);
-        const roadFaceX = side > 0 ? width / 2 + 0.05 : -width / 2 - 0.05;
-
-        const wall = this.box(width, height, depth, index % 3 === 0 ? darkBrick : brick);
-        wall.position.y = height / 2;
-        const roofCap = new Mesh(this.unitPitchedRoof, roof);
-        roofCap.scale.set(width + 0.75, 0.78, depth + 0.95);
-        roofCap.position.y = height + 0.04;
-        group.add(wall, roofCap);
-
-        for (const along of [-0.85, 0.15, 1.05]) {
-          const pane = this.box(0.06, 0.72, 0.82, this.windowMaterial);
-          pane.position.set(roadFaceX, 1.38, along);
-          group.add(pane);
-        }
-
-        if ((index + (side > 0 ? 1 : 0)) % 4 === 0) {
-          const board = this.buildVerticalSignBoard(
-            signNames[
-              (Math.floor(index / 4) + (side > 0 ? 1 : 0)) % signNames.length
-            ],
-          );
-          if (board) {
-            board.position.set(
-              side > 0 ? width / 2 - 0.5 : -width / 2 + 0.5,
-              height - 1.4,
-              -depth / 2 - 0.28,
-            );
-            group.add(board);
-          }
-        }
-
-        if ((index + (side > 0 ? 2 : 0)) % 4 === 0) {
-          for (const along of [-0.75, 0.75]) {
-            const hanger = this.box(0.28, 0.05, 0.05, this.shopHardwareMaterial);
-            hanger.position.set(roadFaceX + (side > 0 ? 0.15 : -0.15), height - 0.58, along);
-            const lantern = new Mesh(this.unitSphere, this.lanternMaterial);
-            lantern.scale.set(0.2, 0.24, 0.2);
-            lantern.position.set(roadFaceX + (side > 0 ? 0.3 : -0.3), height - 0.86, along);
-            group.add(hanger, lantern);
-          }
-        }
-        this.root.add(group);
-      }
-    }
-
-    this.buildHutongEntranceMarker(0.518, 1, '南锣鼓巷');
-    this.buildHutongEntranceMarker(0.562, -1, '五道营胡同');
-    this.addLamp(0.508, -6.4, true);
-    this.addLamp(0.545, 6.4, false);
-    this.addTree(0.525, 11.5, 4.3);
-    this.addTree(0.568, -12.8, 4.6);
-  }
-
-  /** 0.417–0.500 — the Bell & Drum Tower pair above low grey shops. */
-  private buildBellDrumPlaza(): void {
-    this.beginPassage('bell-drum');
-    const brick = this.textured('#565F60', 'brick', { roughness: 1 });
-    const roof = this.textured('#4B5453', 'tileRoof', { roughness: 1 });
-    const civicStone = this.textured('#777B77', 'stoneGrain', { roughness: 1 });
-
-    for (let index = 0; index < 2; index += 1) {
-      const progress = 0.42 + index * 0.0069;
-      for (const side of [-1, 1]) {
-        const width = 4 + hash01(index, side + 41) * 1.6;
-        const height = 3 + hash01(index, side + 45) * 0.9;
-        const depth = 4.4 + hash01(index, side + 49) * 2.2;
-        const group = new Group();
-        this.place(group, progress, side * CURB_BUILDING, 0);
-        const wall = this.box(width, height, depth, brick);
-        wall.position.y = height / 2;
-        const roofCap = new Mesh(this.unitPitchedRoof, roof);
-        roofCap.scale.set(width + 0.7, 0.7, depth + 0.9);
-        roofCap.position.y = height + 0.03;
-        group.add(wall, roofCap);
-        if (index % 3 === 1) {
-          const roadFaceX = side > 0 ? width / 2 + 0.05 : -width / 2 - 0.05;
-          const litWindow = this.box(0.06, 0.7, 1.3, this.windowMaterial);
-          litWindow.position.set(roadFaceX, 1.4, 0);
-          group.add(litWindow);
-        }
-        this.root.add(group);
-      }
-    }
-
-    this.addSetbackApron(0.47, -9.8, 7.2, 22, civicStone);
-    const drumTower = PASSAGE_HEROES.drumTower;
-    const bellTower = PASSAGE_HEROES.bellTower;
-    this.buildDrumTower(
-      drumTower.progress,
-      drumTower.lateralOffset,
-      drumTower.scale,
-    );
-    this.buildBellTower(
-      bellTower.progress,
-      bellTower.lateralOffset,
-      bellTower.scale,
-    );
-
-    this.addLamp(0.429, 6.5, true);
-    this.addLamp(0.462, -6.4, true);
-    this.addLamp(0.491, 6.5, false);
-    this.addTree(0.442, -13.8, 4.6);
-    this.addTree(0.478, -13.8, 4.2);
-  }
-
-  /** 0.583–0.667 — Yonghegong courtyard with a low front hall and rear pavilion. */
-  private buildYonghegong(): void {
-    this.beginPassage('yonghegong');
-    const ochre = this.textured('#A98A3E', 'brick', { roughness: 0.92 });
-    const yellowRoof = this.textured('#B9932A', 'tileRoof', {
-      roughness: 0.88,
-      emissive: '#583B0C',
-      emissiveIntensity: 0.28,
-    });
-    const roofEdge = this.standard(PALETTE.roofEdge, {
-      emissive: '#2A1B09',
-      emissiveIntensity: 0.24,
-      roughness: 0.85,
-    });
-    const eaveShadow = this.standard('#2C2215', {
-      emissive: '#140D08',
-      emissiveIntensity: 0.08,
-      roughness: 1,
-    });
-    const facadeWarmth = this.standard('#4A3422', {
-      emissive: '#563016',
-      emissiveIntensity: 0.16,
-      roughness: 0.96,
-    });
-    const pillarMaterial = this.standard('#7B3B2C', {
-      emissive: '#351411',
-      emissiveIntensity: 0.18,
-      roughness: 0.9,
-    });
-    const stone = this.textured(PALETTE.stone, 'stoneGrain', { roughness: 0.96 });
-
-    const yonghegong = PASSAGE_HEROES.yonghegong;
-    const yonghegongModel = CALIBRATED_LANDMARK_MODELS.yonghegong;
-    const temple = new Group();
-    this.place(temple, yonghegong.progress, yonghegong.lateralOffset, 0);
-    temple.scale.setScalar(yonghegong.scale);
-    this.addSetbackApron(
-      yonghegong.progress,
-      -10.7,
-      6.2,
-      15,
-      stone,
-    );
-
-    const courtyard = this.box(
-      yonghegongModel.solidHalfWidth * 2,
-      0.16,
-      15.8,
-      stone,
-    );
-    courtyard.position.set(0, 0.08, -6.6);
-
-    const frontHall = this.box(10.8, 1.9, 4, ochre);
-    frontHall.position.set(0, 1.05, 8.2);
-    const frontRoof = new Mesh(this.unitUpturnedEave, yellowRoof);
-    frontRoof.scale.set(3.1, 0.42, 7.2);
-    frontRoof.rotation.y = Math.PI / 2;
-    frontRoof.position.set(0, 2.03, 12.4);
-    const frontEdge = this.box(12.8, 0.13, 5.1, roofEdge);
-    frontEdge.position.set(0, 2.06, 8.2);
-
-    const sideHalls = new Group();
-    for (const side of [-1, 1]) {
-      const hall = this.box(3.2, 1.8, 6, ochre);
-      hall.position.set(side * 5.1, 0.98, -4.8);
-      const roof = new Mesh(this.unitUpturnedEave, yellowRoof);
-      roof.scale.set(6.8, 0.65, 4);
-      roof.rotation.y = Math.PI / 2;
-      roof.position.set(side * 5.1, 1.92, -4.8);
-      sideHalls.add(hall, roof);
-    }
-
-    const rearPavilion = new Group();
-    rearPavilion.position.z = -8.4;
-    const plinth = this.box(14.2, 1.6, 10.4, stone);
-    plinth.position.y = 0.8;
-    const mainHall = this.box(12.6, 5.4, 8.4, ochre);
-    mainHall.position.y = 3.5;
-    const mainRoofHeight = 2;
-    const mainRoof = new Mesh(this.unitUpturnedEave, yellowRoof);
-    mainRoof.scale.set(
-      9.6,
-      mainRoofHeight,
-      yonghegongModel.solidHalfWidth * 2,
-    );
-    mainRoof.rotation.y = Math.PI / 2;
-    mainRoof.position.y = yonghegongModel.height - mainRoofHeight;
-    const crownEave = new Mesh(this.unitUpturnedEave, yellowRoof);
-    crownEave.scale.set(6.4, 1.05, 11.2);
-    crownEave.rotation.y = Math.PI / 2;
-    crownEave.position.y = yonghegongModel.height + 0.35;
-    const mainEdge = this.box(
-      yonghegongModel.solidHalfWidth * 2,
-      0.22,
-      9.45,
-      eaveShadow,
-    );
-    mainEdge.position.y = mainRoof.position.y - 0.11;
-
-    const facade = new Group();
-    for (const x of [-5, -3, -1, 1, 3, 5]) {
-      const pillar = this.box(0.24, 4.6, 0.24, pillarMaterial);
-      pillar.position.set(x, 3.25, -4.28);
-      facade.add(pillar);
-    }
-    for (const x of [-4, -2, 0, 2, 4]) {
-      const bay = this.box(1.25, 2.1, 0.08, facadeWarmth);
-      bay.position.set(x, 2.9, -4.25);
-      facade.add(bay);
-    }
-
-    rearPavilion.add(plinth, mainHall, mainRoof, crownEave, mainEdge, facade);
-    const plaque = this.canvasPlaque('雍和宫', {
-      width: 640,
-      height: 224,
-      background: '#163127',
-      border: '#D9B45F',
-      color: PALETTE.warmWhite,
-      font: '700 124px "Songti SC", "STSong", serif',
-    });
-    if (plaque) {
-      const panel = new Mesh(
-        this.trackGeometry(new PlaneGeometry(3.8, 1.18)),
-        plaque,
-      );
-      panel.position.set(0, 4.7, -4.34);
-      panel.rotation.y = Math.PI;
-      rearPavilion.add(panel);
-    }
-    temple.add(
-      courtyard,
-      frontHall,
-      frontRoof,
-      frontEdge,
-      sideHalls,
-      rearPavilion,
-    );
-    this.tagHero(temple);
-    this.root.add(temple);
-
-    this.addLamp(0.591, -6.4, true);
-    this.addLamp(0.635, 6.4, false);
-    this.addLamp(0.659, -6.4, true);
-    this.addTree(0.606, 12, 4.4);
-    this.addTree(0.652, 11.8, 4.2);
-  }
-
-  private buildBellTower(progress: number, offset: number, scale: number): void {
-    const masonry = this.standard('#8A969C', {
-      emissive: '#314048',
-      emissiveIntensity: 0.28,
-      roughness: 0.94,
-    });
-    const body = this.standard('#7A888E', {
-      emissive: '#2A3840',
-      emissiveIntensity: 0.26,
-      roughness: 0.94,
-    });
-    const roof = this.standard('#4C5C54', {
-      emissive: '#1A2820',
-      emissiveIntensity: 0.2,
-      roughness: 0.92,
-    });
-    const group = new Group();
-    this.place(group, progress, offset, 0);
-    group.scale.setScalar(scale);
-
-    const base = this.box(7.6, 2.9, 5.4, masonry);
-    base.position.y = 1.45;
-    const tower = this.box(5.2, 3.4, 3.9, body);
-    tower.position.y = 4.5;
-    const recess = this.box(1.5, 1.7, 4, roof);
-    recess.position.y = 4.2;
-    const lowerRoof = new Mesh(this.unitUpturnedEave, roof);
-    lowerRoof.scale.set(4.7, 1, 7.3);
-    lowerRoof.rotation.y = Math.PI / 2;
-    lowerRoof.position.y = 6.2;
-    const crown = this.box(3.6, 1, 2.7, body);
-    crown.position.y = 7.5;
-    const topRoof = new Mesh(this.unitUpturnedEave, roof);
-    topRoof.scale.set(3.4, 0.95, 5.2);
-    topRoof.rotation.y = Math.PI / 2;
-    topRoof.position.y = 8;
-    group.add(base, tower, recess, lowerRoof, crown, topRoof);
-    this.tagHero(group);
-    this.root.add(group);
-  }
-
-  /** 0.167–0.250 — Shichahai bank: willows, stone bridge, white dagoba. */
-  private buildWaterfront(): void {
-    this.beginPassage('shichahai');
-    const stone = this.textured(PALETTE.stone, 'stoneGrain', {
-      emissive: '#302D27',
-      emissiveIntensity: 0.08,
-      roughness: 0.98,
-    });
-    const oppositeWall = this.textured('#52636B', 'brick', { roughness: 1 });
-    const barWall = this.textured('#485B64', 'brick', {
-      emissive: '#251B13',
-      emissiveIntensity: 0.1,
-      roughness: 1,
-    });
-
-    const water = new Mesh(
-      this.trackGeometry(
-        createPathRibbon(-22, -6.45, -0.06, {
-          from: 0.085,
-          to: 0.248,
-          centerScale: DRIVE_PATH_SCALE,
-          segments: 180,
-        }),
-      ),
-      this.waterMaterial,
-    );
-    this.root.add(water);
-
-    for (let index = 0; index < 20; index += 1) {
-      const progress = 0.172 + index * 0.0039;
-      const opensDagobaSightline = index >= 14;
-      const postHeight = opensDagobaSightline ? 1.16 : 1.5;
-      const post = this.box(0.52, postHeight, 0.52, stone);
-      this.place(post, progress, -6.38, opensDagobaSightline ? 0.6 : 0.77);
-      const cap = this.box(0.7, 0.16, 0.7, stone);
-      this.place(cap, progress, -6.38, opensDagobaSightline ? 1.23 : 1.56);
-      const topRail = this.box(
-        0.3,
-        opensDagobaSightline ? 0.18 : 0.24,
-        3.4,
-        stone,
-      );
-      this.place(
-        topRail,
-        progress,
-        -6.38,
-        opensDagobaSightline ? 0.98 : 1.23,
-      );
-      const lowerRail = this.box(
-        0.24,
-        opensDagobaSightline ? 0.14 : 0.18,
-        3.4,
-        stone,
-      );
-      this.place(
-        lowerRail,
-        progress,
-        -6.38,
-        opensDagobaSightline ? 0.43 : 0.55,
-      );
-      this.root.add(post, cap, topRail, lowerRail);
-    }
-
-    // Far bank: low bar fronts with a skyline break around the white dagoba.
-    for (let index = 0; index < 8; index += 1) {
-      const progress = 0.175 + index * 0.0077;
-      const group = new Group();
-      this.place(group, progress, -24.5, 0);
-      const height = 2.7 + hash01(index, 61) * 0.9;
-      const building = this.box(4.6, height, 5.4, index % 3 === 0 ? oppositeWall : barWall);
-      building.position.y = height / 2;
-      const glow = this.box(0.08, 0.6, 2.6, this.windowMaterial);
-      glow.position.set(-2.36, 1.15, 0);
-      group.add(building, glow);
-      this.root.add(group);
-    }
-    // Houhai-style lantern string tracing the water's far edge.
-    for (let index = 0; index < 14; index += 1) {
-      const progress = 0.176 + index * 0.0045;
-      const sag = index % 2 === 0 ? 0 : -0.28;
-      const lantern = new Mesh(this.unitSphere, this.lanternMaterial);
-      lantern.scale.set(0.3, 0.36, 0.3);
-      this.place(lantern, progress, -21.6, 2.35 + sag);
-      this.root.add(lantern);
-    }
-
-    // Opposite side of the road stays low and residential.
-    for (const progress of [0.178, 0.2, 0.222, 0.244]) {
-      const building = this.box(4.8, 3.4, 6, oppositeWall);
-      this.place(building, progress, CURB_BUILDING + 1.2, 1.7);
-      this.root.add(building);
-    }
-
-    this.buildHumpbackBridge(0.226, -14.5);
-    const whiteDagoba = PASSAGE_HEROES.whiteDagoba;
-    this.buildWhiteDagoba(
-      whiteDagoba.progress,
-      whiteDagoba.lateralOffset,
-      whiteDagoba.scale,
-    );
-
-    this.addTree(0.185, -6.2, 4.8, 'willow');
-    this.addLamp(0.19, -5.62, true);
-    this.addLamp(0.225, 6.5, false);
-    this.addLamp(0.242, 6.5, true);
-    this.addTree(0.205, CURB_TREE + 1.2, 4.2);
-    this.addTree(0.239, CURB_TREE + 1.5, 4.8);
-  }
-
-  /** Silver Ingot-style humpback stone bridge across the water. */
-  private buildHumpbackBridge(progress: number, offset: number): void {
-    const stone = this.textured(PALETTE.stone, 'stoneGrain', {
-      emissive: '#34312A',
-      emissiveIntensity: 0.1,
-      roughness: 1,
-    });
-    const group = new Group();
-    this.place(group, progress, offset, 0, Math.PI / 2);
-    const steps: Array<[number, number]> = [
-      [-5, 1.15],
-      [-2.6, 2.3],
-      [0, 3.05],
-      [2.6, 2.3],
-      [5, 1.15],
-    ];
-    for (const [x, height] of steps) {
-      const span = this.box(2.75, height, 3.2, stone);
-      span.position.set(x, height / 2 - 0.05, 0);
-      group.add(span);
-      for (const z of [-1.66, 1.66]) {
-        const parapet = this.box(2.75, 0.36, 0.2, stone);
-        parapet.position.set(x, height + 0.13, z);
-        group.add(parapet);
-      }
-    }
-    this.root.add(group);
-  }
-
-  /** Beihai-style white dagoba, grounded on the far bank of the lake. */
-  private buildWhiteDagoba(progress: number, offset: number, scale: number): void {
-    const whiteDagobaModel = CALIBRATED_LANDMARK_MODELS.whiteDagoba;
-    const white = this.standard(PALETTE.warmWhite, {
-      emissive: '#454E50',
-      emissiveIntensity: 0.1,
-      roughness: 0.92,
-    });
-    const baseStone = this.textured('#AEB2AA', 'stoneGrain', {
-      emissive: '#3F4544',
-      emissiveIntensity: 0.08,
-      roughness: 0.98,
-    });
-    const gold = this.standard(PALETTE.roofEdge, {
-      emissive: '#5C431A',
-      emissiveIntensity: 0.22,
-      roughness: 0.88,
-    });
-    const islandStone = this.textured('#77766E', 'stoneGrain', {
-      emissive: '#2D302E',
-      emissiveIntensity: 0.08,
-      roughness: 1,
-    });
-    const group = new Group();
-    this.place(group, progress, offset, 0);
-    group.scale.setScalar(scale);
-
-    const island = new Mesh(this.unitCylinder, islandStone);
-    island.scale.set(whiteDagobaModel.solidHalfWidth, 0.55, 4.1);
-    island.position.y = 0.275;
-    const lowerTerrace = this.box(8, 0.42, 7.4, baseStone);
-    lowerTerrace.position.y = 0.76;
-    const upperTerrace = this.box(6.9, 0.48, 6.3, white);
-    upperTerrace.position.y = 1.21;
-    const platform = this.box(5.5, 0.98, 5.3, baseStone);
-    platform.position.y = 1.94;
-    const body = new Mesh(this.unitDagobaBowl, white);
-    body.scale.setScalar(2.35);
-    body.position.y = 4.72;
-    const drum = this.cylinder(1.15, 0.36, white);
-    drum.position.y = 7.22;
-    const neck = this.cylinder(0.54, 2.34, white);
-    neck.position.y = 8.57;
-    const canopy = this.cylinder(1.08, 0.24, gold);
-    canopy.position.y = 9.86;
-    const spireHeight = 1.92;
-    const spire = this.cylinder(0.22, spireHeight, gold);
-    spire.position.y = whiteDagobaModel.height - spireHeight / 2;
-    group.add(
-      island,
-      lowerTerrace,
-      upperTerrace,
-      platform,
-      body,
-      drum,
-      neck,
-      canopy,
-      spire,
-    );
-    this.tagHero(group);
-    this.root.add(group);
-  }
-
-  /** 0.083–0.167 — palace moat: long red wall and the corner tower. */
-  private buildPalaceMoat(): void {
-    this.beginPassage('palace-moat');
-    const red = this.textured(PALETTE.wallRed, 'brick', { roughness: 0.94 });
-    const roof = this.textured(PALETTE.roof, 'tileRoof', { roughness: 1 });
-    const stone = this.textured(PALETTE.stone, 'stoneGrain', {
-      emissive: '#302D27',
-      emissiveIntensity: 0.08,
-      roughness: 0.98,
-    });
-
-    for (let index = 0; index < 10; index += 1) {
-      const progress = 0.086 + index * 0.0085;
-      const wall = this.box(3.4, 3.9, 7.4, red);
-      this.place(wall, progress, CURB_BUILDING + 0.8, 1.95);
-      const cap = new Mesh(this.unitPitchedRoof, roof);
-      cap.scale.set(4, 0.62, 7.9);
-      this.place(cap, progress, CURB_BUILDING + 0.8, 3.9);
-      this.root.add(wall, cap);
-    }
-
-    for (let index = 0; index < 18; index += 1) {
-      const progress = 0.085 + index * 0.0044;
-      const post = this.box(0.5, 1.45, 0.5, stone);
-      this.place(post, progress, -6.38, 0.74);
-      const rail = this.box(0.26, 0.2, 3.7, stone);
-      this.place(rail, progress, -6.38, 1.18);
-      this.root.add(post, rail);
-    }
-
-    const cornerTower = PASSAGE_HEROES.cornerTower;
-    this.buildCornerTower(
-      cornerTower.progress,
-      cornerTower.lateralOffset,
-      cornerTower.scale,
-    );
-    this.addLamp(0.096, 6.9, false);
-    this.addLamp(0.13, -5.62, true);
-    this.addLamp(0.158, 6.9, false);
-    this.addTree(0.112, 12.6, 4.1);
-    this.addTree(0.148, 12.3, 4.5);
-  }
-
-  /** 0.750–0.833 — Temple of Heaven Hall of Prayer silhouette. */
-  private buildTempleOfHeaven(): void {
-    this.beginPassage('temple-of-heaven');
-    // Lit + emissive (not MeshBasic) so the south-return beat stays readable
-    // without a hard luminance pop when the mass enters fog range.
-    const blueRoof = this.textured('#2A4F6A', 'tileRoof', {
-      roughness: 0.92,
-      emissive: '#2F5F82',
-      emissiveIntensity: 0.42,
-    });
-    const red = this.textured(PALETTE.palaceRed, 'brick', {
-      roughness: 0.88,
-      emissive: '#4A1814',
-      emissiveIntensity: 0.18,
-    });
-    const white = this.standard('#EDE7DA', {
-      roughness: 0.9,
-      emissive: '#CFC6B4',
-      emissiveIntensity: 0.14,
-    });
-    const roofEdge = this.standard(PALETTE.roofEdge, {
-      emissive: '#2A1B09',
-      emissiveIntensity: 0.22,
-      roughness: 0.85,
-    });
-
-    const templeOfHeaven = PASSAGE_HEROES.templeOfHeaven;
-    const templeModel = CALIBRATED_LANDMARK_MODELS.templeOfHeaven;
-    const hall = new Group();
-    this.place(
-      hall,
-      templeOfHeaven.progress,
-      templeOfHeaven.lateralOffset,
-      0,
-    );
-    hall.scale.setScalar(templeOfHeaven.scale);
-    this.addSetbackApron(
-      templeOfHeaven.progress,
-      -9.7,
-      6.8,
-      16,
-      white,
-    );
-
-    const lowerTerrace = this.cylinder(
-      templeModel.solidHalfWidth,
-      0.45,
-      white,
-    );
-    lowerTerrace.position.y = 0.225;
-    const middleTerrace = this.cylinder(6.6, 0.45, white);
-    middleTerrace.position.y = 0.65;
-    const upperTerrace = this.cylinder(6, 0.75, white);
-    upperTerrace.position.y = 1.25;
-
-    const lowerRing = new Mesh(this.unitTempleDrum, red);
-    lowerRing.scale.set(5.5, 2.6, 5.5);
-    lowerRing.position.y = 2.95;
-    const lowerRoof = new Mesh(this.unitTaperedRoof, blueRoof);
-    lowerRoof.scale.set(6.8, 1.8, 6.8);
-    lowerRoof.position.y = 4.45;
-    const lowerEaves = new Mesh(this.unitTaperedRoof, roofEdge);
-    lowerEaves.scale.set(
-      templeModel.solidHalfWidth,
-      0.24,
-      templeModel.solidHalfWidth,
-    );
-    lowerEaves.rotation.x = Math.PI;
-    lowerEaves.position.y = 3.48;
-
-    const midRing = new Mesh(this.unitTempleDrum, red);
-    midRing.scale.set(4.3, 2.35, 4.3);
-    midRing.position.y = 6.3;
-    const midRoof = new Mesh(this.unitTaperedRoof, blueRoof);
-    midRoof.scale.set(5.5, 1.65, 5.5);
-    midRoof.position.y = 7.45;
-    const midEaves = new Mesh(this.unitTaperedRoof, roofEdge);
-    midEaves.scale.set(6, 0.22, 6);
-    midEaves.rotation.x = Math.PI;
-    midEaves.position.y = 6.55;
-
-    const upperRing = new Mesh(this.unitTempleDrum, red);
-    upperRing.scale.set(3.2, 2.15, 3.2);
-    upperRing.position.y = 9.15;
-    const upperRoof = new Mesh(this.unitTaperedRoof, blueRoof);
-    upperRoof.scale.set(4.4, 1.75, 4.4);
-    upperRoof.position.y = 10.15;
-    const upperEaves = new Mesh(this.unitTaperedRoof, roofEdge);
-    upperEaves.scale.set(4.8, 0.2, 4.8);
-    upperEaves.rotation.x = Math.PI;
-    upperEaves.position.y = 9.2;
-
-    const finial = new Mesh(this.unitSphere, roofEdge);
-    finial.scale.setScalar(0.4);
-    finial.position.y = 11.4;
-    const spireHeight = 1.45;
-    const spire = this.cylinder(0.13, spireHeight, roofEdge);
-    spire.position.y = templeModel.height - spireHeight / 2;
-
-    const plaque = this.canvasPlaque('祈年殿', {
-      width: 512,
-      height: 176,
-      background: '#1C3A2E',
-      border: '#C9A056',
-      color: '#EFD494',
-      font: '700 100px "Songti SC", "STSong", serif',
-    });
-    if (plaque) {
-      const panel = new Mesh(this.trackGeometry(new PlaneGeometry(3.2, 1.1)), plaque);
-      panel.position.set(0, 2.95, 5.65);
-      hall.add(panel);
-    }
-
-    hall.add(
-      lowerTerrace,
-      middleTerrace,
-      upperTerrace,
-      lowerRing,
-      lowerRoof,
-      lowerEaves,
-      midRing,
-      midRoof,
-      midEaves,
-      upperRing,
-      upperRoof,
-      upperEaves,
-      finial,
-      spire,
-    );
-    this.tagHero(hall);
-    this.root.add(hall);
-
-    // Cypress band keeps the left verge, but clears the hall's near-field.
-    const cypressMaterial = this.standard('#2E4530', { roughness: 1 });
-    const barkMaterial = this.textured('#3A3224', 'bark', { roughness: 1 });
-    for (let index = 0; index < 10; index += 1) {
-      const progress = 0.755 + index * 0.007;
-      if (progress > 0.778 && progress < 0.825) continue;
-      const height = 5.5 + hash01(index, 81) * 2.5;
-      const trunk = this.cylinder(0.12, height * 0.55, barkMaterial);
-      this.place(trunk, progress, -10.4, height * 0.275);
-      const canopy = new Mesh(this.unitSphere, cypressMaterial);
-      canopy.scale.set(height * 0.22, height * 0.42, height * 0.22);
-      this.place(canopy, progress, -10.4, height * 0.72);
-      this.root.add(trunk, canopy);
-    }
-
-    this.addLamp(0.761, -6.3, true);
-    this.addLamp(0.795, 6.3, false);
-    this.addLamp(0.825, -6.3, true);
-  }
-
-  /** 0.333–0.417 — Second-Ring city threshold: wall edge, flyover, and gantry. */
-  private buildSecondRingThreshold(): void {
-    this.beginPassage('second-ring-threshold');
-    const brick = this.textured('#8C6E66', 'brick', {
-      roughness: 0.94,
-      emissive: '#5A3832',
-      emissiveIntensity: 0.4,
-    });
-    const agedBrick = this.textured('#6E524C', 'brick', {
-      roughness: 0.96,
-      emissive: '#3A2824',
-      emissiveIntensity: 0.22,
-    });
-    const stone = this.textured('#7A8584', 'stoneGrain', { roughness: 0.96 });
-    const roofEdge = this.standard('#C4A36A', {
-      emissive: '#6A4A22',
-      emissiveIntensity: 0.55,
-      roughness: 0.82,
-    });
-    const concrete = this.standard('#68767B', { roughness: 0.96 });
-    const warmSlot = this.standard('#D69B55', {
-      emissive: '#A55D2C',
-      emissiveIntensity: 0.58,
-      roughness: 0.8,
-    });
-
-    const wallHero = PASSAGE_HEROES.secondRingWall;
-    const hero = new Group();
-    this.place(hero, wallHero.progress, wallHero.lateralOffset, 0);
-    hero.scale.setScalar(wallHero.scale);
-
-    const footing = this.box(10.8, 1.05, 6.2, stone);
-    footing.position.y = 0.53;
-    const body = this.box(9.6, 4.85, 5.1, brick);
-    body.position.y = 3.45;
-    const parapet = this.box(10.25, 0.28, 5.45, roofEdge);
-    parapet.position.y = 5.92;
-    hero.add(footing, body, parapet);
-
-    // The low wall reads as an edge of the old city, not a second postcard
-    // tower. The road-facing side gets restrained buttresses and arrow slots.
-    for (const x of [-4.25, -2.15, 0, 2.15, 4.25]) {
-      const buttress = this.box(0.42, 4.2, 0.48, agedBrick);
-      buttress.position.set(x, 2.6, -2.56);
-      hero.add(buttress);
-    }
-    for (const x of [-3.65, -2.15, -0.72, 0.72, 2.15, 3.65]) {
-      const crenel = this.box(0.8, 0.72, 0.64, stone);
-      crenel.position.set(x, 6.42, -2.24);
-      hero.add(crenel);
-      const slot = this.box(0.34, 0.58, 0.08, warmSlot);
-      slot.position.set(x, 3.65, -2.6);
-      hero.add(slot);
-    }
-    this.root.add(hero);
-
-    // A short wall run carries the hero through the whole four-second
-    // passage, so the change feels architectural rather than sign-led.
-    for (let index = 0; index < 8; index += 1) {
-      const progress = 0.338 + index * 0.0097;
-      const segment = new Group();
-      this.place(segment, progress, -10.5, 0);
-      const segmentBody = this.box(
-        5.2,
-        3.35 + (index % 3) * 0.18,
-        3.75,
-        index % 2 === 0 ? agedBrick : brick,
-      );
-      segmentBody.position.y = segmentBody.scale.y / 2;
-      const segmentCap = this.box(5.5, 0.22, 4.02, stone);
-      segmentCap.position.y = segmentBody.scale.y + 0.08;
-      segment.add(segmentBody, segmentCap);
-      this.root.add(segment);
-    }
-
-    // Low roadside guards preserve the lane opening while the wall and bridge
-    // occupy the middle distance.
-    for (let index = 0; index < 8; index += 1) {
-      const progress = 0.338 + index * 0.0095;
-      for (const side of [-1, 1]) {
-        const guard = this.box(0.36, 0.72, 3.7, concrete);
-        this.place(guard, progress, side * 6.95, 0.55);
-        this.root.add(guard);
-      }
-    }
-
-    this.addLamp(0.345, -6.2, false);
-    this.addLamp(0.389, 6.2, true);
-  }
-
-  /** Forbidden City corner tower silhouette across the moat. */
-  private buildCornerTower(progress: number, offset: number, scale: number): void {
-    const red = this.textured(PALETTE.palaceRed, 'brick', { roughness: 0.88 });
-    const roof = this.textured('#242F2F', 'tileRoof', { roughness: 1 });
-    const gold = this.standard(PALETTE.roofEdge, {
-      emissive: '#2A1B09',
-      emissiveIntensity: 0.15,
-      roughness: 0.85,
-    });
-    const masonry = this.standard('#3E4A50', { roughness: 1 });
-
-    const group = new Group();
-    this.place(group, progress, offset, 0);
-    group.scale.setScalar(scale);
-    const plinth = this.box(8.4, 2.2, 8.4, masonry);
-    plinth.position.y = 1.1;
-    const base = this.box(6.2, 2.6, 6.2, red);
-    base.position.y = 3.5;
-    group.add(plinth, base);
-
-    const tiers: Array<[number, number, number]> = [
-      [5, 1.05, 7.2],
-      [3.9, 0.95, 5.7],
-    ];
-    let tierY = 4.9;
-    for (const [halfSpanX, height, spanZ] of tiers) {
-      for (const rotation of [0, Math.PI / 2]) {
-        const eaves = new Mesh(this.unitUpturnedEave, roof);
-        eaves.scale.set(halfSpanX, height, spanZ);
-        eaves.rotation.y = rotation;
-        eaves.position.y = tierY;
-        group.add(eaves);
-      }
-      const edge = this.box(halfSpanX + 1.4, 0.12, halfSpanX + 1.4, gold);
-      edge.position.y = tierY + 0.02;
-      group.add(edge);
-      tierY += 1.35;
-      const body = this.box(halfSpanX - 1, 1.1, halfSpanX - 1, red);
-      body.position.y = tierY - 0.4;
-      group.add(body);
-    }
-    const crownRoof = new Mesh(this.unitUpturnedEave, roof);
-    crownRoof.scale.set(3, 1.15, 3);
-    crownRoof.position.y = tierY + 0.4;
-    const crossCrown = crownRoof.clone();
-    crossCrown.rotation.y = Math.PI / 2;
-    const finial = new Mesh(this.unitSphere, gold);
-    finial.scale.setScalar(0.3);
-    finial.position.y = tierY + 1.75;
-    group.add(crownRoof, crossCrown, finial);
-    this.tagHero(group);
-    this.root.add(group);
-  }
-
-  /** 0.250–0.333 — Deshengmen arrow tower and the Second Ring gantry. */
-  private buildDeshengmen(): void {
-    this.beginPassage('deshengmen');
-    const concrete = this.standard('#69767C', { roughness: 0.96 });
-
-    for (let index = 0; index < 14; index += 1) {
-      const progress = 0.252 + index * 0.0059;
-      for (const side of [-1, 1]) {
-        const guard = this.box(0.36, 0.72, 3.7, concrete);
-        this.place(guard, progress, side * 6.95, 0.55);
-        this.root.add(guard);
-      }
-    }
-
-    const deshengmen = PASSAGE_HEROES.deshengmen;
-    this.buildArrowTower(
-      deshengmen.progress,
-      deshengmen.lateralOffset,
-      deshengmen.scale,
-    );
-    this.buildSecondRingSign(0.33);
-
-    this.addLamp(0.258, -5.8, false);
-    this.addLamp(0.322, -5.8, false);
-  }
-
-  /** A supported Second-Ring flyover ramp, kept deep in the skyline as a city cue. */
-  private buildRingBridge(): void {
-    const deckMaterial = this.standard('#68777D', {
-      emissive: '#273A42',
-      emissiveIntensity: 0.2,
-      roughness: 0.94,
-    });
-    const edgeMaterial = this.standard('#89979A', {
-      emissive: '#35464B',
-      emissiveIntensity: 0.16,
-      roughness: 0.9,
-    });
-    const undersideMaterial = this.standard('#26343B', {
-      emissive: '#111B21',
-      emissiveIntensity: 0.2,
-      roughness: 1,
-    });
-    const bridge = new Group();
-    this.place(bridge, 0.392, 14.8, 0, Math.PI / 2);
-
-    // Flat overlapping segments read as a real curved road deck instead of a
-    // floating ring. The rails follow the same arc and keep its scale legible.
-    const radius = 9.2;
-    const startAngle = -0.96;
-    const arc = 1.62;
-    const segmentCount = 5;
-    for (let index = 0; index < segmentCount; index += 1) {
-      const angle = startAngle + ((index + 0.5) / segmentCount) * arc;
-      const segmentLength = radius * (arc / segmentCount) + 0.08;
-      const x = Math.cos(angle) * radius;
-      const z = Math.sin(angle) * radius;
-      const deck = this.box(2.12, 0.56, segmentLength, deckMaterial);
-      deck.position.set(x, 6.55, z);
-      deck.rotation.y = -angle;
-
-      const underside = this.box(2.2, 0.24, segmentLength + 0.08, undersideMaterial);
-      underside.position.set(x, 6.12, z);
-      underside.rotation.y = -angle;
-      bridge.add(deck, underside);
-
-      for (const side of [-1, 1]) {
-        const rail = this.box(0.14, 0.56, segmentLength, edgeMaterial);
-        const radialX = Math.cos(angle) * side * 1.02;
-        const radialZ = Math.sin(angle) * side * 1.02;
-        rail.position.set(x + radialX, 6.94, z + radialZ);
-        rail.rotation.y = -angle;
-        bridge.add(rail);
-      }
-    }
-
-    for (const angle of [startAngle, startAngle + arc * 0.5, startAngle + arc]) {
-      const x = Math.cos(angle) * radius;
-      const z = Math.sin(angle) * radius;
-      const support = this.box(0.72, 6.4, 0.72, deckMaterial);
-      support.position.set(x, 3.2, z);
-      const footing = this.box(1.35, 0.28, 1.35, undersideMaterial);
-      footing.position.set(x, 0.14, z);
-      bridge.add(support, footing);
-    }
-    this.root.add(bridge);
-  }
-
-  /** 0.667–0.750 — CBD east skyline hero and Xidan / Financial Street west. */
-  private buildCbdFinance(): void {
-    this.beginPassage('cbd-finance');
-    const glass = this.textured('#405A6B', 'glassGrid', {
-      roughness: 0.7,
-      metalness: 0.15,
-      emissive: '#1C4054',
-      emissiveIntensity: 0.38,
-    });
-    const concrete = this.standard('#69767C', { roughness: 0.96 });
-
-    for (let index = 0; index < 10; index += 1) {
-      const progress = 0.67 + index * 0.007;
-      for (const side of [-1, 1]) {
-        const guard = this.box(0.36, 0.72, 3.7, concrete);
-        this.place(guard, progress, side * 6.95, 0.55);
-        this.root.add(guard);
-      }
-    }
-
-    // The stepped hero sits within the CBD passage and leaves a clear wedge of
-    // sky above the carriageway.
-    const cbdHero = PASSAGE_HEROES.cbdHero;
-    const hero = new Group();
-    this.place(hero, cbdHero.progress, cbdHero.lateralOffset, 0);
-    hero.scale.setScalar(cbdHero.scale);
-    const tiers: Array<[number, number, number]> = [
-      [6.2, 4.8, 0],
-      [4.7, 4.4, 4.8],
-      [3.4, 3.8, 9.2],
-      [2.2, 3.1, 13],
-    ];
-    for (const [width, height, y] of tiers) {
-      const tier = this.box(width, height, width * 0.86, glass);
-      tier.position.y = y + height / 2;
-      const band = this.box(width * 0.72, 0.16, 0.08, this.windowMaterial);
-      band.position.set(width / 2 + 0.05, y + height * 0.55, 0);
-      hero.add(tier, band);
-    }
-    const crown = this.box(1.4, 1.6, 1.2, concrete);
-    crown.position.y = 16.9;
-    hero.add(crown);
-    this.tagHero(hero);
-    this.root.add(hero);
-
-    // Staggered east-side cluster: fewer, lower masses with road-facing window
-    // ranks read as a skyline instead of featureless black canyon walls.
-    for (let index = 0; index < 4; index += 1) {
-      const progress = 0.704 + index * 0.0018;
-      const height = 6.5 + hash01(index, 71) * 3.5;
-      const width = 4 + hash01(index, 73) * 1.2;
-      const towerOffset = 10 + hash01(index, 77) * 2.5;
-      const towerGroup = new Group();
-      this.place(towerGroup, progress, towerOffset, 0);
-      const tower = this.box(width, height, width, glass);
-      tower.position.y = height / 2;
-      towerGroup.add(tower);
-      for (const y of [height * 0.35, height * 0.62]) {
-        const band = this.box(width * 0.72, 0.24, 0.1, this.windowMaterial);
-        band.position.set(0, y, -width / 2 - 0.05);
-        towerGroup.add(band);
-      }
-      this.root.add(towerGroup);
-    }
-
-    // Xidan / Financial Street — secondary lower glass plate band to the west.
-    for (let index = 0; index < 4; index += 1) {
-      const progress = 0.704 + index * 0.0018;
-      const height = 5.5 + hash01(index, 91) * 2;
-      const width = 4.5 + hash01(index, 93) * 1.5;
-      const plateOffset = 10 + hash01(index, 97) * 2.5;
-      const plateGroup = new Group();
-      this.place(plateGroup, progress, -plateOffset, 0);
-      const plate = this.box(width, height, 5, glass);
-      plate.position.y = height / 2;
-      plateGroup.add(plate);
-      for (const y of [height * 0.38, height * 0.68]) {
-        const band = this.box(width * 0.68, 0.22, 0.1, this.windowMaterial);
-        band.position.set(0, y, -2.55);
-        plateGroup.add(band);
-      }
-      this.root.add(plateGroup);
-    }
-
-    this.addLamp(0.675, -5.8, false);
-    this.addLamp(0.712, 5.8, true);
-    this.addLamp(0.742, -5.8, false);
-  }
-
-  /** Deshengmen-style arrow tower with ranked arrow windows. */
-  private buildArrowTower(progress: number, offset: number, scale = 1): void {
-    const masonry = this.standard('#6E675C', { roughness: 1 });
-    const body = this.standard('#C8BBA6', {
-      emissive: '#3A342C',
-      emissiveIntensity: 0.16,
-      roughness: 1,
-    });
-    const roof = this.standard('#3E3830', { roughness: 1 });
-    const slot = this.standard('#121416', { roughness: 1 });
-
-    const group = new Group();
-    this.place(group, progress, offset, 0);
-    group.scale.setScalar(scale);
-    const base = this.box(11.5, 2.4, 8.4, masonry);
-    base.position.y = 1.2;
-    const tower = this.box(10, 6.4, 7, body);
-    tower.position.y = 5.6;
-    group.add(base, tower);
-
-    // Arrow windows rank across the road-facing side.
-    for (let row = 0; row < 4; row += 1) {
-      for (let column = 0; column < 5; column += 1) {
-        const slit = this.box(0.18, 1.05, 0.1, slot);
-        slit.position.set(
-          -2.4 + column * 1.2,
-          3.3 + row * 1.35,
-          -3.56,
-        );
-        group.add(slit);
-      }
-    }
-
-    const eaves = new Mesh(this.unitPitchedRoof, roof);
-    eaves.scale.set(8.6, 1.9, 12.4);
-    eaves.rotation.y = Math.PI / 2;
-    eaves.position.y = 8.8;
-    const ridge = this.box(12.7, 0.18, 0.45, this.standard('#3B3527', { roughness: 0.95 }));
-    ridge.position.y = 10.72;
-    group.add(eaves, ridge);
-    this.tagHero(group);
-    this.root.add(group);
-  }
-
-  /** 0.917–1.000 — overpass compression that hides the loop seam. */
-  private buildOverpass(): void {
-    this.beginPassage('overpass');
-    const concrete = this.standard('#77858C', {
-      emissive: '#24323A',
-      emissiveIntensity: 0.16,
-      roughness: 0.72,
-      side: DoubleSide,
-    });
-    const deepConcrete = this.standard('#596A73', {
-      emissive: '#1D2A31',
-      emissiveIntensity: 0.24,
-      roughness: 0.64,
-      side: DoubleSide,
-    });
-
-    const underside = new Mesh(
-      this.trackGeometry(
-        createPathRibbon(-7.6, 7.6, 6.4, {
-          from: 0.918,
-          to: 0.999,
-          centerScale: DRIVE_PATH_SCALE,
-          segments: 110,
-        }),
-      ),
-      deepConcrete,
-    );
-    underside.receiveShadow = true;
-    this.root.add(underside);
-
-    for (let index = 0; index < 5; index += 1) {
-      const progress = 0.928 + index * 0.013;
-      for (const side of [-1, 1]) {
-        const column = this.box(0.58, 7.5, 0.58, concrete);
-        column.castShadow = true;
-        column.receiveShadow = true;
-        this.place(column, progress, side * 8.25, 3.75);
-        this.root.add(column);
-      }
-      const beam = this.box(17, 0.34, 0.68, concrete);
-      this.place(beam, progress, 0, 7.38);
-      this.root.add(beam);
-    }
-
-    for (let index = 0; index < 12; index += 1) {
-      const progress = 0.918 + index * 0.0058;
-      for (const side of [-1, 1]) {
-        const guard = this.box(0.36, 0.72, 3.7, concrete);
-        this.place(guard, progress, side * 7.05, 7.95);
-        this.root.add(guard);
-      }
-    }
-
-    // A lintel and two cheeks close the sky. The gate beyond sits in the slot.
-    const portalProgress = 0.993;
-    for (const side of [-1, 1]) {
-      const cheek = this.box(0.7, 8.4, 2.4, deepConcrete);
-      this.place(cheek, portalProgress, side * 6.5, 4.2);
-      this.root.add(cheek);
-    }
-    const lintel = this.box(14.2, 3.6, 2.2, concrete);
-    this.place(lintel, portalProgress, 0, 8.6);
-    this.root.add(lintel);
-    this.buildOverpassPier();
-
-    this.addLamp(0.925, -5.8, false);
-    this.addLamp(0.958, 5.8, false);
-    this.addLamp(0.985, -5.8, false);
-  }
-
-  /** Sparse, human-scale props that give the drive a believable metre scale. */
-  private buildStreetScaleDetails(): void {
-    const wood = this.standard('#6B5238', { roughness: 0.94 });
-    const shelterGlass = this.textured('#436171', 'glassGrid', {
-      roughness: 0.6,
-      metalness: 0.08,
-    });
-
-    this.addBench(0.202, -5.72, wood);
-    this.addBicycleCluster(0.535, 6.9, 3);
-    this.addBusShelter(0.704, 7.05, shelterGlass);
-    this.addBicycleCluster(0.895, -6.9, 2);
-  }
-
-  private addSetbackApron(
-    progress: number,
-    offset: number,
-    width: number,
-    depth: number,
-    material: Material,
-  ): void {
-    const apron = this.box(width, 0.07, depth, material);
-    this.place(apron, progress, offset, 0.04);
-    this.root.add(apron);
-  }
-
-  private addLanternString(
-    progress: number,
-    offset: number,
-    count: number,
-    span: number,
-    height: number,
-    lateralInset: number,
-  ): void {
-    const string = new Group();
-    this.place(string, progress, offset, 0);
-    const wire = this.box(0.035, 0.035, span, this.shopHardwareMaterial);
-    wire.position.set(lateralInset, height, 0);
-    string.add(wire);
-    for (let index = 0; index < count; index += 1) {
-      const z = (index / Math.max(1, count - 1) - 0.5) * span;
-      const sag = index % 2 === 0 ? 0.08 : 0.2;
-      const hanger = this.box(0.035, 0.32, 0.035, this.shopHardwareMaterial);
-      hanger.position.set(lateralInset, height - 0.16, z);
-      const lantern = new Mesh(this.unitSphere, this.lanternMaterial);
-      lantern.scale.set(0.18, 0.24, 0.18);
-      lantern.position.set(lateralInset, height - 0.42 - sag, z);
-      string.add(hanger, lantern);
-    }
-    this.root.add(string);
-  }
-
-  private buildStreetNameSign(
-    progress: number,
-    offset: number,
-    name: string,
-    side: -1 | 1,
-  ): void {
-    const plaque = this.canvasPlaque(name, {
-      width: 900,
-      height: 210,
-      background: '#1F5E86',
-      border: '#E7F0EE',
-      color: '#F6F7E9',
-      font: '800 86px "PingFang SC", "Microsoft YaHei", sans-serif',
-    });
-    if (!plaque) return;
-
-    const sign = new Group();
-    this.place(sign, progress, offset, 0);
-    const pole = this.cylinder(0.08, 3.05, this.streetMetalMaterial);
-    pole.position.y = 1.52;
-    const backing = this.box(4.65, 1.02, 0.14, this.streetMetalMaterial);
-    backing.position.set(side * 0.16, 3.23, 0);
-    const panel = new Mesh(
-      this.trackGeometry(new PlaneGeometry(4.48, 0.86)),
-      plaque,
-    );
-    panel.position.set(side * 0.16, 3.23, -0.08);
-    panel.rotation.y = Math.PI;
-    sign.add(pole, backing, panel);
-    this.root.add(sign);
-  }
-
-  private addBench(progress: number, offset: number, wood: Material): void {
-    const bench = new Group();
-    this.place(bench, progress, offset, 0);
-    const seat = this.box(0.52, 0.12, 1.9, wood);
-    seat.position.y = 0.66;
-    const back = this.box(0.12, 0.72, 1.9, wood);
-    back.position.set(offset > 0 ? 0.26 : -0.26, 0.96, 0);
-    const leftLeg = this.box(0.34, 0.58, 0.1, this.streetMetalMaterial);
-    leftLeg.position.set(0, 0.3, -0.62);
-    const rightLeg = leftLeg.clone();
-    rightLeg.position.z = 0.62;
-    bench.add(seat, back, leftLeg, rightLeg);
-    this.root.add(bench);
-  }
-
-  private addBicycleCluster(progress: number, offset: number, count: number): void {
-    const cluster = new Group();
-    this.place(cluster, progress, offset, 0);
-    for (let index = 0; index < count; index += 1) {
-      const along = (index - (count - 1) / 2) * 1.15;
-      for (const wheelZ of [-0.42, 0.42]) {
-        const wheel = this.cylinder(0.31, 0.055, this.shopHardwareMaterial);
-        wheel.rotation.z = Math.PI / 2;
-        wheel.position.set(index * 0.08, 0.33, along + wheelZ);
-        cluster.add(wheel);
-      }
-      const frame = this.box(0.055, 0.055, 0.82, this.streetMetalMaterial);
-      frame.position.set(index * 0.08, 0.47, along);
-      frame.rotation.x = 0.16;
-      const handle = this.box(0.46, 0.055, 0.055, this.streetMetalMaterial);
-      handle.position.set(index * 0.08, 0.78, along + 0.28);
-      cluster.add(frame, handle);
-    }
-    this.root.add(cluster);
-  }
-
-  private addBusShelter(
-    progress: number,
-    offset: number,
-    glass: Material,
-  ): void {
-    const shelter = new Group();
-    this.place(shelter, progress, offset, 0);
-    const rearPane = this.box(0.12, 2.35, 3.3, glass);
-    rearPane.position.set(offset > 0 ? 0.38 : -0.38, 1.25, 0);
-    const roof = this.box(1.1, 0.12, 3.55, this.streetMetalMaterial);
-    roof.position.y = 2.5;
-    const frontPost = this.cylinder(0.07, 2.45, this.streetMetalMaterial);
-    frontPost.position.set(offset > 0 ? -0.4 : 0.4, 1.23, -1.5);
-    const rearPost = frontPost.clone();
-    rearPost.position.z = 1.5;
-    const seat = this.box(0.45, 0.1, 2.3, this.shopHardwareMaterial);
-    seat.position.set(0, 0.72, 0);
-    shelter.add(rearPane, roof, frontPost, rearPost, seat);
-    this.root.add(shelter);
-  }
-
-  private buildWallStreetPlaque(
-    name: string,
-    latin: string,
-  ): Group | undefined {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 224;
-    const context = canvas.getContext('2d');
-    if (!context) return undefined;
-
-    context.fillStyle = '#24618A';
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.strokeStyle = '#EEF4EE';
-    context.lineWidth = 12;
-    context.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    context.fillStyle = '#FFFFFF';
-    context.font = '800 78px "PingFang SC", "Microsoft YaHei", sans-serif';
-    context.fillText(name, canvas.width / 2, 78);
-    context.font = '650 27px Inter, Arial, sans-serif';
-    context.letterSpacing = '3px';
-    context.fillText(latin, canvas.width / 2, 164);
-
-    const texture = new CanvasTexture(canvas);
-    texture.colorSpace = SRGBColorSpace;
-    texture.minFilter = LinearFilter;
-    texture.magFilter = LinearFilter;
-    this.textures.add(texture);
-    const material = this.trackMaterial(
-      new MeshBasicMaterial({
-        map: texture,
-        side: FrontSide,
-        fog: true,
-        toneMapped: false,
-      }),
-    );
-    const backingMaterial = this.standard('#293236', { roughness: 0.96 });
-    const group = new Group();
-    const backing = this.box(0.1, 0.66, 2.65, backingMaterial);
-    backing.position.x = -0.05;
-    const sign = new Mesh(
-      this.trackGeometry(new PlaneGeometry(2.46, 0.54)),
-      material,
-    );
-    sign.position.x = -0.105;
-    sign.rotation.y = -Math.PI / 2;
-    group.add(backing, sign);
-    return group;
-  }
-
-  private buildHutongEntranceMarker(
-    progress: number,
-    side: -1 | 1,
-    name: string,
-  ): void {
-    const plaque = this.canvasPlaque(name, {
-      width: 640,
-      height: 176,
-      background: '#1C3A2E',
-      border: '#C9A056',
-      color: '#EFD494',
-      font: '700 92px "Songti SC", "STSong", serif',
-    });
-    if (!plaque) return;
-
-    const masonry = this.textured('#555E5C', 'brick', { roughness: 1 });
-    const capMaterial = this.standard('#303A38', { roughness: 1 });
-    const apronMaterial = this.standard('#4A5150', { roughness: 1 });
-    const entrance = new Group();
-    this.place(entrance, progress, side * 7.2, 0);
-
-    const apron = this.box(4.4, 0.05, 4.1, apronMaterial);
-    apron.position.y = 0.035;
-    for (const along of [-1.86, 1.86]) {
-      const pier = this.box(0.48, 2.4, 0.48, masonry);
-      pier.position.set(0, 1.2, along);
-      entrance.add(pier);
-    }
-    const lintel = this.box(0.56, 0.34, 4.2, masonry);
-    lintel.position.y = 2.42;
-    const cap = this.box(0.72, 0.12, 4.5, capMaterial);
-    cap.position.y = 2.65;
-    const panel = new Mesh(
-      this.trackGeometry(new PlaneGeometry(2.9, 0.66)),
-      plaque,
-    );
-    plaque.side = FrontSide;
-    panel.position.set(side * 0.63, 2.42, 0);
-    panel.rotation.y = side * (Math.PI / 2 + 0.17);
-    entrance.add(apron, lintel, cap, panel);
-    this.root.add(entrance);
-  }
-
-  /** Reusable textured plaque material with an optional vertical layout. */
   private canvasPlaque(
     text: string,
     options: {
@@ -2979,7 +693,6 @@ export class BeijingDriveScene {
     canvas.height = options.height;
     const context = canvas.getContext('2d');
     if (!context) return undefined;
-
     context.fillStyle = options.background;
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.strokeStyle = options.border;
@@ -2989,334 +702,16 @@ export class BeijingDriveScene {
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.font = options.font;
-    if (options.vertical) {
-      const characters = [...text];
-      const step = (canvas.height - 60) / characters.length;
-      characters.forEach((character, index) => {
-        context.fillText(character, canvas.width / 2, 30 + step * (index + 0.5));
-      });
-    } else {
-      context.fillText(text, canvas.width / 2, canvas.height / 2 + 4);
-    }
-
+    context.fillText(text, canvas.width / 2, canvas.height / 2 + 4);
     const texture = new CanvasTexture(canvas);
     texture.colorSpace = SRGBColorSpace;
     texture.minFilter = LinearFilter;
     texture.magFilter = LinearFilter;
     this.textures.add(texture);
-    return this.trackMaterial(
-      new MeshBasicMaterial({ map: texture, side: DoubleSide, fog: true }),
-    );
+    return this.trackMaterial(new MeshBasicMaterial({ map: texture, side: DoubleSide, fog: true }));
   }
 
-  private buildDrumTower(progress: number, offset: number, scale = 1): void {
-    const masonry = this.standard('#6A7672', {
-      emissive: '#24302C',
-      emissiveIntensity: 0.18,
-      roughness: 0.94,
-    });
-    const red = this.standard('#824039', {
-      emissive: '#321310',
-      emissiveIntensity: 0.2,
-      roughness: 0.96,
-    });
-    const roof = this.standard('#3E4C44', {
-      emissive: '#182420',
-      emissiveIntensity: 0.22,
-      roughness: 0.9,
-    });
-    const edge = this.standard('#86724B', { roughness: 0.92 });
-    const group = new Group();
-    this.place(group, progress, offset, 0);
-    group.scale.setScalar(scale);
-
-    const base = this.box(9.4, 3.5, 6.2, masonry);
-    base.position.y = 1.75;
-    const terrace = this.box(10.2, 0.42, 6.9, edge);
-    terrace.position.y = 3.65;
-    const hall = this.box(7.65, 2.45, 4.8, red);
-    hall.position.y = 5.05;
-    const lowerRoof = new Mesh(this.unitUpturnedEave, roof);
-    lowerRoof.scale.set(6.45, 1.25, 10.4);
-    lowerRoof.rotation.y = Math.PI / 2;
-    lowerRoof.position.y = 6.25;
-    const crown = this.box(5.3, 1.35, 3.45, red);
-    crown.position.y = 7.72;
-    const crownRoof = new Mesh(this.unitUpturnedEave, roof);
-    crownRoof.scale.set(4.8, 1.08, 7.35);
-    crownRoof.rotation.y = Math.PI / 2;
-    crownRoof.position.y = 8.38;
-    group.add(base, terrace, hall, lowerRoof, crown, crownRoof);
-    this.tagHero(group);
-    this.root.add(group);
-  }
-
-  private buildSecondRingSign(progress: number): void {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 256;
-    const context = canvas.getContext('2d');
-    if (!context) return;
-
-    context.fillStyle = '#1B536F';
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.strokeStyle = '#EAF4F5';
-    context.lineWidth = 10;
-    context.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
-    context.fillStyle = '#DDE8E8';
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    context.font = '800 104px "PingFang SC", "Microsoft YaHei", sans-serif';
-    context.fillText('二环', 222, canvas.height / 2 + 2);
-    context.font = '700 64px Inter, Arial, sans-serif';
-    context.fillText('SECOND RING', 662, canvas.height / 2 + 3);
-
-    const texture = new CanvasTexture(canvas);
-    texture.colorSpace = SRGBColorSpace;
-    texture.minFilter = LinearFilter;
-    texture.magFilter = LinearFilter;
-    this.textures.add(texture);
-    const signMaterial = this.trackMaterial(
-      new MeshBasicMaterial({ map: texture, side: DoubleSide, fog: true }),
-    );
-    const group = new Group();
-    this.place(group, progress, 0, 0, Math.PI);
-    const gantryMaterial = this.standard('#69727A', { roughness: 1 });
-    const backing = this.box(6.9, 1.62, 0.14, gantryMaterial);
-    backing.position.set(-0.25, 3.35, 0);
-    const sign = new Mesh(
-      this.trackGeometry(new PlaneGeometry(6.72, 1.44)),
-      signMaterial,
-    );
-    sign.position.set(-0.25, 3.35, 0.08);
-
-    const support = this.cylinder(0.16, 3.5, gantryMaterial);
-    support.position.set(5.15, 1.75, 0);
-    const foot = this.cylinder(0.28, 0.12, gantryMaterial);
-    foot.position.set(5.15, 0.06, 0);
-    const crossbeam = this.box(8.8, 0.18, 0.22, gantryMaterial);
-    crossbeam.position.set(0.75, 4.15, 0);
-    for (const x of [-2.55, 2.05]) {
-      const hanger = this.box(0.12, 0.42, 0.12, gantryMaterial);
-      hanger.position.set(x, 3.55, 0);
-      group.add(hanger);
-    }
-    group.add(foot, support, crossbeam, backing, sign);
-    this.root.add(group);
-  }
-
-  private addLamp(progress: number, offset: number, castLight: boolean): void {
-    const group = new Group();
-    this.place(group, progress, offset, 0);
-    const pole = new Mesh(this.lampPoleGeometry, this.lampPoleMaterial);
-    pole.scale.set(0.065, 3.6, 0.065);
-    pole.position.y = 1.8;
-    const bulb = new Mesh(this.lampBulbGeometry, this.lampMaterial);
-    bulb.scale.setScalar(0.24);
-    // Sit on the pole tip. The old overlap depth-fought and the head shimmered.
-    bulb.position.y = 3.86;
-    group.add(pole, bulb);
-
-    if (castLight) {
-      const intensity = 8.2 + hash01(Math.round(progress * 10_000), 91) * 1.8;
-      const light = new PointLight(PALETTE.lamp, intensity, 13, 2);
-      light.position.y = 3.86;
-      group.add(light);
-      this.lampLights.push(light);
-    }
-    this.root.add(group);
-  }
-
-  /** Nanluo poster: one tea house above the shop row, with a moon gate. */
-  private buildNanluoTeaHouse(): void {
-    const hero = PASSAGE_HEROES.nanluoTeaHouse;
-    const brick = this.textured('#5A6365', 'brick', { roughness: 1 });
-    const timber = this.standard('#4A3A28', { roughness: 0.94 });
-    const roof = this.textured('#4A5352', 'tileRoof', { roughness: 1 });
-    const opening = this.standard('#14110E', { roughness: 1 });
-    const house = new Group();
-    this.place(house, hero.progress, hero.lateralOffset, 0);
-    house.scale.setScalar(hero.scale);
-
-    const body = this.box(4.4, 4.05, 3.5, brick);
-    body.position.set(0, 2.02, 0);
-    const upper = this.box(4.05, 2.15, 3.15, timber);
-    upper.position.set(0, 5.05, 0);
-    const eave = new Mesh(this.unitUpturnedEave, roof);
-    eave.scale.set(3.6, 1.15, 5.2);
-    eave.rotation.y = Math.PI / 2;
-    eave.position.y = 6.55;
-    const finial = this.cylinder(0.06, 0.7, timber);
-    finial.position.y = 7.45;
-    const road = hero.lateralOffset > 0 ? 1 : -1;
-    const moonGate = new Mesh(
-      this.trackGeometry(new CylinderGeometry(0.78, 0.78, 0.16, 20)),
-      timber,
-    );
-    moonGate.rotation.z = Math.PI / 2;
-    moonGate.position.set(road * 2.22, 1.55, 0);
-    const moonVoid = new Mesh(
-      this.trackGeometry(new CylinderGeometry(0.62, 0.62, 0.2, 20)),
-      opening,
-    );
-    moonVoid.rotation.z = Math.PI / 2;
-    moonVoid.position.set(road * 2.28, 1.55, 0);
-    const upperPane = this.box(0.08, 0.7, 1.5, this.windowMaterial);
-    upperPane.position.set(road * 2.05, 5.05, 0);
-    house.add(body, upper, eave, finial, moonGate, moonVoid, upperPane);
-    this.tagHero(house);
-    this.root.add(house);
-  }
-
-  /** Qianmen poster: the pailou still leads. This gate is the one bay that is not a shop. */
-  private buildDashilarGate(): void {
-    const hero = PASSAGE_HEROES.dashilarGate;
-    const brick = this.textured('#5C4038', 'brick', { roughness: 0.92 });
-    const timber = this.standard('#3F3224', { roughness: 0.95 });
-    const roof = this.textured('#3A4341', 'tileRoof', { roughness: 1 });
-    const voidMat = this.standard('#120E0C', { roughness: 1 });
-    const gate = new Group();
-    this.place(gate, hero.progress, hero.lateralOffset, 0);
-    gate.scale.setScalar(hero.scale);
-
-    const pierL = this.box(0.7, 4.4, 2.4, brick);
-    pierL.position.set(-1.7, 2.2, 0);
-    const pierR = this.box(0.7, 4.4, 2.4, brick);
-    pierR.position.set(1.7, 2.2, 0);
-    const lintel = this.box(4.4, 0.55, 2.6, timber);
-    lintel.position.y = 4.55;
-    const arch = new Mesh(
-      this.trackGeometry(
-        new CylinderGeometry(1.15, 1.15, 0.42, 16, 1, false, 0, Math.PI),
-      ),
-      brick,
-    );
-    arch.rotation.z = Math.PI / 2;
-    arch.rotation.y = Math.PI / 2;
-    arch.position.set(0, 3.35, -1.15);
-    const throat = this.box(1.7, 2.5, 0.2, voidMat);
-    throat.position.set(0, 1.7, -1.25);
-    const eave = new Mesh(this.unitUpturnedEave, roof);
-    eave.scale.set(2.8, 0.85, 5.4);
-    eave.rotation.y = Math.PI / 2;
-    eave.position.y = 5.15;
-    const lantern = this.box(0.08, 0.55, 0.7, this.windowMaterial);
-    lantern.position.set(0, 4.15, -1.35);
-    gate.add(pierL, pierR, lintel, arch, throat, eave, lantern);
-    this.tagHero(gate);
-    this.root.add(gate);
-  }
-
-  /** One battered pier beside the deck, outside the carriageway. */
-  private buildOverpassPier(): void {
-    const hero = PASSAGE_HEROES.overpassPier;
-    const concrete = this.standard('#6E7C84', {
-      emissive: '#24323A',
-      emissiveIntensity: 0.12,
-      roughness: 0.86,
-    });
-    const deep = this.standard('#4E5C64', {
-      emissive: '#1A262C',
-      emissiveIntensity: 0.16,
-      roughness: 0.9,
-    });
-    const pier = new Group();
-    this.place(pier, hero.progress, hero.lateralOffset, 0);
-    pier.scale.setScalar(hero.scale);
-    const footing = this.box(5.4, 0.7, 4.2, deep);
-    footing.position.y = 0.35;
-    const shaft = new Mesh(
-      this.trackGeometry(new CylinderGeometry(0.72, 1, 1, 10)),
-      concrete,
-    );
-    shaft.scale.set(2.3, 8.2, 2.3);
-    shaft.position.y = 4.5;
-    const cap = this.box(5.8, 0.7, 4.6, deep);
-    cap.position.y = 8.85;
-    const slot = this.box(0.16, 1.4, 1.1, this.windowMaterial);
-    slot.position.set(-1.15, 5.4, 0);
-    pier.add(footing, shaft, cap, slot);
-    this.tagHero(pier);
-    this.root.add(pier);
-  }
-
-  /**
-   * One tree builder. Street crowns sit on a fork, locusts lean over the lane,
-   * and the willow hangs. None of them is a sphere on a bare pole.
-   */
-  private addTree(
-    progress: number,
-    offset: number,
-    height: number,
-    kind: 'street' | 'locust' | 'willow' = 'street',
-  ): void {
-    const group = new Group();
-    this.place(group, progress, offset, 0);
-    const away = offset > 0 ? 1 : -1;
-    if (kind === 'willow') {
-      const foliage = this.standard('#3C5A42', { roughness: 1 });
-      const trunk = this.cylinder(0.18, 4.2, this.treeTrunkMaterial);
-      trunk.position.y = 2.1;
-      trunk.rotation.z = away * 0.18;
-      const crown = new Mesh(this.unitSphere, foliage);
-      crown.scale.set(2.2, 1.05, 2.1);
-      crown.position.set(away * 0.85, 4.15, 0);
-      group.add(trunk, crown);
-      for (const along of [-1.4, 0, 1.35]) {
-        const drop = new Mesh(this.unitSphere, foliage);
-        drop.scale.set(0.42, 1.85, 0.48);
-        drop.position.set(away * 1.7, 2.55, along);
-        group.add(drop);
-      }
-    } else if (kind === 'locust') {
-      const lean = away * 0.12;
-      const trunk = this.cylinder(0.19, 3.6, this.treeBarkMaterial);
-      trunk.position.set(0, 1.8, 0);
-      trunk.rotation.z = lean;
-      const bough = this.cylinder(0.12, 1.9, this.treeBarkMaterial);
-      bough.position.set(lean * 6, 4.1, 0.4);
-      bough.rotation.z = lean * 2.5;
-      const canopy = new Mesh(this.unitSphere, this.foliageMaterial);
-      canopy.scale.set(1.7, 0.7, 1.5);
-      canopy.position.set(lean * 1.6, 3.35, 0.15);
-      const sideMass = new Mesh(this.unitSphere, this.foliageMaterial);
-      sideMass.scale.set(1.15, 0.55, 1.2);
-      sideMass.position.set(lean * 2.4, 2.7, -0.55);
-      const drape = new Mesh(this.unitSphere, this.foliageMaterial);
-      drape.scale.set(0.7, 1.15, 0.75);
-      drape.position.set(lean * 2.1, 2.15, 0.7);
-      group.add(trunk, bough, canopy, sideMass, drape);
-    } else {
-      const trunkHeight = height * 0.58;
-      const trunk = this.cylinder(0.2, trunkHeight, this.treeTrunkMaterial);
-      trunk.position.y = trunkHeight / 2;
-      trunk.rotation.z = away * 0.05;
-      const fork = this.cylinder(0.11, height * 0.32, this.treeBarkMaterial);
-      fork.position.set(away * height * 0.08, trunkHeight * 0.86, 0.05);
-      fork.rotation.z = away * 0.62;
-      group.add(trunk, fork);
-      const crowns: Array<[number, number, number, number]> = [
-        [away * 0.2, trunkHeight + height * 0.02, 0.05, 0.46],
-        [away * 0.55, trunkHeight - height * 0.02, -0.28, 0.32],
-        [away * -0.08, trunkHeight, 0.32, 0.28],
-      ];
-      for (const [x, y, z, radius] of crowns) {
-        const canopy = new Mesh(this.unitSphere, this.foliageMaterial);
-        canopy.scale.set(height * radius * 1.55, height * radius * 0.36, height * radius * 1.2);
-        canopy.position.set(x, y, z);
-        group.add(canopy);
-      }
-    }
-    this.root.add(group);
-  }
-
-  private place(
-    object: Object3D,
-    progress: number,
-    offset: number,
-    y: number,
-    headingOffset = 0,
-  ): void {
+  private place(object: Object3D, progress: number, offset: number, y: number, headingOffset = 0): void {
     const frame = samplePathFrame(progress);
     object.position.set(
       frame.point.x * DRIVE_PATH_SCALE + frame.normal.x * offset,
@@ -3326,44 +721,36 @@ export class BeijingDriveScene {
     object.rotation.y = pathHeading(frame.tangent) + headingOffset;
   }
 
-  private box(
-    width: number,
-    height: number,
-    depth: number,
-    material: Material,
-  ): Mesh {
+  private box(width: number, height: number, depth: number, material: Material): Mesh {
     const mesh = new Mesh(this.unitBox, material);
     mesh.scale.set(width, height, depth);
     return mesh;
   }
 
-  private cylinder(radius: number, height: number, material: Material): Mesh {
-    const mesh = new Mesh(this.unitCylinder, material);
-    mesh.scale.set(radius, height, radius);
-    return mesh;
+  private surface(
+    color: string,
+    kind: SurfaceKind,
+    options: { roughness?: number; metalness?: number; emissive?: string; emissiveIntensity?: number } = {},
+  ): MeshStandardMaterial {
+    const material = this.standard(color, options);
+    bindSurface(material, kind);
+    return material;
   }
 
   private standard(
     color: string,
-    options: Omit<ConstructorParameters<typeof MeshStandardMaterial>[0], 'color'> = {},
+    options: { roughness?: number; metalness?: number; emissive?: string; emissiveIntensity?: number } = {},
   ): MeshStandardMaterial {
     return this.trackMaterial(
       new MeshStandardMaterial({
         color,
         flatShading: false,
-        roughness: 1,
-        metalness: 0,
-        ...options,
+        roughness: options.roughness ?? 1,
+        metalness: options.metalness ?? 0,
+        emissive: options.emissive,
+        emissiveIntensity: options.emissiveIntensity,
       }),
     );
-  }
-
-  private textured(
-    color: string,
-    atlasId: SurfaceAtlasId,
-    options: Omit<ConstructorParameters<typeof MeshStandardMaterial>[0], 'color' | 'map'> = {},
-  ): MeshStandardMaterial {
-    return this.standard(color, { map: this.atlases.get(atlasId), ...options });
   }
 
   private trackGeometry<T extends BufferGeometry>(geometry: T): T {
@@ -3381,53 +768,28 @@ export class BeijingDriveScene {
     if (material.userData.preserveInCapture === true) return material;
     const cached = this.captureMaterialProxies.get(material);
     if (cached) return cached;
-
     const proxy = this.trackMaterial(
       new MeshBasicMaterial({
         color: material.color,
         map: material.map,
-        alphaMap: material.alphaMap,
         side: material.side,
         fog: material.fog,
         transparent: material.transparent,
         opacity: material.opacity,
         alphaTest: material.alphaTest,
-        depthTest: material.depthTest,
         depthWrite: material.depthWrite,
-        depthFunc: material.depthFunc,
-        colorWrite: material.colorWrite,
-        blending: material.blending,
-        blendSrc: material.blendSrc,
-        blendDst: material.blendDst,
-        blendEquation: material.blendEquation,
-        blendSrcAlpha: material.blendSrcAlpha,
-        blendDstAlpha: material.blendDstAlpha,
-        blendEquationAlpha: material.blendEquationAlpha,
-        premultipliedAlpha: material.premultipliedAlpha,
-        dithering: material.dithering,
-        polygonOffset: material.polygonOffset,
-        polygonOffsetFactor: material.polygonOffsetFactor,
-        polygonOffsetUnits: material.polygonOffsetUnits,
-        toneMapped: material.toneMapped,
-        vertexColors: material.vertexColors,
-        wireframe: material.wireframe,
       }),
     );
     proxy.name = material.name ? `${material.name} capture proxy` : 'capture proxy';
-    proxy.visible = material.visible;
+    const kind = material.userData.surfaceKind as SurfaceKind | undefined;
+    if (kind) bindSurface(proxy, kind);
     this.applyCaptureColor(material, proxy);
     this.captureMaterialProxies.set(material, proxy);
     return proxy;
   }
 
-  private applyCaptureColor(
-    source: MeshStandardMaterial,
-    proxy: MeshBasicMaterial,
-  ): void {
-    const emissiveWeight = Math.min(
-      1,
-      Math.max(0, source.emissiveIntensity * 0.42),
-    );
+  private applyCaptureColor(source: MeshStandardMaterial, proxy: MeshBasicMaterial): void {
+    const emissiveWeight = Math.min(1, Math.max(0, source.emissiveIntensity * 0.42));
     proxy.color.copy(source.color);
     proxy.color.r = Math.min(1, proxy.color.r + source.emissive.r * emissiveWeight);
     proxy.color.g = Math.min(1, proxy.color.g + source.emissive.g * emissiveWeight);
@@ -3435,9 +797,13 @@ export class BeijingDriveScene {
   }
 
   private restoreCaptureMaterials(): void {
-    for (const [mesh, material] of this.captureOriginalMaterials) {
-      mesh.material = material;
-    }
+    for (const [mesh, material] of this.captureOriginalMaterials) mesh.material = material;
     this.captureOriginalMaterials.clear();
+  }
+
+  private readMeshColor(mesh: Mesh): string | null {
+    const material = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+    if (!(material instanceof MeshBasicMaterial) && !(material instanceof MeshStandardMaterial)) return null;
+    return `#${material.color.getHexString().toUpperCase()}`;
   }
 }

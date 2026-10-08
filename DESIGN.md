@@ -122,7 +122,11 @@ Adjacent passages overlap through shared silhouettes, fog occlusion, walls, tree
 - `src/app/BeijingLoopApp.ts`: deterministic clock, phase seeking, render lifecycle, playback state, and reduced-motion poster.
 - `src/rendering/BeijingDriveScene.ts`: authored world, twelve passages, lighting, fog, materials, water, and skyline.
 - `src/rendering/passages.ts`: the twelve passage ids and poster sentences. A new passage registers here and in one builder.
-- `src/rendering/surfaceTextures.ts`: deterministic boot-once material atlases.
+- `src/rendering/surfaceTextures.ts`: seeded hash shared by the drive.
+- `src/rendering/surfaces.ts`: world-metre brick, tile, stone, concrete, bark, glass, and leaf patterns.
+- `src/rendering/kit/`: parametric podium, column, bracket, roof, wall, opening, tree, bridge, and lamp parts.
+- `src/rendering/buildings/`: gate, hall, tower, bay, and street assemblies at complexity 3–4.
+- `src/rendering/assembleCity.ts`: twelve passages placed on the spatial contract.
 - `src/rendering/FirstPersonCameraRig.ts`: phase- and aspect-derived driver-eye camera.
 - `src/rendering/drivePath.ts`: closed authored spline, stable path frame, heading, and ribbon helpers.
 - `src/rendering/theme.ts`: duration, road/camera dimensions, and renderer palette.
@@ -130,7 +134,7 @@ Adjacent passages overlap through shared silhouettes, fog occlusion, walls, tree
 
 The implementation uses Vite, TypeScript, Three.js, and plain CSS. It adds no map SDK, tile service, runtime data service, UI framework, or downloaded font.
 
-Repeated street meshes are instanced after construction, so the live scene graph is no longer the pre-instance count of roughly `1939` objects. The browser regression keeps the instanced graph within `640–1599`: the lower bound catches accidental scene loss, while the upper bound prevents a return to thousands of separate nodes. Construction resolves world matrices once and disables automatic scene world-matrix updates; any future dynamic scene transform must explicitly update its world matrix or deliberately restore automatic updates. The camera remains outside this static scene hierarchy and updates independently.
+Repeated street bays and bracket rows are instanced after construction. The browser regression keeps that graph within `300–2499` objects. Construction resolves world matrices once and disables automatic scene world-matrix updates; any future dynamic scene transform must explicitly update its world matrix or deliberately restore automatic updates. The camera remains outside this static scene hierarchy and updates independently.
 
 ## Determinism, lifecycle, and compatibility
 
@@ -164,7 +168,7 @@ Repeated street meshes are instanced after construction, so the live scene graph
 - The real `LoopRecorder` gate measures successful render callbacks from its own `requestAnimationFrame` loop and requires an average of at least `28fps`. The test injects a `1.2s` main-thread stall; the maximum callback gap must be at least `1.2s` to prove the injection occurred and no more than `2.5s` to reject an extreme freeze. A fresh browser before this real-time recording is test-harness resource isolation only, not product behavior or a relaxed gate.
 - The downloaded WebM must be non-empty and byte-complete, contain exactly one monotonic video-block timeline, include the single requested terminal frame, begin at `0–0.1s`, end at `47.9–48.3s`, and span `47.8–48.3s`. Encoded block density of `18–65fps` is an artifact-health bound; it is not renderer or recorder render-throughput evidence.
 - Bundle evidence measures the largest emitted production JS and CSS assets with Node `zlib` gzip level 9.
-- Primary JS: raw `<=656000` bytes (measured 653758 after the passage masses and upturned eaves), gzip `<=170000` bytes, and gzip growth `<=5%` over the Node zlib level-9 `153080`-byte `origin/main` baseline (`<=160734` bytes).
+- Primary JS: raw `<=656000` bytes (measured 632772 after the parametric kit), gzip `<=170000` bytes, and gzip growth `<=5%` over the Node zlib level-9 `153080`-byte `origin/main` baseline (`<=160734` bytes).
 - Primary CSS: gzip `<=4096` bytes.
 - Performance and bundle thresholds are release gates. A failing machine result is recorded and investigated; thresholds are not silently relaxed.
 

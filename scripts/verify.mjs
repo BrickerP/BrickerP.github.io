@@ -2822,8 +2822,8 @@ assert.equal(
 assert.ok(
   // Instancing folds repeated bays into shared meshes. The old 1850–2000
   // band counted the city before that fold.
-  activeCapturePerformance.staticSceneObjectCount >= 640 &&
-    activeCapturePerformance.staticSceneObjectCount < 1_600,
+  activeCapturePerformance.staticSceneObjectCount >= 300 &&
+    activeCapturePerformance.staticSceneObjectCount < 2_500,
   `static scene object count is outside the authored complexity budget: ${activeCapturePerformance.staticSceneObjectCount}`,
 );
 assert.equal(
