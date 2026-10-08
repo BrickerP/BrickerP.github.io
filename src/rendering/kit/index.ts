@@ -10,7 +10,7 @@ export {
 } from './columns';
 export { mergeParts, placedBeam, placedBox, placedCylinder, placedFrustum, placedLathe } from './geom';
 export { createLampPole } from './lamp';
-export { createArch, createCityWall, createCourtyardWall, createMerlons, createVault } from './wall';
+export { createArch, createCityWall, createCourtyardWall, createEnclosedHall, createMerlons, createVault } from './wall';
 export { createArrowSlit, createDoor, createWindowOpening } from './openings';
 export { createPodium, createSumeru } from './podium';
 export { createRoof, createRoofFrame, createRoofSurface } from './roof';

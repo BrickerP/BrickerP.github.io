@@ -18,6 +18,63 @@ export function createCityWall(options: CityWallOptions): BufferGeometry {
   ]);
 }
 
+export interface HallOpening {
+  x?: number;
+  width: number;
+  height: number;
+  /** Bottom of the hole, metres above the shell base. */
+  y?: number;
+}
+
+/**
+ * A hall shell: back wall, two sides, and a front on -Z.
+ * Openings are gaps in the front so a door or arch can sit in the bay.
+ */
+export function createEnclosedHall(
+  width: number,
+  height: number,
+  depth: number,
+  openings: HallOpening[] = [],
+): BufferGeometry {
+  const thickness = 0.16;
+  const parts: BufferGeometry[] = [
+    placedBox(width, height, thickness, 0, height / 2, depth / 2 - thickness / 2),
+    placedBox(thickness, height, depth, -width / 2 + thickness / 2, height / 2, 0),
+    placedBox(thickness, height, depth, width / 2 - thickness / 2, height / 2, 0),
+  ];
+  const frontZ = -depth / 2 + thickness / 2;
+  const sorted = [...openings].sort((left, right) => (left.x ?? 0) - (right.x ?? 0));
+  if (sorted.length === 0) {
+    parts.push(placedBox(Math.max(0.1, width - thickness * 2), height, thickness, 0, height / 2, frontZ));
+    return mergeParts(parts);
+  }
+  let cursor = -width / 2;
+  for (const opening of sorted) {
+    const center = opening.x ?? 0;
+    const left = center - opening.width / 2;
+    const right = center + opening.width / 2;
+    const bottom = opening.y ?? 0;
+    if (left - cursor > 0.05) {
+      const span = left - cursor;
+      parts.push(placedBox(span, height, thickness, cursor + span / 2, height / 2, frontZ));
+    }
+    if (bottom > 0.05) {
+      parts.push(placedBox(opening.width, bottom, thickness, center, bottom / 2, frontZ));
+    }
+    const top = bottom + opening.height;
+    if (height - top > 0.05) {
+      const span = height - top;
+      parts.push(placedBox(opening.width, span, thickness, center, top + span / 2, frontZ));
+    }
+    cursor = Math.max(cursor, right);
+  }
+  if (width / 2 - cursor > 0.05) {
+    const span = width / 2 - cursor;
+    parts.push(placedBox(span, height, thickness, cursor + span / 2, height / 2, frontZ));
+  }
+  return mergeParts(parts);
+}
+
 /** A low courtyard wall with a tiled cap. Length runs along local X. */
 export function createCourtyardWall(length: number, height = 1.45): BufferGeometry {
   return mergeParts([

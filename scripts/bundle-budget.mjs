@@ -19,7 +19,7 @@ const BUDGET = {
     originMainGzipBaselineBytes: 166_491,
     maximumGrowthRatio: 0.05,
     absoluteGzipMaximumBytes: 190_000,
-    // Measured 649885 raw after the joinery pass, including the printed programme.
+    // Measured 651194 raw after hall walls were added back between the columns.
     rawMaximumBytes: 656_000,
   },
   // Programme redesign (2026-10) shares one stylesheet across the modal and /about/.

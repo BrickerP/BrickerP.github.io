@@ -145,7 +145,7 @@ function faceRoad(offset: number): number {
 
 function scatterShops(
   host: CityHost,
-  bays: Array<{ timber: BufferGeometry; roof: BufferGeometry; opening: BufferGeometry; eave: BufferGeometry }>,
+  bays: Array<{ timber: BufferGeometry; wall: BufferGeometry; roof: BufferGeometry; opening: BufferGeometry; eave: BufferGeometry }>,
   stamps: Array<{ progress: number; offset: number }>,
 ): void {
   const rows: Array<Array<{ progress: number; offset: number }>> = [[], [], []];
@@ -158,6 +158,7 @@ function scatterShops(
     const row = rows[index];
     const placed = row.map((stamp) => ({ ...stamp, heading: faceRoad(stamp.offset) }));
     scatter(host, bay.timber, host.mats.timber, placed, true);
+    scatter(host, bay.wall, host.mats.streetBrick, placed, true);
     scatter(host, bay.roof, host.mats.tile, placed, true);
     scatter(host, bay.eave, host.mats.gold, placed, false);
     scatter(host, bay.opening, host.mats.window, placed, false);
@@ -229,7 +230,7 @@ export function assembleCity(host: CityHost): void {
   gantry.add(new Mesh(placedCylinder(0.14, 0.18, 4.2, 3.2, 2.1, 0, 8), mats.concrete));
   gantry.add(new Mesh(placedBox(7.2, 0.28, 0.28, 0, 4.3, 0), mats.concrete));
   hangPlaque(host, gantry, '二环', 0, 3.6, 0.2, 4.2, 0.9);
-  put(host, gantry, 0.33, 0, 1, Math.PI);
+  put(host, gantry, 0.33, 0, 1);
   host.addLamp(0.258, -5.8, false);
   host.addLamp(0.322, -5.8, false);
 
