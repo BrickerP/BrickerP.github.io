@@ -153,7 +153,7 @@ export class FirstPersonCameraRig {
     const heroLook =
       this.aspectMix() *
       (focusWindow(progress, 0.27, 0.288, 0.312, 0.332) * -3.3 +
-        focusWindow(progress, 0.352, 0.372, 0.402, 0.416) * -3.5 +
+        focusWindow(progress, 0.352, 0.372, 0.402, 0.416) * -1.4 +
         focusWindow(progress, 0.684, 0.708, 0.736, 0.749) * 3.1);
     const portraitFovBoost =
       portraitLandmarkCue(progress, 8, 14, 0) * portraitFocusMix;

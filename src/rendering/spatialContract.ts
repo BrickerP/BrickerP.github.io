@@ -134,7 +134,7 @@ export const PASSAGE_HEROES = {
   drumTower: {
     id: 'drum-tower',
     passage: 5,
-    progress: 0.488,
+    progress: 0.494,
     lateralOffset: -8.75,
     scale: 0.72,
     solidHalfWidth: 3.68,
@@ -142,7 +142,7 @@ export const PASSAGE_HEROES = {
   bellTower: {
     id: 'bell-tower',
     passage: 5,
-    progress: 0.492,
+    progress: 0.497,
     lateralOffset: 7.65,
     scale: 0.68,
     solidHalfWidth: 2.59,
@@ -158,7 +158,7 @@ export const PASSAGE_HEROES = {
   cbdHero: {
     id: 'cbd-hero',
     passage: 8,
-    progress: 0.738,
+    progress: 0.746,
     lateralOffset: 8.05,
     scale: 0.95,
     solidHalfWidth: 3.05,
