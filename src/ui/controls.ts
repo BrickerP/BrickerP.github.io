@@ -96,6 +96,8 @@ export class Controls {
         >${ICON.about}</button>
       </div>
 
+      <p class="ui-hint" data-ui-hint aria-hidden="true">Record saves a 48-second film</p>
+
       <p class="ui-footer">ARTISTIC COMPOSITION <span aria-hidden="true">·</span> NOT FOR NAVIGATION</p>
 
       <div class="ui-debug" hidden>
@@ -131,11 +133,20 @@ export class Controls {
     this.recordDescription = this.query('#record-capability');
     this.fullscreenDescription = this.query('#fullscreen-capability');
     this.liveRegion = this.query('[data-ui-live]');
+    const hint = this.query('[data-ui-hint]');
+    const actions = this.query('.ui-actions');
+    const showHint = (button: HTMLButtonElement) => {
+      hint.textContent = button.title.replace(/\s*\([^)]*\)\s*$/, '');
+    };
 
     this.playBtn.addEventListener('click', () => this.callbacks.onTogglePlay());
     this.recordBtn.addEventListener('click', () => this.callbacks.onRecord());
     this.fullscreenBtn.addEventListener('click', () => this.callbacks.onToggleFullscreen());
     this.aboutBtn.addEventListener('click', () => this.callbacks.onAbout());
+    for (const button of actions.querySelectorAll('button')) {
+      button.addEventListener('pointerenter', () => showHint(button));
+      button.addEventListener('focus', () => showHint(button));
+    }
     document.addEventListener('fullscreenchange', () => this.syncFullscreen());
     this.syncFullscreen();
   }
