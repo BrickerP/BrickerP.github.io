@@ -99,7 +99,12 @@ export function buildGateTower(
     upper.position.y = upperY + 0.9;
   }
 
-  const glow = new Mesh(placedBox(0.9, 2.4, 0.08, 0, 2.2, -(options.pierDepth / 2 + 0.06)), mats.window);
-  group.add(glow);
+  for (const side of [-1, 1]) {
+    const slot = new Mesh(
+      placedBox(0.22, 1.6, 0.08, side * (options.openingHalf + 0.15), 2.4, -(options.pierDepth / 2 + 0.04)),
+      mats.window,
+    );
+    group.add(slot);
+  }
   return group;
 }

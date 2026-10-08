@@ -4,6 +4,7 @@ import {
   createArch,
   createArrowSlit,
   createCityWall,
+  createMerlons,
   createColumnRow,
   createDoor,
   createPodium,
@@ -107,7 +108,9 @@ export function buildArrowTower(mats: Mats, bracket: BufferGeometry): Group {
 
 export function buildCityWallSegment(mats: Mats, length = 9): Group {
   const group = new Group();
-  add(group, createCityWall({ length, height: 4.4, depth: 2.6, merlons: 6 }), mats.streetBrick);
+  const options = { length, height: 4.4, depth: 2.6, merlons: 6 };
+  add(group, createCityWall(options), mats.streetBrick);
+  add(group, createMerlons(options), mats.stone);
   return group;
 }
 
