@@ -373,7 +373,8 @@ canvas {
     bottom: calc(22px + var(--safe-b));
     left: calc(14px + var(--safe-l));
     width: auto;
-    max-width: calc(100vw - 210px - var(--safe-l) - var(--safe-r));
+    /* Four 48px coarse-pointer buttons, plus the rail's padding, border, and inset. */
+    max-width: calc(100vw - 244px - var(--safe-l) - var(--safe-r));
     height: auto;
     margin: 0;
     padding: 0;
