@@ -1,9 +1,9 @@
 {
   "name": "Yupeng Lu",
   "role": "AI Agent Engineer",
-  "dateModified": "2026-07-19",
+  "dateModified": "2026-10-08",
   "status": "US Permanent Resident · No sponsorship required",
-  "summary": "Production agent systems: MCP/tool-use contracts, public API boundaries, CLI/skill distribution, evidence-bound report synthesis, voice runtimes, monetized workflows, and evidence-gated releases.",
+  "summary": "Production agent systems and the platforms they run on: MCP/tool-use contracts, agent skills and CLIs, evals and evidence-gated releases, governed agent access to production infrastructure, and the billing and attribution backbone of an AI app builder.",
   "publicProof": [
     {
       "label": "User-research skill",
@@ -21,8 +21,8 @@
       "href": "https://cookiy.ai"
     }
   ],
-  "experienceNote": "Cookiy AI is the primary role; the Quant Trading Systems Venture is a concurrent engineering role.",
-  "focus": "MCP · tool-use contracts · OpenAPI / Zod · agent eval & release gates · evidence-bound synthesis · voice / realtime · auth & billing · TypeScript · Python · C++ · REST / SSE / WebSocket",
+  "experienceNote": "Baidu (MeDo) is the primary role; the Quant Trading Systems Venture is a concurrent engineering role.",
+  "focus": "MCP · tool-use contracts · agent skills & CLIs · evals & release gates · Stripe Billing · ads attribution · Java / Spring Boot · TypeScript · Python · AWS · Kubernetes · ClickHouse",
   "primaryActions": [
     { "linkId": "email", "label": "Email", "staticLabel": "Contact Yupeng", "style": "primary", "modalOrder": 1, "staticOrder": 1 },
     { "linkId": "resume", "label": "Resume", "staticLabel": "Read resume", "style": "secondary", "modalOrder": 2, "staticOrder": 2 },

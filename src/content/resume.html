@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<title>Yupeng Lu - AI Agent Engineer</title>
+<meta name="author" content="Yupeng Lu">
+<meta name="description" content="Resume - AI Agent Engineer">
+<meta name="keywords" content="AI Agent Engineer, AI agents, MCP, Model Context Protocol, tool-use contracts, agent skills, coding agents, Claude Code, Codex, evals, release gates, LLM operations, Stripe Billing, ads attribution, Java, Spring Boot, TypeScript, Python, AWS, Kubernetes, ClickHouse">
+<meta name="dcterms.modified" content="2026-10-08">
+<style>
+  @page { size: Letter; margin: 0.4in 0.5in; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    margin: 0;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 9pt;
+    line-height: 1.24;
+    color: #16181d;
+  }
+  a { color: #1d4ed8; text-decoration: underline; text-decoration-thickness: 0.5pt; text-underline-offset: 1.2pt; }
+  p { margin: 0; }
+  .masthead { text-align: center; }
+  h1 { margin: 0 0 2pt; font-size: 22pt; font-weight: 300; letter-spacing: 0.4pt; color: #0f1115; }
+  .contact { font-size: 8.4pt; line-height: 1.36; color: #3b3f47; }
+  .sep { color: #9aa0aa; padding: 0 3pt; }
+  .headline { margin-top: 5pt; font-size: 10.6pt; font-weight: 500; letter-spacing: 0.8pt; text-transform: uppercase; color: #1f2937; }
+  h2 {
+    margin: 8pt 0 3pt;
+    padding-bottom: 1.5pt;
+    border-bottom: 0.75pt solid #1f2937;
+    font-size: 9.4pt;
+    font-weight: 600;
+    letter-spacing: 0.5pt;
+    text-transform: uppercase;
+    color: #1f2937;
+    break-after: avoid;
+  }
+  ul { margin: 0; padding-left: 10pt; }
+  li { margin: 0 0 1.4pt; padding-left: 1pt; break-inside: avoid; }
+  li::marker { content: "\2022\00a0"; color: #6b7280; }
+  .lead { font-weight: 600; color: #0f1115; }
+  .entry { margin-top: 6pt; }
+  .entry:first-of-type { margin-top: 0; }
+  .role-line { display: flex; justify-content: space-between; align-items: baseline; gap: 12pt; break-after: avoid; }
+  h3 { margin: 0; font-size: 9.9pt; font-weight: 600; color: #0f1115; }
+  h3 .title { font-weight: 400; color: #2a2e36; }
+  .meta { flex: none; font-size: 8.3pt; color: #5b616b; }
+  .intro { margin: 1.5pt 0 2pt; color: #2a2e36; }
+  .proof li { margin-bottom: 1pt; }
+  .skills p { margin-bottom: 1.2pt; }
+  .edu .role-line { margin-bottom: 0.5pt; }
+  .edu .sub { font-size: 8.3pt; color: #5b616b; margin-bottom: 2pt; }
+</style>
+</head>
+<body>
+<header class="masthead">
+  <h1>Yupeng Lu</h1>
+  <p class="contact">US Permanent Resident<span class="sep">·</span>No sponsorship required</p>
+  <p class="contact"><a href="mailto:yplmicro@gmail.com" aria-label="Email Yupeng Lu">yplmicro@gmail.com</a><span class="sep">·</span><a href="https://www.linkedin.com/in/yupeng-lu-845a0b411/" aria-label="Yupeng Lu on LinkedIn">linkedin.com/in/yupeng-lu-845a0b411</a></p>
+  <p class="contact">GitHub: <a href="https://github.com/BrickerP" aria-label="Yupeng Lu personal GitHub">github.com/BrickerP</a><span class="sep">·</span>Public work: <a href="https://github.com/cookiy-ai" aria-label="Cookiy AI public repositories on GitHub">github.com/cookiy-ai</a></p>
+  <p class="headline">AI Agent Engineer</p>
+</header>
+
+<section aria-labelledby="summary-heading">
+  <h2 id="summary-heading">Summary</h2>
+  <p>AI Agent Engineer building production agent systems and the platforms they run on: MCP/tool-use contracts, CLI/skill distribution, evals and evidence-gated releases, and governed agent access to production infrastructure. Now at Baidu on MeDo, an AI agent app builder, owning the overseas revenue platform (billing, credits, ads attribution, service migration) and the team's agent-native tooling.</p>
+</section>
+
+<section class="proof" aria-labelledby="proof-heading">
+  <h2 id="proof-heading">Public Proof</h2>
+  <ul>
+    <li><a href="https://github.com/cookiy-ai/user-research-skill" aria-label="Cookiy user-research skill on GitHub">public user-research skill</a> - AI-agent skill for end-to-end user research across Claude, Codex, Cursor, and OpenClaw-style clients.</li>
+    <li><a href="https://github.com/cookiy-ai/cookiy-cli" aria-label="Cookiy CLI source on GitHub">public TypeScript CLI</a> / <a href="https://www.npmjs.com/package/cookiy-cli" aria-label="cookiy-cli package on npm">npm CLI package</a> - AI interviews, synthetic users, surveys, recruitment, playback, and billing via REST/MCP.</li>
+    <li><a href="https://www.npmjs.com/package/cookiy-mcp" aria-label="cookiy-mcp package on npm">MCP package</a> and <a href="https://s.cookiy.ai/developer-portal" aria-label="Cookiy AI developer portal">developer portal</a> - one-command skill/MCP setup, Redoc/OpenAPI docs, and public agent onboarding surface.</li>
+  </ul>
+</section>
+
+<section aria-labelledby="experience-heading">
+  <h2 id="experience-heading">Experience</h2>
+
+  <article class="entry">
+    <div class="role-line">
+      <h3>Baidu<span class="title"> - Software Engineer, MeDo</span></h3>
+      <p class="meta">Jul 2026 – Present · Beijing</p>
+    </div>
+    <p class="intro"><a href="https://medo.dev/" aria-label="MeDo AI app builder">MeDo</a> turns a chat prompt into a full-stack app that coding agents generate, deploy, and host. Overseas engineering owner for the revenue platform (Stripe billing, credits ledger, ads attribution, growth, SEO) and builder of the agent tooling the team uses to ship and operate it. 600+ merged code changes across 19 repos and 140+ design/RCA/verification docs in under 3 months.</p>
+    <ul>
+      <li><span class="lead">Agent-native infra access.</span> Authored medo-infra-connect, a coding-agent skill + unified CLI (~5.5K LOC) adopted in the team skill repo: governed agent access to AWS, MySQL, ClickHouse, OpenSearch, Metabase, and Google/Meta/Bing/GA4 APIs across US and China environments; read-only by default, a verified prod-write path, per-user OAuth, no secrets in the repo.</li>
+      <li><span class="lead">Agent workflow guardrails.</span> Built release-proof skills (code review &harr; deployed bundle &harr; design doc, 14 incident-derived gates) and a policy hook (59-case suite) enforcing pipeline-only builds in Claude Code, Codex, Cursor, and OpenCode; wired codegraph MCP (48 repos), Opus-to-Codex delegation, persistent memory, and an MCP schema-fix proxy for the company LLM gateway.</li>
+      <li><span class="lead">LLM operations bots.</span> Took over and hardened the Discord &rarr; LLM-enriched report &rarr; intake desk &rarr; issue-tracker pipeline (durable capture + outbox, bounded LLM budgets, AI prefill, guarded rollback; cleared an 8-day ticket stall; merged 3 services, 788 tests); built an IM data-assistant bot whose skills query a read-only Metabase proxy (no free-form SQL).</li>
+      <li><span class="lead">Agent sandbox abuse response.</span> Contained a cluster-wide outage in which bot accounts prompted the coding agent to install remote shells and run crypto-miners in Kata-VM sandboxes: quantified 42&times; CPU overcommit, re-weighted node system cgroups, killed miners, and blocked pools by IP; worst-node CPU 96% &rarr; 48%, load 269 &rarr; 52, ~40 cores reclaimed, zero restarts.</li>
+      <li><span class="lead">Billing service extraction.</span> Led the move of the overseas credits ledger and Stripe stack (27 webhook event types, ~29K lines) out of the monolith into a new billing service on its own RDS; wrote the plan, runbook, and 28-item SQL acceptance matrix; caught ~10 rehearsal blockers (e.g., DMS showing 100% with 6 tables suspended); cutover loaded 40/40 tables with 0 errors.</li>
+      <li><span class="lead">Subscriptions and pricing.</span> Shipped Pro Max and annual plans on a two-phase quote &rarr; commit plan-change API over Stripe Subscription Schedules (20 countries, 10 currencies), Billing Portal cancellation with retention offers, past-due self-serve recovery, promo codes on every checkout path, and a first-purchase offer A/B (+88% lift in 48-hour first-payment rate).</li>
+      <li><span class="lead">Billing correctness.</span> Root-caused Stripe lifecycle defects (canceled subscriptions revived by late invoices, ~240 locked accounts; unsynced renewals; upgrade declines misread as downgrades; swallowed fulfillment rollbacks); fixed them with terminal-state gates, Stripe-status checks, and retry &rarr; dead-letter state machines; moved compensation to self-expiring $0 subscriptions.</li>
+      <li><span class="lead">Ads attribution and consent.</span> Found one-time top-ups had never been uploaded to Google Ads (a Spring afterCommit write silently joining a committed transaction) and fixed it; built Meta Pixel + CAPI, Bing UET server-side conversions via a transactional outbox, and a first-party CMP (EEA/UK/CH opt-in, CA opt-out + GPC) gating 5 channels server-side; converged on an append-only one-winner-per-user model with a registration-time gate (22% of winners had been polluted).</li>
+      <li><span class="lead">Credits economy and abuse.</span> Cut gifted credits 35% (&minus;58% per new user) without hurting retention or paid conversion; moved invite rewards to publish/payment milestones (spend down two-thirds); caught 437 inviters farming 20.6K fake accounts and shipped risk scoring with gifted-only clawback; fixed phantom debt entries and an expiry job skipping half its rows.</li>
+      <li><span class="lead">Data and SEO.</span> Built K8s CronJob collectors (Google Ads, Bing, GA4, Search Console, logs) &rarr; ClickHouse &rarr; Metabase dashboards; diagnosed an indexing collapse (crawl budget eaten by ~18K UGC app pages); shipped a Next.js 16 blog replacing Ghost (/blog payload &minus;92%, crawlable posts 12 &rarr; 59); moved a 1.9K-URL pSEO site from a hand-run EC2 box onto EKS CI/CD.</li>
+      <li><span class="lead">Enterprise and Azure OpenAI.</span> Built enterprise Seat Pool + partner redemption codes across 6 repos (launched with a K-12 education partner) and Azure OpenAI resale hosting with per-customer resource isolation.</li>
+    </ul>
+  </article>
+
+  <article class="entry">
+    <div class="role-line">
+      <h3>Cookiy AI<span class="title"> - AI Agent Engineer</span></h3>
+      <p class="meta">Aug 2025 – Jul 2026 · Silicon Valley HQ / Beijing Engineering Team</p>
+    </div>
+    <p class="intro">Voice-AI platform for user-research interviews. Built agent-native research infrastructure across MCP tools, public REST APIs, OAuth/billing, report generation, Report Voice Platform, interview/playback flows, and E2E/release gates; 1,040 merged PRs.</p>
+    <ul>
+      <li><span class="lead">Contract-first MCP/tool platform.</span> Owned 41 tools across 4 MCP servers and 26 Zod/OpenAPI schemas (study, interview, quant, billing, recruit, guide, playback, report); hardened runtime validation, status semantics, and CLI payload compatibility.</li>
+      <li><span class="lead">CLI/skill distribution.</span> Published public skill and TypeScript CLI surfaces; migrated shell workflows to an npm CLI with MCP-first/REST-fallback behavior, token/login flows, Cursor/Claude deep links, and Homebrew installer distribution.</li>
+      <li><span class="lead">Tool-using chat agents.</span> Re-architected report/study agents around scoped registries, load-before-edit artifact discipline, evidence bundles, direct-save tools, and locked-fact guards; removed 7 duplicate tools and slimmed prompts by ~2.5k LOC.</li>
+      <li><span class="lead">Evidence-bound report synthesis.</span> Replaced single-shot prompting with objective-first multi-pass synthesis (cohort batches, objective-independence and emergent-discovery passes), chunked HTML fidelity/readiness gates, screener/chat corpus QA, and report-driven auto clips (MediaConvert + GCP Transcoder fallback).</li>
+      <li><span class="lead">LLM reliability and streaming.</span> Hardened OpenAI/Gemini paths (native fetch, uncompressed SDK responses, preserved auth headers, runtime pinning, Cloudflare/401 handling) and SSE/WebSocket/MCP streamable-HTTP long tool work (heartbeats, abort isolation, hard timeouts, run-ID propagation).</li>
+      <li><span class="lead">Eval/release infrastructure.</span> Built a dual-surface E2E harness (291 cases: 168 SaaS + 123 CLI/MCP), 7 L0-L6 gate profiles, preview SaaS/voice/share-link oracles, runtime evidence packets, trace correlation, p95 budgets, and a baseline ledger.</li>
+      <li><span class="lead">Realtime voice and Report Voice Platform.</span> Worked across LiveKit rooms, Deepgram STT, TTS providers, Gemini/OpenAI LLM paths, and Tavus/SpatialReal avatars (~200 ms barge-in); shipped a report-voice runtime with streaming TTS, speculative follow-up turn-taking, VAD barge-in, and voice-role training.</li>
+      <li><span class="lead">Agent-compatible auth and billing.</span> Hardened compact CLI tokens, OAuth/Bearer semantics, wallet-ledger idempotency, StripeEventLog webhook audit, pay-before-reveal report billing, and minimum-disclosure tool responses.</li>
+    </ul>
+  </article>
+
+  <article class="entry">
+    <div class="role-line">
+      <h3>SMU<span class="title"> - Software Engineer / 0-to-1 Product Owner</span></h3>
+      <p class="meta">Feb 2024 – Jan 2026 · Los Angeles, CA</p>
+    </div>
+    <p class="intro">Data-platform role that expanded into a founder-sponsored 0-to-1 product: after shipping core commerce/ERP infrastructure, independently built and operated GetDateLove as a production consumer product.</p>
+    <ul>
+      <li>Built Python AsyncIO pipelines connecting Amazon Seller Central + Shopify with ERP, processing 500k+ daily orders and cutting sync latency from 15 min to 30 s; shipped Redis/Kafka inventory sync, FastAPI/PostgreSQL tariff services, Elasticsearch HS Code lookup, Spark migration jobs, and Docker/Jenkins CI/CD on AWS.</li>
+      <li>Built GetDateLove end to end: FastAPI, redis.asyncio, PostgreSQL, WebSocket messaging, S3 voice notes, PayPal checkout, AWS/Nginx/CloudFront, CI/Playwright release gates, and GDPR/privacy controls.</li>
+      <li>Reduced operational and frontend entropy by replacing blocking Redis patterns, consolidating 11 Redis clients, batching SQL, moving message storage to redis.asyncio, and extracting stable frontend state owners.</li>
+    </ul>
+  </article>
+
+  <article class="entry">
+    <div class="role-line">
+      <h3>Quant Trading Systems Venture<span class="title"> - Co-Engineer</span></h3>
+      <p class="meta">Apr 2026 – Present · Concurrent</p>
+    </div>
+    <p class="intro">Private live-trading system on AWS: intraday scanner &rarr; factor filter &rarr; broker bracket orders &rarr; S3 Parquet warehouse &rarr; <a href="https://d2c9pzwpavuktk.cloudfront.net/" aria-label="Quant trading public research dashboard">public research dashboard</a>; 250+ commits since Jul 2026.</p>
+    <ul>
+      <li><span class="lead">Execution safety.</span> IBKR heartbeat/reconnect, broker + DB startup reconcile, and bracket/OCO fixes; then a shared IBKR/Alpaca execution ledger, flag-gated migration of live routing to Alpaca with fill-dedupe keys, and removal of the dead IB Gateway path.</li>
+      <li><span class="lead">Immutable public dashboard.</span> Renders as a pure function of content-addressed input snapshots; Lambda publication with CAS supersede semantics, redacted live logs, daily P&amp;L, CloudFront/S3 OAC hardening, and skip-unchanged publishing.</li>
+      <li><span class="lead">Ops and latency.</span> Rebuilt infra in a new AWS account with a verification checklist; moved live secrets to SSM Parameter Store with SSM-only deploys and an after-close watchdog; cut scanner latency via event-based waits and warm caches.</li>
+    </ul>
+  </article>
+
+  <article class="entry">
+    <div class="role-line">
+      <h3>Huawei Technologies<span class="title"> - Software Engineer, SPU Development</span></h3>
+      <p class="meta">Apr 2023 – Feb 2024 · Beijing</p>
+    </div>
+    <ul>
+      <li>Built C/C++ SPU/router features for NE40E traffic statistics and NetStream monitoring; fixed 50+ packet-processing, flow-log, URL parsing, HTTP header, and SmartNet resource issues.</li>
+    </ul>
+  </article>
+</section>
+
+<section class="skills" aria-labelledby="skills-heading">
+  <h2 id="skills-heading">Skills</h2>
+  <p><span class="lead">Agents and LLMs:</span> MCP servers/tools, agent skills and CLIs, Claude Code / Codex / Cursor / OpenCode harnesses, Zod/OpenAPI tool contracts, evals and release gates, OpenAI, Gemini, Bedrock, Azure OpenAI, LiveKit voice.</p>
+  <p><span class="lead">Backend and data:</span> TypeScript/Node (NestJS, Express), Python (FastAPI, AsyncIO), Java 21 / Spring Boot (JPA, MyBatis), C/C++; MySQL, PostgreSQL, Redis, ClickHouse, Kafka, Metabase.</p>
+  <p><span class="lead">Cloud and payments:</span> AWS (EKS, RDS, DMS, Lambda, CloudFront, S3), Kubernetes, Stripe Billing, Google Ads/Meta CAPI/Bing UET.</p>
+</section>
+
+<section class="edu" aria-labelledby="education-heading">
+  <h2 id="education-heading">Education</h2>
+  <div class="role-line">
+    <h3>Boston University<span class="title"> - M.S. Mathematical Finance &amp; FinTech</span></h3>
+    <p class="meta">GPA 3.78</p>
+  </div>
+  <p class="sub">Computational Methods, Stochastic Calculus, Algorithmic Trading</p>
+  <div class="role-line">
+    <h3>The Ohio State University<span class="title"> - B.A. Physics</span></h3>
+    <p class="meta">GPA 3.84 · Dean's List</p>
+  </div>
+</section>
+</body>
+</html>
