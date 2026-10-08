@@ -21,7 +21,8 @@ export type SurfaceAtlasId =
   | 'stoneGrain'
   | 'asphaltGrain'
   | 'lattice'
-  | 'bluePanel';
+  | 'bluePanel'
+  | 'windowPanes';
 
 function makeCanvas(size: number): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
@@ -63,6 +64,7 @@ export class SurfaceAtlasLibrary {
     this.atlases.set('asphaltGrain', this.buildAsphaltGrain());
     this.atlases.set('lattice', this.buildLattice());
     this.atlases.set('bluePanel', this.buildBluePanel());
+    this.atlases.set('windowPanes', this.buildWindowPanes());
   }
 
   get(id: SurfaceAtlasId): Texture {
@@ -245,5 +247,33 @@ export class SurfaceAtlasLibrary {
       ctx.strokeRect(4, p + 4, size - 8, size / 6 - 8);
     }
     return this.track(finishTexture(canvas, { repeat: 1.5 }));
+  }
+
+  /** One mullion grid. Some panes are lit, some stay dark, so a window is not one glow. */
+  private buildWindowPanes(): CanvasTexture {
+    const size = 256;
+    const canvas = makeCanvas(size);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return this.track(finishTexture(makeCanvas(4), { repeat: 1 }));
+    ctx.fillStyle = '#1A140E';
+    ctx.fillRect(0, 0, size, size);
+    const cols = 4;
+    const rows = 5;
+    const gap = 10;
+    const cellW = (size - gap * (cols + 1)) / cols;
+    const cellH = (size - gap * (rows + 1)) / rows;
+    for (let row = 0; row < rows; row += 1) {
+      for (let col = 0; col < cols; col += 1) {
+        const lit = hash01(row * 4 + col, 61) > 0.42;
+        ctx.fillStyle = lit ? '#FFD9A0' : '#241C14';
+        ctx.fillRect(
+          gap + col * (cellW + gap),
+          gap + row * (cellH + gap),
+          cellW,
+          cellH,
+        );
+      }
+    }
+    return this.track(finishTexture(canvas, { repeat: 1 }));
   }
 }
