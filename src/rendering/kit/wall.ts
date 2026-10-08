@@ -8,14 +8,18 @@ export interface CityWallOptions {
   merlons?: number;
 }
 
-/** A battered wall run with a parapet and crenels. */
+/** A battered wall body. Crenels are separate so they can read as stone. */
 export function createCityWall(options: CityWallOptions): BufferGeometry {
-  const merlons = options.merlons ?? Math.max(4, Math.round(options.length / 1.3));
-  const parts: BufferGeometry[] = [
+  return mergeParts([
     placedBox(options.length, options.height * 0.18, options.depth + 0.35, 0, options.height * 0.09, 0),
     placedBox(options.length * 0.98, options.height * 0.72, options.depth, 0, options.height * 0.5, 0),
     placedBox(options.length, 0.16, options.depth + 0.12, 0, options.height * 0.9, 0),
-  ];
+  ]);
+}
+
+export function createMerlons(options: CityWallOptions): BufferGeometry {
+  const merlons = options.merlons ?? Math.max(4, Math.round(options.length / 1.3));
+  const parts: BufferGeometry[] = [];
   for (let index = 0; index < merlons; index += 1) {
     const x = -options.length / 2 + (options.length / merlons) * (index + 0.5);
     parts.push(

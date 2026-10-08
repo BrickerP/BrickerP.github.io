@@ -15,7 +15,7 @@ import { pathHeading, samplePathFrame } from './drivePath';
 import { hash01 } from './surfaceTextures';
 import { CENTRAL_AXIS_LANDMARKS, PASSAGE_HEROES } from './spatialContract';
 import type { PassageId } from './passages';
-import { createBracketGeometry, createCityWall, createStoneBridge, createTreeGroup, placedBox, placedCylinder } from './kit';
+import { createBracketGeometry, createCityWall, createMerlons, createStoneBridge, createTreeGroup, placedBox, placedCylinder } from './kit';
 import {
   buildArrowTower,
   buildCityWallSegment,
@@ -159,7 +159,9 @@ export function assembleCity(host: CityHost): void {
   const bracket = host.track(createBracketGeometry());
   const windowBay = createShopBay(true);
   const doorBay = createShopBay(false);
-  const wallRun = createCityWall({ length: 8, height: 4.2, depth: 2.5, merlons: 5 });
+  const wallOptions = { length: 8, height: 4.2, depth: 2.5, merlons: 5 };
+  const wallRun = createCityWall(wallOptions);
+  const wallMerlons = createMerlons(wallOptions);
 
   host.begin('central-axis');
   const zhengyang = CENTRAL_AXIS_LANDMARKS.zhengyangmen;
@@ -189,6 +191,7 @@ export function assembleCity(host: CityHost): void {
     moatWalls.push({ progress: 0.09 + index * 0.012, offset: -11.5, heading: Math.PI / 2, scale: 0.9 });
   }
   scatter(host, wallRun, mats.streetBrick, moatWalls, true);
+  scatter(host, wallMerlons, mats.stone, moatWalls, true);
   const corner = PASSAGE_HEROES.cornerTower;
   put(host, buildCornerTower(mats, bracket), corner.progress, corner.lateralOffset, corner.scale);
   host.addLamp(0.096, 6.9, false);
@@ -226,6 +229,7 @@ export function assembleCity(host: CityHost): void {
     ringRun.push({ progress: 0.352 + index * 0.012, offset: -11.4, heading: Math.PI / 2, scale: 0.75 });
   }
   scatter(host, wallRun, mats.streetBrick, ringRun, true);
+  scatter(host, wallMerlons, mats.stone, ringRun, true);
   host.addLamp(0.345, -6.2, false);
   host.addLamp(0.389, 6.2, true);
 
