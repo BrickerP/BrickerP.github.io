@@ -171,7 +171,7 @@ Repeated street bays and bracket rows are instanced after construction. The brow
 - The downloaded WebM must be non-empty and byte-complete, contain exactly one monotonic video-block timeline, include the single requested terminal frame, begin at `0–0.1s`, end at `47.9–48.3s`, and span `47.8–48.3s`. Encoded block density of `18–65fps` is an artifact-health bound; it is not renderer or recorder render-throughput evidence.
 - Bundle evidence measures the largest emitted production JS and CSS assets with Node `zlib` gzip level 9.
 - Primary JS: raw `<=656000` bytes (measured 632772 after the parametric kit), gzip `<=170000` bytes, and gzip growth `<=5%` over the Node zlib level-9 `153080`-byte `origin/main` baseline (`<=160734` bytes).
-- Primary CSS: gzip `<=4096` bytes.
+- Primary CSS: gzip `<=16384` bytes. Raised from `4096` in `2026-10` when the printed programme began sharing one stylesheet across the intro and `/about/`; the gate still catches runaway CSS.
 - Performance and bundle thresholds are release gates. A failing machine result is recorded and investigated; thresholds are not silently relaxed.
 
 ## Release acceptance
