@@ -55,10 +55,33 @@ export const PROFILE: Profile = {
   ...PUBLIC_PROFILE,
   experience: [
     {
+      id: 'baidu',
+      title: 'Software Engineer, MeDo',
+      org: 'Baidu',
+      meta: 'Jul 2026 – Present · Primary role · Beijing',
+      summary: [
+        'Overseas engineering owner for MeDo, an AI agent app builder: Stripe billing, credits ledger, ads attribution, growth, and SEO, plus the agent tooling the team ships and operates it with.',
+        'Authored medo-infra-connect, a coding-agent skill + unified CLI (~5.5K LOC) giving agents governed access to AWS, MySQL, ClickHouse, OpenSearch, Metabase, and ad-platform APIs; read-only by default with a verified prod-write path.',
+        'Evidence snapshot: 600+ merged code changes across 19 repos and 140+ design/RCA/verification docs in under 3 months.',
+      ],
+      details: [
+        'Billing service extraction: led the move of the overseas credits ledger and Stripe stack (27 webhook event types, ~29K lines) out of the monolith into a new billing service on its own RDS; cut over 40/40 tables with 0 errors.',
+        'Agent workflow guardrails: release-proof skills (code review ↔ deployed bundle ↔ design doc, 14 incident-derived gates) and a policy hook enforcing pipeline-only builds across Claude Code, Codex, Cursor, and OpenCode.',
+        'LLM operations bots: hardened the Discord → LLM-enriched report → intake desk → issue-tracker pipeline and built an IM data-assistant bot over a read-only Metabase proxy.',
+        'Agent sandbox abuse response: contained a cluster-wide outage where bot accounts prompted the coding agent to run crypto-miners; quantified 42× CPU overcommit and reclaimed ~40 cores with zero restarts.',
+        'Subscriptions and pricing: Pro Max and annual plans on a two-phase quote → commit API over Stripe Subscription Schedules (20 countries, 10 currencies), Billing Portal cancellation, and a first-purchase offer A/B (+88% lift).',
+        'Billing correctness: fixed Stripe lifecycle defects (revived canceled subscriptions, unsynced renewals, misread upgrade declines) with terminal-state gates and retry → dead-letter state machines.',
+        'Ads attribution and consent: Meta Pixel + CAPI, Bing UET server-side conversions via a transactional outbox, a first-party CMP with GPC, and an append-only one-winner-per-user attribution model.',
+        'Credits economy and abuse: cut gifted credits 35% without hurting retention or paid conversion; detected 437 inviters farming 20.6K fake accounts and shipped gifted-only clawback.',
+        'Data and SEO: K8s CronJob collectors → ClickHouse → Metabase dashboards, a Next.js 16 blog replacing Ghost (/blog payload −92%), and a 1.9K-URL pSEO site moved onto EKS CI/CD.',
+        'Enterprise and Azure OpenAI: Seat Pool + partner redemption codes across 6 repos and Azure OpenAI resale hosting with per-customer resource isolation.',
+      ],
+    },
+    {
       id: 'cookiy',
       title: 'AI Agent Engineer',
       org: 'Cookiy AI',
-      meta: 'Aug 2025 – Present · Primary role · Silicon Valley HQ / Beijing Engineering Team',
+      meta: 'Aug 2025 – Jul 2026 · Silicon Valley HQ / Beijing Engineering Team',
       summary: [
         'Owned 41 tools across 4 MCP servers and 26 Zod/OpenAPI schema files spanning study, interview, quant, billing, recruit, guide, playback, and report workflows.',
         'Shipped dual-surface E2E harness with 291 cases (168 SaaS + 123 CLI/MCP) and 7 L0–L6 gate profiles with runtime evidence packets.',
@@ -96,11 +119,12 @@ export const PROFILE: Profile = {
       org: 'Quant Trading Systems Venture',
       meta: 'Apr 2026 – Present · Concurrent venture role',
       summary: [
-        'Improved live IBKR execution safety with heartbeat/reconnect, account-update ordering, broker+DB startup reconcile, bracket/OCO fixes, and deterministic flatten paths.',
-        'Built research/ops visibility: live dashboard, Pipeline Health, Trade Cards, Factor/Calibration/Drift views, Signal Funnel, and daily S3 Parquet archive.',
+        'Execution safety: IBKR heartbeat/reconnect, broker + DB startup reconcile, and bracket/OCO fixes, then a shared IBKR/Alpaca execution ledger and a flag-gated migration of live routing to Alpaca.',
+        'Immutable public dashboard: renders as a pure function of content-addressed input snapshots, with Lambda publication, redacted live logs, daily P&L, and CloudFront/S3 OAC hardening.',
       ],
       details: [
-        'Private live-trading systems on AWS EC2: scanner → factor filter → IBKR bracket orders → S3 Parquet warehouse → researcher dashboard.',
+        'Private live-trading system on AWS: intraday scanner → factor filter → broker bracket orders → S3 Parquet warehouse → public research dashboard.',
+        'Rebuilt infra in a new AWS account with a verification checklist; moved live secrets to SSM Parameter Store with SSM-only deploys and an after-close watchdog.',
         'Reduced scanner/data latency with event-based scanner waits, vectorized reject reasons, warm-cache fast paths, SQLite parse optimization, and lazy-load startup paths.',
       ],
     },
