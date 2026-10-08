@@ -95,13 +95,11 @@ canvas {
 }
 
 .ui-root::before {
-  background:
-    linear-gradient(180deg, rgba(3, 5, 8, 0.72) 0, rgba(3, 5, 8, 0) 24%),
-    linear-gradient(0deg, rgba(3, 5, 8, 0.54) 0, rgba(3, 5, 8, 0) 18%);
+  background: linear-gradient(180deg, rgba(3, 5, 8, 0.55) 0, rgba(3, 5, 8, 0) 16%);
 }
 
 .ui-root::after {
-  box-shadow: inset 0 0 12vw rgba(0, 0, 0, 0.56);
+  box-shadow: inset 0 10vh 7vh -8vh rgba(0, 0, 0, 0.42);
 }
 
 .ui-root button,
@@ -137,29 +135,29 @@ canvas {
 }
 
 .ui-eyebrow {
-  color: var(--text);
-  font-size: clamp(23px, 2.1vw, 30px);
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  line-height: 1;
-}
-
-.ui-title {
-  margin-top: 8px;
-  color: rgba(236, 229, 216, 0.76);
-  font-size: clamp(10px, 0.85vw, 12px);
+  color: rgba(236, 229, 216, 0.62);
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.18em;
   line-height: 1.2;
 }
 
+.ui-title {
+  margin-top: 6px;
+  color: rgba(236, 229, 216, 0.92);
+  font-size: clamp(18px, 1.7vw, 26px);
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  line-height: 1.15;
+}
+
 .ui-sub {
-  margin-top: 10px;
-  color: rgba(236, 229, 216, 0.68);
-  font-size: 8px;
+  margin-top: 8px;
+  color: rgba(236, 229, 216, 0.72);
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.11em;
-  line-height: 1.5;
+  letter-spacing: 0.08em;
+  line-height: 1.45;
 }
 
 .ui-actions {
@@ -233,6 +231,30 @@ canvas {
 .ui-icon-btn.recording {
   background: rgba(232, 93, 74, 0.12);
   color: var(--record);
+}
+
+.ui-hint {
+  position: absolute;
+  top: calc(76px + var(--safe-t));
+  right: calc(22px + var(--safe-r));
+  max-width: 240px;
+  margin: 0;
+  color: rgba(236, 229, 216, 0.78);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+  text-align: right;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.8);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ui-actions:hover ~ .ui-hint,
+.ui-actions:focus-within ~ .ui-hint,
+.ui-hint.is-visible {
+  opacity: 1;
 }
 
 .ui-footer {
@@ -319,19 +341,21 @@ canvas {
   }
 
   .ui-eyebrow {
-    font-size: clamp(21px, 6.2vw, 25px);
+    font-size: 10px;
+    letter-spacing: 0.14em;
   }
 
   .ui-title {
-    margin-top: 8px;
-    font-size: clamp(9px, 2.8vw, 11px);
-    line-height: 1.2;
+    margin-top: 6px;
+    font-size: clamp(16px, 4.8vw, 20px);
+    letter-spacing: 0.04em;
+    line-height: 1.15;
   }
 
   .ui-sub {
-    margin-top: 9px;
-    font-size: 8px;
-    letter-spacing: 0.08em;
+    margin-top: 7px;
+    font-size: 10px;
+    letter-spacing: 0.06em;
   }
 
   .ui-actions {
@@ -344,14 +368,32 @@ canvas {
   }
 
   .ui-footer {
-    position: fixed;
-    width: 1px;
-    height: 1px;
+    position: absolute;
+    right: auto;
+    bottom: calc(22px + var(--safe-b));
+    left: calc(14px + var(--safe-l));
+    width: auto;
+    max-width: calc(100vw - 210px - var(--safe-l) - var(--safe-r));
+    height: auto;
+    margin: 0;
     padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
+    overflow: visible;
+    clip: auto;
+    color: rgba(236, 229, 216, 0.62);
+    font-size: 8px;
+    letter-spacing: 0.06em;
+    line-height: 1.35;
+    white-space: normal;
+  }
+
+  .ui-hint {
+    top: auto;
+    right: calc(14px + var(--safe-r));
+    bottom: calc(64px + var(--safe-b));
+    left: auto;
+    max-width: min(220px, 58vw);
+    opacity: 1;
+    text-align: right;
   }
 
   .ui-rec {
