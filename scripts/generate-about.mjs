@@ -2,25 +2,38 @@ import assert from 'node:assert/strict';
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  creditsMarkup,
+  educationMarkup,
+  emailAddress,
+  escapeHtml,
+  firstReelLabel,
+  focusMarkup,
+  identityMarkup,
+  monthIndex,
+  nameMarkup,
+  programmeNumber,
+  proofMarkup,
+  reelsBody,
+  sectionMarkup,
+  spineMarkup,
+  stampMarkup,
+  stubMarkup,
+} from '../src/ui/programme.ts';
+
+export { escapeHtml };
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ABOUT_PATH = path.join(ROOT, 'public/about/index.html');
 const PROFILE_PATH = path.join(ROOT, 'src/content/public-profile.json');
+const PROGRAMME_CSS_PATH = path.join(ROOT, 'src/styles/programme.css');
 const PROFILE_MARKER = /<!--\s*PUBLIC_PROFILE:([A-Z_]+):([A-Z]+)\s*-->/g;
+const MONTH = /^\d{4}-(?:0[1-9]|1[0-2])$/;
 
-export function escapeHtml(value) {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-}
-
-function linkById(profile, id) {
-  const link = profile.elsewhere.find((item) => item.id === id);
-  assert.ok(link, `public profile: missing elsewhere link “${id}”`);
-  return link;
+function actionById(profile, id) {
+  const action = profile.primaryActions.find((item) => item.id === id);
+  assert.ok(action, `public profile: missing primary action “${id}”`);
+  return action;
 }
 
 function isHttpsHref(href) {
@@ -31,7 +44,7 @@ function isHttpsHref(href) {
   }
 }
 
-function isSupportedElsewhereHref(href) {
+function isSupportedActionHref(href) {
   if (href.startsWith('/') && !href.startsWith('//')) return true;
   try {
     return ['https:', 'mailto:'].includes(new URL(href).protocol);
@@ -40,48 +53,34 @@ function isSupportedElsewhereHref(href) {
   }
 }
 
+function assertText(value, label) {
+  assert.equal(typeof value, 'string', `public profile: ${label} must be a string`);
+  assert.ok(value.length > 0, `public profile: ${label} must not be empty`);
+}
+
 export function validatePublicProfile(profile) {
   for (const key of ['name', 'role', 'dateModified', 'status', 'summary', 'experienceNote', 'focus']) {
-    assert.equal(typeof profile[key], 'string', `public profile: ${key} must be a string`);
-    assert.ok(profile[key].length > 0, `public profile: ${key} must not be empty`);
+    assertText(profile[key], key);
   }
   assert.match(profile.dateModified, /^\d{4}-\d{2}-\d{2}$/, 'public profile: dateModified must use YYYY-MM-DD');
   assert.ok(Array.isArray(profile.publicProof) && profile.publicProof.length > 0, 'public profile: publicProof must not be empty');
   assert.ok(Array.isArray(profile.primaryActions) && profile.primaryActions.length > 0, 'public profile: primaryActions must not be empty');
-  assert.ok(Array.isArray(profile.elsewhere) && profile.elsewhere.length > 0, 'public profile: elsewhere must not be empty');
-  const ids = profile.elsewhere.map(({ id }) => id);
-  assert.equal(new Set(ids).size, ids.length, 'public profile: elsewhere ids must be unique');
+  assert.ok(Array.isArray(profile.experience) && profile.experience.length > 0, 'public profile: experience must not be empty');
+  assert.ok(Array.isArray(profile.education), 'public profile: education must be a list');
   for (const proof of profile.publicProof) {
     assert.ok(proof.label && proof.detail && proof.href, 'public profile: every public proof needs label, detail, and href');
     assert.ok(isHttpsHref(proof.href), 'public profile: public proof hrefs must use https');
   }
-  for (const link of profile.elsewhere) {
-    assert.ok(link.id && link.label && link.href, 'public profile: every elsewhere link needs id, label, and href');
-    assert.ok(isSupportedElsewhereHref(link.href), 'public profile: elsewhere hrefs must use https, mailto, or a root-relative path');
-  }
   for (const action of profile.primaryActions) {
-    linkById(profile, action.linkId);
-    assert.ok(action.label && action.staticLabel, 'public profile: every primary action needs modal and static labels');
-    assert.ok(['primary', 'secondary'].includes(action.style), 'public profile: primary action style must be primary or secondary');
-    assert.ok(Number.isFinite(action.modalOrder), 'public profile: every primary action needs modalOrder');
-    assert.ok(Number.isFinite(action.staticOrder), 'public profile: every primary action needs staticOrder');
+    assert.ok(action.id && action.label && action.note && action.href, 'public profile: every primary action needs id, label, note, and href');
+    assert.ok(isSupportedActionHref(action.href), 'public profile: primary action hrefs must use https, mailto, or a root-relative path');
   }
   assert.equal(
-    new Set(profile.primaryActions.map(({ linkId }) => linkId)).size,
+    new Set(profile.primaryActions.map(({ id }) => id)).size,
     profile.primaryActions.length,
-    'public profile: primary action linkIds must be unique',
+    'public profile: primary action ids must be unique',
   );
-  assert.equal(
-    new Set(profile.primaryActions.map(({ modalOrder }) => modalOrder)).size,
-    profile.primaryActions.length,
-    'public profile: modal action order values must be unique',
-  );
-  assert.equal(
-    new Set(profile.primaryActions.map(({ staticOrder }) => staticOrder)).size,
-    profile.primaryActions.length,
-    'public profile: static action order values must be unique',
-  );
-  const email = linkById(profile, profile.identity.emailLinkId);
+  const email = actionById(profile, profile.identity.emailLinkId);
   assert.ok(email.href.startsWith('mailto:'), 'public profile: identity email link must use mailto');
   assert.equal(
     new Set(profile.identity.sameAsLinkIds).size,
@@ -89,7 +88,29 @@ export function validatePublicProfile(profile) {
     'public profile: identity sameAs linkIds must be unique',
   );
   for (const id of profile.identity.sameAsLinkIds) {
-    assert.ok(isHttpsHref(linkById(profile, id).href), 'public profile: identity sameAs links must use https');
+    assert.ok(isHttpsHref(actionById(profile, id).href), 'public profile: identity sameAs links must use https');
+  }
+  const issued = monthIndex(profile.dateModified.slice(0, 7));
+  for (const role of profile.experience) {
+    for (const key of ['id', 'org', 'title', 'note']) assertText(role[key], `experience ${key}`);
+    assert.match(role.start, MONTH, `public profile: ${role.id} start must use YYYY-MM`);
+    assert.ok(monthIndex(role.start) <= issued, `public profile: ${role.id} must start before dateModified`);
+    if (role.end !== null) {
+      assert.match(role.end, MONTH, `public profile: ${role.id} end must use YYYY-MM or null`);
+      assert.ok(monthIndex(role.end) >= monthIndex(role.start), `public profile: ${role.id} must end after it starts`);
+    }
+    assert.ok(Array.isArray(role.summary) && role.summary.length > 0, `public profile: ${role.id} needs a summary`);
+    assert.ok(Array.isArray(role.details), `public profile: ${role.id} details must be a list`);
+    for (const line of [...role.summary, ...role.details]) assertText(line, `${role.id} line`);
+  }
+  assert.equal(
+    new Set(profile.experience.map(({ id }) => id)).size,
+    profile.experience.length,
+    'public profile: experience ids must be unique',
+  );
+  for (const item of profile.education) {
+    assertText(item.school, 'education school');
+    assertText(item.detail, 'education detail');
   }
 }
 
@@ -106,86 +127,98 @@ export function serializeJsonForScript(value, space = 2) {
   });
 }
 
-function jsonLd(profile) {
-  const email = linkById(profile, profile.identity.emailLinkId).href.replace(/^mailto:/, '');
-  const sameAs = profile.identity.sameAsLinkIds.map((id) => linkById(profile, id).href);
-  return serializeJsonForScript(
-    {
-      '@context': 'https://schema.org',
-      '@type': 'ProfilePage',
-      '@id': 'https://brickerp.github.io/about/#profile',
-      url: 'https://brickerp.github.io/about/',
-      name: `${profile.name} — ${profile.role}`,
-      description: `Profile of ${profile.role} ${profile.name}.`,
-      dateModified: profile.dateModified,
-      mainEntity: {
-        '@type': 'Person',
-        '@id': 'https://brickerp.github.io/about/#yupeng-lu',
-        name: profile.name,
-        url: 'https://brickerp.github.io/about/',
-        jobTitle: profile.role,
-        email,
-        sameAs,
-        knowsAbout: [
-          'AI agents',
-          'Model Context Protocol',
-          'tool-use contracts',
-          'OpenAPI',
-          'realtime voice systems',
-          'evidence-gated software releases',
-        ],
-      },
-    },
-    2,
-  )
+function indent(text, spaces) {
+  const padding = ' '.repeat(spaces);
+  return text
     .split('\n')
-    .map((line) => `    ${line}`)
+    .map((line) => (line ? `${padding}${line}` : line))
     .join('\n');
 }
 
-function primaryActions(profile) {
-  return [...profile.primaryActions]
-    .sort((left, right) => left.staticOrder - right.staticOrder)
-    .map((action) => {
-      const link = linkById(profile, action.linkId);
-      const secondary = action.style === 'secondary' ? ' secondary' : '';
-      return `          <a class="button${secondary}" href="${escapeHtml(link.href)}">${escapeHtml(action.staticLabel)}</a>`;
-    })
-    .join('\n');
+function jsonLd(profile) {
+  const sameAs = profile.identity.sameAsLinkIds.map((id) => actionById(profile, id).href);
+  return indent(
+    serializeJsonForScript(
+      {
+        '@context': 'https://schema.org',
+        '@type': 'ProfilePage',
+        '@id': 'https://brickerp.github.io/about/#profile',
+        url: 'https://brickerp.github.io/about/',
+        name: `${profile.name} — ${profile.role}`,
+        description: `Profile of ${profile.role} ${profile.name}.`,
+        dateModified: profile.dateModified,
+        mainEntity: {
+          '@type': 'Person',
+          '@id': 'https://brickerp.github.io/about/#yupeng-lu',
+          name: profile.name,
+          url: 'https://brickerp.github.io/about/',
+          jobTitle: profile.role,
+          email: emailAddress(profile),
+          sameAs,
+          knowsAbout: [
+            'AI agents',
+            'Model Context Protocol',
+            'tool-use contracts',
+            'OpenAPI',
+            'realtime voice systems',
+            'evidence-gated software releases',
+          ],
+        },
+      },
+      2,
+    ),
+    4,
+  );
 }
 
-function proofCards(profile) {
-  return profile.publicProof
-    .map(
-      (proof) =>
-        `        <li><a class="proof-link" href="${escapeHtml(proof.href)}"><strong>${escapeHtml(proof.label)}</strong><span>${escapeHtml(proof.detail)}</span></a></li>`,
-    )
-    .join('\n');
+function hero(profile) {
+  return [
+    '<header class="about-cover">',
+    '  <img class="about-plate" src="/programme/cover-qianmen.png" alt="Two-colour halftone of the Qianmen passage: a Dashilar gateway over the night road, printed from the film." width="2080" height="1120" decoding="async">',
+    '  <p class="about-film">Loop 01 · Endless Second Ring</p>',
+    `  <p class="about-film programme-issue">Programme № ${programmeNumber(profile)}<br>Beijing<br>Passage 11 / 12 · 00:40</p>`,
+    '  <p class="about-cjk" lang="zh-CN">前门 · 大栅栏</p>',
+    `  ${nameMarkup(profile, 'h1', 'profile-name')}`,
+    '</header>',
+    '<div class="programme-title">',
+    `  <div class="about-ident">${stampMarkup(profile)}${identityMarkup(profile, 'Profile · Builder · Engineer', 'profile-summary')}</div>`,
+    `  <div class="programme-billing">${creditsMarkup(profile)}${focusMarkup(profile)}</div>`,
+    '</div>',
+  ].join('\n');
 }
 
-function renderRegions(profile) {
-  const email = linkById(profile, profile.identity.emailLinkId);
-  const resume = linkById(profile, 'resume');
-  const github = linkById(profile, 'github');
-  const publicWork = linkById(profile, 'public-work');
-  const cli = linkById(profile, 'cli');
+function colophon(profile) {
+  const email = emailAddress(profile);
+  return `<p class="about-colophon"><span class="programme-swatches" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span>Ink · oxblood · one vermilion spot on warm stock</span><span>Halftones printed from the film · Updated ${escapeHtml(profile.dateModified)}</span><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></p>`;
+}
+
+function renderRegions(profile, programmeCss) {
+  const email = actionById(profile, profile.identity.emailLinkId);
+  const resume = actionById(profile, 'resume');
   const title = `${profile.name} — ${profile.role}`;
   const description = `${title}. ${profile.summary}`;
   const imageAlt = `${title} profile card.`;
+  const reelsMeta = `${profile.experience.length} reels · ${firstReelLabel(profile)} – now<br>Overlaps are concurrent work`;
   return {
     HEAD: `  <meta name="description" content="${escapeHtml(description)}">\n  <link rel="canonical" href="https://brickerp.github.io/about/">\n  <meta property="og:title" content="${escapeHtml(title)}">\n  <meta property="og:description" content="${escapeHtml(profile.summary)}">\n  <meta property="og:type" content="profile">\n  <meta property="og:url" content="https://brickerp.github.io/about/">\n  <meta property="og:site_name" content="${escapeHtml(profile.name)} — BrickerP">\n  <meta property="og:image" content="https://brickerp.github.io/profile-preview.png">\n  <meta property="og:image:width" content="1200">\n  <meta property="og:image:height" content="630">\n  <meta property="og:image:alt" content="${escapeHtml(imageAlt)}">\n  <meta name="twitter:card" content="summary_large_image">\n  <meta name="twitter:title" content="${escapeHtml(title)}">\n  <meta name="twitter:description" content="${escapeHtml(profile.summary)}">\n  <meta name="twitter:image" content="https://brickerp.github.io/profile-preview.png">\n  <meta name="twitter:image:alt" content="${escapeHtml(imageAlt)}">\n  <title>${escapeHtml(title)}</title>`,
     JSON_LD: `  <script type="application/ld+json">\n${jsonLd(profile)}\n  </script>`,
+    STYLE: `  <style>\n${indent(programmeCss.trimEnd(), 4)}\n  </style>`,
     NAV: `    <nav aria-label="Primary navigation">\n      <a href="/">Generative artwork</a>\n      <a href="${escapeHtml(resume.href)}">Resume</a>\n      <a href="${escapeHtml(email.href)}">Email</a>\n    </nav>`,
-    HERO: `    <section class="hero" aria-labelledby="profile-name">\n      <div>\n        <p class="eyebrow">Profile · Builder · Engineer</p>\n        <h1 id="profile-name">${escapeHtml(profile.name)}</h1>\n        <p class="role">${escapeHtml(profile.role)}</p>\n        <p class="summary">${escapeHtml(profile.summary)}</p>\n        <div class="actions" aria-label="Profile links">\n${primaryActions(profile)}\n        </div>\n      </div>\n      <p class="status"><strong>Work status</strong><br>${escapeHtml(profile.status)}</p>\n    </section>`,
-    PROOF: `      <ul class="proof-grid">\n${proofCards(profile)}\n      </ul>`,
-    FOCUS: `      <p class="experience-note"><strong>Current roles:</strong> ${escapeHtml(profile.experienceNote)}</p>\n      <p>${escapeHtml(profile.focus)}</p>\n      <p>See the full chronology and project evidence in the <a href="${escapeHtml(resume.href)}">resume PDF</a>, inspect the public <a href="${escapeHtml(publicWork.href)}">research skill</a> and <a href="${escapeHtml(cli.href)}">CLI</a>, or explore the <a href="${escapeHtml(github.href)}">personal GitHub</a>.</p>`,
-    FOOTER: `  <footer><p>© 2026 ${escapeHtml(profile.name)} · <a href="/">Beijing — Endless Second Ring</a></p></footer>`,
+    SPINE: indent(spineMarkup(profile), 6),
+    HERO: indent(hero(profile), 8),
+    REELS: indent(sectionMarkup('reels-heading', 'h2', 'The reels', reelsMeta, reelsBody(profile, 'h3', 930)), 10),
+    LOWER: indent(
+      `<div class="programme-lower">\n${sectionMarkup('proof-heading', 'h2', 'Exhibits', 'Public work', proofMarkup(profile))}\n${sectionMarkup('schooling-heading', 'h2', 'Schooling', '', educationMarkup(profile))}\n</div>`,
+      8,
+    ),
+    STUB: indent(`${stubMarkup(profile)}\n${colophon(profile)}`, 8),
+    FOOTER: `  <footer class="site-foot"><p>© ${escapeHtml(profile.dateModified.slice(0, 4))} ${escapeHtml(profile.name)} · <a href="/">Beijing — Endless Second Ring</a></p></footer>`,
   };
 }
 
-export function renderAbout(template, profile) {
+export function renderAbout(template, profile, programmeCss) {
   validatePublicProfile(profile);
-  const regions = renderRegions(profile);
+  const regions = renderRegions(profile, programmeCss);
   const expectedMarkers = Object.keys(regions).flatMap((name) => [
     `${name}:START`,
     `${name}:END`,
@@ -215,24 +248,31 @@ export async function readPublicProfile() {
   return JSON.parse(await readFile(PROFILE_PATH, 'utf8'));
 }
 
+export async function readProgrammeCss() {
+  return readFile(PROGRAMME_CSS_PATH, 'utf8');
+}
+
 export async function expectedAbout() {
-  const [template, profile] = await Promise.all([
+  const [template, profile, programmeCss] = await Promise.all([
     readFile(ABOUT_PATH, 'utf8'),
     readPublicProfile(),
+    readProgrammeCss(),
   ]);
-  return { actual: template, expected: renderAbout(template, profile) };
+  return { actual: template, expected: renderAbout(template, profile, programmeCss) };
 }
+
+const DRIFT = 'public/about/index.html drifted from src/content/public-profile.json or src/styles/programme.css; run npm run generate:about';
 
 export async function assertAboutIsGenerated() {
   const { actual, expected } = await expectedAbout();
-  assert.equal(actual, expected, 'public/about/index.html drifted from src/content/public-profile.json; run npm run generate:about');
+  assert.equal(actual, expected, DRIFT);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { actual, expected } = await expectedAbout();
   if (process.argv.includes('--check')) {
-    assert.equal(actual, expected, 'public/about/index.html drifted from src/content/public-profile.json; run npm run generate:about');
-    console.log('Static About matches the public profile source.');
+    assert.equal(actual, expected, DRIFT);
+    console.log('Static About matches the public profile and programme stylesheet.');
   } else {
     await writeFile(ABOUT_PATH, expected);
     console.log('Generated static About profile regions.');

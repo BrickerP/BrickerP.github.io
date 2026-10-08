@@ -144,9 +144,13 @@ after the production assets have been served.
 
 ## Verification
 
-The public identity shared by the in-app profile and `/about/` lives in
-`src/content/public-profile.json`. After editing it, run `npm run generate:about`;
-`npm run verify:static` rejects any committed generated-region drift.
+The profile shared by the in-app intro and `/about/` lives in
+`src/content/public-profile.json`; both surfaces render it through
+`src/ui/programme.ts` and `src/styles/programme.css`. After editing any of them, run
+`npm run generate:about`; `npm run verify:static` rejects any committed
+generated-region drift. `npm run generate:programme` reprints the halftone plates in
+`public/programme/` and `public/profile-preview.png` from the deployed film (set
+`URL` to print from another build).
 
 `public/resume.pdf` is generated from `src/content/resume.html`. After editing the
 source, run `npm run generate:resume` (it prints with local Google Chrome; set

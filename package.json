@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit",
     "generate:about": "node scripts/generate-about.mjs",
     "check:about": "node scripts/generate-about.mjs --check",
+    "generate:programme": "node scripts/generate-programme-assets.mjs",
     "verify:about-generator": "node --test scripts/generate-about.test.mjs",
     "generate:resume": "node scripts/generate-resume.mjs",
     "verify:resume-generator": "node --test scripts/generate-resume.test.mjs",

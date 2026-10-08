@@ -261,7 +261,9 @@ for (const visibleText of [
   publicProfile.summary,
   publicProfile.experienceNote,
   publicProfile.focus,
-  ...publicProfile.primaryActions.map(({ staticLabel }) => staticLabel),
+  ...publicProfile.primaryActions.map(({ label }) => label),
+  ...publicProfile.experience.flatMap(({ org, title }) => [org, title]),
+  ...publicProfile.education.map(({ school }) => school),
 ]) {
   assert.ok(aboutHtml.includes(escapeHtml(visibleText)), `about: missing visible content “${visibleText}”`);
 }
@@ -277,11 +279,11 @@ assert.equal(
   publicProfile.publicProof.length,
   'about: each public proof card must expose one full-card link target',
 );
-const email = publicProfile.elsewhere
+const email = publicProfile.primaryActions
   .find(({ id }) => id === publicProfile.identity.emailLinkId)
   ?.href.replace(/^mailto:/, '');
 const sameAs = publicProfile.identity.sameAsLinkIds.map((id) =>
-  publicProfile.elsewhere.find((link) => link.id === id)?.href,
+  publicProfile.primaryActions.find((action) => action.id === id)?.href,
 );
 assert.equal(profile.mainEntity.name, publicProfile.name, 'about: JSON-LD name drifted from public profile');
 assert.equal(profile.mainEntity.jobTitle, publicProfile.role, 'about: JSON-LD role drifted from public profile');

@@ -1,0 +1,442 @@
+.about-panel {
+  --paper: #ece5d8;
+  --ink: #101a22;
+  --ink-soft: #46525c;
+  --ink-solid: #121e28;
+  --gut: 30px;
+  --serif: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
+  --cjk: "Songti SC", STSong, SimSun, serif;
+  --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  background: #ece5d8;
+  color: var(--ink);
+  font-family: var(--serif);
+}
+
+.about-panel :focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.about-spine {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 20px 0;
+  writing-mode: vertical-rl;
+  background: var(--ink-solid);
+  color: var(--paper);
+  font: 9px var(--mono);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.about-spine [lang] {
+  font: 700 14px var(--cjk);
+}
+
+.about-cover {
+  position: relative;
+  margin: 0;
+  padding-bottom: min(46px, 8vw);
+  background: var(--ink-solid);
+  color: var(--paper);
+}
+
+.about-plate {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.about-film,
+.about-close {
+  position: absolute;
+  top: 10px;
+  margin: 0;
+  padding: 3px 7px;
+  background: var(--ink-solid);
+  font: 10px/1.5 var(--mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.about-film {
+  left: min(20px, 4vw);
+}
+
+.about-close {
+  right: 6px;
+  min-height: 44px;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+}
+
+.about-cjk {
+  position: absolute;
+  top: 58px;
+  right: min(22px, 4vw);
+  margin: 0;
+  padding: 8px 3px;
+  background: var(--ink-solid);
+  writing-mode: vertical-rl;
+  font: 700 min(20px, 4vw) var(--cjk);
+  letter-spacing: 0.32em;
+}
+
+.about-name {
+  position: absolute;
+  bottom: 0;
+  left: min(22px, 3vw);
+  margin: 0;
+  font: 900 min(92px, 16vw) / 1 var(--serif);
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+  transform: translateY(50%);
+  background: linear-gradient(var(--paper) 50%, var(--ink) 0);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.about-ident {
+  position: relative;
+  padding: calc(min(46px, 8vw) + 16px) var(--gut) 16px;
+}
+
+.about-eyebrow,
+.about-status,
+.about-role-meta,
+.about-credits dt,
+.about-colophon,
+.about-expand,
+.about-admit,
+.about-action-label,
+.about-reel-no small {
+  margin: 0;
+  color: var(--ink-soft);
+  font: 10px/1.5 var(--mono);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.about-role {
+  margin: 4px 0;
+  font: 12.5px var(--mono);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.about-summary {
+  max-width: 420px;
+  margin: 14px 0 0;
+  font: italic 16px/1.42 var(--serif);
+}
+
+.about-stamp {
+  position: absolute;
+  top: 34px;
+  right: 20px;
+  width: min(112px, 22vw);
+  color: #d9684b;
+  mix-blend-mode: multiply;
+  transform: rotate(-11deg);
+  pointer-events: none;
+}
+
+.about-credits {
+  margin: 0;
+  padding: 0 var(--gut);
+}
+
+.about-credits div {
+  display: flex;
+  align-items: baseline;
+  padding: 3px 0;
+}
+
+.about-credits div::before {
+  flex: 1;
+  order: 1;
+  margin: 0 8px;
+  border-bottom: 1px dotted #8f8571;
+  content: "";
+}
+
+.about-credits dd {
+  order: 2;
+  margin: 0;
+  font-size: 14.5px;
+}
+
+.about-focus {
+  margin: 12px var(--gut) 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.about-section {
+  margin: 26px var(--gut) 0;
+}
+
+.about-section-title {
+  margin: 0 0 10px;
+  font: 900 30px/1 var(--serif);
+}
+
+.about-experience-note {
+  margin: 0 0 12px;
+  font: italic 13px/1.45 var(--serif);
+}
+
+.about-strip {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.about-strip-narrow {
+  display: none;
+}
+
+.about-reels {
+  margin-top: 14px;
+}
+
+.about-reel {
+  display: grid;
+  grid-template-columns: min(96px, 17vw) minmax(0, 1fr);
+  gap: 0 18px;
+  padding: 18px 0;
+}
+
+.about-reel + .about-reel {
+  border-top: 1px solid var(--ink);
+}
+
+.about-reel-no {
+  margin: 0;
+  font: 900 min(90px, 16vw) / 0.74 var(--serif);
+  letter-spacing: -0.04em;
+}
+
+.about-reel-no small {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.about-reel-title {
+  margin: 0;
+  font: 700 23px/1.05 var(--serif);
+}
+
+.about-role-meta {
+  margin-top: 5px;
+}
+
+.about-synopsis {
+  margin: 8px 0 0;
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+
+.about-expand {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink);
+  list-style: none;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.about-expand::-webkit-details-marker {
+  display: none;
+}
+
+.about-expand::after {
+  content: "\a0+";
+}
+
+[open] > .about-expand::after {
+  content: "\a0\2212";
+}
+
+.about-details,
+.about-proof,
+.about-education {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.about-details {
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+
+.about-details li {
+  position: relative;
+  margin-bottom: 6px;
+  padding-left: 18px;
+}
+
+.about-details li::before {
+  position: absolute;
+  top: 0.72em;
+  left: 0;
+  width: 10px;
+  border-top: 1px solid var(--ink-soft);
+  content: "";
+}
+
+.about-proof li + li,
+.about-education li + li {
+  border-top: 1px solid #b8ad98;
+}
+
+.about-proof a {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 0 12px;
+  align-items: baseline;
+  min-height: 44px;
+  padding: 10px 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.about-tag {
+  font: 900 24px/1 var(--serif);
+}
+
+.about-proof-label {
+  font-size: 17px;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.about-fine {
+  display: block;
+  margin: 3px 0 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.about-education li {
+  padding: 8px 0;
+}
+
+.about-edu-school {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.about-colophon {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 18px;
+  margin: 26px var(--gut) 0;
+  padding: 4px 0 14px;
+  border-top: 6px solid var(--ink);
+}
+
+.about-colophon a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink);
+}
+
+.about-primary-actions {
+  display: grid;
+  grid-template-columns: 30px repeat(4, minmax(0, 1fr));
+  border-top: 2px dashed rgba(236, 229, 216, 0.6);
+  background: var(--ink-solid);
+  color: var(--paper);
+}
+
+.about-admit,
+.about-primary-actions a {
+  border-right: 1px dotted rgba(236, 229, 216, 0.35);
+}
+
+.about-admit {
+  display: grid;
+  place-items: center;
+  font-size: 8px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.about-admit,
+.about-action-label {
+  color: rgba(236, 229, 216, 0.78);
+}
+
+.about-primary-actions a {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-height: 66px;
+  padding: 10px min(14px, 2vw);
+  color: inherit;
+  text-decoration: none;
+}
+
+.about-primary-actions a:last-child {
+  border-right: 0;
+}
+
+.about-action-label {
+  font-size: 9px;
+}
+
+.about-action-note {
+  font: 700 min(18px, 3.2vw) var(--serif);
+}
+
+.about-primary-actions a:hover .about-action-note {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 700px) {
+  .about-panel {
+    --gut: 18px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .about-spine,
+  .about-strip-wide {
+    display: none;
+  }
+
+  .about-strip-narrow {
+    display: block;
+  }
+
+  .about-stamp {
+    position: static;
+    float: right;
+    margin: -8px -6px 0 6px;
+  }
+}
+
+@media (max-width: 360px) {
+  .about-primary-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .about-admit,
+  .about-film {
+    display: none;
+  }
+}
