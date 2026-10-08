@@ -1,23 +1,12 @@
-import { BufferAttribute, BufferGeometry, type Material, Group, Mesh } from 'three';
+import { BufferGeometry, Group, Mesh, SphereGeometry, type Material } from 'three';
 import { mergeParts, placedCylinder } from './geom';
 
 export type TreeKind = 'street' | 'locust' | 'willow';
 
-function leafCard(width: number, height: number, y: number, rotationY: number): BufferGeometry {
-  const geometry = new BufferGeometry();
-  const positions = new Float32Array([
-    -width / 2, 0, 0,
-    width / 2, 0, 0,
-    width / 2, height, 0,
-    -width / 2, height, 0,
-  ]);
-  const uvs = new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]);
-  geometry.setAttribute('position', new BufferAttribute(positions, 3));
-  geometry.setAttribute('uv', new BufferAttribute(uvs, 2));
-  geometry.setAttribute('normal', new BufferAttribute(new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1]), 3));
-  geometry.setIndex([0, 1, 2, 0, 2, 3, 0, 2, 1, 0, 3, 2]);
-  geometry.translate(0, y, 0);
-  geometry.rotateY(rotationY);
+function canopy(width: number, height: number, depth: number, x: number, y: number, z: number): BufferGeometry {
+  const geometry = new SphereGeometry(1, 8, 6);
+  geometry.scale(width, height, depth);
+  geometry.translate(x, y, z);
   return geometry;
 }
 
@@ -39,9 +28,9 @@ export function createTree(height: number, kind: TreeKind = 'street'): {
   const leafHeight = kind === 'willow' ? height * 0.55 : height * 0.32;
   const leafY = kind === 'willow' ? crown * 0.55 : crown * 0.82;
   const leaves = mergeParts([
-    leafCard(leafWidth, leafHeight, leafY, 0),
-    leafCard(leafWidth * 0.9, leafHeight, leafY - 0.05, Math.PI / 3),
-    leafCard(leafWidth * 0.85, leafHeight * 0.9, leafY - 0.08, -Math.PI / 3),
+    canopy(leafWidth, leafHeight, leafWidth * 0.8, lean * 0.2, leafY, 0),
+    canopy(leafWidth * 0.7, leafHeight * 0.7, leafWidth * 0.6, lean * height * 0.15, leafY - height * 0.08, 0.2),
+    canopy(leafWidth * 0.55, leafHeight * 0.8, leafWidth * 0.5, -lean * height * 0.08, leafY - height * 0.02, -0.15),
   ]);
   return { wood, leaves };
 }

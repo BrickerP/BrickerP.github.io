@@ -253,12 +253,36 @@ export class BeijingDriveScene {
   }
 
   private createCityMaterials(): CityMaterials & { water: MeshStandardMaterial } {
-    const streetBrick = this.surface(PALETTE.wallRed, 'streetBrick', { roughness: 0.92 });
-    const palaceBrick = this.surface(PALETTE.palaceRed, 'palaceBrick', { roughness: 0.88 });
-    const tile = this.surface(PALETTE.roof, 'tile', { roughness: 0.74 });
-    const stone = this.surface(PALETTE.stone, 'stone', { roughness: 0.94 });
-    const concrete = this.surface('#6E7C84', 'concrete', { roughness: 0.86 });
-    const bark = this.surface('#3B3025', 'bark', { roughness: 0.96 });
+    const streetBrick = this.surface('#8C5A4E', 'streetBrick', {
+      roughness: 0.9,
+      emissive: '#3A221C',
+      emissiveIntensity: 0.42,
+    });
+    const palaceBrick = this.surface('#B15A46', 'palaceBrick', {
+      roughness: 0.86,
+      emissive: '#4A2418',
+      emissiveIntensity: 0.38,
+    });
+    const tile = this.surface('#6E7C78', 'tile', {
+      roughness: 0.72,
+      emissive: '#1C2826',
+      emissiveIntensity: 0.28,
+    });
+    const stone = this.surface('#D5D0C4', 'stone', {
+      roughness: 0.94,
+      emissive: '#3A3832',
+      emissiveIntensity: 0.16,
+    });
+    const concrete = this.surface('#8A98A0', 'concrete', {
+      roughness: 0.84,
+      emissive: '#243038',
+      emissiveIntensity: 0.22,
+    });
+    const bark = this.surface('#6A5340', 'bark', {
+      roughness: 0.94,
+      emissive: '#2A2018',
+      emissiveIntensity: 0.2,
+    });
     const glass = this.surface('#405A6B', 'glass', {
       roughness: 0.42,
       metalness: 0.18,
@@ -283,9 +307,12 @@ export class BeijingDriveScene {
     });
     windowMaterial.userData.preserveInCapture = true;
     bindWindowLattice(windowMaterial);
-    const leaf = this.surface(PALETTE.foliage, 'leaf', { roughness: 0.95 });
+    const leaf = this.standard('#3E6A48', {
+      roughness: 0.95,
+      emissive: '#1A3020',
+      emissiveIntensity: 0.28,
+    });
     leaf.side = DoubleSide;
-    leaf.alphaTest = 0.5;
     const niche = this.standard('#1A1410', { roughness: 0.95 });
     const lampPole = this.surface('#3A4144', 'concrete', { roughness: 1, metalness: 0 });
     const lampHead = this.trackMaterial(
@@ -747,8 +774,7 @@ export class BeijingDriveScene {
         flatShading: false,
         roughness: options.roughness ?? 1,
         metalness: options.metalness ?? 0,
-        emissive: options.emissive,
-        emissiveIntensity: options.emissiveIntensity,
+        ...(options.emissive ? { emissive: options.emissive, emissiveIntensity: options.emissiveIntensity ?? 0 } : {}),
       }),
     );
   }
