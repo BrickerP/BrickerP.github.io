@@ -19,8 +19,8 @@ const BUDGET = {
     originMainGzipBaselineBytes: 166_491,
     maximumGrowthRatio: 0.05,
     absoluteGzipMaximumBytes: 190_000,
-    // Measured 650208 raw after the resume profile copy (649866) plus the control hint.
-    rawMaximumBytes: 651_000,
+    // Measured 653758 raw after the passage masses and upturned eaves.
+    rawMaximumBytes: 656_000,
   },
   css: { gzipMaximumBytes: 4_096 },
 };
