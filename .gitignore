@@ -3,6 +3,7 @@ dist
 *.local
 .DS_Store
 .vite
+scripts/.kit-check-
 # recorded previews / verification artefacts are generated, not source
 beijing-infinite-loop.webm
 docs/verify/

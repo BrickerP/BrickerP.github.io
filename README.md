@@ -111,7 +111,7 @@ src/
   app/BeijingLoopApp.ts       deterministic 48s clock and render orchestration
   rendering/
     BeijingDriveScene.ts      procedural road, twelve passages, lamps, atmosphere
-    surfaceTextures.ts        seeded mid-tier surface atlases
+    surfaceTextures.ts        seeded hash shared by the drive
     FirstPersonCameraRig.ts   phase-derived driver-eye camera pose
     drivePath.ts              closed spline and road-ribbon geometry helpers
     theme.ts                  48s timing, palette and scene constants

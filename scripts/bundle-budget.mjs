@@ -19,7 +19,7 @@ const BUDGET = {
     originMainGzipBaselineBytes: 166_491,
     maximumGrowthRatio: 0.05,
     absoluteGzipMaximumBytes: 190_000,
-    // Measured 653758 raw after the passage masses and upturned eaves.
+    // Measured 632772 raw after the parametric kit replaced the canvas atlases.
     rawMaximumBytes: 656_000,
   },
   css: { gzipMaximumBytes: 4_096 },

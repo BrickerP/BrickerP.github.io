@@ -23,7 +23,7 @@
     "verify:ci": "node scripts/verify-ci.mjs",
     "verify:performance-telemetry": "node --test scripts/performance-telemetry.test.mjs",
     "verify:dist": "node scripts/verify-dist.mjs",
-    "verify:geometry": "node scripts/geometry-check.mjs",
+    "verify:geometry": "node scripts/geometry-check.mjs && node scripts/kit-check.mjs",
     "verify:browser": "node scripts/verify.mjs",
     "verify:seam": "node scripts/seam-check.mjs",
     "verify:performance": "node scripts/performance-check.mjs",
