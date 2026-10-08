@@ -148,6 +148,14 @@ The public identity shared by the in-app profile and `/about/` lives in
 `src/content/public-profile.json`. After editing it, run `npm run generate:about`;
 `npm run verify:static` rejects any committed generated-region drift.
 
+`public/resume.pdf` is generated from `src/content/resume.html`. After editing the
+source, run `npm run generate:resume` (it prints with local Google Chrome; set
+`CHROME_PATH` to use another binary), then approve the printed SHA-256 in
+`scripts/verify-resume.mjs`. The generator adds what Chrome's tagged PDF lacks:
+XMP metadata, author and keywords, a list body for every list item, and an
+accessible description for every link taken from its `aria-label`. Static and dist
+verification reject untagged, unlabeled, stale, or unapproved revisions.
+
 ```bash
 npm run verify       # static/CI contracts, render telemetry, geometry + TypeScript
 npm run build        # typecheck + production bundle
