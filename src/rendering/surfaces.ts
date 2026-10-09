@@ -64,7 +64,7 @@ vec3 surfacePattern(vec3 world, vec3 normal, vec2 uv, float kind) {
   else if (kind < 2.5) feature = 0.15;
   else if (kind < 3.5) feature = 0.32;
   else if (kind < 4.5) feature = 0.6;
-  if (length(fwidth(plane)) > feature * 2.2) {
+  if (kind < 5.5 && length(fwidth(plane)) > feature * 2.2) {
     return vec3(0.94);
   }
   float value = 1.0;

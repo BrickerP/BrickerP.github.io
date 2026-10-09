@@ -90,7 +90,7 @@ export function createMerlons(options: CityWallOptions): BufferGeometry {
   for (let index = 0; index < merlons; index += 1) {
     const x = -options.length / 2 + (options.length / merlons) * (index + 0.5);
     parts.push(
-      placedBox(0.55, 0.48, options.depth * 0.55, x, options.height + 0.16, -options.depth * 0.12),
+      placedBox(0.55, 0.62, options.depth * 0.62, x, options.height - 0.02, -options.depth * 0.08),
     );
   }
   return mergeParts(parts);
@@ -101,53 +101,45 @@ export function createMerlons(options: CityWallOptions): BufferGeometry {
  * Ribs stay inside the ring thickness so the carriageway is not pinched.
  */
 export function createArch(radius: number, depth: number, thickness = 0.28): BufferGeometry {
-  const segments = 18;
+  const segments = 48;
   const positions: number[] = [];
   const indices: number[] = [];
   const inner = Math.max(0.2, radius - thickness / 2);
   const outer = radius + thickness / 2;
   const z0 = -depth / 2;
   const z1 = depth / 2;
-  for (let index = 0; index <= segments; index += 1) {
-    const angle = Math.PI * (index / segments);
-    const c = Math.cos(angle);
-    const s = Math.sin(angle);
-    positions.push(
-      c * inner, s * inner, z0,
-      c * outer, s * outer, z0,
-      c * inner, s * inner, z1,
-      c * outer, s * outer, z1,
-    );
-    if (index === segments) continue;
-    const n = index * 4;
-    indices.push(
-      n + 1, n + 5, n + 3, n + 1, n + 7, n + 5,
-      n, n + 2, n + 4, n + 2, n + 6, n + 4,
-      n + 1, n + 3, n, n + 3, n + 2, n,
-      n + 4, n + 6, n + 5, n + 6, n + 7, n + 5,
-    );
+  const add = (x: number, y: number, z: number) => {
+    positions.push(x, y, z);
+    return positions.length / 3 - 1;
+  };
+  const quad = (a: number, b: number, c: number, d: number) => {
+    indices.push(a, b, c, a, c, d);
+  };
+  for (let index = 0; index < segments; index += 1) {
+    const a0 = Math.PI * (index / segments);
+    const a1 = Math.PI * ((index + 1) / segments);
+    const c0 = Math.cos(a0);
+    const s0 = Math.sin(a0);
+    const c1 = Math.cos(a1);
+    const s1 = Math.sin(a1);
+    const innerFront0 = add(c0 * inner, s0 * inner, z0);
+    const outerFront0 = add(c0 * outer, s0 * outer, z0);
+    const innerFront1 = add(c1 * inner, s1 * inner, z0);
+    const outerFront1 = add(c1 * outer, s1 * outer, z0);
+    const innerBack0 = add(c0 * inner, s0 * inner, z1);
+    const outerBack0 = add(c0 * outer, s0 * outer, z1);
+    const innerBack1 = add(c1 * inner, s1 * inner, z1);
+    const outerBack1 = add(c1 * outer, s1 * outer, z1);
+    quad(innerFront0, outerFront0, outerFront1, innerFront1);
+    quad(outerBack0, innerBack0, innerBack1, outerBack1);
+    quad(outerFront0, outerBack0, outerBack1, outerFront1);
+    quad(innerBack0, innerFront0, innerFront1, innerBack1);
   }
   const ring = new BufferGeometry();
   ring.setAttribute('position', new Float32BufferAttribute(new Float32Array(positions), 3));
   ring.setIndex(indices);
   ring.computeVertexNormals();
-  const ribs: BufferGeometry[] = [ring];
-  for (let index = 1; index <= 4; index += 1) {
-    const angle = Math.PI * (index / 5);
-    ribs.push(
-      placedBox(
-        thickness * 0.7,
-        0.1,
-        depth * 0.92,
-        Math.cos(angle) * radius,
-        Math.sin(angle) * radius,
-        0,
-        0,
-        angle - Math.PI / 2,
-      ),
-    );
-  }
-  return mergeParts(ribs);
+  return ring;
 }
 
 /** Dark vault so a gate opening has depth instead of a flat gap. */
