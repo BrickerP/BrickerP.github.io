@@ -6,7 +6,6 @@ import {
   createArrowSlit,
   createCircularRailing,
   createCityWall,
-  createEnclosedHall,
   createColumnRing,
   createColumnRow,
   createCourtyardWall,
@@ -167,20 +166,16 @@ export function buildPavilion(mats: Mats, bracket: BufferGeometry, wide: boolean
     0,
     'skip',
   );
-  batch.add(
-    createEnclosedHall(width * 0.86, 2.35, depth * 0.72, [
-      { width: wide ? 3.4 : 2.6, height: 2.15, y: 0 },
-    ]),
-    mats.palaceBrick,
-    1.65,
-  );
+  const bodyDepth = depth * 0.78;
+  const bodyZ = -(depth * 0.55) / 2 + 0.12 + bodyDepth / 2;
+  batch.add(placedBox(width * 0.9, 2.45, bodyDepth, 0, 1.225, bodyZ), mats.palaceBrick, 1.65);
   batch.add(createRailing(width * 0.8, 1.75, -(depth * 0.38), wide ? 5 : 4), mats.stone);
   batch.add(
     createRoof({ width: width + overhang, depth: depth + overhang, rise: 1.15, kind: 'xieshan', wingLift: 0.16 }),
     mats.tile,
     4.5,
   );
-  batch.add(placedBox(width * 0.62, 1.1, depth * 0.55, 0, 6.15, 0), mats.palaceBrick);
+  batch.add(placedBox(width * 0.74, 1.55, depth * 0.62, 0, 6.2, 0), mats.palaceBrick);
   batch.add(
     createRoof({ width: width * 0.7, depth: depth * 0.62, rise: 0.95, kind: 'xieshan', wingLift: 0.12 }),
     mats.tile,
@@ -216,20 +211,14 @@ export function buildYongheCourtyard(mats: Mats, bracket: BufferGeometry): Group
     batch.add(wall, mats.streetBrick);
   }
   put(createColumnRow({ bays: 3, bayWidth: 1.8, depth: 2.4, height: 1.8, y: 0.7 }), mats.timber, 0, 0, 5.4, 'skip');
-  put(createEnclosedHall(5.4, 2.05, 2.15, [{ width: 1.55, height: 2.0, y: 0 }]), mats.palaceBrick, 0, 0.7, 5.4);
+  put(placedBox(5.4, 2.05, 2.15, 0, 1.025, 0), mats.palaceBrick, 0, 0.7, 5.4);
   const frontDoor = createDoor(1.4, 2.0);
   frontDoor.translate(0, 0.7, -1.28);
   put(frontDoor, mats.timber, 0, 0, 5.4, 'skip');
   put(createRoof({ width: 6.4, depth: 3.6, rise: 0.9, kind: 'gable', wingLift: 0.12 }), mats.tile, 0, 2.9, 5.4);
   for (const side of [-1, 1]) {
     put(createColumnRow({ bays: 2, bayWidth: 1.6, depth: 2.2, height: 1.5, y: 0.7 }), mats.timber, side * 4.6, 0, 1.2, 'skip');
-    put(
-      createEnclosedHall(3.3, 1.7, 2.0, [{ width: 1.2, height: 1.2, y: 0.15 }]),
-      mats.palaceBrick,
-      side * 4.6,
-      0.7,
-      1.2,
-    );
+    put(placedBox(3.3, 1.7, 2.0, 0, 0.85, 0), mats.palaceBrick, side * 4.6, 0.7, 1.2);
     const wingWindow = createWindowOpening(1.05, 1.15);
     wingWindow.translate(0, 1.35, -1.15);
     put(wingWindow, mats.window, side * 4.6, 0, 1.2, 'skip');
@@ -237,18 +226,7 @@ export function buildYongheCourtyard(mats: Mats, bracket: BufferGeometry): Group
   }
   put(createSumeru(8.4, 5.2, 1), mats.stone, 0, 0, -3.6);
   put(createColumnRow({ bays: 5, bayWidth: 1.35, depth: 3.4, height: 2.6, y: 1 }), mats.timber, 0, 0, -3.6, 'skip');
-  put(
-    createEnclosedHall(6.8, 2.7, 3.05, [
-      { x: -2.2, width: 1.05, height: 2.25, y: 0 },
-      { x: -0.7, width: 1.05, height: 2.25, y: 0 },
-      { x: 0.7, width: 1.05, height: 2.25, y: 0 },
-      { x: 2.2, width: 1.05, height: 2.25, y: 0 },
-    ]),
-    mats.palaceBrick,
-    0,
-    1,
-    -3.6,
-  );
+  put(placedBox(6.8, 2.7, 3.05, 0, 1.35, 0), mats.palaceBrick, 0, 1, -3.6);
   for (const x of [-2.2, -0.7, 0.7, 2.2]) {
     const door = createDoor(0.9, 2.2);
     door.translate(x, 1, -1.75);
@@ -387,6 +365,9 @@ export function buildPailou(mats: Mats, bracket: BufferGeometry): Group {
   }
   batch.add(placedBox(15.6, 0.32, 0.36, 0, 5.55, 0), mats.timber, 0, 'skip');
   batch.add(placedBox(15.2, 0.22, 0.28, 0, 5.9, 0), mats.gold, 0, 'skip');
+  batch.add(placedBox(9.8, 1.15, 0.28, 0, 4.85, -0.16), mats.palaceBrick);
+  batch.add(placedBox(2.15, 0.85, 0.18, -6.4, 4.55, -0.1), mats.palaceBrick);
+  batch.add(placedBox(2.15, 0.85, 0.18, 6.4, 4.55, -0.1), mats.palaceBrick);
   batch.add(createRoof({ width: 6.4, depth: 1.8, rise: 0.85, kind: 'gable', wingLift: 0.1 }), mats.tile, 6.35);
   for (const side of [-1, 1]) {
     const sideRoof = createRoof({ width: 3.2, depth: 1.5, rise: 0.6, kind: 'gable' });
@@ -411,9 +392,6 @@ export function createShopBay(kind: boolean | ShopKind = 'door'): {
   const resolved: ShopKind = kind === true ? 'window' : kind === false ? 'door' : kind;
   const roof = createRoof({ width: 3.3, depth: 3.1, rise: 0.72, kind: 'gable', wingLift: 0.08 });
   roof.translate(0, 2.75, 0);
-  const openingWidth = resolved === 'door' ? 1.2 : resolved === 'screen' ? 1.75 : 1.35;
-  const openingHeight = resolved === 'door' ? 2.05 : resolved === 'screen' ? 1.35 : 1.1;
-  const openingBottom = resolved === 'door' ? 0 : resolved === 'screen' ? 0.85 : 0.95;
   const opening =
     resolved === 'door'
       ? createDoor(1.1, 2.1)
@@ -430,9 +408,7 @@ export function createShopBay(kind: boolean | ShopKind = 'door'): {
       createColumnRow({ bays: 1, bayWidth: 2.4, depth: 2.2, height: 2.45, radius: 0.1 }),
       sign,
     ]),
-    wall: createEnclosedHall(2.7, 2.45, 2.2, [
-      { width: openingWidth, height: openingHeight, y: openingBottom },
-    ]),
+    wall: placedBox(2.65, 2.45, 2.15, 0, 1.225, 0),
     roof,
     opening,
     eave: placedBox(3.2, 0.08, 0.18, 0, 2.72, -1.55),
