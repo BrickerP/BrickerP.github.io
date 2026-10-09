@@ -160,6 +160,10 @@ XMP metadata, author and keywords, a list body for every list item, and an
 accessible description for every link taken from its `aria-label`. Static and dist
 verification reject untagged, unlabeled, stale, or unapproved revisions.
 
+The profile data and the resume source are two independent, hand-maintained records
+of the same experience. No check compares them: update `public-profile.json` and
+`resume.html` together when the chronology changes.
+
 ```bash
 npm run verify       # static/CI contracts, render telemetry, geometry + TypeScript
 npm run build        # typecheck + production bundle
