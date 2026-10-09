@@ -25,9 +25,9 @@ export { escapeHtml };
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ABOUT_PATH = path.join(ROOT, 'public/about/index.html');
+export const SHEET_PATHS = ['public/work/quant/index.html'].map((file) => path.join(ROOT, file));
 const PROFILE_PATH = path.join(ROOT, 'src/content/public-profile.json');
 const PROGRAMME_CSS_PATH = path.join(ROOT, 'src/styles/programme.css');
-const PROFILE_MARKER = /<!--\s*PUBLIC_PROFILE:([A-Z_]+):([A-Z]+)\s*-->/g;
 const MONTH = /^\d{4}-(?:0[1-9]|1[0-2])$/;
 
 function actionById(profile, id) {
@@ -156,12 +156,15 @@ function jsonLd(profile) {
           email: emailAddress(profile),
           sameAs,
           knowsAbout: [
+            'live trading systems',
+            'execution safety',
+            'SQLite',
+            'performance engineering',
             'AI agents',
             'Model Context Protocol',
             'tool-use contracts',
-            'OpenAPI',
-            'realtime voice systems',
             'evidence-gated software releases',
+            'WebGL',
           ],
         },
       },
@@ -203,7 +206,7 @@ function renderRegions(profile, programmeCss) {
     HEAD: `  <meta name="description" content="${escapeHtml(description)}">\n  <link rel="canonical" href="https://brickerp.github.io/about/">\n  <meta property="og:title" content="${escapeHtml(title)}">\n  <meta property="og:description" content="${escapeHtml(profile.summary)}">\n  <meta property="og:type" content="profile">\n  <meta property="og:url" content="https://brickerp.github.io/about/">\n  <meta property="og:site_name" content="${escapeHtml(profile.name)} — BrickerP">\n  <meta property="og:image" content="https://brickerp.github.io/profile-preview.png">\n  <meta property="og:image:width" content="1200">\n  <meta property="og:image:height" content="630">\n  <meta property="og:image:alt" content="${escapeHtml(imageAlt)}">\n  <meta name="twitter:card" content="summary_large_image">\n  <meta name="twitter:title" content="${escapeHtml(title)}">\n  <meta name="twitter:description" content="${escapeHtml(profile.summary)}">\n  <meta name="twitter:image" content="https://brickerp.github.io/profile-preview.png">\n  <meta name="twitter:image:alt" content="${escapeHtml(imageAlt)}">\n  <title>${escapeHtml(title)}</title>`,
     JSON_LD: `  <script type="application/ld+json">\n${jsonLd(profile)}\n  </script>`,
     STYLE: `  <style>\n${indent(programmeCss.trimEnd(), 4)}\n  </style>`,
-    NAV: `    <nav aria-label="Primary navigation">\n      <a href="/">Generative artwork</a>\n      <a href="${escapeHtml(resume.href)}">Resume</a>\n      <a href="${escapeHtml(email.href)}">Email</a>\n    </nav>`,
+    NAV: `    <nav aria-label="Primary navigation">\n      <a href="/">Generative artwork</a>\n      <a href="/work/quant/">Work</a>\n      <a href="${escapeHtml(resume.href)}">Resume</a>\n      <a href="${escapeHtml(email.href)}">Email</a>\n    </nav>`,
     SPINE: indent(spineMarkup(profile), 6),
     HERO: indent(hero(profile), 8),
     REELS: indent(sectionMarkup('reels-heading', 'h2', 'The reels', reelsMeta, reelsBody(profile, 'h3', 930)), 10),
@@ -216,32 +219,45 @@ function renderRegions(profile, programmeCss) {
   };
 }
 
-export function renderAbout(template, profile, programmeCss) {
-  validatePublicProfile(profile);
-  const regions = renderRegions(profile, programmeCss);
+function replaceRegions(template, prefix, regions, file) {
+  const marker = new RegExp(`<!--\\s*${prefix}:([A-Z_]+):([A-Z]+)\\s*-->`, 'g');
   const expectedMarkers = Object.keys(regions).flatMap((name) => [
     `${name}:START`,
     `${name}:END`,
   ]);
-  const actualMarkers = [...template.matchAll(PROFILE_MARKER)].map(
+  const actualMarkers = [...template.matchAll(marker)].map(
     ([, name, boundary]) => `${name}:${boundary}`,
   );
   assert.deepEqual(
     actualMarkers,
     expectedMarkers,
-    'public/about/index.html: profile marker sequence must contain exactly one ordered START/END pair per known region',
+    `${file}: profile marker sequence must contain exactly one ordered START/END pair per known region`,
   );
   let rendered = template;
   for (const [name, content] of Object.entries(regions)) {
-    const start = `<!-- PUBLIC_PROFILE:${name}:START -->`;
-    const end = `<!-- PUBLIC_PROFILE:${name}:END -->`;
+    const start = `<!-- ${prefix}:${name}:START -->`;
+    const end = `<!-- ${prefix}:${name}:END -->`;
     const pattern = new RegExp(`(^[ \\t]*)${start}[\\s\\S]*?${end}`, 'm');
-    assert.match(rendered, pattern, `public/about/index.html: missing ${name} generator markers`);
+    assert.match(rendered, pattern, `${file}: missing ${name} generator markers`);
     rendered = rendered.replace(pattern, (_, indentation) =>
       `${indentation}${start}\n${content}\n${indentation}${end}`,
     );
   }
   return rendered;
+}
+
+export function renderAbout(template, profile, programmeCss) {
+  validatePublicProfile(profile);
+  return replaceRegions(template, 'PUBLIC_PROFILE', renderRegions(profile, programmeCss), 'public/about/index.html');
+}
+
+export function renderSheet(template, programmeCss, file = 'technical sheet') {
+  return replaceRegions(
+    template,
+    'PROGRAMME',
+    { STYLE: `  <style>\n${indent(programmeCss.trimEnd(), 4)}\n  </style>` },
+    file,
+  );
 }
 
 export async function readPublicProfile() {
@@ -261,20 +277,35 @@ export async function expectedAbout() {
   return { actual: template, expected: renderAbout(template, profile, programmeCss) };
 }
 
+export async function expectedSheets() {
+  const programmeCss = await readProgrammeCss();
+  return Promise.all(
+    SHEET_PATHS.map(async (file) => {
+      const template = await readFile(file, 'utf8');
+      const relative = path.relative(ROOT, file);
+      return { file, relative, actual: template, expected: renderSheet(template, programmeCss, relative) };
+    }),
+  );
+}
+
 const DRIFT = 'public/about/index.html drifted from src/content/public-profile.json or src/styles/programme.css; run npm run generate:about';
 
 export async function assertAboutIsGenerated() {
   const { actual, expected } = await expectedAbout();
   assert.equal(actual, expected, DRIFT);
+  for (const sheet of await expectedSheets()) {
+    assert.equal(sheet.actual, sheet.expected, `${sheet.relative} drifted from src/styles/programme.css; run npm run generate:about`);
+  }
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const { actual, expected } = await expectedAbout();
   if (process.argv.includes('--check')) {
-    assert.equal(actual, expected, DRIFT);
-    console.log('Static About matches the public profile and programme stylesheet.');
+    await assertAboutIsGenerated();
+    console.log('Static About and technical sheets match the public profile and programme stylesheet.');
   } else {
+    const { expected } = await expectedAbout();
     await writeFile(ABOUT_PATH, expected);
-    console.log('Generated static About profile regions.');
+    for (const sheet of await expectedSheets()) await writeFile(sheet.file, sheet.expected);
+    console.log('Generated static About profile regions and technical sheet stylesheets.');
   }
 }

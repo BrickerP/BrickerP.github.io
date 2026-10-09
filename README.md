@@ -148,7 +148,9 @@ The profile shared by the in-app intro and `/about/` lives in
 `src/content/public-profile.json`; both surfaces render it through
 `src/ui/programme.ts` and `src/styles/programme.css`. After editing any of them, run
 `npm run generate:about`; `npm run verify:static` rejects any committed
-generated-region drift. `npm run generate:programme` reprints the halftone plates in
+generated-region drift. The same run reprints the `PROGRAMME:STYLE` region of each
+technical sheet under `public/work/` (currently `/work/quant/`), so the sheets share the
+programme stylesheet without a build step. `npm run generate:programme` reprints the halftone plates in
 `public/programme/` and `public/profile-preview.png` from the deployed film (set
 `URL` to print from another build).
 
@@ -167,9 +169,10 @@ unapproved revisions.
 The profile data (`public-profile.json`), the full resume, and the one-page resume are
 three hand-maintained records of the same experience: update them together when the
 chronology changes. Only the two resumes are compared. `verify:static` rejects a
-one-page header, role line, or number that the full resume does not contain, a missing
-current role, a different role order, and a one-page resume dated before the full one
-(review it and bump its `dcterms.modified`). Nothing compares the profile data.
+one-page name, contact line, role line, or number that the full resume does not contain,
+a missing current role, and a one-page resume dated before the full one (review it and
+bump its `dcterms.modified`). Headline and summary may differ, since each resume targets
+a different kind of role. Nothing compares the profile data.
 
 ```bash
 npm run verify       # static/CI contracts, render telemetry, geometry + TypeScript

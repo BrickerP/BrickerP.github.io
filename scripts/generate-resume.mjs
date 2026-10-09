@@ -312,7 +312,7 @@ export async function generateResume(variant, chrome = process.env.CHROME_PATH ?
   const workspace = await mkdtemp(path.join(tmpdir(), 'brickerp-resume-'));
   try {
     const pdf = finalizeResumePdf(await printWithChrome(chrome, workspace, paths.source), source);
-    assertAccessibleResumeStructure(pdf, `generated ${variant.id} resume`, variant.pages);
+    assertAccessibleResumeStructure(pdf, `generated ${variant.id} resume`, variant);
     await mkdir(path.dirname(paths.output), { recursive: true });
     await writeFile(paths.output, pdf);
     return pdf;

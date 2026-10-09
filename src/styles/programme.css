@@ -132,6 +132,11 @@
   text-transform: uppercase;
 }
 
+.about-ident .about-role,
+.about-ident .about-status {
+  padding-right: calc(min(112px, 22vw) + 12px);
+}
+
 .about-summary {
   max-width: 420px;
   margin: 14px 0 0;
@@ -420,6 +425,11 @@
     position: static;
     float: right;
     margin: -8px -6px 0 6px;
+  }
+
+  .about-ident .about-role,
+  .about-ident .about-status {
+    padding-right: 0;
   }
 }
 

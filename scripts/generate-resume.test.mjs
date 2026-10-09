@@ -68,10 +68,11 @@ test('structure checks reject stale identities, unlabeled links, and the wrong p
   const { pdf } = await fixture(FULL_RESUME);
   const text = pdf.toString('latin1');
   const stale = Buffer.from(text.replace('github.com/BrickerP', 'github.com/yupeng-dev'), 'latin1');
-  assert.throws(() => assertAccessibleResumeStructure(stale, 'stale', FULL_RESUME.pages), /stale identity/);
+  assert.throws(() => assertAccessibleResumeStructure(stale, 'stale', FULL_RESUME), /stale identity/);
   const unlabeled = Buffer.from(text.replace(/\/Contents \((?:\\.|[^\\)])+\)/, '/Contents 0 0 R'), 'latin1');
-  assert.throws(() => assertAccessibleResumeStructure(unlabeled, 'unlabeled', FULL_RESUME.pages), /accessible description/);
-  assert.throws(() => assertAccessibleResumeStructure(pdf, 'pages', ONE_PAGE_RESUME.pages), /expected 1 pages/);
+  assert.throws(() => assertAccessibleResumeStructure(unlabeled, 'unlabeled', FULL_RESUME), /accessible description/);
+  assert.throws(() => assertAccessibleResumeStructure(pdf, 'pages', { ...FULL_RESUME, pages: 1 }), /expected 1 pages/);
+  assert.throws(() => assertAccessibleResumeStructure(pdf, 'title', { ...FULL_RESUME, title: ONE_PAGE_RESUME.title }), /accessible document title/);
 });
 
 test('the one-page resume only repeats headers, roles, and numbers from the full resume', async () => {

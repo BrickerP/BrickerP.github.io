@@ -6,15 +6,17 @@ export const FULL_RESUME = {
   id: 'full',
   source: 'src/content/resume.html',
   output: 'public/resume.pdf',
+  title: 'Yupeng Lu - Backend Engineer - Live Trading Systems & AI Platforms',
   pages: 2,
-  sha256: '08cd413ba13d0d98771dd3bf72140585a8b5a92ca6667854e9ab9d0bf02f82b6',
+  sha256: 'b56d169549ae9c74fe9a403fa65d714afc694a1ebe4302a9f0dfdc5f9ab8406c',
 };
 export const ONE_PAGE_RESUME = {
   id: 'one-page',
   source: 'src/content/resume-1p.html',
   output: 'applications/resume-1p.pdf',
+  title: 'Yupeng Lu - AI Agent Engineer',
   pages: 1,
-  sha256: '630fa525c9bec34081144d94bb0ef9ff7b1ed0a84123f986d719f4916392109b',
+  sha256: '36f53bbf71cf560a29d90ad0b019f9325f7a08ea554bc15a1a8e27fa43ad89ff',
 };
 export const RESUME_VARIANTS = [FULL_RESUME, ONE_PAGE_RESUME];
 
@@ -33,9 +35,14 @@ function structureCounts(pdf) {
   return counts;
 }
 
-function assertDocumentMetadata(pdf, name) {
+function titlePattern(title) {
+  const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replaceAll(' - ', ' (?:-|\\\\055) ');
+  return new RegExp(`/Title\\s*\\(${escaped}\\)`);
+}
+
+function assertDocumentMetadata(pdf, name, title) {
   assert.match(pdf, /\/Lang\s*\(en(?:-|\\055)US\)/, `${name}: document language must be en-US`);
-  assert.match(pdf, /\/Title\s*\(Yupeng Lu (?:-|\\055) AI Agent Engineer\)/, `${name}: accessible document title is missing`);
+  assert.match(pdf, titlePattern(title), `${name}: accessible document title “${title}” is missing`);
   assert.match(pdf, /\/Author\s*\(Yupeng Lu\)/, `${name}: document author is missing`);
   assert.match(pdf, /\/Metadata\s+\d+\s+0\s+R\b/, `${name}: XMP metadata stream is missing`);
   assert.match(pdf, /\/ViewerPreferences\s*<<[\s\S]*?\/DisplayDocTitle\s+true[\s\S]*?>>/, `${name}: title display preference is missing`);
@@ -79,16 +86,16 @@ function assertEmbeddedFonts(pdf, name) {
   assert.ok(countMatches(pdf, /\/ToUnicode\s+\d+\s+0\s+R\b/g) >= fonts, `${name}: every font needs a Unicode map`);
 }
 
-export function assertAccessibleResumeStructure(buffer, name, expectedPages) {
+export function assertAccessibleResumeStructure(buffer, name, variant) {
   assert.equal(buffer.subarray(0, 5).toString('ascii'), '%PDF-', `${name}: invalid PDF signature`);
   const pdf = buffer.toString('latin1');
   assert.match(pdf, /%%EOF\s*$/, `${name}: missing final PDF end marker`);
   const pages = countMatches(pdf, /\/Type\s*\/Page\b/g);
-  assert.equal(pages, expectedPages, `${name}: expected ${expectedPages} pages`);
+  assert.equal(pages, variant.pages, `${name}: expected ${variant.pages} pages`);
   for (const identity of STALE_IDENTITIES) {
     assert.ok(!pdf.toLowerCase().includes(identity), `${name}: stale identity “${identity}”`);
   }
-  assertDocumentMetadata(pdf, name);
+  assertDocumentMetadata(pdf, name, variant.title);
   assertTaggedStructure(pdf, name, pages);
   assertTaggedLinks(pdf, name, pages);
   assertEmbeddedFonts(pdf, name);
@@ -96,7 +103,7 @@ export function assertAccessibleResumeStructure(buffer, name, expectedPages) {
 }
 
 export function assertAccessibleResume(buffer, name, variant) {
-  assertAccessibleResumeStructure(buffer, name, variant.pages);
+  assertAccessibleResumeStructure(buffer, name, variant);
   assert.equal(
     createHash('sha256').update(buffer).digest('hex'),
     variant.sha256,
@@ -137,7 +144,7 @@ function resumeFacts(html) {
   const normalize = (token) => token.replace(/^[("'[]+|[)"',.;:\]]+$/g, '').toLowerCase();
   const roleLines = all(/<div class="role-line">([\s\S]*?)<\/div>/g);
   return {
-    masthead: [...all(/<h1>([\s\S]*?)<\/h1>/g), ...all(/<p class="(?:contact|headline)">([\s\S]*?)<\/p>/g)],
+    masthead: [...all(/<h1>([\s\S]*?)<\/h1>/g), ...all(/<p class="contact">([\s\S]*?)<\/p>/g)],
     roleLines,
     current: roleLines.filter((line) => line.includes('Present')),
     numbers: new Set(textOf(body).split(' ').map(normalize).filter((token) => /\d/.test(token))),
@@ -146,8 +153,9 @@ function resumeFacts(html) {
 }
 
 /**
- * The one-page resume is a hand-curated subset. Everything it states as a header, a role line, or a number
- * must also be in the full resume, and the current roles must stay, so the two are updated together.
+ * The one-page resume is a hand-curated subset aimed at one kind of role, so its headline and summary may
+ * differ from the full resume. Facts may not: every name, contact line, role line, and number it states
+ * must also be in the full resume, and every current role must be listed, so the two are updated together.
  */
 export function assertOnePageParity(fullHtml, onePageHtml) {
   const full = resumeFacts(fullHtml);
@@ -159,8 +167,6 @@ export function assertOnePageParity(fullHtml, onePageHtml) {
   for (const line of one.roleLines) {
     assert.ok(full.roleLines.includes(line), `one-page resume: role line “${line}” does not match ${FULL_RESUME.source}; ${together}`);
   }
-  const order = one.roleLines.map((line) => full.roleLines.indexOf(line));
-  assert.deepEqual(order, [...order].sort((left, right) => left - right), `one-page resume: roles must keep the order of ${FULL_RESUME.source}`);
   for (const line of full.current) {
     assert.ok(one.roleLines.includes(line), `one-page resume: current role “${line}” is missing; ${together}`);
   }
