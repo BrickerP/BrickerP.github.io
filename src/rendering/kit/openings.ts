@@ -28,10 +28,10 @@ export function createDoor(width: number, height: number): BufferGeometry {
   ]);
 }
 
-/** Narrow arrow slit used in ranks on a tower face. */
+/** A shallow arrow slit. It sits in the wall face and does not read as a post. */
 export function createArrowSlit(): BufferGeometry {
   return mergeParts([
-    placedBox(0.16, 0.72, 0.18, 0, 0, 0),
-    placedBox(0.08, 0.58, 0.08, 0, 0, -0.08),
+    placedBox(0.2, 0.48, 0.06, 0, 0, 0),
+    placedBox(0.08, 0.34, 0.04, 0, 0, -0.02),
   ]);
 }

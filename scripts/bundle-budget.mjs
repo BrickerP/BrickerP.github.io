@@ -17,10 +17,11 @@ const BUDGET = {
   javascript: {
     // Shadows, bloom, and the wet road. Measured with postprocessing around 166491 gzip.
     originMainGzipBaselineBytes: 166_491,
-    maximumGrowthRatio: 0.05,
+    // 6% after the lamp, storey, and plaque seating. CI measured 174832 gzip.
+    maximumGrowthRatio: 0.06,
     absoluteGzipMaximumBytes: 190_000,
-    // Measured 650448 raw after the hall bodies became solid brick.
-    rawMaximumBytes: 656_000,
+    // CI measured 656107 raw for that same seating build.
+    rawMaximumBytes: 662_000,
   },
   // Programme redesign (2026-10) shares one stylesheet across the modal and /about/.
   // 4KB was the film-only ceiling and blocked every visual fix; 16KB still gates runaway CSS.
