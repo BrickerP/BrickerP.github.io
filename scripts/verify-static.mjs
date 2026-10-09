@@ -4,7 +4,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { documentFor, redirectPaths } from './generate-poe2-redirects.mjs';
 import { assertAboutIsGenerated, escapeHtml, readPublicProfile } from './generate-about.mjs';
-import { assertAccessibleResume } from './verify-resume.mjs';
+import {
+  FULL_RESUME,
+  ONE_PAGE_RESUME,
+  RESUME_VARIANTS,
+  assertAccessibleResume,
+  assertOnePageParity,
+} from './verify-resume.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SITE_ORIGIN = 'https://brickerp.github.io';
@@ -370,7 +376,9 @@ for (const previewName of ['social-preview.png', 'profile-preview.png']) {
   assert.equal(preview.readUInt32BE(20), 630, `${previewName} height must be 630px`);
 }
 
-const resume = await readFile(path.join(ROOT, 'public', 'resume.pdf'));
-assertAccessibleResume(resume, 'public/resume.pdf');
+for (const variant of RESUME_VARIANTS) {
+  assertAccessibleResume(await readFile(path.join(ROOT, variant.output)), variant.output, variant);
+}
+assertOnePageParity(await text(FULL_RESUME.source), await text(ONE_PAGE_RESUME.source));
 
 console.log(`Static integrity verified: root, about, sitemap, and ${redirectPaths.length} PoE2 redirects.`);
