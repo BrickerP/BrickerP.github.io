@@ -2,9 +2,11 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import {
+  SHEET_PATHS,
   readProgrammeCss,
   readPublicProfile,
   renderAbout,
+  renderSheet,
   serializeJsonForScript,
   validatePublicProfile,
 } from './generate-about.mjs';
@@ -32,6 +34,21 @@ test('the static page inlines the programme stylesheet shared with the intro', a
   }
   const changed = renderAbout(about, profile, `${css}\n.about-panel {\n  outline: 0;\n}\n`);
   assert.match(changed, /<!-- PUBLIC_PROFILE:STYLE:START -->[\s\S]*outline: 0;[\s\S]*<!-- PUBLIC_PROFILE:STYLE:END -->/);
+});
+
+test('technical sheets inline the same programme stylesheet and reject stylesheet drift', async () => {
+  const css = await readProgrammeCss();
+  for (const file of SHEET_PATHS) {
+    const sheet = await readFile(file, 'utf8');
+    assert.equal(renderSheet(sheet, css), sheet);
+    const style = sheet.match(/<!-- PROGRAMME:STYLE:START -->([\s\S]*?)<!-- PROGRAMME:STYLE:END -->/)?.[1] ?? '';
+    for (const rule of css.match(/^\.[a-z-]+ \{$/gm) ?? []) {
+      assert.ok(style.includes(rule), `technical sheet stylesheet is missing ${rule}`);
+    }
+    const changed = renderSheet(sheet, `${css}\n.about-panel {\n  outline: 0;\n}\n`);
+    assert.notEqual(changed, sheet);
+    assert.throws(() => renderSheet(sheet.replace('<!-- PROGRAMME:STYLE:START -->', ''), css), /marker sequence/);
+  }
 });
 
 test('JSON-LD serialization is script-safe and lossless for hostile strings', async () => {

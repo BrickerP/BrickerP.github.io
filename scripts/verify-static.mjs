@@ -27,12 +27,22 @@ function attribute(html, selector, name) {
   return undefined;
 }
 
+function decodeHtml(value) {
+  return value
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&quot;', '"')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&amp;', '&');
+}
+
 function meta(html, key, value) {
   const tags = html.match(/<meta\b[^>]*>/gi) ?? [];
   for (const tag of tags) {
     const keyMatch = tag.match(new RegExp(`\\b${key}=["']${escapeRegExp(value)}["']`, 'i'));
     if (!keyMatch) continue;
-    return tag.match(/\bcontent=["']([^"']+)["']/i)?.[1];
+    const content = tag.match(/\bcontent=["']([^"']+)["']/i)?.[1];
+    return content === undefined ? undefined : decodeHtml(content);
   }
   return undefined;
 }
@@ -100,6 +110,7 @@ async function walk(directory) {
 
 const rootHtml = await text('index.html');
 const aboutHtml = await text('public/about/index.html');
+const sheetHtml = await text('public/work/quant/index.html');
 const profileLoopCard = await text('public/profile-loop-card.svg');
 const controlsSource = await text('src/ui/controls.ts');
 const stylesSource = await text('src/styles/main.css');
@@ -112,6 +123,7 @@ const publicProfile = await readPublicProfile();
 await assertAboutIsGenerated();
 assertPageMetadata(rootHtml, 'index.html', `${SITE_ORIGIN}/`, 'social-preview.png');
 assertPageMetadata(aboutHtml, 'public/about/index.html', `${SITE_ORIGIN}/about/`, 'profile-preview.png');
+assertPageMetadata(sheetHtml, 'public/work/quant/index.html', `${SITE_ORIGIN}/work/quant/`, 'profile-preview.png');
 assert.match(
   controlsSource,
   /<p class="ui-eyebrow">LOOP 01<\/p>[\s\S]*?<h1 class="ui-title" id="experience-title">ENDLESS SECOND RING<\/h1>[\s\S]*?<p class="ui-sub">BEIJING <span lang="zh-CN">\/ 北京<\/span> <span aria-hidden="true">·<\/span> 48-SECOND GENERATIVE DRIVE<\/p>/,
@@ -292,9 +304,28 @@ assert.deepEqual(profile.mainEntity.sameAs, sameAs, 'about: JSON-LD sameAs drift
 assert.equal(profile.dateModified, publicProfile.dateModified, 'about: JSON-LD dateModified drifted from public profile');
 assert.match(rootHtml, /<span\s+lang=["']zh-CN["']>北京<\/span>/, 'index.html: Chinese text needs an explicit language span');
 
+// Technical sheet № 01: the programme must reach it, it must reach back, and every
+// number it prints must sit next to a method and an explicit pending marker.
+assert.match(aboutHtml, /<a\b[^>]*href=["']\/work\/quant\/["']/i, 'about: primary navigation must link the technical sheet');
+assert.match(sheetHtml, /<a\b[^>]*href=["']\/about\/["']/i, 'work/quant: must link back to the full programme');
+assert.equal(linkHref(sheetHtml, 'icon'), rootFavicon, 'work/quant: favicon must match the root artwork identity');
+const sheetData = jsonLd(sheetHtml, 'public/work/quant/index.html');
+const sheet = sheetData.find((item) => item['@type'] === 'TechArticle');
+assert.equal(sheet?.author?.['@id'], profile.mainEntity['@id'], 'work/quant: TechArticle author must be the About Person');
+assert.match(sheetHtml, /id=["']method-heading["']/, 'work/quant: the measured section needs its method box');
+assert.ok(sheetHtml.includes('Pending re-measure'), 'work/quant: unmeasured cells must say so');
+for (const fact of ['~2.4 s', '~9.2 s', '2026-10-08', '2026-10-09']) {
+  assert.ok(sheetHtml.includes(fact), `work/quant: missing recorded fact “${fact}”`);
+}
+assert.ok(
+  publicProfile.publicProof.some(({ href }) => href === `${SITE_ORIGIN}/work/quant/`),
+  'public profile: Exhibits must include the technical sheet',
+);
+
 const sitemap = await text('public/sitemap.xml');
 assert.match(sitemap, /<loc>https:\/\/brickerp\.github\.io\/<\/loc>/, 'sitemap: root URL missing');
 assert.match(sitemap, /<loc>https:\/\/brickerp\.github\.io\/about\/<\/loc>/, 'sitemap: about URL missing');
+assert.match(sitemap, /<loc>https:\/\/brickerp\.github\.io\/work\/quant\/<\/loc>/, 'sitemap: technical sheet URL missing');
 assert.doesNotMatch(sitemap, /\/poe2\//, 'sitemap: legacy PoE2 redirects must not be indexed');
 
 const notFound = await text('public/404.html');
