@@ -106,6 +106,7 @@ function batchAddColumns(group: Group, material: Material, y: number): void {
 
 /** Arrow tower: podium, three battered storeys of slit ranks, waist eaves, xieshan crown. */
 export function buildArrowTower(mats: Mats, bracket: BufferGeometry): Group {
+  void bracket;
   const group = new Group();
   const batch = beginAssembly(group);
   batch.add(createPodium({ width: 9.2, depth: 6.4, height: 1.3, steps: 3 }), mats.stone);
@@ -131,11 +132,6 @@ export function buildArrowTower(mats: Mats, bracket: BufferGeometry): Group {
   }
   batch.add(createRoof({ width: 7.2, depth: 5.2, rise: 1.15, kind: 'xieshan', wingLift: 0.18 }), mats.tile, 8.15);
   batch.finish();
-  for (let storey = 0; storey < 3; storey += 1) {
-    const y = 1.5 + storey * 2.15;
-    const shrink = 1 - storey * 0.08;
-    addBracketRun(group, bracket, mats.timber, y + 1.42, -2.7 * shrink, 6.2 * shrink);
-  }
   return group;
 }
 
