@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 
-export const APPROVED_RESUME_SHA256 = '08cd413ba13d0d98771dd3bf72140585a8b5a92ca6667854e9ab9d0bf02f82b6';
+export const APPROVED_RESUME_SHA256 = 'b56d169549ae9c74fe9a403fa65d714afc694a1ebe4302a9f0dfdc5f9ab8406c';
 export const RESUME_PAGE_COUNT = 2;
 const STALE_IDENTITIES = ['yupeng-dev'];
 const ACTIVE_CONTENT = /\/(?:JavaScript|JS|OpenAction|AA|Launch|EmbeddedFile|AcroForm|Encrypt)\b/;
@@ -20,7 +20,11 @@ function structureCounts(pdf) {
 
 function assertDocumentMetadata(pdf, name) {
   assert.match(pdf, /\/Lang\s*\(en(?:-|\\055)US\)/, `${name}: document language must be en-US`);
-  assert.match(pdf, /\/Title\s*\(Yupeng Lu (?:-|\\055) AI Agent Engineer\)/, `${name}: accessible document title is missing`);
+  assert.match(
+    pdf,
+    /\/Title\s*\(Yupeng Lu (?:-|\\055) Backend Engineer (?:-|\\055) Live Trading Systems & AI Platforms\)/,
+    `${name}: accessible document title is missing`,
+  );
   assert.match(pdf, /\/Author\s*\(Yupeng Lu\)/, `${name}: document author is missing`);
   assert.match(pdf, /\/Metadata\s+\d+\s+0\s+R\b/, `${name}: XMP metadata stream is missing`);
   assert.match(pdf, /\/ViewerPreferences\s*<<[\s\S]*?\/DisplayDocTitle\s+true[\s\S]*?>>/, `${name}: title display preference is missing`);
