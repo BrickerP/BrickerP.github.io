@@ -1862,7 +1862,7 @@ for (const aboutViewport of [
   );
   assert.match(
     ((await aboutPage.locator('.about-role').textContent()) ?? '').trim(),
-    /AI Agent Engineer/i,
+    /Backend Engineer — live trading systems & AI platforms/i,
     `${aboutViewport.name}: about role`,
   );
   assert.equal(
