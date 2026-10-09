@@ -67,7 +67,7 @@ export function addBracketRing(
   const scale = new Vector3(1, 1, 1);
   const forward = new Vector3(0, 0, 1);
   for (let index = 0; index < total; index += 1) {
-    const angle = (index / total) * Math.PI * 2;
+    const angle = -Math.PI / 2 + ((index + 0.5) / total) * Math.PI * 2;
     outward.set(Math.cos(angle), 0, Math.sin(angle));
     quaternion.setFromUnitVectors(forward, outward);
     local.compose(outward.clone().multiplyScalar(radius).setY(y), quaternion, scale);

@@ -573,12 +573,12 @@ export class BeijingDriveScene {
     const pole = new Mesh(this.lampPoleGeometry, this.cityMaterials.lampPole);
     const bulb = new Mesh(this.lampBulbGeometry, this.lampMaterial);
     bulb.scale.setScalar(0.22);
-    bulb.position.set(0.46, 3.7, 0);
+    bulb.position.set(0, 3.86, 0);
     group.add(pole, bulb);
     if (castLight) {
       const intensity = 8.2 + hash01(Math.round(progress * 10_000), 91) * 1.8;
       const light = new PointLight(PALETTE.lamp, intensity, 13, 2);
-      light.position.set(0.46, 3.7, 0);
+      light.position.set(0, 3.86, 0);
       group.add(light);
       this.lampLights.push(light);
     }

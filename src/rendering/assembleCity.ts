@@ -11,13 +11,24 @@ import {
   type Object3D,
 } from 'three';
 import { DRIVE_PATH_SCALE } from './FirstPersonCameraRig';
-import { pathHeading, samplePathFrame } from './drivePath';
+import { DRIVE_PATH, pathHeading, samplePathFrame } from './drivePath';
 import { hash01 } from './surfaceTextures';
 import { CENTRAL_AXIS_LANDMARKS, PASSAGE_HEROES } from './spatialContract';
 import type { PassageId } from './passages';
 import { dressRoadside } from './roadside';
-import { createBracketGeometry, createCityWall, createMerlons, createStoneBridge, createTreeGroup, placedBox, placedCylinder } from './kit';
 import {
+  createBracketGeometry,
+  createCityWall,
+  createMerlons,
+  createPlaqueFrame,
+  createStoneBridge,
+  createTreeGroup,
+  placedBox,
+  placedCylinder,
+} from './kit';
+import {
+  CORNER_BASTION,
+  PALACE_GATE_OPTIONS,
   buildArrowTower,
   buildCityWallSegment,
   buildCornerTower,
@@ -34,6 +45,7 @@ import {
   buildYongheCourtyard,
   createShopBay,
   createSkylineMass,
+  gateRoofHalfWidth,
   type CityMaterials,
 } from './buildings';
 
@@ -115,6 +127,18 @@ function scatter(
   host.root.add(mesh);
 }
 
+function plaqueMaterial(host: CityHost, text: string, canvasHeight: number) {
+  return host.plaque(text, {
+    width: 640,
+    height: canvasHeight,
+    background: '#123E46',
+    border: '#D4AD5C',
+    color: '#F3D78D',
+    font: '700 112px "Songti SC", "STSong", serif',
+  });
+}
+
+/** Road gantry board. Building names use the framed board instead. */
 function hangPlaque(
   host: CityHost,
   parent: Object3D,
@@ -125,14 +149,7 @@ function hangPlaque(
   width: number,
   height: number,
 ): void {
-  const material = host.plaque(text, {
-    width: 640,
-    height: 220,
-    background: '#123E46',
-    border: '#D4AD5C',
-    color: '#F3D78D',
-    font: '700 112px "Songti SC", "STSong", serif',
-  });
+  const material = plaqueMaterial(host, text, 220);
   if (!material) return;
   const panel = new Mesh(host.track(new PlaneGeometry(width, height)), material);
   panel.position.set(x, y, z);
@@ -140,8 +157,121 @@ function hangPlaque(
   parent.add(panel);
 }
 
+/** Frame, corbels, and the painted board, centred on the given point and facing -Z. */
+function hangFramedPlaque(
+  host: CityHost,
+  parent: Object3D,
+  text: string,
+  x: number,
+  y: number,
+  z: number,
+  width: number,
+  height: number,
+): void {
+  const frame = new Mesh(host.track(createPlaqueFrame(width, height)), host.mats.gold);
+  frame.position.set(x, y, z);
+  parent.add(frame);
+  const material = plaqueMaterial(host, text, 220);
+  if (!material) return;
+  const panel = new Mesh(
+    host.track(new PlaneGeometry(Math.max(0.2, width - 0.12), Math.max(0.12, height - 0.12))),
+    material,
+  );
+  panel.position.set(x, y, z - 0.045);
+  panel.rotation.y = Math.PI;
+  parent.add(panel);
+}
+
+interface PlaqueSeat {
+  lintelBottom: number;
+  z: number;
+  bayWidth: number;
+}
+
+function hangInBay(
+  host: CityHost,
+  parent: Object3D,
+  text: string,
+  width: number,
+  height: number,
+): void {
+  const seat = parent.userData.plaqueSeat as PlaqueSeat | undefined;
+  if (!seat || !Number.isFinite(seat.lintelBottom) || !Number.isFinite(seat.bayWidth)) {
+    if (import.meta.env.DEV) console.assert(false, `${text} has no column bay to hang from`);
+    return;
+  }
+  hangFramedPlaque(
+    host,
+    parent,
+    text,
+    0,
+    seat.lintelBottom - height / 2 - 0.05,
+    seat.z,
+    Math.min(width, Math.max(0.6, seat.bayWidth - 0.35)),
+    height,
+  );
+}
+
 function faceRoad(offset: number): number {
   return offset > 0 ? -Math.PI / 2 : Math.PI / 2;
+}
+
+interface Span {
+  p0: number;
+  p1: number;
+  l0: number;
+  l1: number;
+}
+
+const PATH_METRES = DRIVE_PATH.getLength() * DRIVE_PATH_SCALE;
+const occupied: Span[] = [];
+
+function claim(progress: number, offset: number, along: number, across: number): void {
+  const dp = along / 2 / PATH_METRES;
+  const dl = across / 2;
+  occupied.push({ p0: progress - dp, p1: progress + dp, l0: offset - dl, l1: offset + dl });
+}
+
+function blocked(progress: number, offset: number, along: number, across: number): boolean {
+  const dp = along / 2 / PATH_METRES;
+  const dl = across / 2;
+  const span = { p0: progress - dp, p1: progress + dp, l0: offset - dl, l1: offset + dl };
+  return occupied.some(
+    (wall) => span.p1 > wall.p0 + 1e-4 && wall.p1 > span.p0 + 1e-4 && span.l1 > wall.l0 + 1e-4 && wall.l1 > span.l0 + 1e-4,
+  );
+}
+
+function rejectOverlap(label: string, progress: number, offset: number, along: number, across: number): boolean {
+  if (!blocked(progress, offset, along, across)) return false;
+  if (import.meta.env.DEV) console.assert(false, `${label} overlaps a wall at ${progress.toFixed(3)}, ${offset}`);
+  return true;
+}
+
+function clearOfWalls(
+  progress: number,
+  offset: number,
+  label: string,
+): { progress: number; offset: number } | undefined {
+  let cursor = progress;
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    if (!blocked(cursor, offset, 4.4, 4.4)) {
+      if (attempt > 0 && import.meta.env.DEV) {
+        console.assert(false, `${label} overlaps a wall at ${progress.toFixed(3)}, ${offset}`);
+      }
+      return { progress: cursor, offset };
+    }
+    cursor += 0.01;
+  }
+  if (import.meta.env.DEV) console.assert(false, `${label} stays inside a wall at ${progress.toFixed(3)}, ${offset}`);
+  return undefined;
+}
+
+/** 0 door, 1 window, 2 screen. Stable for a progress/offset pair. */
+function shopSlot(progress: number, offset: number): 0 | 1 | 2 {
+  const roll = hash01(Math.round(progress * 1000), Math.round(Math.abs(offset) * 10));
+  if (roll < 0.34) return 0;
+  if (roll < 0.67) return 1;
+  return 2;
 }
 
 function scatterShops(
@@ -151,9 +281,8 @@ function scatterShops(
 ): void {
   const rows: Array<Array<{ progress: number; offset: number }>> = [[], [], []];
   for (const stamp of stamps) {
-    const roll = hash01(Math.round(stamp.progress * 1000), Math.round(Math.abs(stamp.offset) * 10));
-    const slot = roll < 0.34 ? 0 : roll < 0.67 ? 1 : 2;
-    rows[slot].push(stamp);
+    if (rejectOverlap('shop', stamp.progress, stamp.offset, 3.3, 3.1)) continue;
+    rows[shopSlot(stamp.progress, stamp.offset)].push(stamp);
   }
   bays.forEach((bay, index) => {
     const row = rows[index];
@@ -168,6 +297,7 @@ function scatterShops(
 
 /** Twelve passages assembled from the parametric kit. Anchors stay on the spatial contract. */
 export function assembleCity(host: CityHost): void {
+  occupied.length = 0;
   const mats = host.mats;
   const bracket = host.track(createBracketGeometry());
   const doorBay = createShopBay('door');
@@ -187,27 +317,59 @@ export function assembleCity(host: CityHost): void {
     bays: 5,
     eaves: 2,
   });
-  hangPlaque(host, gate, '正阳门', 0, 9.2, -2.8, 3.6, 1.2);
+  hangInBay(host, gate, '正阳门', 3.6, 1.2);
   put(host, gate, zhengyang.progress, zhengyang.lateralOffset, zhengyang.scale);
 
   const tiananmen = CENTRAL_AXIS_LANDMARKS.tiananmen;
   const palace = buildPalaceWallGate(mats, bracket);
-  hangPlaque(host, palace, '天安门', 0, 7.05, -2.45, 2.8, 0.95);
+  hangInBay(host, palace, '天安门', 2.8, 0.95);
   put(host, palace, tiananmen.progress, tiananmen.lateralOffset, tiananmen.scale, tiananmen.headingOffset);
+  claim(
+    tiananmen.progress,
+    tiananmen.lateralOffset,
+    gateRoofHalfWidth(PALACE_GATE_OPTIONS) * 2 * tiananmen.scale,
+    (PALACE_GATE_OPTIONS.pierDepth + 1.1) * tiananmen.scale,
+  );
   host.addLamp(0.02, -6.6, false);
   host.addLamp(0.034, -6.6, true);
   host.addLamp(0.034, 6.6, false);
   host.addLamp(0.052, 6.6, true);
 
   host.begin('palace-moat');
-  const moatWalls: Stamp[] = [];
-  for (let index = 0; index < 5; index += 1) {
-    moatWalls.push({ progress: 0.088 + index * 0.016, offset: -13.4, heading: Math.PI / 2, scale: 0.92 });
-  }
-  scatter(host, wallRun, mats.streetBrick, moatWalls, true);
-  scatter(host, wallMerlons, mats.stone, moatWalls, true);
   const corner = PASSAGE_HEROES.cornerTower;
-  put(host, buildCornerTower(mats, bracket), corner.progress, corner.lateralOffset, corner.scale);
+  const cornerTower = buildCornerTower(mats, bracket);
+  const bastionWorld = CORNER_BASTION.half * corner.scale;
+  const bastionTop = CORNER_BASTION.height * corner.scale;
+  const moatScale = 0.92;
+  const moatDepth = 2.7;
+  const roofHalf = gateRoofHalfWidth(PALACE_GATE_OPTIONS) * tiananmen.scale;
+  const embed = 0.18 / PATH_METRES;
+  const runP0 = tiananmen.progress + roofHalf / PATH_METRES - embed;
+  const runP1 = corner.progress - bastionWorld / PATH_METRES + embed;
+  if (import.meta.env.DEV) console.assert(runP1 > runP0, 'moat wall has no run between the gate and the bastion');
+  const runWorld = Math.max(0, runP1 - runP0) * PATH_METRES;
+  const segCount = Math.max(1, Math.round(runWorld / 12.4));
+  const segWorld = runWorld / segCount;
+  const moatWall = createCityWall({
+    length: segWorld / moatScale,
+    height: bastionTop / moatScale / 0.94,
+    depth: moatDepth,
+  });
+  const moatMerlons = createMerlons({
+    length: segWorld / moatScale,
+    height: bastionTop / moatScale / 0.94,
+    depth: moatDepth,
+  });
+  const moatWalls: Stamp[] = [];
+  for (let index = 0; index < segCount; index += 1) {
+    const progress = runP0 + ((index + 0.5) * (runP1 - runP0)) / segCount;
+    moatWalls.push({ progress, offset: -13.4, heading: Math.PI / 2, scale: moatScale });
+    claim(progress, -13.4, segWorld, moatDepth * moatScale);
+  }
+  scatter(host, moatWall, mats.streetBrick, moatWalls, true);
+  scatter(host, moatMerlons, mats.stone, moatWalls, true);
+  claim(corner.progress, corner.lateralOffset, bastionWorld * 2, bastionWorld * 2);
+  put(host, cornerTower, corner.progress, corner.lateralOffset, corner.scale);
   host.addLamp(0.096, 6.9, false);
   host.addLamp(0.13, -5.62, true);
   host.addLamp(0.158, 6.9, false);
@@ -218,7 +380,8 @@ export function assembleCity(host: CityHost): void {
   put(host, bridge, 0.226, -14.5, 1);
   const dagoba = PASSAGE_HEROES.whiteDagoba;
   put(host, buildWhiteDagoba(mats), dagoba.progress, dagoba.lateralOffset, dagoba.scale);
-  put(host, createTreeGroup(4.8, 'willow', mats.bark, mats.leaf), 0.185, -6.2, 1);
+  const willow = clearOfWalls(0.185, -6.2, 'willow');
+  if (willow) put(host, createTreeGroup(4.8, 'willow', mats.bark, mats.leaf), willow.progress, willow.offset, 1);
   host.addLamp(0.19, -5.62, true);
   host.addLamp(0.225, 6.5, false);
   host.addLamp(0.242, 6.5, true);
@@ -248,6 +411,7 @@ export function assembleCity(host: CityHost): void {
     ringWall.scale,
     Math.PI / 2,
   );
+  claim(ringWall.progress, ringWall.lateralOffset, 10.2 * ringWall.scale, 2.6 * ringWall.scale);
   const ringRun: Stamp[] = [];
   for (let index = 0; index < 8; index += 1) {
     ringRun.push({ progress: 0.346 + index * 0.014, offset: -9.8, heading: Math.PI / 2, scale: 0.86 });
@@ -255,6 +419,7 @@ export function assembleCity(host: CityHost): void {
   for (let index = 0; index < 4; index += 1) {
     ringRun.push({ progress: 0.41 + index * 0.014, offset: 11.2, heading: Math.PI / 2, scale: 0.86 });
   }
+  for (const stamp of ringRun) claim(stamp.progress, stamp.offset, 13.5 * 0.86, 2.7 * 0.86);
   scatter(host, wallRun, mats.streetBrick, ringRun, true);
   scatter(host, wallMerlons, mats.stone, ringRun, true);
   host.addLamp(0.345, -6.2, false);
@@ -266,9 +431,9 @@ export function assembleCity(host: CityHost): void {
   put(host, buildPavilion(mats, bracket, true), drum.progress, drum.lateralOffset, drum.scale);
   put(host, buildPavilion(mats, bracket, false), bell.progress, bell.lateralOffset, bell.scale);
   scatterShops(host, [doorBay, windowBay, screenBay], [
-    { progress: 0.424, offset: 8.6 },
-    { progress: 0.424, offset: -8.6 },
-    { progress: 0.432, offset: 8.6 },
+    { progress: 0.46, offset: -8.6 },
+    { progress: 0.468, offset: 8.6 },
+    { progress: 0.476, offset: 8.6 },
   ]);
   host.addLamp(0.429, 6.5, true);
   host.addLamp(0.462, -6.4, true);
@@ -292,7 +457,7 @@ export function assembleCity(host: CityHost): void {
   host.begin('yonghegong');
   const yonghe = PASSAGE_HEROES.yonghegong;
   const courtyard = buildYongheCourtyard(mats, bracket);
-  hangPlaque(host, courtyard, '雍和宫', 0, 3.7, -5.55, 2.4, 0.7);
+  hangFramedPlaque(host, courtyard, '雍和宫', 0, 3.05, -5.55, 1.15, 0.5);
   put(host, courtyard, yonghe.progress, yonghe.lateralOffset, yonghe.scale);
   host.addLamp(0.591, -6.4, true);
   host.addLamp(0.635, 6.4, false);
@@ -317,16 +482,12 @@ export function assembleCity(host: CityHost): void {
   host.begin('temple-of-heaven');
   const temple = PASSAGE_HEROES.templeOfHeaven;
   const hall = buildTempleOfHeaven(mats, bracket);
-  hangPlaque(host, hall, '祈年殿', 0, 6.35, -2.55, 2.6, 0.72);
+  hangFramedPlaque(host, hall, '祈年殿', 0, 3.95, -4.25, 1.4, 0.55);
   put(host, hall, temple.progress, temple.lateralOffset, temple.scale);
   for (let index = 0; index < 6; index += 1) {
-    put(
-      host,
-      createTreeGroup(5.4, 'cypress', mats.bark, mats.leaf),
-      0.818 + index * 0.006,
-      -16.4,
-      1,
-    );
+    const cypress = clearOfWalls(0.818 + index * 0.006, -16.4, 'cypress');
+    if (!cypress) continue;
+    put(host, createTreeGroup(5.4, 'cypress', mats.bark, mats.leaf), cypress.progress, cypress.offset, 1);
   }
   host.addLamp(0.761, -6.3, true);
   host.addLamp(0.795, 6.3, false);
@@ -344,7 +505,7 @@ export function assembleCity(host: CityHost): void {
   }
   scatterShops(host, [doorBay, windowBay, screenBay], qianmen);
   const pailou = buildPailou(mats, bracket);
-  hangPlaque(host, pailou, '前门', 0, 4.62, -0.32, 2.2, 0.55);
+  hangFramedPlaque(host, pailou, '前门', 0, 4.62, -0.32, 2.2, 0.55);
   put(host, pailou, 0.902, 0, 0.94);
   const dashilar = PASSAGE_HEROES.dashilarGate;
   put(
@@ -379,27 +540,30 @@ export function assembleCity(host: CityHost): void {
     { progress: 0.86, offset: -11.8 },
   ];
   for (const stamp of trees) {
+    const spot = clearOfWalls(stamp.progress, stamp.offset, 'tree');
+    if (!spot) continue;
     const kind = hash01(Math.round(stamp.progress * 100), 4) > 0.7 ? 'locust' : 'street';
     put(
       host,
       createTreeGroup(4.2 + hash01(Math.round(stamp.progress * 80), 5), kind, mats.bark, mats.leaf),
-      stamp.progress,
-      stamp.offset,
+      spot.progress,
+      spot.offset,
       1,
     );
   }
 
   const shopNames = ['茶莊', '綢緞', '醬園', '藥鋪', '布莊', '煤鋪'];
+  const namedBays = nanluo.filter((stamp) => shopSlot(stamp.progress, stamp.offset) !== 1);
   shopNames.forEach((name, index) => {
-    const progress = 0.514 + index * 0.008;
-    if (Math.abs(progress - PASSAGE_HEROES.nanluoTeaHouse.progress) < 0.008) return;
-    const offset = index % 2 === 0 ? 8.5 : -8.5;
+    const stamp = namedBays[index];
+    if (!stamp) return;
+    if (rejectOverlap('shop name', stamp.progress, stamp.offset, 3.3, 3.1)) return;
     const sign = new Group();
-    hangPlaque(host, sign, name, 0, 2.22, -1.28, 1.5, 0.42);
-    put(host, sign, progress, offset, 1, faceRoad(offset));
+    hangFramedPlaque(host, sign, name, 0, 2.15, -1.35, 1.3, 0.42);
+    put(host, sign, stamp.progress, stamp.offset, 1, faceRoad(stamp.offset));
   });
 
-  dressRoadside(host);
+  dressRoadside(host, blocked);
 
   for (const variant of [0, 1, 2]) {
     const skyline: Stamp[] = [];

@@ -47,7 +47,17 @@ function scatter(
   host.root.add(mesh);
 }
 
-function marker(host: CityHost, progress: number, offset: number, name: string): void {
+function marker(
+  host: CityHost,
+  progress: number,
+  offset: number,
+  name: string,
+  blocked: (progress: number, offset: number, along: number, across: number) => boolean,
+): void {
+  if (blocked(progress, offset, 0.8, 3.8)) {
+    if (import.meta.env.DEV) console.assert(false, `${name} overlaps a wall`);
+    return;
+  }
   const group = new Group();
   host.place(group, progress, offset, 0);
   group.add(new Mesh(placedBox(0.46, 2.3, 0.46, -1.5, 1.15, 0), host.mats.streetBrick));
@@ -71,7 +81,10 @@ function marker(host: CityHost, progress: number, offset: number, name: string):
 }
 
 /** Roadside layers the kit passage lost: rails, lanterns, signs, benches, and the far bank. */
-export function dressRoadside(host: CityHost): void {
+export function dressRoadside(
+  host: CityHost,
+  blocked: (progress: number, offset: number, along: number, across: number) => boolean,
+): void {
   const { mats } = host;
   const axisWalls: Stamp[] = [];
   for (let index = 0; index < 7; index += 1) {
@@ -185,8 +198,8 @@ export function dressRoadside(host: CityHost): void {
   shelter.add(new Mesh(placedBox(1.2, 0.1, 3.4, 0, 2.3, 0), mats.concrete));
   host.root.add(shelter);
 
-  marker(host, 0.518, 7.4, '南锣鼓巷');
-  marker(host, 0.562, -7.4, '五道营');
+  marker(host, 0.503, 6.3, '南锣鼓巷', blocked);
+  marker(host, 0.566, -6.3, '五道营', blocked);
 
   for (let index = 0; index < 8; index += 1) {
     const progress = 0.338 + index * 0.008;

@@ -1,13 +1,16 @@
-export { buildGateTower } from './gateTower';
+export { buildGateTower, gateRoofHalfWidth } from './gateTower';
+export type { GateTowerOptions, PlaqueSeat } from './gateTower';
 export {
   buildArrowTower,
   buildCityWallSegment,
   buildCornerTower,
   buildGlassTower,
+  CORNER_BASTION,
   createSkylineMass,
   buildOverpassPier,
   buildPailou,
   buildPalaceWallGate,
+  PALACE_GATE_OPTIONS,
   buildPavilion,
   buildStreetGate,
   buildTeaHouse,

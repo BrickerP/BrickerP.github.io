@@ -10,6 +10,7 @@ import {
   createColumnRow,
   createCourtyardWall,
   createDoor,
+  createEnclosedHall,
   createMerlons,
   createPodium,
   createRailing,
@@ -23,7 +24,7 @@ import {
   placedLathe,
 } from '../kit';
 import { beginAssembly } from './batch';
-import { buildGateTower } from './gateTower';
+import { buildGateTower, type GateTowerOptions } from './gateTower';
 
 type Mats = {
   palaceBrick: Material;
@@ -39,28 +40,48 @@ type Mats = {
   glass: Material;
 };
 
+/** Shared with the moat wall, so the wall can butt into this gate's roof. */
+export const PALACE_GATE_OPTIONS: GateTowerOptions = {
+  openingHalf: 2.2,
+  pierWidth: 6.2,
+  pierDepth: 4.4,
+  pierHeight: 6.0,
+  bays: 3,
+  eaves: 2,
+  portrait: true,
+};
+
 /** The set-back gate uses the same tower as Zhengyangmen: fewer bays, lower, with a niche. */
 export function buildPalaceWallGate(mats: Mats, bracket: BufferGeometry): Group {
-  return buildGateTower(mats, bracket, {
-    openingHalf: 2.2,
-    pierWidth: 6.2,
-    pierDepth: 4.4,
-    pierHeight: 6.0,
-    bays: 3,
-    eaves: 2,
-    portrait: true,
-  });
+  return buildGateTower(mats, bracket, PALACE_GATE_OPTIONS);
 }
 
-/** Corner tower: three solid storeys, each meeting the eave above it. */
+/**
+ * Bastion sized so the corner tower's 0.72 scale is 4.2 m tall and 2.38 m
+ * half-wide — the city-wall height, inside the 3.03 m clearance.
+ */
+export const CORNER_BASTION = {
+  half: 2.38 / 0.72,
+  height: 4.2 / 0.72,
+} as const;
+
+/** Corner tower: a wall bastion, then three storeys each buried in the eave below. */
 export function buildCornerTower(mats: Mats, bracket: BufferGeometry): Group {
   const group = new Group();
   const batch = beginAssembly(group);
-  batch.add(createPodium({ width: 6.2, depth: 6.2, height: 1.05, steps: 0 }), mats.stone);
+  const base = CORNER_BASTION.height;
+  batch.add(
+    createCityWall({
+      length: CORNER_BASTION.half * 2,
+      depth: CORNER_BASTION.half * 2,
+      height: base / 0.94,
+    }),
+    mats.streetBrick,
+  );
   const storeys = [
-    { width: 5.4, depth: 5.4, bottom: 1.05, eave: 3.05, roof: 6.4, rise: 0.62 },
-    { width: 4.1, depth: 4.1, bottom: 3.85, eave: 5.5, roof: 5.0, rise: 0.55 },
-    { width: 2.9, depth: 2.9, bottom: 6.2, eave: 7.45, roof: 3.6, rise: 0.7 },
+    { width: 5.4, depth: 5.4, bottom: base - 0.05, eave: base + 2.0, roof: 6.4, rise: 0.62 },
+    { width: 4.1, depth: 4.1, bottom: base + 2.1, eave: base + 4.45, roof: 5.0, rise: 0.55 },
+    { width: 2.9, depth: 2.9, bottom: base + 4.55, eave: base + 6.4, roof: 3.6, rise: 0.7 },
   ];
   storeys.forEach((storey, index) => {
     const body = storey.eave - storey.bottom;
@@ -89,11 +110,11 @@ export function buildCornerTower(mats: Mats, bracket: BufferGeometry): Group {
       storey.eave,
     );
   });
-  batch.add(placedBox(0.16, 0.48, 0.16, 0, 8.7, 0), mats.gold, 0, 'skip');
+  batch.add(placedBox(0.16, 0.48, 0.16, 0, base + 7.5, 0), mats.gold, 0, 'skip');
   batch.finish();
-  addBracketRun(group, bracket, mats.timber, 2.62, -2.2, 4.2);
-  addBracketRun(group, bracket, mats.timber, 5.08, -1.7, 3.2);
-  batchAddColumns(group, mats.timber, 1.15);
+  addBracketRun(group, bracket, mats.timber, base + 2.0 - 0.43, -2.2, 4.2);
+  addBracketRun(group, bracket, mats.timber, base + 4.45 - 0.42, -1.7, 3.2);
+  batchAddColumns(group, mats.timber, base + 0.08);
   return group;
 }
 
@@ -185,13 +206,14 @@ export function buildPavilion(mats: Mats, bracket: BufferGeometry, wide: boolean
     mats.tile,
     lowerEave,
   );
-  const upperBottom = lowerEave + lowerRise + 0.12;
-  const upperHeight = 0.62;
+  const upperBottom = lowerEave + 0.1;
+  const upperTop = lowerEave + lowerRise + 0.74;
+  const upperHeight = upperTop - upperBottom;
   batch.add(placedBox(width * 0.42, upperHeight, depth * 0.32, 0, upperBottom + upperHeight / 2, 0), mats.palaceBrick);
   batch.add(
     createRoof({ width: width * 0.58, depth: depth * 0.48, rise: 0.82, kind: 'xieshan', wingLift: 0.14 }),
     mats.tile,
-    upperBottom + upperHeight,
+    upperTop,
   );
   batch.add(placedCylinder(0.12, 0.16, 0.55, 0, upperBottom + upperHeight + 1.15, 0, 8), mats.gold, 0, 'skip');
   batch.finish();
@@ -247,7 +269,7 @@ export function buildYongheCourtyard(mats: Mats, bracket: BufferGeometry): Group
   const rail = createRailing(6.4, 1.05, -1.95, 5);
   put(rail, mats.stone, 0, 0, -3.6);
   put(createRoof({ width: 8.6, depth: 5.2, rise: 1.05, kind: 'xieshan', wingLift: 0.2 }), mats.gold, 0, 3.85, -3.6);
-  put(placedBox(3.4, 0.48, 1.6, 0, 5.35, 0), mats.palaceBrick, 0, 0, -3.6);
+  put(placedBox(3.4, 1.64, 1.6, 0, 4.77, 0), mats.palaceBrick, 0, 0, -3.6);
   put(createRoof({ width: 4.8, depth: 3.2, rise: 0.72, kind: 'xieshan', wingLift: 0.14 }), mats.gold, 0, 5.7, -3.6);
   batch.finish();
   const runs: Array<[number, number, number, number, number]> = [
@@ -283,8 +305,14 @@ export function buildTempleOfHeaven(mats: Mats, bracket: BufferGeometry): Group 
     { radius: 3.3, y: 5.5, rise: 1.05, columns: 10 },
     { radius: 2.4, y: 8.2, rise: 1.0, columns: 8 },
   ];
-  for (const tier of tiers) {
-    batch.add(placedCylinder(tier.radius * 0.72, tier.radius * 0.82, 1.7, 0, tier.y + 0.8, 0, 16), mats.palaceBrick);
+  tiers.forEach((tier, index) => {
+    const eave = tier.y + 1.75;
+    const bottom = index === 0 ? 2.155 : (tiers[index - 1]?.y ?? tier.y) + 1.75 + 0.1;
+    const height = Math.max(0.4, eave - bottom);
+    batch.add(
+      placedCylinder(tier.radius * 0.72, tier.radius * 0.82, height, 0, bottom + height / 2, 0, 16),
+      mats.palaceBrick,
+    );
     batch.add(
       createColumnRing({
         radius: tier.radius * 0.96,
@@ -302,7 +330,7 @@ export function buildTempleOfHeaven(mats: Mats, bracket: BufferGeometry): Group 
       mats.tile,
       tier.y + 1.75,
     );
-  }
+  });
   batch.add(placedCylinder(0.18, 0.08, 1.15, 0, 12.15, 0, 8), mats.gold, 0, 'skip');
   batch.finish();
   for (const tier of tiers) {
@@ -377,7 +405,6 @@ export function buildPailou(mats: Mats, bracket: BufferGeometry): Group {
     batch.add(placedCylinder(0.16, 0.2, 4.7, x, 2.55, 0, 8), mats.palaceBrick);
   }
   batch.add(placedBox(15.6, 0.28, 0.32, 0, 5.08, 0), mats.timber, 0, 'skip');
-  batch.add(placedBox(4.4, 0.62, 0.1, 0, 4.62, -0.22), mats.palaceBrick);
   batch.add(createRoof({ width: 16.2, depth: 2.6, rise: 0.88, kind: 'gable', wingLift: 0.24 }), mats.tile, 5.42);
   batch.finish();
   addBracketRun(group, bracket, mats.timber, 5.08, -0.85, 14.4);
@@ -386,34 +413,7 @@ export function buildPailou(mats: Mats, bracket: BufferGeometry): Group {
 
 export type ShopKind = 'door' | 'window' | 'screen';
 
-function shopFacade(openingWidth: number, openingBottom: number, openingHeight: number): BufferGeometry {
-  const width = 2.55;
-  const height = 2.15;
-  const depth = 0.22;
-  const z = -0.92;
-  const holeLeft = -openingWidth / 2;
-  const holeRight = openingWidth / 2;
-  const holeTop = openingBottom + openingHeight;
-  const parts: BufferGeometry[] = [];
-  const leftSpan = holeLeft + width / 2;
-  const rightSpan = width / 2 - holeRight;
-  parts.push(
-    placedBox(leftSpan, height, depth, -width / 2 + leftSpan / 2, height / 2, z),
-    placedBox(rightSpan, height, depth, holeRight + rightSpan / 2, height / 2, z),
-    placedBox(0.16, height, 1.25, -width / 2, height / 2, z + 0.7),
-    placedBox(0.16, height, 1.25, width / 2, height / 2, z + 0.7),
-  );
-  if (openingBottom > 0.04) {
-    parts.push(placedBox(openingWidth, openingBottom, depth, 0, openingBottom / 2, z));
-  }
-  if (height - holeTop > 0.04) {
-    const span = height - holeTop;
-    parts.push(placedBox(openingWidth, span, depth, 0, holeTop + span / 2, z));
-  }
-  return mergeParts(parts);
-}
-
-/** One shop bay. The facade has a real opening facing -Z, toward the road. */
+/** One shop bay. Back wall, side walls, and a front opening facing -Z, toward the road. */
 export function createShopBay(kind: boolean | ShopKind = 'door'): {
   timber: BufferGeometry;
   wall: BufferGeometry;
@@ -430,13 +430,9 @@ export function createShopBay(kind: boolean | ShopKind = 'door'): {
   const opening =
     resolved === 'door' ? createDoor(holeWidth, holeHeight) : createWindowOpening(holeWidth, holeHeight);
   opening.translate(0, resolved === 'door' ? holeBottom : holeBottom + holeHeight / 2, -1.08);
-  const sign = placedBox(1.45, 0.28, 0.06, 0, 2.15, -1.16);
   return {
-    timber: mergeParts([
-      createColumnRow({ bays: 1, bayWidth: 2.4, depth: 2.2, height: 1.85, radius: 0.09 }),
-      sign,
-    ]),
-    wall: shopFacade(holeWidth, holeBottom, holeHeight),
+    timber: createColumnRow({ bays: 1, bayWidth: 2.4, depth: 2.2, height: 1.85, radius: 0.09 }),
+    wall: createEnclosedHall(2.55, 2.15, 2.2, [{ width: holeWidth, height: holeHeight, y: holeBottom }]),
     roof,
     opening,
     eave: placedBox(3.15, 0.07, 0.14, 0, 2.68, -1.5),

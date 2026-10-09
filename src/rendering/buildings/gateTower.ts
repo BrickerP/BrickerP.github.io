@@ -5,10 +5,9 @@ import {
   createArch,
   createBalusterGeometry,
   createColumnRow,
-  createWindowOpening,
-  createPodium,
   createRailPanel,
   createRoof,
+  createSumeru,
   placedBox,
 } from '../kit';
 import { beginAssembly } from './batch';
@@ -25,9 +24,65 @@ export interface GateTowerOptions {
   portrait?: boolean;
 }
 
+export interface PlaqueSeat {
+  /** Bottom of the upper lintel, local metres. */
+  lintelBottom: number;
+  /** 0.25 m in front of the road-facing column line. */
+  z: number;
+  bayWidth: number;
+}
+
+/** Half-width of the lower roof, local metres. The wall run butts into this. */
+export function gateRoofHalfWidth(options: GateTowerOptions): number {
+  const center = options.openingHalf + options.pierWidth / 2;
+  const span = center * 2 + options.pierWidth;
+  return (span * 1.04) / 2;
+}
+
+interface GateLayout {
+  center: number;
+  span: number;
+  hallY: number;
+  hallDepth: number;
+  columnY: number;
+  columnHeight: number;
+  columnDepth: number;
+  frontColumnZ: number;
+  seat: PlaqueSeat;
+}
+
+function layoutGate(options: GateTowerOptions): GateLayout {
+  const center = options.openingHalf + options.pierWidth / 2;
+  const span = center * 2 + options.pierWidth;
+  const hallY = options.pierHeight;
+  const hallDepth = options.pierDepth * 0.72;
+  const archCrown = 0.55 + options.openingHalf + 0.15;
+  const columnY = Math.max(hallY + 0.2, archCrown + 0.2);
+  const columnHeight = 1.7;
+  const columnDepth = Math.min(2.4, hallDepth * 0.55);
+  const frontColumnZ = -(options.pierDepth / 2) + 0.55;
+  const bayWidth = span / options.bays;
+  return {
+    center,
+    span,
+    hallY,
+    hallDepth,
+    columnY,
+    columnHeight,
+    columnDepth,
+    frontColumnZ,
+    seat: {
+      lintelBottom: columnY + columnHeight + 0.3,
+      z: frontColumnZ - 0.25,
+      bayWidth,
+    },
+  };
+}
+
 /**
  * A gate tower: battered piers, an open vault, a columned hall,
  * bracket rows, and one or two xieshan roofs with main, vertical, and hip ridges.
+ * The upper storey grows down into the lower roof. The name board hangs in the centre bay.
  */
 export function buildGateTower(
   mats: {
@@ -36,6 +91,7 @@ export function buildGateTower(
     tile: Material;
     timber: Material;
     gold: Material;
+    white: Material;
     window: Material;
     niche?: Material;
   },
@@ -44,19 +100,16 @@ export function buildGateTower(
 ): Group {
   const group = new Group();
   const batch = beginAssembly(group);
-  const center = options.openingHalf + options.pierWidth / 2;
-  const span = center * 2 + options.pierWidth;
-  const hallY = options.pierHeight;
-  const hallDepth = options.pierDepth * 0.72;
+  const gate = layoutGate(options);
+  const { center, span, hallY, hallDepth } = gate;
   for (const side of [-1, 1]) {
-    const footing = createPodium({
-      width: Math.max(0.8, options.pierWidth - 0.4),
-      depth: Math.max(0.8, options.pierDepth - 0.5),
-      height: 0.7,
-      steps: 0,
-    });
+    const footing = createSumeru(
+      Math.max(1.6, options.pierWidth - 0.7),
+      Math.max(1.6, options.pierDepth - 0.15),
+      0.62,
+    );
     footing.translate(side * center, 0, 0);
-    batch.add(footing, mats.stone);
+    batch.add(footing, mats.white);
     batch.add(
       placedBox(
         options.pierWidth,
@@ -68,22 +121,40 @@ export function buildGateTower(
       ),
       mats.palaceBrick,
     );
+    const nicheArch = createArch(0.6, 0.22, 0.12);
+    nicheArch.translate(side * center, 2.15, -(options.pierDepth / 2) - 0.02);
+    batch.add(nicheArch, mats.palaceBrick);
+    batch.add(
+      placedBox(1.08, 2.05, 0.12, side * center, 1.78, -(options.pierDepth / 2) + 0.14),
+      mats.niche ?? mats.window,
+      0,
+      'skip',
+    );
   }
   const arch = createArch(options.openingHalf + 0.15, options.pierDepth * 0.92, 0.34);
   arch.translate(0, 0.55, 0);
   batch.add(arch, mats.palaceBrick);
-  for (const side of [-1, 1]) {
-    const row = createColumnRow({
-      bays: 2,
-      bayWidth: Math.max(0.7, options.pierWidth * 0.38),
-      depth: Math.min(2.4, hallDepth * 0.55),
-      height: 1.7,
-      radius: 0.13,
-      y: hallY + 0.2,
-    });
-    row.translate(side * center, 0, -(hallDepth * 0.18));
-    batch.add(row, mats.timber, 0, 'skip');
-  }
+  const row = createColumnRow({
+    bays: options.bays,
+    bayWidth: gate.seat.bayWidth,
+    depth: gate.columnDepth,
+    height: gate.columnHeight,
+    radius: 0.13,
+    y: gate.columnY,
+  });
+  row.translate(0, 0, gate.frontColumnZ + gate.columnDepth / 2);
+  batch.add(row, mats.timber, 0, 'skip');
+  batch.add(
+    placedBox(
+      span * 0.98,
+      0.16,
+      gate.columnDepth + 0.2,
+      0,
+      gate.columnY - 0.08,
+      gate.frontColumnZ + gate.columnDepth / 2,
+    ),
+    mats.stone,
+  );
   const archCrown = 0.55 + options.openingHalf + 0.15;
   const wallBottom = Math.max(hallY, archCrown + 0.28);
   const wallTop = hallY + 2.05;
@@ -94,6 +165,14 @@ export function buildGateTower(
     wallBottom,
   );
   batch.add(placedBox(span * 0.62, 0.32, 0.36, 0, hallY + 2.05, hallDepth * 0.12), mats.palaceBrick);
+  const parapetH = 0.85;
+  const parapetZ = -(options.pierDepth / 2) + 0.08;
+  batch.add(
+    placedBox(span * 0.88, parapetH, 0.24, 0, hallY + parapetH / 2, parapetZ),
+    mats.palaceBrick,
+  );
+  batch.add(placedBox(span * 0.9, 0.07, 0.32, 0, hallY + parapetH + 0.03, parapetZ), mats.stone);
+  const lowerEave = hallY + 3.2;
   const lowerRoof = createRoof({
     width: span * 1.04,
     depth: options.pierDepth + 1.1,
@@ -101,11 +180,16 @@ export function buildGateTower(
     kind: 'xieshan',
     wingLift: 0.22,
   });
-  lowerRoof.translate(0, hallY + 3.2, 0);
+  lowerRoof.translate(0, lowerEave, 0);
   batch.add(lowerRoof, mats.tile);
+  const upperEave = hallY + 6.1;
   if (options.eaves > 1) {
-    const upperY = hallY + 5.2;
-    batch.add(placedBox(span * 0.48, 0.38, hallDepth * 0.42, 0, upperY, 0), mats.palaceBrick);
+    const upperBottom = lowerEave + 0.15;
+    const upperHeight = upperEave - upperBottom;
+    batch.add(
+      placedBox(span * 0.48, upperHeight, hallDepth * 0.42, 0, upperBottom + upperHeight / 2, 0),
+      mats.palaceBrick,
+    );
     const upper = createRoof({
       width: span * 0.68,
       depth: options.pierDepth * 0.72,
@@ -113,31 +197,27 @@ export function buildGateTower(
       kind: 'xieshan',
       wingLift: 0.16,
     });
-    upper.translate(0, upperY + 0.9, 0);
+    upper.translate(0, upperEave, 0);
     batch.add(upper, mats.tile);
-  }
-  for (const side of [-1, 1]) {
-    const slot = createWindowOpening(0.72, 1.2, 0.16);
-    slot.translate(side * center, options.pierHeight * 0.55, -(options.pierDepth / 2) - 0.02);
-    batch.add(slot, mats.window, 0, 'skip');
   }
   if (options.portrait && mats.niche) {
     const niche = placedBox(1.5, 2.0, 0.06, 0, hallY - 1.5, -(options.pierDepth / 2 + 0.08));
     batch.add(niche, mats.niche, 0, 'skip');
   }
   batch.finish();
+  group.userData.plaqueSeat = gate.seat;
   addBracketRun(group, bracket, mats.timber, hallY + 2.55, -(hallDepth * 0.42), span * 0.72);
   if (options.eaves > 1) {
-    addBracketRun(group, bracket, mats.timber, hallY + 5.45, -(hallDepth * 0.22), span * 0.42);
+    addBracketRun(group, bracket, mats.timber, upperEave - 0.42, -(hallDepth * 0.22), span * 0.42);
   }
   addBalusterRun(
     group,
     createBalusterGeometry(),
     createRailPanel(),
     mats.stone,
-    hallY + 0.15,
-    -(hallDepth / 2 + 0.15),
-    span * 0.7,
+    hallY + parapetH,
+    parapetZ,
+    span * 0.72,
     options.bays + 2,
   );
   return group;

@@ -187,6 +187,45 @@ export function createRoofFrame(options: RoofOptions): BufferGeometry {
   return mergeParts(parts);
 }
 
+/** A thin triangular board closing the gable, tucked just inside the verge. */
+function gablePrism(x: number, halfD: number, yEave: number, yRidge: number): BufferGeometry {
+  const halfT = 0.06;
+  const x0 = x - halfT;
+  const x1 = x + halfT;
+  const positions: number[] = [];
+  const indices: number[] = [];
+  const add = (px: number, py: number, pz: number) => {
+    positions.push(px, py, pz);
+    return positions.length / 3 - 1;
+  };
+  const a0 = add(x0, yEave, -halfD);
+  const b0 = add(x0, yEave, halfD);
+  const c0 = add(x0, yRidge, 0);
+  const a1 = add(x1, yEave, -halfD);
+  const b1 = add(x1, yEave, halfD);
+  const c1 = add(x1, yRidge, 0);
+  if (x >= 0) indices.push(b1, a1, c1, a0, b0, c0);
+  else indices.push(a0, b0, c0, b1, a1, c1);
+  indices.push(a0, a1, b1, a0, b1, b0, b0, b1, c1, b0, c1, c0, c0, c1, a1, c0, a1, a0);
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new BufferAttribute(new Float32Array(positions), 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function gableBoards(options: RoofOptions): BufferGeometry {
+  const wing = options.wingLift ?? Math.min(0.35, options.rise * 0.18);
+  const halfW = options.width / 2;
+  const halfD = options.depth / 2;
+  const x = halfW - 0.07;
+  const yEave = wing * 0.35;
+  const yRidge = options.rise * 0.96;
+  return mergeParts([gablePrism(x, halfD, yEave, yRidge), gablePrism(-x, halfD, yEave, yRidge)]);
+}
+
 export function createRoof(options: RoofOptions): BufferGeometry {
-  return mergeParts([thickenRoof(createRoofSurface(options), 0.14), createRoofFrame(options)]);
+  const parts = [thickenRoof(createRoofSurface(options), 0.14), createRoofFrame(options)];
+  if ((options.kind ?? 'hip') === 'gable') parts.push(gableBoards(options));
+  return mergeParts(parts);
 }
