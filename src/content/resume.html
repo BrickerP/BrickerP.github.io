@@ -2,11 +2,11 @@
 <html lang="en-US">
 <head>
 <meta charset="utf-8">
-<title>Yupeng Lu - AI Agent Engineer</title>
+<title>Yupeng Lu - Backend Engineer - Live Trading Systems &amp; AI Platforms</title>
 <meta name="author" content="Yupeng Lu">
-<meta name="description" content="Resume - AI Agent Engineer">
-<meta name="keywords" content="AI Agent Engineer, AI agents, MCP, Model Context Protocol, tool-use contracts, agent skills, coding agents, Claude Code, Codex, evals, release gates, LLM operations, Stripe Billing, ads attribution, Java, Spring Boot, TypeScript, Python, AWS, Kubernetes, ClickHouse">
-<meta name="dcterms.modified" content="2026-10-08">
+<meta name="description" content="Resume - Backend Engineer, live trading systems and AI platforms">
+<meta name="keywords" content="Backend Engineer, live trading systems, trading execution, Alpaca, execution ledger, SQLite, performance engineering, latency, AI platforms, AI agents, MCP, Model Context Protocol, tool-use contracts, agent skills, coding agents, evals, release gates, Stripe Billing, Java, Spring Boot, TypeScript, Python, AWS, Kubernetes, ClickHouse, WebGL">
+<meta name="dcterms.modified" content="2026-10-09">
 <style>
   @page { size: Letter; margin: 0.4in 0.5in; }
   * { box-sizing: border-box; }
@@ -59,17 +59,18 @@
   <p class="contact">US Permanent Resident<span class="sep">·</span>No sponsorship required</p>
   <p class="contact"><a href="mailto:yplmicro@gmail.com" aria-label="Email Yupeng Lu">yplmicro@gmail.com</a><span class="sep">·</span><a href="https://www.linkedin.com/in/yupeng-lu-845a0b411/" aria-label="Yupeng Lu on LinkedIn">linkedin.com/in/yupeng-lu-845a0b411</a></p>
   <p class="contact">GitHub: <a href="https://github.com/BrickerP" aria-label="Yupeng Lu personal GitHub">github.com/BrickerP</a><span class="sep">·</span>Public work: <a href="https://github.com/cookiy-ai" aria-label="Cookiy AI public repositories on GitHub">github.com/cookiy-ai</a></p>
-  <p class="headline">AI Agent Engineer</p>
+  <p class="headline">Backend Engineer &mdash; live trading systems &amp; AI platforms</p>
 </header>
 
 <section aria-labelledby="summary-heading">
   <h2 id="summary-heading">Summary</h2>
-  <p>AI Agent Engineer building production agent systems and the platforms they run on: MCP/tool-use contracts, CLI/skill distribution, evals and evidence-gated releases, and governed agent access to production infrastructure. Now at Baidu on MeDo, an AI agent app builder, owning the overseas revenue platform (billing, credits, ads attribution, service migration) and the team's agent-native tooling.</p>
+  <p>Backend engineer for live systems who ships the measurements with the code: trading execution on Alpaca (shared execution ledger, startup reconcile, flag-gated routing, scan-latency work), AI agent platforms at Baidu on MeDo (billing service extraction, agent-native infra tooling, outage response), and a deterministic 48-second WebGL film with CI performance and seam gates. Earlier: MCP/tool-use contracts and evidence-gated releases at Cookiy.</p>
 </section>
 
 <section class="proof" aria-labelledby="proof-heading">
   <h2 id="proof-heading">Public Proof</h2>
   <ul>
+    <li><a href="https://brickerp.github.io/work/quant/" aria-label="Technical sheet 01: live trading execution">technical sheet 01 - live trading execution</a> - system diagram, execution-safety invariants, and the 2026-10-08 scan-latency regression with its method box; <a href="https://d2c9pzwpavuktk.cloudfront.net/" aria-label="Quant trading public research dashboard">public research dashboard</a>.</li>
     <li><a href="https://github.com/cookiy-ai/user-research-skill" aria-label="Cookiy user-research skill on GitHub">public user-research skill</a> - AI-agent skill for end-to-end user research across Claude, Codex, Cursor, and OpenClaw-style clients.</li>
     <li><a href="https://github.com/cookiy-ai/cookiy-cli" aria-label="Cookiy CLI source on GitHub">public TypeScript CLI</a> / <a href="https://www.npmjs.com/package/cookiy-cli" aria-label="cookiy-cli package on npm">npm CLI package</a> - AI interviews, synthetic users, surveys, recruitment, playback, and billing via REST/MCP.</li>
     <li><a href="https://www.npmjs.com/package/cookiy-mcp" aria-label="cookiy-mcp package on npm">MCP package</a> and <a href="https://s.cookiy.ai/developer-portal" aria-label="Cookiy AI developer portal">developer portal</a> - one-command skill/MCP setup, Redoc/OpenAPI docs, and public agent onboarding surface.</li>
@@ -120,6 +121,19 @@
 
   <article class="entry">
     <div class="role-line">
+      <h3>Quant Trading Systems Venture<span class="title"> - Co-Engineer</span></h3>
+      <p class="meta">Apr 2026 – Present · Concurrent</p>
+    </div>
+    <p class="intro">Private live-trading system on AWS: intraday scanner &rarr; factor filter &rarr; Alpaca bracket orders &rarr; SQLite execution ledger &rarr; S3 Parquet warehouse &rarr; <a href="https://d2c9pzwpavuktk.cloudfront.net/" aria-label="Quant trading public research dashboard">public research dashboard</a>; 250+ commits since Jul 2026.</p>
+    <ul>
+      <li><span class="lead">Execution safety on Alpaca.</span> Shared execution ledger with fill-dedupe keys, broker + DB startup reconcile, bracket/OCO fixes, and a flag-gated migration of live routing onto Alpaca. Retired path: IBKR heartbeat/reconnect and the IB Gateway route, removed after cutover.</li>
+      <li><span class="lead">Scan latency and SQLite write contention.</span> Event-based scanner waits, warm-cache fast paths, SQLite parse optimization, and lazy-load startup; on 2026-10-08 traced a scan-batch p95 regression (~2.4 s &rarr; ~9.2 s) to a 5-minute backfill cron holding SQLite's write lock and removed it on 2026-10-09 (post-fix re-measure pending).</li>
+      <li><span class="lead">Immutable public dashboard and ops.</span> Dashboard renders as a pure function of content-addressed input snapshots with Lambda publication (CAS supersede, skip-unchanged), redacted live logs, and CloudFront/S3 OAC hardening; rebuilt infra in a new AWS account with a verification checklist, SSM Parameter Store secrets, SSM-only deploys, and an after-close watchdog.</li>
+    </ul>
+  </article>
+
+  <article class="entry">
+    <div class="role-line">
       <h3>SMU<span class="title"> - Software Engineer / 0-to-1 Product Owner</span></h3>
       <p class="meta">Feb 2024 – Jan 2026 · Los Angeles, CA</p>
     </div>
@@ -128,19 +142,6 @@
       <li>Built Python AsyncIO pipelines connecting Amazon Seller Central + Shopify with ERP, processing 500k+ daily orders and cutting sync latency from 15 min to 30 s; shipped Redis/Kafka inventory sync, FastAPI/PostgreSQL tariff services, Elasticsearch HS Code lookup, Spark migration jobs, and Docker/Jenkins CI/CD on AWS.</li>
       <li>Built GetDateLove end to end: FastAPI, redis.asyncio, PostgreSQL, WebSocket messaging, S3 voice notes, PayPal checkout, AWS/Nginx/CloudFront, CI/Playwright release gates, and GDPR/privacy controls.</li>
       <li>Reduced operational and frontend entropy by replacing blocking Redis patterns, consolidating 11 Redis clients, batching SQL, moving message storage to redis.asyncio, and extracting stable frontend state owners.</li>
-    </ul>
-  </article>
-
-  <article class="entry">
-    <div class="role-line">
-      <h3>Quant Trading Systems Venture<span class="title"> - Co-Engineer</span></h3>
-      <p class="meta">Apr 2026 – Present · Concurrent</p>
-    </div>
-    <p class="intro">Private live-trading system on AWS: intraday scanner &rarr; factor filter &rarr; broker bracket orders &rarr; S3 Parquet warehouse &rarr; <a href="https://d2c9pzwpavuktk.cloudfront.net/" aria-label="Quant trading public research dashboard">public research dashboard</a>; 250+ commits since Jul 2026.</p>
-    <ul>
-      <li><span class="lead">Execution safety.</span> IBKR heartbeat/reconnect, broker + DB startup reconcile, and bracket/OCO fixes; then a shared IBKR/Alpaca execution ledger, flag-gated migration of live routing to Alpaca with fill-dedupe keys, and removal of the dead IB Gateway path.</li>
-      <li><span class="lead">Immutable public dashboard.</span> Renders as a pure function of content-addressed input snapshots; Lambda publication with CAS supersede semantics, redacted live logs, daily P&amp;L, CloudFront/S3 OAC hardening, and skip-unchanged publishing.</li>
-      <li><span class="lead">Ops and latency.</span> Rebuilt infra in a new AWS account with a verification checklist; moved live secrets to SSM Parameter Store with SSM-only deploys and an after-close watchdog; cut scanner latency via event-based waits and warm caches.</li>
     </ul>
   </article>
 

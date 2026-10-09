@@ -3,10 +3,12 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertAccessibleResume } from './verify-resume.mjs';
+import { readPublicProfile } from './generate-about.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.join(ROOT, 'dist');
 const HTTP_ORIGIN = process.env.URL;
+const publicProfile = await readPublicProfile();
 
 async function read(relativePath) {
   return readFile(path.join(DIST, relativePath), 'utf8');
@@ -22,6 +24,11 @@ const about = await read('about/index.html');
 assert.match(about, /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/brickerp\.github\.io\/about\/["']/i, 'dist about canonical');
 assert.match(about, /(?:property=["']og:image["'][^>]*content|content)=["']https:\/\/brickerp\.github\.io\/profile-preview\.png["']/i, 'dist about profile image');
 assert.match(about, /"@type"\s*:\s*"ProfilePage"/, 'dist about ProfilePage JSON-LD');
+
+const sheet = await read('work/quant/index.html');
+assert.match(sheet, /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/brickerp\.github\.io\/work\/quant\/["']/i, 'dist technical sheet canonical');
+assert.match(sheet, /"@type"\s*:\s*"TechArticle"/, 'dist technical sheet TechArticle JSON-LD');
+assert.match(sheet, /<!-- PROGRAMME:STYLE:START -->\s*<style>/, 'dist technical sheet must inline the programme stylesheet');
 
 const redirect = await read('poe2/guides/classes-explained.html');
 assert.match(redirect, /name=["']robots["'][^>]*content=["']noindex,follow["']/i, 'nested redirect robots');
@@ -42,6 +49,7 @@ assertAccessibleResume(await readFile(path.join(DIST, 'resume.pdf')), 'dist/resu
 if (HTTP_ORIGIN) {
   const cases = [
     { pathname: '/about/', type: /^text\/html\b/i, body: /profile-preview\.png/ },
+    { pathname: '/work/quant/', type: /^text\/html\b/i, body: /"TechArticle"[\s\S]*Pending re-measure/ },
     {
       pathname: '/beijing-loop/',
       type: /^text\/html\b/i,
@@ -93,7 +101,7 @@ if (HTTP_ORIGIN && process.env.VERIFY_LAYOUT === '1') {
         }),
       }));
       assert.equal(result.scrollWidth, result.innerWidth, `${viewport.width}px about page overflow`);
-      assert.equal(result.proofTargets.length, 3, `${viewport.width}px proof target count`);
+      assert.equal(result.proofTargets.length, publicProfile.publicProof.length, `${viewport.width}px proof target count`);
       for (const [index, box] of result.proofTargets.entries()) {
         assert.ok(box.width >= 44 && box.height >= 44, `${viewport.width}px proof target ${index + 1} is smaller than 44px`);
       }

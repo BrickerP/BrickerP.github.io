@@ -148,7 +148,9 @@ The profile shared by the in-app intro and `/about/` lives in
 `src/content/public-profile.json`; both surfaces render it through
 `src/ui/programme.ts` and `src/styles/programme.css`. After editing any of them, run
 `npm run generate:about`; `npm run verify:static` rejects any committed
-generated-region drift. `npm run generate:programme` reprints the halftone plates in
+generated-region drift. The same run reprints the `PROGRAMME:STYLE` region of each
+technical sheet under `public/work/` (currently `/work/quant/`), so the sheets share the
+programme stylesheet without a build step. `npm run generate:programme` reprints the halftone plates in
 `public/programme/` and `public/profile-preview.png` from the deployed film (set
 `URL` to print from another build).
 

@@ -1,12 +1,27 @@
 {
   "name": "Yupeng Lu",
-  "role": "AI Agent Engineer",
-  "dateModified": "2026-10-08",
+  "role": "Backend Engineer — live trading systems & AI platforms",
+  "dateModified": "2026-10-09",
   "status": "US Permanent Resident · No sponsorship required",
-  "summary": "Production agent systems and the platforms they run on: MCP/tool-use contracts, agent skills and CLIs, evals and evidence-gated releases, governed agent access to production infrastructure, and the billing and attribution backbone of an AI app builder.",
+  "summary": "I build live systems and publish the numbers: trading execution on Alpaca, agent platforms at Baidu, and a deterministic 48-second WebGL film with CI performance gates.",
   "experienceNote": "Baidu (MeDo) is the primary role; the Quant Trading Systems Venture is a concurrent engineering role.",
-  "focus": "MCP · tool-use contracts · agent skills & CLIs · evals & release gates · Stripe Billing · ads attribution · Java / Spring Boot · TypeScript · Python · AWS · Kubernetes · ClickHouse",
+  "focus": "Alpaca execution · SQLite · AWS Lambda / S3 · Three.js / WebGL · MCP · tool-use contracts · evals & release gates · Stripe Billing · Java / Spring Boot · TypeScript · Python · Kubernetes · ClickHouse",
   "publicProof": [
+    {
+      "label": "Technical sheet № 01 — live trading execution",
+      "detail": "System diagram, execution-safety invariants, and the 2026-10-08 scan-latency regression with its method box. Strategy and P&L stay private.",
+      "href": "https://brickerp.github.io/work/quant/"
+    },
+    {
+      "label": "Live research dashboard",
+      "detail": "Immutable public dashboard rendered as a pure function of content-addressed input snapshots; Lambda publication and redacted live logs.",
+      "href": "https://d2c9pzwpavuktk.cloudfront.net/"
+    },
+    {
+      "label": "fed-pulse",
+      "detail": "Stdlib-only Python CLI: latest FOMC minutes + Treasury yield curve → plain-English rate-pressure brief and one-page HTML dashboard.",
+      "href": "https://github.com/BrickerP/fed-pulse"
+    },
     {
       "label": "User-research skill",
       "detail": "Public end-to-end AI interview workflows for Claude, Codex, Cursor, and OpenClaw-style clients.",
@@ -16,11 +31,6 @@
       "label": "TypeScript CLI",
       "detail": "Public interviews, synthetic-user, survey, recruitment, playback, billing, and REST/MCP workflows.",
       "href": "https://github.com/cookiy-ai/cookiy-cli"
-    },
-    {
-      "label": "MCP developer portal",
-      "detail": "One-command skill/MCP setup, Redoc/OpenAPI documentation, and public agent onboarding.",
-      "href": "https://cookiy.ai"
     }
   ],
   "primaryActions": [
@@ -91,13 +101,14 @@
       "end": null,
       "note": "Concurrent venture role",
       "summary": [
-        "Execution safety: IBKR heartbeat/reconnect, broker + DB startup reconcile, and bracket/OCO fixes, then a shared IBKR/Alpaca execution ledger and a flag-gated migration of live routing to Alpaca.",
-        "Immutable public dashboard: renders as a pure function of content-addressed input snapshots, with Lambda publication, redacted live logs, daily P&L, and CloudFront/S3 OAC hardening."
+        "Live execution on Alpaca: a shared execution ledger with fill-dedupe keys, broker + DB startup reconcile, bracket/OCO fixes, and a flag-gated migration of live routing onto Alpaca.",
+        "Scan latency and SQLite write contention: event-based scanner waits, warm-cache fast paths, and SQLite parse optimization; on 2026-10-08 traced a scan-batch p95 regression (~2.4 s → ~9.2 s) to a 5-minute backfill cron holding SQLite's write lock, removed on 2026-10-09."
       ],
       "details": [
-        "Private live-trading system on AWS: intraday scanner → factor filter → broker bracket orders → S3 Parquet warehouse → public research dashboard.",
+        "Private live-trading system on AWS: intraday scanner → factor filter → Alpaca bracket orders → SQLite execution ledger → S3 Parquet warehouse → public research dashboard.",
+        "Immutable public dashboard: renders as a pure function of content-addressed input snapshots, with Lambda publication, redacted live logs, daily P&L, and CloudFront/S3 OAC hardening.",
         "Rebuilt infra in a new AWS account with a verification checklist; moved live secrets to SSM Parameter Store with SSM-only deploys and an after-close watchdog.",
-        "Reduced scanner/data latency with event-based scanner waits, vectorized reject reasons, warm-cache fast paths, SQLite parse optimization, and lazy-load startup paths."
+        "Retired path: IBKR heartbeat/reconnect and IB Gateway routing, kept only as ledger history after the Alpaca cutover."
       ]
     },
     {
