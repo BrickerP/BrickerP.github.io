@@ -1896,9 +1896,11 @@ for (const aboutViewport of [
   assert.deepEqual(
     await proofLinks.evaluateAll((links) => links.map((link) => link.getAttribute('href'))),
     [
+      'https://brickerp.github.io/work/quant/',
+      'https://d2c9pzwpavuktk.cloudfront.net/',
+      'https://github.com/BrickerP/fed-pulse',
       'https://github.com/cookiy-ai/user-research-skill',
       'https://github.com/cookiy-ai/cookiy-cli',
-      'https://cookiy.ai',
     ],
     `${aboutViewport.name}: public proof links use the verified public surfaces`,
   );
