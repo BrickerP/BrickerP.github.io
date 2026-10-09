@@ -1,16 +1,14 @@
 import { BufferGeometry, InstancedMesh, Matrix4, Quaternion, Vector3 } from 'three';
 import type { Group, Material } from 'three';
-import { mergeParts, placedBox, placedCylinder } from './geom';
+import { mergeParts, placedBox } from './geom';
 
-/** One bracket set: block, two arms, and a small capital. Instanced along an eave. */
+/** One bracket set that stays under the eave. The arms do not spike past the tile. */
 export function createBracketGeometry(): BufferGeometry {
   return mergeParts([
-    placedBox(0.22, 0.1, 0.22, 0, 0.05, 0),
-    placedBox(0.16, 0.12, 0.46, 0, 0.14, 0),
-    placedBox(0.58, 0.08, 0.16, 0, 0.2, 0),
-    placedBox(0.14, 0.1, 0.34, 0, 0.28, 0),
-    placedBox(0.86, 0.06, 0.12, 0, 0.34, 0),
-    placedCylinder(0.05, 0.05, 0.16, 0, 0.42, 0, 6),
+    placedBox(0.2, 0.08, 0.18, 0, 0.04, 0),
+    placedBox(0.14, 0.1, 0.26, 0, 0.12, 0),
+    placedBox(0.4, 0.06, 0.12, 0, 0.18, 0),
+    placedBox(0.12, 0.08, 0.18, 0, 0.26, 0),
   ]);
 }
 

@@ -8,13 +8,13 @@ export interface CityWallOptions {
   merlons?: number;
 }
 
-/** A battered wall body with a waist course. Crenels are separate so they can read as stone. */
+/** A solid battered wall. The face runs from the ground to the parapet bed. */
 export function createCityWall(options: CityWallOptions): BufferGeometry {
   const { length, height, depth } = options;
+  const body = height * 0.94;
   return mergeParts([
-    placedFrustum(length, length * 0.94, depth + 0.42, depth * 0.78, height * 0.82, 0, height * 0.41, 0),
-    placedBox(length * 0.98, 0.12, depth + 0.08, 0, height * 0.62, 0),
-    placedBox(length * 0.96, 0.2, depth * 0.72, 0, height * 0.9, 0),
+    placedFrustum(length, length * 0.985, depth, depth * 0.9, body, 0, body / 2, 0),
+    placedBox(length * 0.99, 0.14, depth * 0.62, 0, body * 0.58, 0),
   ]);
 }
 
@@ -87,10 +87,12 @@ export function createCourtyardWall(length: number, height = 1.45): BufferGeomet
 export function createMerlons(options: CityWallOptions): BufferGeometry {
   const merlons = options.merlons ?? Math.max(4, Math.round(options.length / 1.3));
   const parts: BufferGeometry[] = [];
+  const bed = options.height * 0.94;
+  const merlonHeight = 0.58;
   for (let index = 0; index < merlons; index += 1) {
     const x = -options.length / 2 + (options.length / merlons) * (index + 0.5);
     parts.push(
-      placedBox(0.55, 0.62, options.depth * 0.62, x, options.height - 0.02, -options.depth * 0.08),
+      placedBox(0.72, merlonHeight, options.depth * 0.46, x, bed + merlonHeight / 2 - 0.1, 0),
     );
   }
   return mergeParts(parts);

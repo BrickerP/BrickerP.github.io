@@ -5,6 +5,7 @@ import {
   createArch,
   createBalusterGeometry,
   createColumnRow,
+  createWindowOpening,
   createPodium,
   createRailPanel,
   createRoof,
@@ -116,7 +117,8 @@ export function buildGateTower(
     batch.add(upper, mats.tile);
   }
   for (const side of [-1, 1]) {
-    const slot = placedBox(0.55, 1.35, 0.12, side * center, options.pierHeight * 0.55, -(options.pierDepth / 2 + 0.04));
+    const slot = createWindowOpening(0.72, 1.2, 0.16);
+    slot.translate(side * center, options.pierHeight * 0.55, -(options.pierDepth / 2) - 0.02);
     batch.add(slot, mats.window, 0, 'skip');
   }
   if (options.portrait && mats.niche) {
@@ -124,9 +126,9 @@ export function buildGateTower(
     batch.add(niche, mats.niche, 0, 'skip');
   }
   batch.finish();
-  addBracketRun(group, bracket, mats.timber, hallY + 2.7, -(hallDepth * 0.42), span * 0.72);
+  addBracketRun(group, bracket, mats.timber, hallY + 2.55, -(hallDepth * 0.42), span * 0.72);
   if (options.eaves > 1) {
-    addBracketRun(group, bracket, mats.timber, hallY + 5.6, -(hallDepth * 0.22), span * 0.42);
+    addBracketRun(group, bracket, mats.timber, hallY + 5.45, -(hallDepth * 0.22), span * 0.42);
   }
   addBalusterRun(
     group,

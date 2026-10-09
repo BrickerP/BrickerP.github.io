@@ -4,6 +4,7 @@ export {
   buildCityWallSegment,
   buildCornerTower,
   buildGlassTower,
+  createSkylineMass,
   buildOverpassPier,
   buildPailou,
   buildPalaceWallGate,

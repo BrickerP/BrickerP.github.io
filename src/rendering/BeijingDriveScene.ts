@@ -488,12 +488,18 @@ export class BeijingDriveScene {
     this.openCircuitCarrier.renderOrder = 2;
     this.root.add(this.openCircuitCarrier);
 
+    const closureRing = new Mesh(
+      this.trackGeometry(new CylinderGeometry(0.72, 0.72, 0.02, 28)),
+      this.cityMaterials.stone,
+    );
+    this.place(closureRing, OPEN_CIRCUIT_NODE_PHASE, OPEN_CIRCUIT_CARRIER_OFFSET, 0.03);
+    this.root.add(closureRing);
     this.openCircuitNode = new Mesh(
-      this.trackGeometry(new CylinderGeometry(0.22, 0.22, 0.016, 28)),
-      this.standard(PALETTE.signature, { metalness: 0, roughness: 0.88 }),
+      this.trackGeometry(new CylinderGeometry(0.42, 0.42, 0.028, 28)),
+      this.standard(PALETTE.signature, { metalness: 0, roughness: 0.72 }),
     );
     this.openCircuitNode.name = OPEN_CIRCUIT_NODE_NAME;
-    this.place(this.openCircuitNode, OPEN_CIRCUIT_NODE_PHASE, OPEN_CIRCUIT_CARRIER_OFFSET, 0.04);
+    this.place(this.openCircuitNode, OPEN_CIRCUIT_NODE_PHASE, OPEN_CIRCUIT_CARRIER_OFFSET, 0.055);
     this.openCircuitNode.renderOrder = 3;
     this.root.add(this.openCircuitNode);
   }
@@ -509,20 +515,19 @@ export class BeijingDriveScene {
     const segmentCount = 5;
     for (let index = 0; index < segmentCount; index += 1) {
       const angle = startAngle + ((index + 0.5) / segmentCount) * arc;
-      const segmentLength = radius * (arc / segmentCount) + 0.85;
-      const deck = this.box(2.12, 0.56, segmentLength, deckMaterial);
-      deck.position.set(Math.cos(angle) * radius, 6.55, Math.sin(angle) * radius);
+      const segmentLength = radius * (arc / segmentCount) + 2.4;
+      const deck = this.box(3.4, 0.85, segmentLength, deckMaterial);
+      deck.position.set(Math.cos(angle) * radius, 6.4, Math.sin(angle) * radius);
       deck.rotation.y = -angle;
-      const railNear = this.box(0.16, 0.48, segmentLength, deckMaterial);
-      railNear.position.set(Math.cos(angle) * (radius - 1), 6.95, Math.sin(angle) * (radius - 1));
+      const railNear = this.box(0.22, 0.7, segmentLength, deckMaterial);
+      railNear.position.set(Math.cos(angle) * (radius - 1.45), 6.95, Math.sin(angle) * (radius - 1.45));
       railNear.rotation.y = -angle;
-      const railFar = this.box(0.16, 0.48, segmentLength, deckMaterial);
-      railFar.position.set(Math.cos(angle) * (radius + 1), 6.95, Math.sin(angle) * (radius + 1));
+      const railFar = this.box(0.22, 0.7, segmentLength, deckMaterial);
+      railFar.position.set(Math.cos(angle) * (radius + 1.45), 6.95, Math.sin(angle) * (radius + 1.45));
       railFar.rotation.y = -angle;
-      const cap = this.box(2.3, 0.28, 0.46, deckMaterial);
-      cap.position.set(Math.cos(angle) * radius, 6.15, Math.sin(angle) * radius);
-      cap.rotation.y = -angle;
-      bridge.add(deck, railNear, railFar, cap);
+      const pier = this.box(0.85, 6.1, 0.85, deckMaterial);
+      pier.position.set(Math.cos(angle) * radius, 3.05, Math.sin(angle) * radius);
+      bridge.add(deck, railNear, railFar, pier);
     }
     this.root.add(bridge);
   }
@@ -530,37 +535,26 @@ export class BeijingDriveScene {
   /** Deck and portal that hide the loop seam. The battered pier is assembled with the kit. */
   private buildOverpassDeck(): void {
     const concrete = this.cityMaterials.concrete;
-    const underside = new Mesh(
-      this.trackGeometry(
-        createPathRibbon(-7.6, 7.6, 6.4, {
-          from: 0.918,
-          to: 0.999,
-          centerScale: DRIVE_PATH_SCALE,
-          segments: 110,
-        }),
-      ),
-      concrete,
-    );
-    underside.receiveShadow = true;
-    this.root.add(underside);
-    for (let index = 0; index < 5; index += 1) {
-      const progress = 0.928 + index * 0.013;
+    for (let index = 0; index < 8; index += 1) {
+      const progress = 0.92 + index * 0.009;
+      const slab = this.box(15.6, 0.85, 6.4, concrete);
+      slab.castShadow = true;
+      slab.receiveShadow = true;
+      this.place(slab, progress, 0, 6.35);
+      this.root.add(slab);
       for (const side of [-1, 1]) {
-        const column = this.box(0.58, 7.5, 0.58, concrete);
-        column.castShadow = true;
-        this.place(column, progress, side * 8.25, 3.75);
-        this.root.add(column);
-        const guard = this.box(0.22, 0.72, 7.6, concrete);
-        this.place(guard, progress, side * 7.15, 6.85);
+        const guard = this.box(0.36, 0.85, 6.6, concrete);
+        this.place(guard, progress, side * 7.4, 6.9);
         this.root.add(guard);
-        const web = this.box(0.28, 1.15, 7.6, concrete);
-        this.place(web, progress, side * 6.9, 6.15);
-        this.root.add(web);
       }
-      const beam = this.box(15.4, 0.55, 0.7, concrete);
-      beam.castShadow = true;
-      this.place(beam, progress, 0, 5.85);
-      this.root.add(beam);
+      if (index % 2 === 0) {
+        for (const side of [-1, 1]) {
+          const column = this.box(0.7, 6.4, 0.7, concrete);
+          column.castShadow = true;
+          this.place(column, progress, side * 7.8, 3.2);
+          this.root.add(column);
+        }
+      }
     }
     const portalProgress = 0.993;
     for (const side of [-1, 1]) {

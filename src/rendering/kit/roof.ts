@@ -94,24 +94,36 @@ export function createRoofSurface(options: RoofOptions): BufferGeometry {
   return geometry;
 }
 
-function dripBand(parts: BufferGeometry[], width: number, depth: number): void {
-  const insetX = Math.max(0.2, width * 0.04);
-  const insetZ = Math.max(0.16, depth * 0.04);
-  const halfW = width / 2 - insetX;
-  const halfD = depth / 2 - insetZ;
-  const step = 0.55;
-  const countX = Math.max(3, Math.round((halfW * 2) / step));
-  for (let index = 0; index < countX; index += 1) {
-    const x = -halfW + ((halfW * 2) / countX) * (index + 0.5);
-    parts.push(placedBox(0.16, 0.12, 0.1, x, -0.04, -halfD));
-    parts.push(placedBox(0.16, 0.12, 0.1, x, -0.04, halfD));
+/** One fascia board per eave, so the tile edge is a board and not a row of cubes. */
+function fascia(parts: BufferGeometry[], width: number, depth: number): void {
+  const halfW = width / 2;
+  const halfD = depth / 2;
+  const lip = 0.16;
+  parts.push(
+    placedBox(width + lip, 0.16, 0.14, 0, -0.06, -halfD),
+    placedBox(width + lip, 0.16, 0.14, 0, -0.06, halfD),
+    placedBox(0.14, 0.16, depth + lip, -halfW, -0.06, 0),
+    placedBox(0.14, 0.16, depth + lip, halfW, -0.06, 0),
+  );
+}
+
+/** The tile surface plus a soffit, so a roof reads as a shell instead of a sheet. */
+function thickenRoof(surface: BufferGeometry, thickness: number): BufferGeometry {
+  const soffit = surface.clone();
+  const position = soffit.getAttribute('position');
+  for (let index = 0; index < position.count; index += 1) {
+    position.setY(index, position.getY(index) - thickness);
   }
-  const countZ = Math.max(2, Math.round((halfD * 2) / step));
-  for (let index = 0; index < countZ; index += 1) {
-    const z = -halfD + ((halfD * 2) / countZ) * (index + 0.5);
-    parts.push(placedBox(0.1, 0.12, 0.16, -halfW, -0.04, z));
-    parts.push(placedBox(0.1, 0.12, 0.16, halfW, -0.04, z));
+  const index = soffit.getIndex();
+  if (index) {
+    for (let cursor = 0; cursor < index.count; cursor += 3) {
+      const first = index.getX(cursor);
+      index.setX(cursor, index.getX(cursor + 1));
+      index.setX(cursor + 1, first);
+    }
   }
+  soffit.computeVertexNormals();
+  return mergeParts([surface, soffit]);
 }
 
 /** Main ridge, hip or gable ridges, and a drip-tile band under the eave. */
@@ -171,21 +183,10 @@ export function createRoofFrame(options: RoofOptions): BufferGeometry {
       }
     }
   }
-  if (kind === 'cone') {
-    const dripRadius = Math.max(halfW, halfD) * 0.98;
-    const dripCount = 18;
-    for (let index = 0; index < dripCount; index += 1) {
-      const angle = (index / dripCount) * Math.PI * 2;
-      parts.push(
-        placedBox(0.12, 0.08, 0.1, Math.cos(angle) * dripRadius, -0.02, Math.sin(angle) * dripRadius),
-      );
-    }
-  } else {
-    dripBand(parts, options.width, options.depth);
-  }
+  if (kind !== 'cone') fascia(parts, options.width, options.depth);
   return mergeParts(parts);
 }
 
 export function createRoof(options: RoofOptions): BufferGeometry {
-  return mergeParts([createRoofSurface(options), createRoofFrame(options)]);
+  return mergeParts([thickenRoof(createRoofSurface(options), 0.14), createRoofFrame(options)]);
 }

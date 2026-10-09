@@ -124,13 +124,13 @@ export function dressRoadside(host: CityHost): void {
     bankPosts.push({ progress, offset: -6.4, y: low ? 0.45 : 0.7, scale: low ? 0.8 : 1 });
     bankRails.push({ progress, offset: -6.4, y: low ? 0.85 : 1.15 });
   }
-  scatter(host, placedBox(0.42, 1.2, 0.42, 0, 0.6, 0), mats.stone, bankPosts);
-  scatter(host, placedBox(0.22, 0.16, 2.6, 0, 0, 0), mats.stone, bankRails);
+  scatter(host, placedBox(0.22, 0.85, 0.22, 0, 0.42, 0), mats.stone, bankPosts);
+  scatter(host, placedBox(0.12, 0.1, 3.1, 0, 0.72, 0), mats.stone, bankRails);
   const shore: Stamp[] = [];
-  for (let index = 0; index < 8; index += 1) {
-    shore.push({ progress: 0.168 + index * 0.009, offset: -5.9, y: 0.06 });
+  for (let index = 0; index < 6; index += 1) {
+    shore.push({ progress: 0.168 + index * 0.01, offset: -6.1, y: 0.04 });
   }
-  scatter(host, placedBox(5.4, 0.16, 0.7, 0, 0.08, 0), mats.stone, shore);
+  scatter(host, placedBox(1.1, 0.16, 6.2, 0, 0.08, 0), mats.stone, shore);
 
   const bars: Stamp[] = [];
   for (let index = 0; index < 8; index += 1) {
