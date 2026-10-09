@@ -84,7 +84,7 @@ export const CENTRAL_AXIS_LANDMARKS = {
   tiananmen: {
     id: 'tiananmen',
     progress: 0.071,
-    lateralOffset: -14.8,
+    lateralOffset: -10.6,
     // Restore a monumental read while keeping the gate nested behind
     // Zhengyangmen and well outside the carriageway.
     scale: 0.94,

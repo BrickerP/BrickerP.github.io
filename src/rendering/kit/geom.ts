@@ -137,7 +137,7 @@ export function placedFrustum(
     for (const point of [a, b, c, d]) positions.push(point[0], point[1], point[2]);
     indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
   };
-  face(bottom[0], bottom[1], top[1], top[0]);
+  face(bottom[1], bottom[0], top[0], top[1]);
   face(bottom[2], bottom[1], top[1], top[2]);
   face(bottom[3], bottom[2], top[2], top[3]);
   face(bottom[0], bottom[3], top[3], top[0]);

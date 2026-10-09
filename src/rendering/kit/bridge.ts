@@ -1,27 +1,23 @@
 import type { BufferGeometry } from 'three';
-import { mergeParts, placedBox, placedCylinder } from './geom';
+import { mergeParts, placedBox } from './geom';
 
-/** A stone arch bridge: vault, rising deck, parapet, and posts. */
+/** A stone arch bridge: one rising deck, parapets, and an arch tucked under the crown. */
 export function createStoneBridge(length = 11, rise = 1.7): BufferGeometry {
   const parts: BufferGeometry[] = [];
-  const segments = 7;
+  const segments = 9;
   for (let index = 0; index < segments; index += 1) {
     const t = (index + 0.5) / segments;
     const x = -length / 2 + length * t;
     const arch = Math.sin(t * Math.PI);
-    const deckY = 0.35 + rise * arch;
-    parts.push(placedBox(length / segments + 0.08, 0.28, 3.1, x, deckY, 0));
-    parts.push(placedBox(length / segments + 0.05, 0.22, 0.16, x, deckY + 0.28, -1.45));
-    parts.push(placedBox(length / segments + 0.05, 0.22, 0.16, x, deckY + 0.28, 1.45));
-    if (index % 2 === 0) {
-      parts.push(placedBox(0.16, 0.42, 0.16, x, deckY + 0.5, -1.45));
-      parts.push(placedBox(0.16, 0.42, 0.16, x, deckY + 0.5, 1.45));
-    }
+    const deckY = 0.42 + rise * arch;
+    const span = length / segments + 0.85;
+    parts.push(placedBox(span, 0.46, 3.4, x, deckY, 0));
+    parts.push(placedBox(span, 0.42, 0.28, x, deckY + 0.4, -1.5));
+    parts.push(placedBox(span, 0.42, 0.28, x, deckY + 0.4, 1.5));
   }
   parts.push(
-    placedCylinder(1.15, 1.15, 2.4, 0, 0.7, 0, 12, Math.PI / 2),
-    placedBox(1.3, 0.7, 2.6, -length / 2 + 0.4, 0.35, 0),
-    placedBox(1.3, 0.7, 2.6, length / 2 - 0.4, 0.35, 0),
+    placedBox(1.8, 0.9, 2.8, -length / 2 + 0.6, 0.45, 0),
+    placedBox(1.8, 0.9, 2.8, length / 2 - 0.6, 0.45, 0),
   );
   return mergeParts(parts);
 }

@@ -47,14 +47,15 @@ export function createColumnRing(options: {
   const parts: BufferGeometry[] = [];
   const count = Math.max(6, options.count);
   for (let index = 0; index < count; index += 1) {
-    const angle = (index / count) * Math.PI * 2;
+    // Half a step, so a bay — not a column — faces the road (-Z).
+    const angle = -Math.PI / 2 + ((index + 0.5) / count) * Math.PI * 2;
     const x = Math.cos(angle) * options.radius;
     const z = Math.sin(angle) * options.radius;
     parts.push(
       placedBox(shaft * 2.2, 0.12, shaft * 2.2, x, y + 0.06, z),
       placedCylinder(shaft * 0.9, shaft, options.height, x, y + 0.12 + options.height / 2, z, 8),
     );
-    const next = ((index + 1) / count) * Math.PI * 2;
+    const next = -Math.PI / 2 + ((index + 1.5) / count) * Math.PI * 2;
     parts.push(
       placedBeam(
         x,
