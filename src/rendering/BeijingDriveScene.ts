@@ -283,11 +283,11 @@ export class BeijingDriveScene {
       emissive: '#2A2018',
       emissiveIntensity: 0.2,
     });
-    const glass = this.surface('#405A6B', 'glass', {
-      roughness: 0.42,
-      metalness: 0.18,
-      emissive: '#1C4054',
-      emissiveIntensity: 0.28,
+    const glass = this.surface('#8FB4C8', 'glass', {
+      roughness: 0.32,
+      metalness: 0.08,
+      emissive: '#2C6C88',
+      emissiveIntensity: 0.72,
     });
     const timber = this.standard('#5A4630', { roughness: 0.9 });
     const gold = this.standard(PALETTE.roofEdge, {
@@ -509,7 +509,7 @@ export class BeijingDriveScene {
     const segmentCount = 5;
     for (let index = 0; index < segmentCount; index += 1) {
       const angle = startAngle + ((index + 0.5) / segmentCount) * arc;
-      const segmentLength = radius * (arc / segmentCount) + 0.08;
+      const segmentLength = radius * (arc / segmentCount) + 0.85;
       const deck = this.box(2.12, 0.56, segmentLength, deckMaterial);
       deck.position.set(Math.cos(angle) * radius, 6.55, Math.sin(angle) * radius);
       deck.rotation.y = -angle;
@@ -550,11 +550,14 @@ export class BeijingDriveScene {
         column.castShadow = true;
         this.place(column, progress, side * 8.25, 3.75);
         this.root.add(column);
-        const guard = this.box(0.16, 0.5, 2.3, concrete);
-        this.place(guard, progress, side * 7.15, 6.7);
+        const guard = this.box(0.22, 0.72, 7.6, concrete);
+        this.place(guard, progress, side * 7.15, 6.85);
         this.root.add(guard);
+        const web = this.box(0.28, 1.15, 7.6, concrete);
+        this.place(web, progress, side * 6.9, 6.15);
+        this.root.add(web);
       }
-      const beam = this.box(15.4, 0.32, 0.55, concrete);
+      const beam = this.box(15.4, 0.55, 0.7, concrete);
       beam.castShadow = true;
       this.place(beam, progress, 0, 5.85);
       this.root.add(beam);
@@ -575,13 +578,13 @@ export class BeijingDriveScene {
     this.place(group, progress, offset, 0);
     const pole = new Mesh(this.lampPoleGeometry, this.cityMaterials.lampPole);
     const bulb = new Mesh(this.lampBulbGeometry, this.lampMaterial);
-    bulb.scale.setScalar(0.24);
-    bulb.position.set(0.32, 3.62, 0);
+    bulb.scale.setScalar(0.22);
+    bulb.position.set(0.46, 3.7, 0);
     group.add(pole, bulb);
     if (castLight) {
       const intensity = 8.2 + hash01(Math.round(progress * 10_000), 91) * 1.8;
       const light = new PointLight(PALETTE.lamp, intensity, 13, 2);
-      light.position.set(0.32, 3.62, 0);
+      light.position.set(0.46, 3.7, 0);
       group.add(light);
       this.lampLights.push(light);
     }
@@ -603,7 +606,7 @@ export class BeijingDriveScene {
       new MeshBasicMaterial({
         color: '#05080c',
         transparent: true,
-        opacity: 0.5,
+        opacity: 0.22,
         depthWrite: false,
         polygonOffset: true,
         polygonOffsetFactor: -2,
@@ -627,11 +630,9 @@ export class BeijingDriveScene {
       const spanX = Math.abs(object.scale.x);
       const spanZ = Math.abs(object.scale.z);
       if (spanX > 18 || spanZ > 18) return;
-      let sx = spanX * 0.5;
-      let sz = spanZ * 0.5;
-      if (height > 2.2 && sx < 1.05) sx = 1.15;
-      if (height > 2.2 && sz < 1.05) sz = 1.15;
-      if (sx < 0.2 || sz < 0.2) return;
+      const sx = spanX * 0.42;
+      const sz = spanZ * 0.42;
+      if (sx < 0.85 || sz < 0.85) return;
       stamps.push({
         x: worldPosition.x,
         z: worldPosition.z,

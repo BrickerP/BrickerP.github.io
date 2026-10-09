@@ -71,28 +71,28 @@ export function buildGateTower(
   const arch = createArch(options.openingHalf + 0.15, options.pierDepth * 0.92, 0.34);
   arch.translate(0, 0.55, 0);
   batch.add(arch, mats.palaceBrick);
-  batch.add(
-    createColumnRow({
-      bays: options.bays,
-      bayWidth: (span * 0.72) / options.bays,
-      depth: hallDepth,
-      height: 2.1,
-      y: hallY,
-    }),
-    mats.timber,
-    0,
-    'skip',
-  );
+  for (const side of [-1, 1]) {
+    const row = createColumnRow({
+      bays: 2,
+      bayWidth: Math.max(0.7, options.pierWidth * 0.38),
+      depth: Math.min(2.4, hallDepth * 0.55),
+      height: 1.7,
+      radius: 0.13,
+      y: hallY + 0.2,
+    });
+    row.translate(side * center, 0, -(hallDepth * 0.18));
+    batch.add(row, mats.timber, 0, 'skip');
+  }
   const archCrown = 0.55 + options.openingHalf + 0.15;
   const wallBottom = Math.max(hallY, archCrown + 0.28);
-  const wallTop = hallY + 2.35;
-  const wallHeight = wallTop - wallBottom;
+  const wallTop = hallY + 2.05;
+  const wallHeight = Math.max(0.4, wallTop - wallBottom);
   batch.add(
-    placedBox(span * 0.74, wallHeight, hallDepth * 0.92, 0, wallHeight / 2, 0),
+    placedBox(span * 0.7, wallHeight, 0.38, 0, wallHeight / 2, hallDepth * 0.22),
     mats.palaceBrick,
     wallBottom,
   );
-  batch.add(placedBox(span * 0.96, 0.9, hallDepth + 0.4, 0, hallY + 2.55, 0), mats.palaceBrick);
+  batch.add(placedBox(span * 0.62, 0.32, 0.36, 0, hallY + 2.05, hallDepth * 0.12), mats.palaceBrick);
   const lowerRoof = createRoof({
     width: span * 1.04,
     depth: options.pierDepth + 1.1,
@@ -103,8 +103,8 @@ export function buildGateTower(
   lowerRoof.translate(0, hallY + 3.2, 0);
   batch.add(lowerRoof, mats.tile);
   if (options.eaves > 1) {
-    const upperY = hallY + 4.7;
-    batch.add(placedBox(span * 0.62, 0.7, hallDepth * 0.7, 0, upperY, 0), mats.palaceBrick);
+    const upperY = hallY + 5.2;
+    batch.add(placedBox(span * 0.48, 0.38, hallDepth * 0.42, 0, upperY, 0), mats.palaceBrick);
     const upper = createRoof({
       width: span * 0.68,
       depth: options.pierDepth * 0.72,
@@ -116,7 +116,7 @@ export function buildGateTower(
     batch.add(upper, mats.tile);
   }
   for (const side of [-1, 1]) {
-    const slot = placedBox(0.22, 1.6, 0.08, side * (options.openingHalf + 0.55), 2.4, -(options.pierDepth / 2 + 0.02));
+    const slot = placedBox(0.55, 1.35, 0.12, side * center, options.pierHeight * 0.55, -(options.pierDepth / 2 + 0.04));
     batch.add(slot, mats.window, 0, 'skip');
   }
   if (options.portrait && mats.niche) {
@@ -124,9 +124,9 @@ export function buildGateTower(
     batch.add(niche, mats.niche, 0, 'skip');
   }
   batch.finish();
-  addBracketRun(group, bracket, mats.timber, hallY + 3.15, -(hallDepth / 2 + 0.05), span * 0.9);
+  addBracketRun(group, bracket, mats.timber, hallY + 2.7, -(hallDepth * 0.42), span * 0.72);
   if (options.eaves > 1) {
-    addBracketRun(group, bracket, mats.timber, hallY + 5.55, -(hallDepth * 0.28), span * 0.55);
+    addBracketRun(group, bracket, mats.timber, hallY + 5.6, -(hallDepth * 0.22), span * 0.42);
   }
   addBalusterRun(
     group,

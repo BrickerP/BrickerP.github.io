@@ -171,7 +171,18 @@ export function createRoofFrame(options: RoofOptions): BufferGeometry {
       }
     }
   }
-  dripBand(parts, options.width, options.depth);
+  if (kind === 'cone') {
+    const dripRadius = Math.max(halfW, halfD) * 0.98;
+    const dripCount = 18;
+    for (let index = 0; index < dripCount; index += 1) {
+      const angle = (index / dripCount) * Math.PI * 2;
+      parts.push(
+        placedBox(0.12, 0.08, 0.1, Math.cos(angle) * dripRadius, -0.02, Math.sin(angle) * dripRadius),
+      );
+    }
+  } else {
+    dripBand(parts, options.width, options.depth);
+  }
   return mergeParts(parts);
 }
 

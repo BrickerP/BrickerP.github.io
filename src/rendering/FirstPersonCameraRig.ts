@@ -152,7 +152,8 @@ export class FirstPersonCameraRig {
     // puts the mass in the middle of the frame at the passage midpoint.
     const heroLook =
       this.aspectMix() *
-      (focusWindow(progress, 0.27, 0.288, 0.312, 0.332) * -3.3 +
+      (focusWindow(progress, 0.05, 0.062, 0.084, 0.102) * -4.4 +
+        focusWindow(progress, 0.27, 0.288, 0.312, 0.332) * -3.3 +
         focusWindow(progress, 0.352, 0.372, 0.402, 0.416) * -1.4 +
         focusWindow(progress, 0.44, 0.462, 0.488, 0.508) * -1.2 +
         focusWindow(progress, 0.688, 0.7, 0.718, 0.736) * 3.1);

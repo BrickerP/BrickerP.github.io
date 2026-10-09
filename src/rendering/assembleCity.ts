@@ -228,8 +228,11 @@ export function assembleCity(host: CityHost): void {
   const gantry = new Group();
   gantry.add(new Mesh(placedCylinder(0.14, 0.18, 4.2, -3.2, 2.1, 0, 8), mats.concrete));
   gantry.add(new Mesh(placedCylinder(0.14, 0.18, 4.2, 3.2, 2.1, 0, 8), mats.concrete));
-  gantry.add(new Mesh(placedBox(7.2, 0.28, 0.28, 0, 4.3, 0), mats.concrete));
-  hangPlaque(host, gantry, '二环', 0, 3.6, 0.2, 4.2, 0.9);
+  gantry.add(new Mesh(placedBox(7.4, 0.42, 0.55, 0, 4.35, 0), mats.concrete));
+  gantry.add(new Mesh(placedBox(6.2, 1.15, 0.16, 0, 3.55, -0.12), mats.concrete));
+  gantry.add(new Mesh(placedBox(0.55, 0.28, 0.55, -3.2, 4.15, 0), mats.concrete));
+  gantry.add(new Mesh(placedBox(0.55, 0.28, 0.55, 3.2, 4.15, 0), mats.concrete));
+  hangPlaque(host, gantry, '二环', 0, 3.55, -0.24, 3.6, 0.78);
   put(host, gantry, 0.33, 0, 1);
   host.addLamp(0.258, -5.8, false);
   host.addLamp(0.322, -5.8, false);
@@ -240,6 +243,10 @@ export function assembleCity(host: CityHost): void {
   const ringRun: Stamp[] = [];
   for (let index = 0; index < 5; index += 1) {
     ringRun.push({ progress: 0.352 + index * 0.012, offset: -11.4, heading: Math.PI / 2, scale: 0.75 });
+  }
+  for (let index = 0; index < 4; index += 1) {
+    ringRun.push({ progress: 0.408 + index * 0.012, offset: -10.6, heading: Math.PI / 2, scale: 0.75 });
+    ringRun.push({ progress: 0.408 + index * 0.012, offset: 10.8, heading: Math.PI / 2, scale: 0.75 });
   }
   scatter(host, wallRun, mats.streetBrick, ringRun, true);
   scatter(host, wallMerlons, mats.stone, ringRun, true);
@@ -278,7 +285,7 @@ export function assembleCity(host: CityHost): void {
   host.begin('yonghegong');
   const yonghe = PASSAGE_HEROES.yonghegong;
   const courtyard = buildYongheCourtyard(mats, bracket);
-  hangPlaque(host, courtyard, '雍和宫', 0, 4.6, -5.5, 3.2, 1.05);
+  hangPlaque(host, courtyard, '雍和宫', 0, 3.35, -5.15, 2.1, 0.58);
   put(host, courtyard, yonghe.progress, yonghe.lateralOffset, yonghe.scale);
   host.addLamp(0.591, -6.4, true);
   host.addLamp(0.635, 6.4, false);
@@ -303,7 +310,7 @@ export function assembleCity(host: CityHost): void {
   host.begin('temple-of-heaven');
   const temple = PASSAGE_HEROES.templeOfHeaven;
   const hall = buildTempleOfHeaven(mats, bracket);
-  hangPlaque(host, hall, '祈年殿', 0, 3.2, -6.2, 3.2, 1.05);
+  hangPlaque(host, hall, '祈年殿', 0, 4.15, -4.35, 1.8, 0.55);
   put(host, hall, temple.progress, temple.lateralOffset, temple.scale);
   for (let index = 0; index < 6; index += 1) {
     put(
@@ -329,7 +336,9 @@ export function assembleCity(host: CityHost): void {
     qianmen.push({ progress: 0.876 + index * 0.0055, offset: index % 2 === 0 ? 8.2 : -8.2 });
   }
   scatterShops(host, [doorBay, windowBay, screenBay], qianmen);
-  put(host, buildPailou(mats, bracket), 0.902, 0, 0.94);
+  const pailou = buildPailou(mats, bracket);
+  hangPlaque(host, pailou, '前门', 0, 4.62, -0.32, 2.2, 0.55);
+  put(host, pailou, 0.902, 0, 0.94);
   const dashilar = PASSAGE_HEROES.dashilarGate;
   put(
     host,
@@ -376,7 +385,6 @@ export function assembleCity(host: CityHost): void {
   dressRoadside(host);
 
   const skyline: Stamp[] = [];
-  const caps: Stamp[] = [];
   for (let index = 0; index < 32; index += 1) {
     const stamp = {
       progress: (index + 0.5) / 32,
@@ -384,8 +392,6 @@ export function assembleCity(host: CityHost): void {
       scale: 0.7 + hash01(index, 2) * 0.7,
     };
     skyline.push(stamp);
-    if (index % 3 === 0) caps.push(stamp);
   }
   scatter(host, placedBox(5, 12, 5, 0, 6, 0), mats.glass, skyline, false);
-  scatter(host, placedBox(5.6, 0.4, 5.6, 0, 12.4, 0), mats.tile, caps, false);
 }

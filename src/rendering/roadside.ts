@@ -1,7 +1,7 @@
-import { Group, Mesh, SphereGeometry } from 'three';
+import { Group, Mesh } from 'three';
 import { hash01 } from './surfaceTextures';
 import { CENTRAL_AXIS_LANDMARKS } from './spatialContract';
-import { placedBox, placedCylinder } from './kit';
+import { mergeParts, placedBox, placedCylinder } from './kit';
 import type { CityHost } from './assembleCity';
 import { InstancedMesh, Matrix4, Quaternion, Vector3 } from 'three';
 import { DRIVE_PATH_SCALE } from './FirstPersonCameraRig';
@@ -149,7 +149,18 @@ export function dressRoadside(host: CityHost): void {
       y: index % 2 === 0 ? 2.3 : 2.05,
     });
   }
-  scatter(host, host.track(new SphereGeometry(0.22, 8, 6)), mats.lantern, lanterns);
+  scatter(
+    host,
+    host.track(
+      mergeParts([
+        placedBox(0.16, 0.26, 0.16, 0, 0, 0),
+        placedBox(0.24, 0.05, 0.24, 0, 0.15, 0),
+        placedCylinder(0.015, 0.015, 0.18, 0, 0.26, 0, 5),
+      ]),
+    ),
+    mats.lantern,
+    lanterns,
+  );
 
   const bench = new Group();
   host.place(bench, 0.202, -5.75, 0);
@@ -160,9 +171,11 @@ export function dressRoadside(host: CityHost): void {
   const bikes = new Group();
   host.place(bikes, 0.535, 6.8, 0);
   for (let index = 0; index < 3; index += 1) {
-    bikes.add(new Mesh(placedBox(0.08, 0.08, 1.1, index * 0.7, 0.45, 0), mats.concrete));
-    bikes.add(new Mesh(placedCylinder(0.28, 0.28, 0.06, index * 0.7, 0.3, 0.4, 8, Math.PI / 2), mats.timber));
-    bikes.add(new Mesh(placedCylinder(0.28, 0.28, 0.06, index * 0.7, 0.3, -0.4, 8, Math.PI / 2), mats.timber));
+    const x = index * 0.85;
+    bikes.add(new Mesh(placedBox(0.05, 0.04, 0.9, x, 0.48, 0), mats.concrete));
+    bikes.add(new Mesh(placedBox(0.04, 0.28, 0.04, x, 0.62, -0.28), mats.concrete));
+    bikes.add(new Mesh(placedCylinder(0.22, 0.22, 0.04, x, 0.24, 0.32, 10, Math.PI / 2), mats.timber));
+    bikes.add(new Mesh(placedCylinder(0.22, 0.22, 0.04, x, 0.24, -0.32, 10, Math.PI / 2), mats.timber));
   }
   host.root.add(bikes);
 
