@@ -48,6 +48,7 @@ assert.match(film, /<script\b[^>]*type=["']module["'][^>]*src=["'](?:\.\.\/|\/)a
 const hire = await read('hire/index.html');
 assert.match(hire, /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/brickerp\.github\.io\/hire\/["']/i, 'dist hire canonical');
 assert.ok(visibleText(hire).includes(POSITIONING), 'dist hire must carry the one-line positioning');
+assert.match(hire, /http-equiv=["']refresh["'][^>]*content=["']0; url=https:\/\/brickerp\.github\.io\/#contact["']/i, 'dist hire must redirect to /#contact');
 
 const about = await read('about/index.html');
 assert.match(about, /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/brickerp\.github\.io\/about\/["']/i, 'dist about canonical');
@@ -75,9 +76,9 @@ assertAccessibleResume(await readFile(path.join(DIST, 'resume.pdf')), 'dist/resu
 if (HTTP_ORIGIN) {
   const cases = [
     { pathname: '/', type: /^text\/html\b/i, body: /"WebSite"[\s\S]*I take agents from demo to production/ },
-    { pathname: '/hire/', type: /^text\/html\b/i, body: /I take agents from demo to production[\s\S]*overlaps my employer/ },
+    { pathname: '/hire/', type: /^text\/html\b/i, body: /I take agents from demo to production[\s\S]*overlaps my employer[\s\S]*#contact/ },
     { pathname: '/about/', type: /^text\/html\b/i, body: /profile-preview\.png/ },
-    { pathname: '/work/quant/', type: /^text\/html\b/i, body: /"TechArticle"[\s\S]*Pending re-measure/ },
+    { pathname: '/work/quant/', type: /^text\/html\b/i, body: /"TechArticle"[\s\S]*Cron removed/ },
     {
       pathname: '/beijing-loop/',
       type: /^text\/html\b/i,

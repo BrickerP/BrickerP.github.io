@@ -183,7 +183,9 @@ for (const file of ['src/content/resume.html', 'src/content/resume-1p.html']) {
   );
 }
 assert.match(hireHtml, /overlaps my employer['’]s product/i, 'hire: must state the employer no-overlap boundary');
-assert.match(rootHtml, /<a\b[^>]*href=["']\/hire\/["']/i, 'index.html: landing must reach /hire/');
+assert.match(hireHtml, /http-equiv=["']refresh["'][^>]*content=["']0; url=https:\/\/brickerp\.github\.io\/#contact["']/i, 'hire: must meta-refresh to /#contact');
+assert.match(hireHtml, /href=["']https:\/\/brickerp\.github\.io\/#contact["']/i, 'hire: must link /#contact');
+assert.match(rootHtml, /<a\b[^>]*href=["'](?:\/hire\/|#contact)["']/i, 'index.html: landing must reach Contact (/#contact or /hire/)');
 assert.match(rootHtml, /<a\b[^>]*href=["']\/beijing-loop\/["']/i, 'index.html: landing must keep the film reachable');
 assert.match(filmHtml, /<a\b[^>]*href=["']\/["']/i, 'beijing-loop: film must link back to the landing page');
 assert.match(hireHtml, /<a\b[^>]*href=["']\/beijing-loop\/["']/i, 'hire: footer must keep the film reachable');
@@ -380,8 +382,7 @@ assert.doesNotMatch(rootHtml, /<script\b[^>]*src=/i, 'index.html: the landing pa
 assert.doesNotMatch(filmHtml, /name=["']robots["']/i, 'beijing-loop: the film is an indexable page, not a redirect');
 
 // Technical sheet № 01: the programme must reach it, it must reach back, and every
-// number it prints must sit next to a method. The sheet may hold exactly one
-// pending placeholder: the post-fix cell that is filled only by a measured session.
+// number it prints must sit next to a method. No pending placeholder wording.
 assert.match(aboutHtml, /<a\b[^>]*href=["']\/work\/quant\/["']/i, 'about: primary navigation must link the technical sheet');
 assert.match(aboutHtml, /<nav\b[^>]*aria-label=["']Primary navigation["'][\s\S]*?<a\b[^>]*href=["']\/hire\/["'][\s\S]*?<\/nav>/i, 'about: primary navigation must reach /hire/');
 assert.match(sheetHtml, /<a\b[^>]*href=["']\/about\/["']/i, 'work/quant: must link back to the full programme');
@@ -391,11 +392,8 @@ const sheetData = jsonLd(sheetHtml, 'public/work/quant/index.html');
 const sheet = sheetData.find((item) => item['@type'] === 'TechArticle');
 assert.equal(sheet?.author?.['@id'], profile.mainEntity['@id'], 'work/quant: TechArticle author must be the About Person');
 assert.match(sheetHtml, /id=["']method-heading["']/, 'work/quant: the measured section needs its method box');
-assert.equal(
-  (sheetHtml.match(/Pending re-measure/g) ?? []).length,
-  1,
-  'work/quant: exactly one unmeasured cell may carry the pending placeholder',
-);
+assert.doesNotMatch(sheetHtml, /Pending re-measure|re-measure pending|post-fix re-measure pending/i, 'work/quant: must not carry pending re-measure wording');
+assert.match(sheetHtml, /Cron removed/, 'work/quant: post-fix cell must record that the cron was removed');
 for (const fact of ['~2.4 s', '~9.2 s', '2026-10-08', '2026-10-09']) {
   assert.ok(sheetHtml.includes(fact), `work/quant: missing recorded fact “${fact}”`);
 }
