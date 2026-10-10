@@ -149,11 +149,20 @@ export function dressRoadside(
   for (let index = 0; index < 8; index += 1) {
     bars.push({
       progress: 0.176 + index * 0.0075,
-      offset: -22,
+      offset: -27,
       scale: 0.85 + hash01(index, 61) * 0.25,
     });
   }
-  scatter(host, placedBox(4.4, 3.2, 5, 0, 1.6, 0), mats.streetBrick, bars);
+  scatter(
+    host,
+    mergeParts([
+      placedBox(4.6, 1.8, 4.8, 0, 0.9, 0),
+      placedBox(3.4, 1.15, 3.4, 0, 2.2, 0),
+      placedBox(2.2, 0.7, 2.2, 0, 3.0, 0),
+    ]),
+    mats.streetBrick,
+    bars,
+  );
   const lanterns: Stamp[] = [];
   for (let index = 0; index < 14; index += 1) {
     lanterns.push({

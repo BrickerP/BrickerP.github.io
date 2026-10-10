@@ -79,9 +79,9 @@ export function buildCornerTower(mats: Mats, bracket: BufferGeometry): Group {
     mats.streetBrick,
   );
   const storeys = [
-    { width: 5.4, depth: 5.4, bottom: base - 0.05, eave: base + 2.0, roof: 6.4, rise: 0.62 },
-    { width: 4.1, depth: 4.1, bottom: base + 2.1, eave: base + 4.45, roof: 5.0, rise: 0.55 },
-    { width: 2.9, depth: 2.9, bottom: base + 4.55, eave: base + 6.4, roof: 3.6, rise: 0.7 },
+    { width: 5.4, depth: 5.4, bottom: base - 0.05, eave: base + 2.0, roof: 7.0, rise: 0.82 },
+    { width: 4.1, depth: 4.1, bottom: base + 2.1, eave: base + 4.45, roof: 5.5, rise: 0.72 },
+    { width: 2.9, depth: 2.9, bottom: base + 4.55, eave: base + 6.4, roof: 4.0, rise: 0.85 },
   ];
   storeys.forEach((storey, index) => {
     const body = storey.eave - storey.bottom;
@@ -155,7 +155,7 @@ export function buildArrowTower(mats: Mats, bracket: BufferGeometry): Group {
       batch.add(slit, mats.niche, 0, 'skip');
     }
     batch.add(
-      createRoof({ width: width + 0.2, depth: depth + 0.15, rise: 0.38, kind: 'hip', wingLift: 0.12 }),
+      createRoof({ width: width + 1.15, depth: depth + 0.85, rise: 0.78, kind: 'hip', wingLift: 0.22 }),
       mats.tile,
       bottom + body - 0.02,
     );
@@ -326,7 +326,7 @@ export function buildTempleOfHeaven(mats: Mats, bracket: BufferGeometry): Group 
       'skip',
     );
     batch.add(
-      createRoof({ width: tier.radius * 2.3, depth: tier.radius * 2.3, rise: tier.rise, kind: 'cone', wingLift: 0.08 }),
+      createRoof({ width: tier.radius * 2.55, depth: tier.radius * 2.55, rise: tier.rise, kind: 'cone', wingLift: 0.16 }),
       mats.tile,
       tier.y + 1.75,
     );
@@ -368,7 +368,7 @@ export function buildWhiteDagoba(mats: Mats): Group {
   for (let index = 0; index < 13; index += 1) {
     const y = 7.55 + index * 0.2;
     const radius = 0.42 - index * 0.018;
-    batch.add(placedCylinder(radius * 0.55, radius, 0.09, 0, y, 0, 12), mats.gold, 0, 'skip');
+    batch.add(placedCylinder(radius * 0.42, radius, 0.16, 0, y, 0, 12), mats.gold, 0, 'skip');
   }
   batch.add(placedCylinder(0.85, 0.22, 0.16, 0, 10.2, 0, 12), mats.gold, 0, 'skip');
   batch.add(
@@ -405,7 +405,7 @@ export function buildPailou(mats: Mats, bracket: BufferGeometry): Group {
     batch.add(placedCylinder(0.16, 0.2, 4.7, x, 2.55, 0, 8), mats.palaceBrick);
   }
   batch.add(placedBox(15.6, 0.28, 0.32, 0, 5.08, 0), mats.timber, 0, 'skip');
-  batch.add(createRoof({ width: 16.2, depth: 2.6, rise: 0.88, kind: 'gable', wingLift: 0.24 }), mats.tile, 5.42);
+  batch.add(createRoof({ width: 16.2, depth: 3.4, rise: 1.25, kind: 'gable', wingLift: 0.48 }), mats.tile, 5.42);
   batch.finish();
   addBracketRun(group, bracket, mats.timber, 5.08, -0.85, 14.4);
   return group;
@@ -443,18 +443,24 @@ export function createShopBay(kind: boolean | ShopKind = 'door'): {
 export function createSkylineMass(variant: number): BufferGeometry {
   if (variant === 1) {
     return mergeParts([
-      placedBox(6.2, 8.5, 4.4, 0, 4.25, 0),
-      placedBox(3.4, 5.2, 2.6, 0, 10.6, 0),
+      placedBox(7.4, 2.2, 5.2, 0, 1.1, 0),
+      placedBox(5.2, 7.4, 3.6, 0.4, 5.7, 0),
+      placedBox(2.2, 4.6, 2.2, -1.2, 11.2, 0),
     ]);
   }
   if (variant === 2) {
     return mergeParts([
-      placedBox(4.4, 6.2, 3.6, 0, 3.1, 0),
-      placedBox(3.1, 5.4, 2.4, 0, 8.6, 0),
-      placedBox(1.8, 3.2, 1.5, 0, 12.6, 0),
+      placedBox(6.6, 3.4, 4.8, 0, 1.7, 0),
+      placedBox(3.6, 6.2, 3.2, 0, 6.2, 0),
+      placedBox(2.2, 4.4, 2.2, 0, 11.2, 0),
+      placedBox(1.1, 2.4, 1.1, 0, 14.4, 0),
     ]);
   }
-  return placedBox(3.3, 16.5, 2.8, 0, 8.25, 0);
+  return mergeParts([
+    placedBox(5.4, 3.2, 4.2, 0, 1.6, 0),
+    placedBox(3.2, 11.4, 2.6, 0, 8.6, 0),
+    placedBox(1.6, 3.4, 1.6, 0, 15.6, 0),
+  ]);
 }
 
 /** Skirt, four setbacks, and floor bands set into the glass rather than stuck through it. */
