@@ -1,16 +1,16 @@
-import { BufferGeometry, Group, type Material } from 'three';
+import { Group, type BufferGeometry } from 'three';
 import {
-  addBalusterRun,
-  addBracketRun,
-  createArch,
-  createBalusterGeometry,
-  createColumnRow,
-  createRailPanel,
-  createRoof,
+  createDoorway,
+  createGatePlatform,
+  createGateSurround,
   createSumeru,
   placedBox,
 } from '../kit';
 import { beginAssembly } from './batch';
+import type { CityMaterials } from './materials';
+import { stackTiers, type Glaze, type TierSpec } from './tiers';
+
+export type { PlaqueSeat } from './tiers';
 
 export interface GateTowerOptions {
   /** Inner face of each pier, local metres. The drive-through opening is twice this. */
@@ -20,205 +20,107 @@ export interface GateTowerOptions {
   pierHeight: number;
   bays: number;
   eaves: 1 | 2;
-  /** A centred niche above the arch, used by the set-back gate. */
+  /** Flank each pier with an arched door, as the set-back palace gate does. */
   portrait?: boolean;
+  glaze?: Glaze;
 }
 
-export interface PlaqueSeat {
-  /** Bottom of the upper lintel, local metres. */
-  lintelBottom: number;
-  /** 0.25 m in front of the road-facing column line. */
-  z: number;
-  bayWidth: number;
-}
-
-/** Half-width of the lower roof, local metres. The wall run butts into this. */
-export function gateRoofHalfWidth(options: GateTowerOptions): number {
-  const center = options.openingHalf + options.pierWidth / 2;
-  const span = center * 2 + options.pierWidth;
-  return (span * 1.04) / 2;
-}
-
-interface GateLayout {
-  center: number;
-  span: number;
-  hallY: number;
-  hallDepth: number;
-  columnY: number;
-  columnHeight: number;
-  columnDepth: number;
-  frontColumnZ: number;
-  seat: PlaqueSeat;
-}
-
-function layoutGate(options: GateTowerOptions): GateLayout {
-  const center = options.openingHalf + options.pierWidth / 2;
-  const span = center * 2 + options.pierWidth;
-  const hallY = options.pierHeight;
-  const hallDepth = options.pierDepth * 0.72;
-  const archCrown = 0.55 + options.openingHalf + 0.15;
-  const columnY = Math.max(hallY + 0.2, archCrown + 0.2);
-  const columnHeight = 1.7;
-  const columnDepth = Math.min(2.4, hallDepth * 0.55);
-  const frontColumnZ = -(options.pierDepth / 2) + 0.55;
-  const bayWidth = span / options.bays;
-  return {
-    center,
-    span,
-    hallY,
-    hallDepth,
-    columnY,
-    columnHeight,
-    columnDepth,
-    frontColumnZ,
-    seat: {
-      lintelBottom: columnY + columnHeight + 0.3,
-      z: frontColumnZ - 0.25,
-      bayWidth,
-    },
-  };
+/** Half the platform length, local metres. Walls butt into this. */
+export function gateHalfWidth(options: GateTowerOptions): number {
+  return options.openingHalf + options.pierWidth;
 }
 
 /**
- * A gate tower: battered piers, an open vault, a columned hall,
- * bracket rows, and one or two xieshan roofs with main, vertical, and hip ridges.
- * The upper storey grows down into the lower roof. The name board hangs in the centre bay.
+ * A gate: a solid platform with a tunnel, stone surrounds, a crenellated parapet, and a one- or
+ * two-storey hall on top. The name board hangs on the lintel of the middle bay.
  */
 export function buildGateTower(
-  mats: {
-    palaceBrick: Material;
-    stone: Material;
-    tile: Material;
-    timber: Material;
-    gold: Material;
-    white: Material;
-    window: Material;
-    niche?: Material;
-  },
+  mats: CityMaterials,
   bracket: BufferGeometry,
   options: GateTowerOptions,
 ): Group {
   const group = new Group();
   const batch = beginAssembly(group);
-  const gate = layoutGate(options);
-  const { center, span, hallY, hallDepth } = gate;
+  const center = options.openingHalf + options.pierWidth / 2;
+  const span = gateHalfWidth(options) * 2;
+  const platformTop = options.pierHeight + 0.35;
+  const vertical = Math.min(options.openingHalf, options.pierHeight - 1.3);
+  const spring = options.pierHeight - 1.3 - vertical;
+  const depth = options.pierDepth;
+
+  batch.add(createGatePlatform(span, platformTop, depth, options.openingHalf, spring, vertical), mats.palaceBrick);
   for (const side of [-1, 1]) {
-    const footing = createSumeru(
-      Math.max(1.6, options.pierWidth - 0.7),
-      Math.max(1.6, options.pierDepth - 0.15),
-      0.62,
-    );
+    const footing = createSumeru(options.pierWidth + 0.5, depth + 0.5, 0.55);
     footing.translate(side * center, 0, 0);
     batch.add(footing, mats.white);
-    batch.add(
-      placedBox(
-        options.pierWidth,
-        options.pierHeight,
-        options.pierDepth,
-        side * center,
-        options.pierHeight / 2 + 0.35,
-        0,
-      ),
-      mats.palaceBrick,
-    );
-    const nicheArch = createArch(0.6, 0.22, 0.12);
-    nicheArch.translate(side * center, 2.15, -(options.pierDepth / 2) - 0.02);
-    batch.add(nicheArch, mats.palaceBrick);
-    batch.add(
-      placedBox(1.08, 2.05, 0.12, side * center, 1.78, -(options.pierDepth / 2) + 0.14),
-      mats.niche ?? mats.window,
-      0,
-      'skip',
-    );
+    batch.add(placedBox(options.pierWidth + 0.3, 0.2, depth + 0.3, side * center, platformTop - 1.1, 0), mats.stone);
   }
-  const arch = createArch(options.openingHalf + 0.15, options.pierDepth * 0.92, 0.34);
-  arch.translate(0, 0.55, 0);
-  batch.add(arch, mats.palaceBrick);
-  const row = createColumnRow({
+  for (const face of [-1, 1]) {
+    const surround = createGateSurround(options.openingHalf, spring, vertical);
+    surround.translate(0, 0, face * (depth / 2 + 0.13));
+    batch.add(surround, mats.stone);
+  }
+  batch.add(placedBox(span + 0.5, 0.26, depth + 0.5, 0, platformTop + 0.05, 0), mats.stone);
+
+  const parapetZ = depth / 2 - 0.17;
+  for (const face of [-1, 1]) {
+    batch.add(placedBox(span, 0.8, 0.34, 0, platformTop + 0.58, face * parapetZ), mats.palaceBrick);
+    batch.add(placedBox(span + 0.1, 0.1, 0.44, 0, platformTop + 1.03, face * parapetZ), mats.stone);
+    const merlons = Math.round(span / 1.15);
+    for (let index = 0; index < merlons; index += 1) {
+      const x = -span / 2 + (span / merlons) * (index + 0.5);
+      batch.add(placedBox(0.6, 0.5, 0.34, x, platformTop + 1.33, face * parapetZ), mats.palaceBrick);
+    }
+  }
+
+  if (options.portrait) {
+    for (const side of [-1, 1]) {
+      const place = (geometry: BufferGeometry) => {
+        geometry.translate(side * center, 0.55, -depth / 2 - 0.3);
+        return geometry;
+      };
+      const parts = createDoorway(1.5, 3.4);
+      batch.add(place(parts.stone), mats.stone);
+      batch.add(place(parts.door), mats.lacquer);
+      batch.add(place(parts.studs), mats.gold, 0, 'skip');
+      batch.add(place(parts.dark), mats.niche, 0, 'skip');
+      batch.add(placedBox(2.8, 0.3, 0.7, side * center, 0.15, -depth / 2 - 0.55), mats.stone);
+    }
+  }
+
+  const hallDepth = Math.min(options.pierDepth * 0.5, options.pierDepth - 2.5);
+  const lower: TierSpec = {
+    width: span * (options.portrait ? 0.54 : 0.48),
+    depth: hallDepth,
+    wallHeight: options.portrait ? 2.2 : 2.6,
+    gallery: options.portrait ? 0.55 : 0.8,
     bays: options.bays,
-    bayWidth: gate.seat.bayWidth,
-    depth: gate.columnDepth,
-    height: gate.columnHeight,
-    radius: 0.13,
-    y: gate.columnY,
-  });
-  row.translate(0, 0, gate.frontColumnZ + gate.columnDepth / 2);
-  batch.add(row, mats.timber, 0, 'skip');
-  batch.add(
-    placedBox(
-      span * 0.98,
-      0.16,
-      gate.columnDepth + 0.2,
-      0,
-      gate.columnY - 0.08,
-      gate.frontColumnZ + gate.columnDepth / 2,
-    ),
-    mats.stone,
-  );
-  const archCrown = 0.55 + options.openingHalf + 0.15;
-  const wallBottom = Math.max(hallY, archCrown + 0.28);
-  const wallTop = hallY + 2.05;
-  const wallHeight = Math.max(0.4, wallTop - wallBottom);
-  batch.add(
-    placedBox(span * 0.7, wallHeight, 0.38, 0, wallHeight / 2, hallDepth * 0.22),
-    mats.palaceBrick,
-    wallBottom,
-  );
-  batch.add(placedBox(span * 0.62, 0.32, 0.36, 0, hallY + 2.05, hallDepth * 0.12), mats.palaceBrick);
-  const parapetH = 0.85;
-  const parapetZ = -(options.pierDepth / 2) + 0.08;
-  batch.add(
-    placedBox(span * 0.88, parapetH, 0.24, 0, hallY + parapetH / 2, parapetZ),
-    mats.palaceBrick,
-  );
-  batch.add(placedBox(span * 0.9, 0.07, 0.32, 0, hallY + parapetH + 0.03, parapetZ), mats.stone);
-  const lowerEave = hallY + 3.2;
-  const lowerRoof = createRoof({
-    width: span * 1.04,
-    depth: options.pierDepth + 1.1,
-    rise: 1.55,
-    kind: 'xieshan',
-    wingLift: 0.34,
-  });
-  lowerRoof.translate(0, lowerEave, 0);
-  batch.add(lowerRoof, mats.tile);
-  const upperEave = hallY + 6.1;
-  if (options.eaves > 1) {
-    const upperBottom = lowerEave + 0.15;
-    const upperHeight = upperEave - upperBottom;
-    batch.add(
-      placedBox(span * 0.48, upperHeight, hallDepth * 0.42, 0, upperBottom + upperHeight / 2, 0),
-      mats.palaceBrick,
-    );
-    const upper = createRoof({
-      width: span * 0.68,
-      depth: options.pierDepth * 0.72,
-      rise: 1.05,
+    front: 'doors',
+    roof: {
       kind: 'xieshan',
-      wingLift: 0.16,
-    });
-    upper.translate(0, upperEave, 0);
-    batch.add(upper, mats.tile);
-  }
-  if (options.portrait && mats.niche) {
-    const niche = placedBox(1.5, 2.0, 0.06, 0, hallY - 1.5, -(options.pierDepth / 2 + 0.08));
-    batch.add(niche, mats.niche, 0, 'skip');
-  }
+      rise: options.portrait ? 1.6 : 1.8,
+      overhang: options.portrait ? 1.3 : 1.7,
+      wingLift: options.portrait ? 0.6 : 0.75,
+    },
+    glaze: options.glaze ?? 'tile',
+  };
+  const upper: TierSpec = {
+    width: span * (options.portrait ? 0.3 : 0.28),
+    depth: hallDepth * 0.8,
+    wallHeight: options.portrait ? 1.7 : 2.0,
+    gallery: options.portrait ? 0.5 : 0.7,
+    bays: 3,
+    front: 'windows',
+    roof: {
+      kind: 'xieshan',
+      rise: options.portrait ? 1.7 : 1.9,
+      overhang: options.portrait ? 1.2 : 1.6,
+      wingLift: options.portrait ? 0.6 : 0.8,
+    },
+    glaze: options.glaze ?? 'tile',
+    finial: true,
+  };
   batch.finish();
-  group.userData.plaqueSeat = gate.seat;
-  addBracketRun(group, bracket, mats.timber, hallY + 2.55, -(hallDepth * 0.42), span * 0.72);
-  if (options.eaves > 1) {
-    addBracketRun(group, bracket, mats.timber, upperEave - 0.42, -(hallDepth * 0.22), span * 0.42);
-  }
-  addBalusterRun(
-    group,
-    createBalusterGeometry(),
-    createRailPanel(),
-    mats.stone,
-    hallY + parapetH,
-    parapetZ,
-    span * 0.72,
-    options.bays + 2,
-  );
+  stackTiers(group, mats, bracket, platformTop + 0.1, options.eaves > 1 ? [lower, upper] : [{ ...lower, finial: true }]);
   return group;
 }

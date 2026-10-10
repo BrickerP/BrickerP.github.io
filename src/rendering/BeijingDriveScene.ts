@@ -25,6 +25,7 @@ import {
   Scene,
   SphereGeometry,
   SRGBColorSpace,
+  TorusGeometry,
   Vector3,
   Vector4,
   type Material,
@@ -42,7 +43,8 @@ import { hash01 } from './surfaceTextures';
 import { assertPassageId, PASSAGES, type PassageId } from './passages';
 import { DRIVE, PALETTE } from './theme';
 import { bindSurface, bindWetSurface, bindWindowLattice, type SurfaceKind } from './surfaces';
-import { createLampPole } from './kit';
+import { createLampPole, createPierBent, createSweep, type SweepFrame, type SweepOutline } from './kit';
+import { sweepFrames } from './pathSweep';
 import { CENTRAL_AXIS_LANDMARKS } from './spatialContract';
 import { assembleCity, type CityMaterials } from './assembleCity';
 
@@ -307,6 +309,43 @@ export class BeijingDriveScene {
     });
     windowMaterial.userData.preserveInCapture = true;
     bindWindowLattice(windowMaterial);
+    const lattice = (variant: number): MeshStandardMaterial => {
+      const material = this.standard('#1A140E', {
+        emissive: variant === 1 ? '#FFB45A' : '#FFD08A',
+        emissiveIntensity: 0.35,
+        roughness: 0.72,
+      });
+      material.userData.preserveInCapture = true;
+      bindWindowLattice(material, variant);
+      return material;
+    };
+    const windowDiamond = lattice(1);
+    const windowSlat = lattice(2);
+    const grayBrick = this.surface('#8E7F73', 'streetBrick', {
+      roughness: 0.9,
+      emissive: '#3A2E24',
+      emissiveIntensity: 0.55,
+    });
+    const lacquer = this.standard('#A8372E', {
+      roughness: 0.6,
+      emissive: '#5C1A14',
+      emissiveIntensity: 0.6,
+    });
+    const paint = this.standard('#2A7C78', {
+      roughness: 0.6,
+      emissive: '#0F403E',
+      emissiveIntensity: 0.6,
+    });
+    const glaze = this.surface('#D2A236', 'tile', {
+      roughness: 0.5,
+      emissive: '#7A5412',
+      emissiveIntensity: 0.6,
+    });
+    const glazeBlue = this.surface('#3568B5', 'tile', {
+      roughness: 0.5,
+      emissive: '#143765',
+      emissiveIntensity: 0.6,
+    });
     const leaf = this.surface('#3E6A48', 'leaf', {
       roughness: 0.95,
       emissive: '#1A3020',
@@ -337,15 +376,22 @@ export class BeijingDriveScene {
     return {
       streetBrick,
       palaceBrick,
+      grayBrick,
       tile,
+      glaze,
+      glazeBlue,
       stone,
       concrete,
       bark,
       glass,
       timber,
+      lacquer,
+      paint,
       gold,
       white,
       window: windowMaterial,
+      windowDiamond,
+      windowSlat,
       leaf,
       niche,
       lampPole,
@@ -494,78 +540,131 @@ export class BeijingDriveScene {
     );
     this.place(closureRing, OPEN_CIRCUIT_NODE_PHASE, OPEN_CIRCUIT_CARRIER_OFFSET, 0.03);
     this.root.add(closureRing);
+    const dome = new SphereGeometry(0.42, 28, 10, 0, Math.PI * 2, 0, Math.PI / 2);
+    dome.scale(1, 0.42, 1);
     this.openCircuitNode = new Mesh(
-      this.trackGeometry(new CylinderGeometry(0.42, 0.42, 0.09, 28)),
-      this.standard(PALETTE.signature, { metalness: 0, roughness: 0.72 }),
+      this.trackGeometry(dome),
+      this.standard(PALETTE.signature, {
+        metalness: 0,
+        roughness: 0.5,
+        emissive: PALETTE.signature,
+        emissiveIntensity: 0.5,
+      }),
     );
     this.openCircuitNode.name = OPEN_CIRCUIT_NODE_NAME;
-    this.place(this.openCircuitNode, OPEN_CIRCUIT_NODE_PHASE, OPEN_CIRCUIT_CARRIER_OFFSET, 0.055);
+    this.place(this.openCircuitNode, OPEN_CIRCUIT_NODE_PHASE, OPEN_CIRCUIT_CARRIER_OFFSET, 0.04);
     this.openCircuitNode.renderOrder = 3;
     this.root.add(this.openCircuitNode);
+    const rim = new Mesh(this.trackGeometry(new TorusGeometry(0.46, 0.035, 8, 40)), this.cityMaterials.gold);
+    rim.rotation.x = Math.PI / 2;
+    this.place(rim, OPEN_CIRCUIT_NODE_PHASE, OPEN_CIRCUIT_CARRIER_OFFSET, 0.06);
+    this.root.add(rim);
   }
 
-  /** Curved second-ring flyover kept outside the carriageway. */
+  /** A lit concrete for soffits: the underside faces away from the key light, so it carries its own glow. */
+  private soffitMaterial(): MeshStandardMaterial {
+    return this.surface('#7C8A92', 'concrete', {
+      roughness: 0.9,
+      emissive: '#4A5A64',
+      emissiveIntensity: 0.85,
+    });
+  }
+
+  /** Curved second-ring flyover kept outside the carriageway: a swept deck on girders and bent piers. */
   private buildRingBridge(): void {
-    const deckMaterial = this.cityMaterials.concrete;
+    const material = this.soffitMaterial();
     const bridge = new Group();
     this.place(bridge, 0.392, 14.8, 0, Math.PI / 2);
     const radius = 9.2;
     const startAngle = -0.96;
     const arc = 1.62;
-    const segmentCount = 5;
-    for (let index = 0; index < segmentCount; index += 1) {
-      const angle = startAngle + ((index + 0.5) / segmentCount) * arc;
-      const segmentLength = radius * (arc / segmentCount) + 2.4;
-      const deck = this.box(3.4, 0.85, segmentLength, deckMaterial);
-      deck.position.set(Math.cos(angle) * radius, 6.4, Math.sin(angle) * radius);
-      deck.rotation.y = -angle;
-      const railNear = this.box(0.22, 0.7, segmentLength, deckMaterial);
-      railNear.position.set(Math.cos(angle) * (radius - 1.45), 6.95, Math.sin(angle) * (radius - 1.45));
-      railNear.rotation.y = -angle;
-      const railFar = this.box(0.22, 0.7, segmentLength, deckMaterial);
-      railFar.position.set(Math.cos(angle) * (radius + 1.45), 6.95, Math.sin(angle) * (radius + 1.45));
-      railFar.rotation.y = -angle;
-      const pier = this.box(0.7, 5.4, 0.7, deckMaterial);
-      pier.position.set(Math.cos(angle) * radius, 3.35, Math.sin(angle) * radius);
-      const footing = this.box(1.35, 0.7, 1.35, deckMaterial);
-      footing.position.set(Math.cos(angle) * radius, 0.35, Math.sin(angle) * radius);
-      bridge.add(deck, railNear, railFar, pier, footing);
+    const steps = 28;
+    const frames: SweepFrame[] = [];
+    for (let index = 0; index <= steps; index += 1) {
+      const angle = startAngle + (arc * index) / steps;
+      frames.push({
+        x: Math.cos(angle) * radius,
+        z: Math.sin(angle) * radius,
+        nx: Math.cos(angle),
+        nz: Math.sin(angle),
+      });
+    }
+    const outlines: SweepOutline[] = [
+      [[-1.7, 6.0], [1.7, 6.0], [1.7, 6.85], [-1.7, 6.85]],
+      [[-1.15, 5.35], [-0.65, 5.35], [-0.65, 6.0], [-1.15, 6.0]],
+      [[0.65, 5.35], [1.15, 5.35], [1.15, 6.0], [0.65, 6.0]],
+      [[-1.75, 6.85], [-1.4, 6.85], [-1.4, 7.55], [-1.75, 7.55]],
+      [[1.4, 6.85], [1.75, 6.85], [1.75, 7.55], [1.4, 7.55]],
+    ];
+    const deck = new Mesh(this.trackGeometry(createSweep(frames, outlines)), material);
+    deck.frustumCulled = false;
+    deck.castShadow = true;
+    deck.receiveShadow = true;
+    bridge.add(deck);
+    const bent = this.trackGeometry(createPierBent(5.35));
+    for (let index = 0; index < 5; index += 1) {
+      const angle = startAngle + ((index + 0.5) / 5) * arc;
+      const pier = new Mesh(bent, material);
+      pier.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+      pier.rotation.y = -angle;
+      pier.castShadow = true;
+      bridge.add(pier);
     }
     this.root.add(bridge);
   }
 
-  /** Deck and portal that hide the loop seam. The battered pier is assembled with the kit. */
+  /**
+   * Overpass deck and portal that hide the loop seam. The deck is one swept slab on girders, with
+   * edge beams and parapets, carried by bent piers; the portal boxes at the end stay as they were.
+   */
   private buildOverpassDeck(): void {
     const concrete = this.cityMaterials.concrete;
-    // The soffit faces away from the key light, so a lit material reads as a black slab.
-    const deck = this.trackMaterial(new MeshBasicMaterial({ color: '#8E989C', fog: false }));
-    for (let index = 0; index < 8; index += 1) {
-      const progress = 0.92 + index * 0.009;
-      const slab = this.box(18, 0.55, 12, deck);
-      slab.castShadow = true;
-      slab.receiveShadow = true;
-      this.place(slab, progress, 0, 6.5);
-      this.root.add(slab);
-      const fascia = this.box(18.6, 0.28, 12.4, this.cityMaterials.stone);
-      this.place(fascia, progress, 0, 6.15);
-      this.root.add(fascia);
-      for (const side of [-1, 1]) {
-        const guard = this.box(0.36, 0.85, 6.6, concrete);
-        this.place(guard, progress, side * 7.4, 6.95);
-        this.root.add(guard);
-      }
-      if (index % 2 === 0) {
-        for (const side of [-1, 1]) {
-          const column = this.box(0.62, 5.5, 0.62, concrete);
-          column.castShadow = true;
-          this.place(column, progress, side * 7.8, 3.45);
-          this.root.add(column);
-          const footing = this.box(1.25, 0.7, 1.25, concrete);
-          this.place(footing, progress, side * 7.8, 0.35);
-          this.root.add(footing);
-        }
-      }
+    const material = this.soffitMaterial();
+    const frames = sweepFrames(0.909, 0.9945, 0, 1.6);
+    const girders: SweepOutline[] = [-7.6, -5.1, -2.55, 0, 2.55, 5.1, 7.6].map((u) => [
+      [u - 0.28, 5.55],
+      [u + 0.28, 5.55],
+      [u + 0.28, 6.25],
+      [u - 0.28, 6.25],
+    ]);
+    const outlines: SweepOutline[] = [
+      [[-9, 6.25], [9, 6.25], [9, 6.8], [-9, 6.8]],
+      ...girders,
+      [[-9.25, 5.85], [-8.5, 5.85], [-8.5, 6.8], [-9.25, 6.8]],
+      [[8.5, 5.85], [9.25, 5.85], [9.25, 6.8], [8.5, 6.8]],
+      [[-8.9, 6.8], [-8.4, 6.8], [-8.4, 7.65], [-8.9, 7.65]],
+      [[8.4, 6.8], [8.9, 6.8], [8.9, 7.65], [8.4, 7.65]],
+    ];
+    const deck = new Mesh(this.trackGeometry(createSweep(frames, outlines)), material);
+    deck.frustumCulled = false;
+    deck.castShadow = true;
+    deck.receiveShadow = true;
+    this.root.add(deck);
+    const stamps: Array<{ progress: number; offset: number }> = [];
+    for (let index = 0; index < 5; index += 1) {
+      for (const side of [-1, 1]) stamps.push({ progress: 0.92 + index * 0.018, offset: side * 8.1 });
     }
+    const bent = this.trackGeometry(createPierBent(5.55));
+    const bents = new InstancedMesh(bent, material, stamps.length);
+    bents.frustumCulled = false;
+    bents.castShadow = true;
+    const matrix = new Matrix4();
+    const turn = new Quaternion();
+    const spot = new Vector3();
+    const unit = new Vector3(1, 1, 1);
+    stamps.forEach((stamp, index) => {
+      const frame = samplePathFrame(stamp.progress);
+      spot.set(
+        frame.point.x * DRIVE_PATH_SCALE + frame.normal.x * stamp.offset,
+        0,
+        frame.point.z * DRIVE_PATH_SCALE + frame.normal.z * stamp.offset,
+      );
+      turn.setFromAxisAngle(new Vector3(0, 1, 0), pathHeading(frame.tangent));
+      matrix.compose(spot, turn, unit);
+      bents.setMatrixAt(index, matrix);
+    });
+    bents.instanceMatrix.needsUpdate = true;
+    this.root.add(bents);
     const portalProgress = 0.993;
     for (const side of [-1, 1]) {
       const cheek = this.box(0.7, 8.4, 2.4, concrete);
@@ -758,7 +857,17 @@ export class BeijingDriveScene {
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.font = options.font;
-    context.fillText(text, canvas.width / 2, canvas.height / 2 + 4);
+    if (options.vertical) {
+      const characters = Array.from(text);
+      const size = Math.min(canvas.width * 0.62, (canvas.height - 50) / characters.length);
+      context.font = options.font.replace(/\d+px/, `${Math.round(size)}px`);
+      characters.forEach((character, index) => {
+        const y = canvas.height / 2 + (index - (characters.length - 1) / 2) * size * 1.06 + 4;
+        context.fillText(character, canvas.width / 2, y);
+      });
+    } else {
+      context.fillText(text, canvas.width / 2, canvas.height / 2 + 4);
+    }
     const texture = new CanvasTexture(canvas);
     texture.colorSpace = SRGBColorSpace;
     texture.minFilter = LinearFilter;

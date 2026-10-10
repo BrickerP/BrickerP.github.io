@@ -1,5 +1,67 @@
-import { BufferGeometry, Float32BufferAttribute } from 'three';
-import { mergeParts, placedBox, placedCylinder, placedFrustum } from './geom';
+import { BufferGeometry, ExtrudeGeometry, Float32BufferAttribute, Path, Shape } from 'three';
+import { indexed, mergeParts, placedBox, placedCylinder, placedFrustum } from './geom';
+
+function openingPath(
+  path: Path | Shape,
+  openingHalf: number,
+  spring: number,
+  vertical: number,
+  clockwise: boolean,
+): void {
+  path.moveTo(-openingHalf, 0);
+  path.lineTo(-openingHalf, spring);
+  path.absellipse(0, spring, openingHalf, vertical, Math.PI, 0, clockwise, 0);
+  path.lineTo(openingHalf, 0);
+  path.lineTo(-openingHalf, 0);
+}
+
+/**
+ * A solid gate platform with a real tunnel. The opening is a rectangle that turns into a
+ * half-ellipse of height `vertical` above `spring`. Faces run along X; depth runs along Z.
+ */
+export function createGatePlatform(
+  span: number,
+  height: number,
+  depth: number,
+  openingHalf: number,
+  spring: number,
+  vertical: number,
+): BufferGeometry {
+  const shape = new Shape();
+  shape.moveTo(-span / 2, 0);
+  shape.lineTo(span / 2, 0);
+  shape.lineTo(span / 2, height);
+  shape.lineTo(-span / 2, height);
+  shape.lineTo(-span / 2, 0);
+  const hole = new Path();
+  openingPath(hole, openingHalf, spring, vertical, true);
+  shape.holes.push(hole);
+  const geometry = new ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 32 });
+  geometry.translate(0, 0, -depth / 2);
+  return indexed(geometry);
+}
+
+/** A stone frame around a tunnel mouth. Place one flush against each face of the platform. */
+export function createGateSurround(
+  openingHalf: number,
+  spring: number,
+  vertical: number,
+  border = 0.4,
+  depth = 0.26,
+): BufferGeometry {
+  const outer = new Shape();
+  outer.moveTo(-openingHalf - border, 0);
+  outer.lineTo(-openingHalf - border, spring);
+  outer.absellipse(0, spring, openingHalf + border, vertical + border, Math.PI, 0, true, 0);
+  outer.lineTo(openingHalf + border, 0);
+  outer.lineTo(-openingHalf - border, 0);
+  const hole = new Path();
+  openingPath(hole, openingHalf, spring, vertical, true);
+  outer.holes.push(hole);
+  const geometry = new ExtrudeGeometry(outer, { depth, bevelEnabled: false, curveSegments: 32 });
+  geometry.translate(0, 0, -depth / 2);
+  return indexed(geometry);
+}
 
 export interface CityWallOptions {
   length: number;

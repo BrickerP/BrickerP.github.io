@@ -74,7 +74,7 @@ vec3 surfacePattern(vec3 world, vec3 normal, vec2 uv, float kind) {
     float row = plane.y / 0.15;
     float ridge = abs(fract(row) - 0.72);
     float barrel = 0.5 + 0.5 * sin(plane.x / 0.14 * 6.28318);
-    value = mix(0.86, 1.0, smoothstep(0.0, 0.22, ridge)) * (0.92 + 0.08 * barrel);
+    value = mix(0.78, 1.0, smoothstep(0.0, 0.22, ridge)) * (0.86 + 0.14 * barrel);
   } else if (kind < 3.5) {
     value = mix(0.9, surfaceBrick(plane, vec2(0.55, 0.32), 0.016), 0.7);
   } else if (kind < 4.5) {
@@ -166,6 +166,14 @@ export function bindSurface(material: Material, kind: SurfaceKind): void {
          roughnessFactor = clamp(roughnessFactor * surfaceRoughMul, 0.04, 1.0);`,
       );
     }
+    // Street lamps wash the foot of a wall; the top falls into the dark.
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <emissivemap_fragment>',
+      `#include <emissivemap_fragment>
+       if (surfaceKind < 1.5 || (surfaceKind > 2.5 && surfaceKind < 3.5)) {
+         totalEmissiveRadiance *= 1.0 + 1.5 * exp(-max(vSurfaceWorld.y, 0.0) * 0.3);
+       }`,
+    );
   };
   typed.customProgramCacheKey = () => `surface-${kind}`;
 }
@@ -227,8 +235,17 @@ export function bindWetSurface(
   material.customProgramCacheKey = () => `wet-${surface}`;
 }
 
-/** Pane grid in world metres so a wide shopfront does not stretch into a light strip. */
-export function bindWindowLattice(material: MeshStandardMaterial): void {
+/**
+ * Pane grid in world metres so a wide shopfront does not stretch into a light strip.
+ * Variant 0 is a square grid, 1 a diamond lattice, 2 vertical slats.
+ */
+export function bindWindowLattice(material: MeshStandardMaterial, variant = 0): void {
+  const remap =
+    variant === 1
+      ? 'paneUv = vec2(paneUv.x + paneUv.y, paneUv.x - paneUv.y) * 0.62;'
+      : variant === 2
+        ? 'paneUv = vec2(paneUv.x * 3.2, paneUv.y * 0.55);'
+        : '';
   material.onBeforeCompile = (shader) => {
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vWindowWorld;')
@@ -253,6 +270,7 @@ export function bindWindowLattice(material: MeshStandardMaterial): void {
         vec2 paneUv = face.x > face.z ? vWindowWorld.zy : vWindowWorld.xy;
         if (face.y > face.x && face.y > face.z) paneUv = vWindowWorld.xz;
         paneUv *= vec2(2.6, 3.4);
+        ${remap}
         vec2 cell = fract(paneUv);
         vec2 paneId = floor(paneUv);
         float mortar = step(0.18, cell.x) * step(0.18, cell.y);
@@ -264,5 +282,5 @@ export function bindWindowLattice(material: MeshStandardMaterial): void {
         `,
       );
   };
-  material.customProgramCacheKey = () => 'window-lattice';
+  material.customProgramCacheKey = () => `window-lattice-${variant}`;
 }
