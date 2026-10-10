@@ -35,7 +35,7 @@
       "headline": "Technical sheet № 01 — Live trading execution",
       "description": "The order path of a private live-trading system on Alpaca, its execution-safety invariants, and the 2026-10-08 scan-latency regression traced to a backfill cron holding SQLite's write lock.",
       "datePublished": "2026-10-09",
-      "dateModified": "2026-10-09",
+      "dateModified": "2026-10-10",
       "inLanguage": "en",
       "image": "https://brickerp.github.io/profile-preview.png",
       "author": { "@id": "https://brickerp.github.io/about/#yupeng-lu" },
@@ -702,8 +702,9 @@
   <header class="topbar">
     <a class="brand" href="/">BrickerP</a>
     <nav aria-label="Primary navigation">
-      <a href="/">Generative artwork</a>
+      <a href="/hire/">Work with me</a>
       <a href="/about/">Programme</a>
+      <a href="/beijing-loop/">Film</a>
       <a href="/resume.pdf">Resume</a>
       <a href="mailto:yplmicro@gmail.com">Email</a>
     </nav>
@@ -774,11 +775,11 @@
         </header>
         <div class="programme-title">
           <div class="about-ident">
-            <svg class="about-stamp" viewBox="0 0 132 132" aria-hidden="true" focusable="false"><defs><path id="sheet-arc-top" d="M18 66a48 48 0 0 1 96 0"/><path id="sheet-arc-bottom" d="M12 66a54 54 0 0 0 108 0"/><filter id="sheet-ink"><feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="1" seed="7"/><feDisplacementMap in="SourceGraphic" scale="1.8"/></filter></defs><g filter="url(#sheet-ink)" fill="currentColor" font-family="ui-monospace,Menlo,monospace" text-anchor="middle"><circle cx="66" cy="66" r="62" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="66" cy="66" r="36" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="9.5" cy="66" r="1.7"/><circle cx="122.5" cy="66" r="1.7"/><text font-size="10.5" letter-spacing="2.2"><textPath href="#sheet-arc-top" startOffset="50%">TECHNICAL SHEET</textPath></text><text font-size="9" letter-spacing="1.6"><textPath href="#sheet-arc-bottom" startOffset="50%">RE-MEASURE PENDING</textPath></text><text x="66" y="58" font-size="8.5" letter-spacing="2.4">SHEET</text><text x="66" y="84" font-family="Iowan Old Style,Palatino,Georgia,serif" font-weight="900" font-size="27">01</text></g></svg>
+            <svg class="about-stamp" viewBox="0 0 132 132" aria-hidden="true" focusable="false"><defs><path id="sheet-arc-top" d="M18 66a48 48 0 0 1 96 0"/><path id="sheet-arc-bottom" d="M12 66a54 54 0 0 0 108 0"/><filter id="sheet-ink"><feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="1" seed="7"/><feDisplacementMap in="SourceGraphic" scale="1.8"/></filter></defs><g filter="url(#sheet-ink)" fill="currentColor" font-family="ui-monospace,Menlo,monospace" text-anchor="middle"><circle cx="66" cy="66" r="62" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="66" cy="66" r="36" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="9.5" cy="66" r="1.7"/><circle cx="122.5" cy="66" r="1.7"/><text font-size="10.5" letter-spacing="2.2"><textPath href="#sheet-arc-top" startOffset="50%">TECHNICAL SHEET</textPath></text><text font-size="9" letter-spacing="1.6"><textPath href="#sheet-arc-bottom" startOffset="50%">ONE HOST · ONE WRITER</textPath></text><text x="66" y="58" font-size="8.5" letter-spacing="2.4">SHEET</text><text x="66" y="84" font-family="Iowan Old Style,Palatino,Georgia,serif" font-weight="900" font-size="27">01</text></g></svg>
             <p class="about-eyebrow">Technical sheet · Programme insert</p>
             <p class="about-role">Live trading execution</p>
             <p class="about-status">Private system · Strategy, universe, positions and P&amp;L stay private</p>
-            <p class="about-summary" id="sheet-summary">A private live-trading system on AWS that scans intraday, filters by factor, and routes bracket orders through Alpaca into a SQLite execution ledger. This sheet prints the order path, the invariants that keep it safe, and one measured regression with its method. Every number here has a method line; where the measurement is still pending, the sheet says so.</p>
+            <p class="about-summary" id="sheet-summary">A private live-trading system on AWS that scans intraday, filters by factor, and routes bracket orders through Alpaca into a SQLite execution ledger. This sheet prints the order path, the invariants that keep it safe, and one measured regression with its method. Every number here carries its method line.</p>
           </div>
           <div class="programme-billing">
             <dl class="about-credits">
@@ -838,7 +839,7 @@
         <section class="programme-block about-section" aria-labelledby="measured-heading">
           <div class="about-section-head">
             <h2 class="about-section-title" id="measured-heading"><small>03</small>Measured</h2>
-            <p class="about-section-meta">Values marked ~ are read from logs, not a controlled benchmark<br>Placeholders are replaced only by a measured session</p>
+            <p class="about-section-meta">Values marked ~ are read from logs, not a controlled benchmark<br>The placeholder is replaced only by a measured session</p>
           </div>
           <div class="sheet-measured">
             <table class="sheet-table">
@@ -846,14 +847,12 @@
               <thead><tr><th scope="col">Metric</th><th scope="col">Baseline</th><th scope="col">2026-10-08 regression</th><th scope="col">2026-10-09 post-fix</th></tr></thead>
               <tbody>
                 <tr><th scope="row">Scan batch latency, p95</th><td data-col="Baseline" class="num">~2.4 s</td><td data-col="2026-10-08 regression" class="num">~9.2 s<small>Backfill cron active</small></td><td data-col="2026-10-09 post-fix"><span class="sheet-pending">Pending re-measure</span></td></tr>
-                <tr><th scope="row">Scan batch latency, p50</th><td data-col="Baseline"><span class="sheet-pending">Pending re-measure</span></td><td data-col="2026-10-08 regression"><span class="sheet-pending">Pending re-measure</span></td><td data-col="2026-10-09 post-fix"><span class="sheet-pending">Pending re-measure</span></td></tr>
-                <tr><th scope="row">SQLite write-lock wait inside a scan batch</th><td data-col="Baseline" class="mono">not sampled</td><td data-col="2026-10-08 regression" class="mono">not sampled</td><td data-col="2026-10-09 post-fix"><span class="sheet-pending">Pending re-measure</span></td></tr>
               </tbody>
             </table>
             <figure>
               <svg class="sheet-chart" viewBox="0 0 640 260" width="640" height="260" role="img" aria-labelledby="chart-title chart-desc" focusable="false">
                 <title id="chart-title">Scan batch p95 latency over three dates</title>
-                <desc id="chart-desc">Baseline about 2.4 seconds; 2026-10-08 regression about 9.2 seconds; 2026-10-09 post-fix marked pending re-measure with no value plotted.</desc>
+                <desc id="chart-desc">Baseline about 2.4 seconds; 2026-10-08 regression about 9.2 seconds; the 2026-10-09 post-fix session is marked with no value plotted until it is measured.</desc>
                 <rect width="640" height="260" fill="#ece5d8"/>
                 <g font-family="ui-monospace,Menlo,monospace" font-size="9" letter-spacing="1.4" fill="#46525c">
                   <text x="22" y="24">SCAN BATCH P95 · SECONDS</text>
@@ -874,7 +873,7 @@
                   <g text-anchor="middle">
                     <text x="170" y="228">BASELINE</text>
                     <text x="340" y="228">2026-10-08</text><text x="340" y="242">REGRESSION</text>
-                    <text x="510" y="228" fill="#d9684b" font-weight="700">2026-10-09</text><text x="510" y="242" fill="#d9684b" font-weight="700">PENDING RE-MEASURE</text>
+                    <text x="510" y="228" fill="#d9684b" font-weight="700">2026-10-09</text><text x="510" y="242" fill="#d9684b" font-weight="700">POST-FIX</text>
                   </g>
                   <line x1="170" y1="167.6" x2="340" y2="58.8" stroke="#101a22" stroke-width="1.5"/>
                   <circle cx="170" cy="167.6" r="5" fill="#101a22"/>
@@ -887,7 +886,7 @@
                   <circle cx="510" cy="206" r="6.5" fill="#ece5d8" stroke="#d9684b" stroke-width="2"/>
                 </g>
               </svg>
-              <figcaption>Ink points are log reads marked ~ · the vermilion rule is the pending post-fix session · no value is drawn until it is measured</figcaption>
+              <figcaption>Ink points are log reads marked ~ · the vermilion rule is the post-fix session · its value is drawn only once measured</figcaption>
             </figure>
             <aside class="sheet-method" aria-labelledby="method-heading">
               <p id="method-heading">Method</p>
@@ -902,7 +901,7 @@
             </aside>
             <div class="sheet-rca">
               <p class="sheet-prose">On 2026-10-08 scan-batch p95 rose from about 2.4 s to about 9.2 s with no change to the scanner itself. The cause was a backfill cron running every five minutes on the same host. SQLite admits one writer at a time; while the backfill held the write lock, the scanner's own ledger writes queued behind it, so each batch inherited the backfill's lock-hold time.</p>
-              <p class="sheet-prose">The cron was removed from the live host on 2026-10-09. Post-fix numbers are not printed until a full session has been sampled under the method above; the placeholders stay until then.</p>
+              <p class="sheet-prose">The cron was removed from the live host on 2026-10-09. The post-fix p95 is printed once a full session has been sampled under the method above; one placeholder holds its cell until then.</p>
             </div>
           </div>
         </section>
@@ -935,10 +934,10 @@
         </section>
 
         <nav class="about-primary-actions" aria-label="Primary links"><span class="about-admit" aria-hidden="true">Admit one</span><a href="https://d2c9pzwpavuktk.cloudfront.net/" target="_blank" rel="noopener noreferrer"><span class="about-action-label">Dashboard</span><span class="about-action-note" aria-hidden="true">Live ↗</span></a><a href="/resume.pdf"><span class="about-action-label">Resume</span><span class="about-action-note" aria-hidden="true">PDF ↗</span></a><a href="mailto:yplmicro@gmail.com"><span class="about-action-label">Email</span><span class="about-action-note" aria-hidden="true">Write ↗</span></a><a href="https://github.com/BrickerP" target="_blank" rel="noopener noreferrer"><span class="about-action-label">GitHub</span><span class="about-action-note" aria-hidden="true">BrickerP ↗</span></a></nav>
-        <p class="about-colophon"><span class="programme-swatches" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span>Ink · oxblood · one vermilion spot on warm stock</span><span>Printed 2026-10-09 · Placeholders are replaced only by a measured session</span><a href="mailto:yplmicro@gmail.com">yplmicro@gmail.com</a></p>
+        <p class="about-colophon"><span class="programme-swatches" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span>Ink · oxblood · one vermilion spot on warm stock</span><span>Printed 2026-10-09 · The placeholder is replaced only by a measured session</span><a href="mailto:yplmicro@gmail.com">yplmicro@gmail.com</a></p>
       </div>
     </main>
   </div>
-  <footer class="site-foot"><p>© 2026 Yupeng Lu · <a href="/about/">Full programme</a> · <a href="/">Beijing — Endless Second Ring</a></p></footer>
+  <footer class="site-foot"><p>© 2026 Yupeng Lu · <a href="/">Home</a> · <a href="/hire/">Work with me</a> · <a href="/about/">Full programme</a> · <a href="/beijing-loop/">Beijing — Endless Second Ring</a></p></footer>
 </body>
 </html>
