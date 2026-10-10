@@ -282,7 +282,7 @@ export function assembleCity(host: CityHost): void {
 
   host.begin('shichahai');
   const bridge = new Group();
-  bridge.add(new Mesh(host.track(createStoneBridge()), mats.stone));
+  bridge.add(new Mesh(host.track(createStoneBridge()), mats.white));
   put(host, bridge, 0.226, -14.5, 1);
   const dagoba = PASSAGE_HEROES.whiteDagoba;
   put(host, buildWhiteDagoba(mats), dagoba.progress, dagoba.lateralOffset, dagoba.scale);
