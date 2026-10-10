@@ -2,7 +2,7 @@
 
 ## Scope boundary
 
-- This file governs only `LOOP 01 / ENDLESS SECOND RING`, the realtime night film at the root site.
+- This file governs only `LOOP 01 / ENDLESS SECOND RING`, the realtime night film served at `/beijing-loop/`. The static landing page at `/`, `/hire/`, and the technical sheets are separate surfaces outside this contract.
 - The active Personal Profile `Human Zine` brief is the `2026-08-09` section of `docs/creative/04-prototype.md`; it does not inherit this film contract.
 - AI Usage is governed by its independent repository contract.
 - The film, Personal Profile, and AI Usage are separate surfaces; no shared palette, typography, or interaction system is inherited from this file.
@@ -146,7 +146,7 @@ Repeated street bays and bracket rows are instanced after construction. The brow
 - Visible frame gaps up to and including `10s` preserve wall-clock playback; gaps above `10s` are treated as suspension and skipped, while hidden-tab restoration resets the elapsed-time baseline before requesting the next frame.
 - WebGL-capable evergreen browsers are the compatibility target. `MediaRecorder` plus `canvas.captureStream` and the Fullscreen API are optional capabilities.
 - Development exposes `window.__BEIJING_LOOP_TEST__`. Production exposes it only for explicit `?qa=1`; the normal production URL must not expose the hook.
-- Relative assets and the Vite base remain compatible with GitHub Pages at `https://brickerp.github.io/`.
+- Relative assets and the Vite base remain compatible with GitHub Pages at `https://brickerp.github.io/`; the film is one Vite HTML entry (`beijing-loop/index.html`) beside the static landing entry (`index.html`).
 
 ## Seam and visual acceptance
 
