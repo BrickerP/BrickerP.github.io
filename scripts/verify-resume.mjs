@@ -48,9 +48,15 @@ function structureCounts(pdf) {
 
 const PDF_HYPHEN = '(?:-|\\\\055)';
 
-function pdfTextPattern(text) {
-  const literal = text.replace(/[\\()]/g, '\\$&');
-  return literal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replaceAll('-', PDF_HYPHEN);
+/** A regular expression for `text` as it appears in a PDF literal string, where `\`, `(`, `)` are backslash-escaped. */
+export function pdfTextPattern(text) {
+  return [...text]
+    .map((character) => {
+      if (character === '-') return PDF_HYPHEN;
+      const pattern = character.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return '\\()'.includes(character) ? `\\\\${pattern}` : pattern;
+    })
+    .join('');
 }
 
 function assertDocumentMetadata(pdf, name, variant) {

@@ -19,6 +19,7 @@ import {
   assertAccessibleResumeStructure,
   assertChineseParity,
   assertOnePageParity,
+  pdfTextPattern,
 } from './verify-resume.mjs';
 
 const LINK_ANNOTATION = /\/Subtype \/Link\b[\s\S]*?\/URI \(((?:\\.|[^\\)])*)\)[\s\S]*?\/Contents \(((?:\\.|[^\\)])*)\)/g;
@@ -121,4 +122,11 @@ test('the Chinese resume keeps every role the one-page resume lists and is never
   assert.throws(() => assertChineseParity(full, onePage, withoutQuant), /period 2026-04~now of src\/content\/resume-1p\.html is missing/);
   const newer = onePage.replace(/(name="dcterms\.modified" content=")[^"]+/, '$12099-01-01');
   assert.throws(() => assertChineseParity(full, newer, chinese), /older than the one-page resume/);
+});
+
+test('metadata patterns match PDF literal strings, including escaped parentheses and hyphens', () => {
+  const pattern = new RegExp(`/Title\\s*\\(${pdfTextPattern('Yupeng Lu - AI (x) & y\\z')}\\)`);
+  assert.match('/Title (Yupeng Lu - AI \\(x\\) & y\\\\z)', pattern);
+  assert.match('/Title (Yupeng Lu \\055 AI \\(x\\) & y\\\\z)', pattern);
+  assert.doesNotMatch('/Title (Yupeng Lu - AI (x) & y\\z)', pattern);
 });
