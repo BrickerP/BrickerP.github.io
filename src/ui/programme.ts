@@ -287,7 +287,7 @@ ${focusMarkup(profile)}
 ${sectionMarkup('about-reels-title', 'h3', 'The reels', '', reelsBody(profile, 'h4', 556))}
 ${sectionMarkup('about-proof-title', 'h3', 'Exhibits', '', proofMarkup(profile))}
 ${sectionMarkup('about-education-title', 'h3', 'Schooling', '', educationMarkup(profile))}
-<p class="about-colophon">Printed ${escapeHtml(profile.dateModified)}<a href="/about/">Full programme</a><a href="/hire/">Work with me</a><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></p>
+<p class="about-colophon">Printed ${escapeHtml(profile.dateModified)}<a href="/">Home page</a><a href="/about/">Full programme</a><a href="/hire/">Work with me</a><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></p>
 </div>
 ${stubMarkup(profile)}
 </div>

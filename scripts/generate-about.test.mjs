@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import {
   SHEET_PATHS,
+  escapeHtml,
   readProgrammeCss,
   readPublicProfile,
   renderAbout,
@@ -22,7 +23,8 @@ async function fixture() {
 test('committed About regions are generated and reject visible-content drift', async () => {
   const [about, profile, css] = await fixture();
   assert.equal(renderAbout(about, profile, css), about);
-  const drifted = about.replace(profile.summary, 'stale summary');
+  const drifted = about.replace(escapeHtml(profile.summary), 'stale summary');
+  assert.notEqual(drifted, about, 'fixture must contain the escaped summary');
   assert.notEqual(renderAbout(drifted, profile, css), drifted);
 });
 
