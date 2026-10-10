@@ -5,7 +5,6 @@ import {
   createArch,
   createArrowSlit,
   createCircularRailing,
-  createCityWall,
   createColumnRingParts,
   createCourtyardWall,
   createDoor,
@@ -101,6 +100,9 @@ export function buildCornerTower(mats: CityMaterials, bracket: BufferGeometry): 
   const half = CORNER_BASTION.half;
   const base = CORNER_BASTION.height;
   batch.add(placedFrustum(half * 2, half * 1.8, half * 2, half * 1.8, base, 0, base / 2, 0), mats.grayBrick);
+  const widthAt = (y: number) => half * 2 - half * 0.2 * (y / base);
+  batch.add(placedBox(half * 2 + 0.34, 0.49, half * 2 + 0.34, 0, 0.245, 0), mats.stone);
+  batch.add(placedBox(widthAt(base * 0.62) + 0.2, 0.22, widthAt(base * 0.62) + 0.2, 0, base * 0.62, 0), mats.stone);
   batch.add(placedBox(half * 1.8 + 0.45, 0.24, half * 1.8 + 0.45, 0, base + 0.02, 0), mats.stone);
   const ring = half * 0.9 + 0.05;
   for (let index = 0; index < 5; index += 1) {
@@ -229,15 +231,6 @@ export function buildArrowTower(mats: CityMaterials, bracket: BufferGeometry): G
     },
   ];
   stackTiers(group, mats, bracket, topY + 0.24, tiers);
-  return group;
-}
-
-export function buildCityWallSegment(mats: CityMaterials, length = 9): Group {
-  const group = new Group();
-  const batch = beginAssembly(group);
-  const options = { length, height: 4.4, depth: 2.6, merlons: 6 };
-  batch.add(createCityWall(options), mats.grayBrick);
-  batch.finish();
   return group;
 }
 

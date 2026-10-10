@@ -9,7 +9,9 @@ import { blocked, claim, resetOccupancy } from './occupancy';
 import { hangFramedPlaque, hangInBay, hangPlaque, hangVerticalSign } from './plaques';
 import { faceRoad, put, scatter, type Stamp } from './stamps';
 import {
+  BUTTRESS,
   createBracketGeometry,
+  createButtress,
   createLantern,
   createSignBracket,
   createStoneBridge,
@@ -96,15 +98,16 @@ interface WallSpec {
 }
 
 /**
- * One continuous city wall that follows the road: battered body, plinth, string course, coping,
- * a low parapet on the road side and crenels on the far side. No segments, so no seams.
+ * One continuous city wall that follows the road: battered body, plinth, string course and coping.
+ * The crenels stand on the face toward the road, as on the outer face of a real wall, with a low
+ * parapet on the far side. Bastions project every few strides and the crenels step around them.
  */
 function wallRun(host: CityHost, spec: WallSpec): void {
   const mats = host.mats;
   const { base, top, height } = spec;
   const roadSide = spec.offset < 0 ? 1 : -1;
-  const lo = roadSide > 0 ? top / 2 - 0.32 : -top / 2;
-  const hi = roadSide > 0 ? top / 2 : -top / 2 + 0.32;
+  const lo = roadSide > 0 ? -top / 2 : top / 2 - 0.32;
+  const hi = roadSide > 0 ? -top / 2 + 0.32 : top / 2;
   const stringY = height * 0.62;
   const stringHalf = (base + (top - base) * 0.62) / 2 + 0.07;
   const frames = sweepFrames(spec.from, spec.to, spec.offset);
@@ -127,17 +130,38 @@ function wallRun(host: CityHost, spec: WallSpec): void {
     host.root.add(mesh);
   }
   const metres = (spec.to - spec.from) * PATH_METRES;
-  const count = Math.max(2, Math.round(metres / 1.25));
-  const crenels: Stamp[] = [];
-  for (let index = 0; index < count; index += 1) {
-    crenels.push({
-      progress: spec.from + ((spec.to - spec.from) * (index + 0.5)) / count,
-      offset: spec.offset - roadSide * (top / 2 - 0.17),
-      y: height + 0.1,
+  const along = (index: number, count: number) => spec.from + ((spec.to - spec.from) * (index + 0.5)) / count;
+
+  const bastions: Stamp[] = [];
+  const bastionCount = Math.floor(metres / BUTTRESS.spacing);
+  for (let index = 0; index < bastionCount; index += 1) {
+    bastions.push({
+      progress: along(index, bastionCount),
+      offset: spec.offset,
+      heading: roadSide > 0 ? Math.PI : 0,
     });
   }
-  scatter(host, placedBox(0.46, 0.56, 0.62, 0, 0.28, 0), mats.stone, crenels, true);
-  claim((spec.from + spec.to) / 2, spec.offset, metres, base + 0.6);
+  const bastion = createButtress({ height, base, top });
+  scatter(host, bastion.body, mats.grayBrick, bastions, true);
+  scatter(host, bastion.trim, mats.stone, bastions, true);
+
+  const count = Math.max(2, Math.round(metres / 1.3));
+  const crenels: Stamp[] = [];
+  for (let index = 0; index < count; index += 1) {
+    const progress = along(index, count);
+    const clear = bastions.every(
+      (stamp) => Math.abs(progress - stamp.progress) * PATH_METRES > BUTTRESS.length / 2 + 0.45,
+    );
+    if (!clear) continue;
+    crenels.push({ progress, offset: spec.offset + roadSide * (top / 2 - 0.2), y: height + 0.1 });
+  }
+  scatter(host, placedBox(0.46, 0.72, 0.62, 0, 0.36, 0), mats.grayBrick, crenels, true);
+  claim(
+    (spec.from + spec.to) / 2,
+    spec.offset + (roadSide * BUTTRESS.reach) / 2,
+    metres,
+    base + 0.6 + BUTTRESS.reach,
+  );
 }
 
 /** A hanging vertical sign on a bracket, at the end of the shopfront nearest the oncoming driver. */

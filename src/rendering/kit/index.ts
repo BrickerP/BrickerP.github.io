@@ -1,26 +1,21 @@
 export { addBracketRing, addBracketRun, createBracketGeometry, bracketOffsets } from './brackets';
 export {
-  addBalusterRun,
-  createBalusterGeometry,
   createCircularRailing,
   createColumnPerimeter,
   createColumnRingParts,
-  createColumnRow,
-  createRailPanel,
   createRailing,
 } from './columns';
 export { mergeParts, placedBeam, placedBox, placedCylinder, placedFrustum, placedLathe, pushOriented } from './geom';
 export { createLampPole } from './lamp';
 export { createPlaqueFrame, plaqueCanopyTop } from './plaque';
 export {
+  BUTTRESS,
   createArch,
-  createCityWall,
+  createButtress,
   createCourtyardWall,
   createEnclosedHall,
   createGatePlatform,
   createGateSurround,
-  createMerlons,
-  createVault,
 } from './wall';
 export { createArrowSlit, createDoor, createWindowOpening } from './openings';
 export { createPodium, createSumeru } from './podium';

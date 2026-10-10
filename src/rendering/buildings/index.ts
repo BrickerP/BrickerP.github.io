@@ -3,7 +3,6 @@ export type { GateTowerOptions } from './gateTower';
 export type { Glaze, PlaqueSeat, TierSpec } from './tiers';
 export {
   buildArrowTower,
-  buildCityWallSegment,
   buildCornerTower,
   buildGlassTower,
   CORNER_BASTION,
