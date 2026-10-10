@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { assertAccessibleResume } from './verify-resume.mjs';
+import { FULL_RESUME, assertAccessibleResume } from './verify-resume.mjs';
 import { readPublicProfile } from './generate-about.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -44,7 +44,7 @@ assert.match(legacyBeijingLoop, /<a\b[^>]*href=["']\/["']/i, 'legacy Beijing loo
 for (const image of ['social-preview.png', 'profile-preview.png']) {
   assertPng(await readFile(path.join(DIST, image)), `dist/${image}`);
 }
-assertAccessibleResume(await readFile(path.join(DIST, 'resume.pdf')), 'dist/resume.pdf');
+assertAccessibleResume(await readFile(path.join(DIST, 'resume.pdf')), 'dist/resume.pdf', FULL_RESUME);
 
 if (HTTP_ORIGIN) {
   const cases = [
@@ -70,7 +70,7 @@ if (HTTP_ORIGIN) {
     assert.match(response.headers.get('content-type') ?? '', definition.type, `${definition.pathname}: wrong content type`);
     const bytes = Buffer.from(await response.arrayBuffer());
     if (definition.png) assertPng(bytes, definition.pathname);
-    if (definition.resume) assertAccessibleResume(bytes, definition.pathname);
+    if (definition.resume) assertAccessibleResume(bytes, definition.pathname, FULL_RESUME);
     if (definition.body) assert.match(bytes.toString('utf8'), definition.body, `${definition.pathname}: response body contract`);
   }
 }

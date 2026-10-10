@@ -1,16 +1,13 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { assertAccessibleResumeStructure } from './verify-resume.mjs';
+import { RESUME_VARIANTS, assertAccessibleResumeStructure } from './verify-resume.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-export const RESUME_SOURCE_PATH = path.join(ROOT, 'src/content/resume.html');
-export const RESUME_OUTPUT_PATH = path.join(ROOT, 'public/resume.pdf');
-const CREATOR = 'brickerp.github.io resume generator (src/content/resume.html)';
 const DEFAULT_CHROME = {
   darwin: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   linux: 'google-chrome',
@@ -27,11 +24,15 @@ function decodeHtml(value) {
     .replaceAll('&amp;', '&');
 }
 
+export function resumePaths(variant) {
+  return { source: path.join(ROOT, variant.source), output: path.join(ROOT, variant.output) };
+}
+
 export function canonicalHref(href) {
   return new URL(href).href;
 }
 
-export function readResumeSource(html) {
+export function readResumeSource(html, sourcePath) {
   const lang = html.match(/<html\s+lang="([^"]+)"/i)?.[1];
   assert.equal(lang, 'en-US', 'resume source: <html lang> must be en-US');
   const title = html.match(/<title>([^<]+)<\/title>/i)?.[1];
@@ -63,6 +64,7 @@ export function readResumeSource(html) {
     keywords: meta('keywords'),
     modified,
     links,
+    creator: `brickerp.github.io resume generator (${sourcePath})`,
   };
 }
 
@@ -172,7 +174,7 @@ function xmpPacket(source, producer) {
     `<dc:language><rdf:Bag><rdf:li>${xmlText(source.lang)}</rdf:li></rdf:Bag></dc:language>`,
     `<pdf:Keywords>${xmlText(source.keywords)}</pdf:Keywords>`,
     `<pdf:Producer>${xmlText(producer)}</pdf:Producer>`,
-    `<xmp:CreatorTool>${xmlText(CREATOR)}</xmp:CreatorTool>`,
+    `<xmp:CreatorTool>${xmlText(source.creator)}</xmp:CreatorTool>`,
     `<xmp:CreateDate>${timestamp}</xmp:CreateDate>`,
     `<xmp:ModifyDate>${timestamp}</xmp:ModifyDate>`,
     `<xmp:MetadataDate>${timestamp}</xmp:MetadataDate>`,
@@ -263,7 +265,7 @@ export function finalizeResumePdf(buffer, source) {
         `/Author ${pdfLiteral(source.author)}`,
         `/Subject ${pdfLiteral(source.subject)}`,
         `/Keywords ${pdfLiteral(source.keywords)}`,
-        `/Creator ${pdfLiteral(CREATOR)}`,
+        `/Creator ${pdfLiteral(source.creator)}`,
         `/Producer ${pdfLiteral(producer)}`,
         `/CreationDate ${date}`,
         `/ModDate ${date}>>`,
@@ -281,7 +283,7 @@ export function finalizeResumePdf(buffer, source) {
   return serializePdf({ header: pdf.header, objects, root: pdf.root, info: pdf.info });
 }
 
-function printWithChrome(chrome, workspace) {
+function printWithChrome(chrome, workspace, sourceFile) {
   const printed = path.join(workspace, 'chrome.pdf');
   const result = spawnSync(
     chrome,
@@ -295,7 +297,7 @@ function printWithChrome(chrome, workspace) {
       '--export-tagged-pdf',
       '--generate-pdf-document-outline',
       `--print-to-pdf=${printed}`,
-      pathToFileURL(RESUME_SOURCE_PATH).href,
+      pathToFileURL(sourceFile).href,
     ],
     { encoding: 'utf8', timeout: 120_000 },
   );
@@ -303,14 +305,16 @@ function printWithChrome(chrome, workspace) {
   return readFile(printed);
 }
 
-export async function generateResume(chrome = process.env.CHROME_PATH ?? DEFAULT_CHROME[process.platform]) {
+export async function generateResume(variant, chrome = process.env.CHROME_PATH ?? DEFAULT_CHROME[process.platform]) {
   assert.ok(chrome, `no default Chrome path for ${process.platform}; set CHROME_PATH`);
-  const source = readResumeSource(await readFile(RESUME_SOURCE_PATH, 'utf8'));
+  const paths = resumePaths(variant);
+  const source = readResumeSource(await readFile(paths.source, 'utf8'), variant.source);
   const workspace = await mkdtemp(path.join(tmpdir(), 'brickerp-resume-'));
   try {
-    const pdf = finalizeResumePdf(await printWithChrome(chrome, workspace), source);
-    assertAccessibleResumeStructure(pdf, 'generated resume');
-    await writeFile(RESUME_OUTPUT_PATH, pdf);
+    const pdf = finalizeResumePdf(await printWithChrome(chrome, workspace, paths.source), source);
+    assertAccessibleResumeStructure(pdf, `generated ${variant.id} resume`, variant);
+    await mkdir(path.dirname(paths.output), { recursive: true });
+    await writeFile(paths.output, pdf);
     return pdf;
   } finally {
     await rm(workspace, { recursive: true, force: true });
@@ -318,8 +322,22 @@ export async function generateResume(chrome = process.env.CHROME_PATH ?? DEFAULT
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const pdf = await generateResume();
-  const sha256 = createHash('sha256').update(pdf).digest('hex');
-  console.log(`Generated public/resume.pdf (${pdf.length} bytes, sha256 ${sha256}).`);
-  console.log('Approve the revision by setting APPROVED_RESUME_SHA256 in scripts/verify-resume.mjs.');
+  const requested = process.argv.slice(2);
+  const variants = requested.length
+    ? requested.map((id) => {
+        const variant = RESUME_VARIANTS.find((candidate) => candidate.id === id);
+        assert.ok(variant, `unknown resume “${id}”; choose from ${RESUME_VARIANTS.map(({ id: known }) => known).join(', ')}`);
+        return variant;
+      })
+    : RESUME_VARIANTS;
+  for (const variant of variants) {
+    const pdf = await generateResume(variant);
+    const sha256 = createHash('sha256').update(pdf).digest('hex');
+    console.log(`Generated ${variant.output} (${pdf.length} bytes, sha256 ${sha256}).`);
+    console.log(
+      sha256 === variant.sha256
+        ? '  Already approved.'
+        : `  Approve it by setting the sha256 of “${variant.id}” in scripts/verify-resume.mjs.`,
+    );
+  }
 }

@@ -1,8 +1,25 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 
-export const APPROVED_RESUME_SHA256 = 'b56d169549ae9c74fe9a403fa65d714afc694a1ebe4302a9f0dfdc5f9ab8406c';
-export const RESUME_PAGE_COUNT = 2;
+/** Every resume this repo prints. Approve a revision by setting its sha256. */
+export const FULL_RESUME = {
+  id: 'full',
+  source: 'src/content/resume.html',
+  output: 'public/resume.pdf',
+  title: 'Yupeng Lu - Backend Engineer - Live Trading Systems & AI Platforms',
+  pages: 2,
+  sha256: 'b56d169549ae9c74fe9a403fa65d714afc694a1ebe4302a9f0dfdc5f9ab8406c',
+};
+export const ONE_PAGE_RESUME = {
+  id: 'one-page',
+  source: 'src/content/resume-1p.html',
+  output: 'applications/resume-1p.pdf',
+  title: 'Yupeng Lu - AI Agent Engineer',
+  pages: 1,
+  sha256: '36f53bbf71cf560a29d90ad0b019f9325f7a08ea554bc15a1a8e27fa43ad89ff',
+};
+export const RESUME_VARIANTS = [FULL_RESUME, ONE_PAGE_RESUME];
+
 const STALE_IDENTITIES = ['yupeng-dev'];
 const ACTIVE_CONTENT = /\/(?:JavaScript|JS|OpenAction|AA|Launch|EmbeddedFile|AcroForm|Encrypt)\b/;
 
@@ -18,13 +35,14 @@ function structureCounts(pdf) {
   return counts;
 }
 
-function assertDocumentMetadata(pdf, name) {
+function titlePattern(title) {
+  const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replaceAll(' - ', ' (?:-|\\\\055) ');
+  return new RegExp(`/Title\\s*\\(${escaped}\\)`);
+}
+
+function assertDocumentMetadata(pdf, name, title) {
   assert.match(pdf, /\/Lang\s*\(en(?:-|\\055)US\)/, `${name}: document language must be en-US`);
-  assert.match(
-    pdf,
-    /\/Title\s*\(Yupeng Lu (?:-|\\055) Backend Engineer (?:-|\\055) Live Trading Systems & AI Platforms\)/,
-    `${name}: accessible document title is missing`,
-  );
+  assert.match(pdf, titlePattern(title), `${name}: accessible document title “${title}” is missing`);
   assert.match(pdf, /\/Author\s*\(Yupeng Lu\)/, `${name}: document author is missing`);
   assert.match(pdf, /\/Metadata\s+\d+\s+0\s+R\b/, `${name}: XMP metadata stream is missing`);
   assert.match(pdf, /\/ViewerPreferences\s*<<[\s\S]*?\/DisplayDocTitle\s+true[\s\S]*?>>/, `${name}: title display preference is missing`);
@@ -68,27 +86,92 @@ function assertEmbeddedFonts(pdf, name) {
   assert.ok(countMatches(pdf, /\/ToUnicode\s+\d+\s+0\s+R\b/g) >= fonts, `${name}: every font needs a Unicode map`);
 }
 
-export function assertAccessibleResumeStructure(buffer, name) {
+export function assertAccessibleResumeStructure(buffer, name, variant) {
   assert.equal(buffer.subarray(0, 5).toString('ascii'), '%PDF-', `${name}: invalid PDF signature`);
   const pdf = buffer.toString('latin1');
   assert.match(pdf, /%%EOF\s*$/, `${name}: missing final PDF end marker`);
   const pages = countMatches(pdf, /\/Type\s*\/Page\b/g);
-  assert.equal(pages, RESUME_PAGE_COUNT, `${name}: expected ${RESUME_PAGE_COUNT} pages`);
+  assert.equal(pages, variant.pages, `${name}: expected ${variant.pages} pages`);
   for (const identity of STALE_IDENTITIES) {
     assert.ok(!pdf.toLowerCase().includes(identity), `${name}: stale identity “${identity}”`);
   }
-  assertDocumentMetadata(pdf, name);
+  assertDocumentMetadata(pdf, name, variant.title);
   assertTaggedStructure(pdf, name, pages);
   assertTaggedLinks(pdf, name, pages);
   assertEmbeddedFonts(pdf, name);
   assert.doesNotMatch(pdf, ACTIVE_CONTENT, `${name}: active, embedded, form, or encrypted content is forbidden`);
 }
 
-export function assertAccessibleResume(buffer, name) {
-  assertAccessibleResumeStructure(buffer, name);
+export function assertAccessibleResume(buffer, name, variant) {
+  assertAccessibleResumeStructure(buffer, name, variant);
   assert.equal(
     createHash('sha256').update(buffer).digest('hex'),
-    APPROVED_RESUME_SHA256,
-    `${name}: unapproved resume revision; run npm run generate:resume and approve its SHA-256`,
+    variant.sha256,
+    `${name}: unapproved resume revision; run npm run generate:resume and approve its SHA-256 in scripts/verify-resume.mjs`,
   );
+}
+
+const ENTITIES = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
+  nbsp: ' ',
+  middot: '·',
+  ndash: '–',
+  mdash: '—',
+  harr: '↔',
+  rarr: '→',
+  times: '×',
+  minus: '−',
+};
+
+function textOf(html) {
+  return html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&([a-z]+);/gi, (match, name) => {
+      assert.ok(name in ENTITIES, `resume source: unknown HTML entity ${match}`);
+      return ENTITIES[name];
+    })
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function resumeFacts(html) {
+  const body = html.slice(html.indexOf('<body'));
+  const all = (pattern) => [...body.matchAll(pattern)].map(([, inner]) => textOf(inner));
+  const normalize = (token) => token.replace(/^[("'[]+|[)"',.;:\]]+$/g, '').toLowerCase();
+  const roleLines = all(/<div class="role-line">([\s\S]*?)<\/div>/g);
+  return {
+    masthead: [...all(/<h1>([\s\S]*?)<\/h1>/g), ...all(/<p class="contact">([\s\S]*?)<\/p>/g)],
+    roleLines,
+    current: roleLines.filter((line) => line.includes('Present')),
+    numbers: new Set(textOf(body).split(' ').map(normalize).filter((token) => /\d/.test(token))),
+    modified: html.match(/<meta\s+name="dcterms\.modified"\s+content="([^"]+)"/)?.[1] ?? '',
+  };
+}
+
+/**
+ * The one-page resume is a hand-curated subset aimed at one kind of role, so its headline and summary may
+ * differ from the full resume. Facts may not: every name, contact line, role line, and number it states
+ * must also be in the full resume, and every current role must be listed, so the two are updated together.
+ */
+export function assertOnePageParity(fullHtml, onePageHtml) {
+  const full = resumeFacts(fullHtml);
+  const one = resumeFacts(onePageHtml);
+  const together = 'update both resumes together';
+  for (const line of one.masthead) {
+    assert.ok(full.masthead.includes(line), `one-page resume: header “${line}” is not in ${FULL_RESUME.source}; ${together}`);
+  }
+  for (const line of one.roleLines) {
+    assert.ok(full.roleLines.includes(line), `one-page resume: role line “${line}” does not match ${FULL_RESUME.source}; ${together}`);
+  }
+  for (const line of full.current) {
+    assert.ok(one.roleLines.includes(line), `one-page resume: current role “${line}” is missing; ${together}`);
+  }
+  for (const number of one.numbers) {
+    assert.ok(full.numbers.has(number), `one-page resume: “${number}” is not in ${FULL_RESUME.source}; ${together}`);
+  }
+  assert.ok(one.modified >= full.modified, `one-page resume: older than the full resume; review ${ONE_PAGE_RESUME.source} and bump its dcterms.modified`);
 }
