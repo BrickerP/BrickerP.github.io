@@ -86,6 +86,8 @@ export function createLowRise(variant: number): LowRise {
           placedBox(1.1, 1.0, 0.06, -2.4, 1.7, -2.33),
           placedBox(1.1, 1.0, 0.06, 0, 1.7, -2.33),
           placedBox(1.1, 1.0, 0.06, 2.4, 1.7, -2.33),
+          placedBox(0.06, 1.0, 1.1, -4.03, 1.7, 0),
+          placedBox(0.06, 1.0, 1.1, 4.03, 1.7, 0),
         ]),
       };
     case 1:
@@ -115,6 +117,12 @@ export function createLowRise(variant: number): LowRise {
           placedBox(1.1, 1.1, 0.06, -2.2, 3.4, -2.73),
           placedBox(1.1, 1.1, 0.06, 0, 3.4, -2.73),
           placedBox(1.1, 1.1, 0.06, 2.2, 3.4, -2.73),
+          ...[1.2, 3.4].flatMap((y) =>
+            [-1.3, 1.3].flatMap((z) => [
+              placedBox(0.06, 1.1, 1.1, -3.63, y, z),
+              placedBox(0.06, 1.1, 1.1, 3.63, y, z),
+            ]),
+          ),
         ]),
       };
     default:
@@ -128,6 +136,10 @@ export function createLowRise(variant: number): LowRise {
           placedBox(7.8, 0.9, 0.06, 0, 1.4, -3.73),
           placedBox(7.8, 0.9, 0.06, 0, 3.0, -3.73),
           placedBox(7.8, 0.9, 0.06, 0, 4.6, -3.73),
+          ...[1.4, 3.0, 4.6].flatMap((y) => [
+            placedBox(0.06, 0.9, 6.4, -4.53, y, 0),
+            placedBox(0.06, 0.9, 6.4, 4.53, y, 0),
+          ]),
         ]),
       };
   }
