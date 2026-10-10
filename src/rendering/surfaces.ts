@@ -37,18 +37,21 @@ float surfaceHash(vec2 cell) {
   return fract(sin(dot(cell, vec2(127.1, 311.7))) * 43758.5453);
 }
 float surfaceBrick(vec2 uv, vec2 brick, float mortar) {
+  vec2 aa = fwidth(uv / brick) * 1.25;
   float row = floor(uv.y / brick.y);
   uv.x += mod(row, 2.0) * brick.x * 0.5;
   vec2 id = floor(uv / brick);
   vec2 cell = fract(uv / brick);
-  vec2 aa = fwidth(uv / brick) * 1.25;
-  float mortarX = smoothstep(mortar / brick.x, mortar / brick.x + aa.x, cell.x)
-    * smoothstep(mortar / brick.x, mortar / brick.x + aa.x, 1.0 - cell.x);
-  float mortarY = smoothstep(mortar / brick.y, mortar / brick.y + aa.y, cell.y)
-    * smoothstep(mortar / brick.y, mortar / brick.y + aa.y, 1.0 - cell.y);
-  float joint = mortarX * mortarY;
+  vec2 gap = mortar / brick;
+  float jointX = smoothstep(gap.x, gap.x + aa.x, cell.x) * smoothstep(gap.x, gap.x + aa.x, 1.0 - cell.x);
+  float jointY = smoothstep(gap.y, gap.y + aa.y, cell.y) * smoothstep(gap.y, gap.y + aa.y, 1.0 - cell.y);
+  // A wall seen along its length smears the vertical joints first; the courses stay readable.
+  float seeX = 1.0 - smoothstep(0.6, 1.1, aa.x);
+  float seeY = 1.0 - smoothstep(0.6, 1.1, aa.y);
   float tone = 0.9 + 0.1 * surfaceHash(id);
-  return mix(0.78, tone, joint);
+  float full = mix(0.78, tone, jointX * jointY);
+  float courses = mix(0.86, 0.98, jointY);
+  return mix(0.94, mix(courses, full, seeX), seeY);
 }
 vec2 surfaceUv(vec3 world, vec3 normal) {
   vec3 n = abs(normal);
@@ -64,7 +67,8 @@ vec3 surfacePattern(vec3 world, vec3 normal, vec2 uv, float kind) {
   else if (kind < 2.5) feature = 0.15;
   else if (kind < 3.5) feature = 0.32;
   else if (kind < 4.5) feature = 0.6;
-  if (kind < 5.5 && length(fwidth(plane)) > feature * 2.2) {
+  bool masonry = kind < 1.5 || (kind > 2.5 && kind < 3.5);
+  if (!masonry && kind < 5.5 && length(fwidth(plane)) > feature * 2.2) {
     return vec3(0.94);
   }
   float value = 1.0;
