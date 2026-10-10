@@ -154,17 +154,25 @@ programme stylesheet without a build step. `npm run generate:programme` reprints
 `public/programme/` and `public/profile-preview.png` from the deployed film (set
 `URL` to print from another build).
 
-`public/resume.pdf` is generated from `src/content/resume.html`. After editing the
-source, run `npm run generate:resume` (it prints with local Google Chrome; set
-`CHROME_PATH` to use another binary), then approve the printed SHA-256 in
-`scripts/verify-resume.mjs`. The generator adds what Chrome's tagged PDF lacks:
-XMP metadata, author and keywords, a list body for every list item, and an
-accessible description for every link taken from its `aria-label`. Static and dist
-verification reject untagged, unlabeled, stale, or unapproved revisions.
+Two resumes are printed from HTML sources by one script: `public/resume.pdf` (two
+pages, linked from the site) from `src/content/resume.html`, and
+`applications/resume-1p.pdf` (one page, for job applications, never deployed) from
+`src/content/resume-1p.html`. After editing a source, run `npm run generate:resume`
+(it prints with local Google Chrome; set `CHROME_PATH` to use another binary;
+`npm run generate:resume -- one-page` prints only that one), then approve each printed
+SHA-256 in the `sha256` field of `scripts/verify-resume.mjs`. The generator adds what
+Chrome's tagged PDF lacks: XMP metadata, author and keywords, a list body for every
+list item, and an accessible description for every link taken from its `aria-label`.
+Static and dist verification reject untagged, unlabeled, stale, wrong-length, or
+unapproved revisions.
 
-The profile data and the resume source are two independent, hand-maintained records
-of the same experience. No check compares them: update `public-profile.json` and
-`resume.html` together when the chronology changes.
+The profile data (`public-profile.json`), the full resume, and the one-page resume are
+three hand-maintained records of the same experience: update them together when the
+chronology changes. Only the two resumes are compared. `verify:static` rejects a
+one-page name, contact line, role line, or number that the full resume does not contain,
+a missing current role, and a one-page resume dated before the full one (review it and
+bump its `dcterms.modified`). Headline and summary may differ, since each resume targets
+a different kind of role. Nothing compares the profile data.
 
 ```bash
 npm run verify       # static/CI contracts, render telemetry, geometry + TypeScript
