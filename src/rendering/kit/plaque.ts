@@ -6,8 +6,8 @@ import { mergeParts, placedBox } from './geom';
  * The painted characters sit on a separate panel in the opening, facing -Z.
  */
 export function createPlaqueFrame(width: number, height: number): BufferGeometry {
-  const border = 0.06;
-  const depth = 0.08;
+  const border = 0.09;
+  const depth = 0.14;
   const inset = Math.min(0.18, Math.max(0.08, width * 0.2));
   const side = Math.max(0.04, height - border * 2);
   return mergeParts([

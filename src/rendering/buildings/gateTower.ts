@@ -176,9 +176,9 @@ export function buildGateTower(
   const lowerRoof = createRoof({
     width: span * 1.04,
     depth: options.pierDepth + 1.1,
-    rise: 1.35,
+    rise: 1.55,
     kind: 'xieshan',
-    wingLift: 0.22,
+    wingLift: 0.34,
   });
   lowerRoof.translate(0, lowerEave, 0);
   batch.add(lowerRoof, mats.tile);

@@ -495,7 +495,7 @@ export class BeijingDriveScene {
     this.place(closureRing, OPEN_CIRCUIT_NODE_PHASE, OPEN_CIRCUIT_CARRIER_OFFSET, 0.03);
     this.root.add(closureRing);
     this.openCircuitNode = new Mesh(
-      this.trackGeometry(new CylinderGeometry(0.42, 0.42, 0.028, 28)),
+      this.trackGeometry(new CylinderGeometry(0.42, 0.42, 0.09, 28)),
       this.standard(PALETTE.signature, { metalness: 0, roughness: 0.72 }),
     );
     this.openCircuitNode.name = OPEN_CIRCUIT_NODE_NAME;
@@ -525,9 +525,11 @@ export class BeijingDriveScene {
       const railFar = this.box(0.22, 0.7, segmentLength, deckMaterial);
       railFar.position.set(Math.cos(angle) * (radius + 1.45), 6.95, Math.sin(angle) * (radius + 1.45));
       railFar.rotation.y = -angle;
-      const pier = this.box(0.85, 6.1, 0.85, deckMaterial);
-      pier.position.set(Math.cos(angle) * radius, 3.05, Math.sin(angle) * radius);
-      bridge.add(deck, railNear, railFar, pier);
+      const pier = this.box(0.7, 5.4, 0.7, deckMaterial);
+      pier.position.set(Math.cos(angle) * radius, 3.35, Math.sin(angle) * radius);
+      const footing = this.box(1.35, 0.7, 1.35, deckMaterial);
+      footing.position.set(Math.cos(angle) * radius, 0.35, Math.sin(angle) * radius);
+      bridge.add(deck, railNear, railFar, pier, footing);
     }
     this.root.add(bridge);
   }
@@ -535,24 +537,32 @@ export class BeijingDriveScene {
   /** Deck and portal that hide the loop seam. The battered pier is assembled with the kit. */
   private buildOverpassDeck(): void {
     const concrete = this.cityMaterials.concrete;
+    // The soffit faces away from the key light, so a lit material reads as a black slab.
+    const deck = this.trackMaterial(new MeshBasicMaterial({ color: '#8E989C', fog: false }));
     for (let index = 0; index < 8; index += 1) {
       const progress = 0.92 + index * 0.009;
-      const slab = this.box(15.6, 0.85, 6.4, concrete);
+      const slab = this.box(18, 0.55, 12, deck);
       slab.castShadow = true;
       slab.receiveShadow = true;
-      this.place(slab, progress, 0, 6.35);
+      this.place(slab, progress, 0, 6.5);
       this.root.add(slab);
+      const fascia = this.box(18.6, 0.28, 12.4, this.cityMaterials.stone);
+      this.place(fascia, progress, 0, 6.15);
+      this.root.add(fascia);
       for (const side of [-1, 1]) {
         const guard = this.box(0.36, 0.85, 6.6, concrete);
-        this.place(guard, progress, side * 7.4, 6.9);
+        this.place(guard, progress, side * 7.4, 6.95);
         this.root.add(guard);
       }
       if (index % 2 === 0) {
         for (const side of [-1, 1]) {
-          const column = this.box(0.7, 6.4, 0.7, concrete);
+          const column = this.box(0.62, 5.5, 0.62, concrete);
           column.castShadow = true;
-          this.place(column, progress, side * 7.8, 3.2);
+          this.place(column, progress, side * 7.8, 3.45);
           this.root.add(column);
+          const footing = this.box(1.25, 0.7, 1.25, concrete);
+          this.place(footing, progress, side * 7.8, 0.35);
+          this.root.add(footing);
         }
       }
     }

@@ -174,7 +174,7 @@ function hangFramedPlaque(
   const material = plaqueMaterial(host, text, 220);
   if (!material) return;
   const panel = new Mesh(
-    host.track(new PlaneGeometry(Math.max(0.2, width - 0.12), Math.max(0.12, height - 0.12))),
+    host.track(new PlaneGeometry(Math.max(0.2, width - 0.18), Math.max(0.12, height - 0.18))),
     material,
   );
   panel.position.set(x, y, z - 0.045);
@@ -200,16 +200,15 @@ function hangInBay(
     if (import.meta.env.DEV) console.assert(false, `${text} has no column bay to hang from`);
     return;
   }
-  hangFramedPlaque(
-    host,
-    parent,
-    text,
-    0,
-    seat.lintelBottom - height / 2 - 0.05,
-    seat.z,
-    Math.min(width, Math.max(0.6, seat.bayWidth - 0.35)),
-    height,
+  const boardWidth = Math.min(width, Math.max(0.6, seat.bayWidth - 0.35));
+  const boardY = seat.lintelBottom - height / 2 - 0.05;
+  const backer = new Mesh(
+    host.track(placedBox(boardWidth + 0.45, height + 0.4, 0.22, 0, 0, 0)),
+    host.mats.palaceBrick,
   );
+  backer.position.set(0, boardY, seat.z + 0.22);
+  parent.add(backer);
+  hangFramedPlaque(host, parent, text, 0, boardY, seat.z, boardWidth, height);
 }
 
 function faceRoad(offset: number): number {
@@ -303,7 +302,7 @@ export function assembleCity(host: CityHost): void {
   const doorBay = createShopBay('door');
   const windowBay = createShopBay('window');
   const screenBay = createShopBay('screen');
-  const wallOptions = { length: 13.5, height: 4.6, depth: 2.7, merlons: 8 };
+  const wallOptions = { length: 16.2, height: 4.6, depth: 2.7, merlons: 9 };
   const wallRun = createCityWall(wallOptions);
   const wallMerlons = createMerlons(wallOptions);
 
@@ -350,13 +349,14 @@ export function assembleCity(host: CityHost): void {
   const runWorld = Math.max(0, runP1 - runP0) * PATH_METRES;
   const segCount = Math.max(1, Math.round(runWorld / 12.4));
   const segWorld = runWorld / segCount;
+  const moatLength = (segWorld / moatScale) * 1.16;
   const moatWall = createCityWall({
-    length: segWorld / moatScale,
+    length: moatLength,
     height: bastionTop / moatScale / 0.94,
     depth: moatDepth,
   });
   const moatMerlons = createMerlons({
-    length: segWorld / moatScale,
+    length: moatLength,
     height: bastionTop / moatScale / 0.94,
     depth: moatDepth,
   });
@@ -419,7 +419,7 @@ export function assembleCity(host: CityHost): void {
   for (let index = 0; index < 4; index += 1) {
     ringRun.push({ progress: 0.41 + index * 0.014, offset: 11.2, heading: Math.PI / 2, scale: 0.86 });
   }
-  for (const stamp of ringRun) claim(stamp.progress, stamp.offset, 13.5 * 0.86, 2.7 * 0.86);
+  for (const stamp of ringRun) claim(stamp.progress, stamp.offset, 16.2 * 0.86, 2.7 * 0.86);
   scatter(host, wallRun, mats.streetBrick, ringRun, true);
   scatter(host, wallMerlons, mats.stone, ringRun, true);
   host.addLamp(0.345, -6.2, false);
@@ -487,7 +487,8 @@ export function assembleCity(host: CityHost): void {
   for (let index = 0; index < 6; index += 1) {
     const cypress = clearOfWalls(0.818 + index * 0.006, -16.4, 'cypress');
     if (!cypress) continue;
-    put(host, createTreeGroup(5.4, 'cypress', mats.bark, mats.leaf), cypress.progress, cypress.offset, 1);
+    const cypressHeight = 4.4 + hash01(index, 17) * 2.1;
+    put(host, createTreeGroup(cypressHeight, 'cypress', mats.bark, mats.leaf), cypress.progress, cypress.offset, 1);
   }
   host.addLamp(0.761, -6.3, true);
   host.addLamp(0.795, 6.3, false);

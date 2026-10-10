@@ -31,7 +31,7 @@ export function createDoor(width: number, height: number): BufferGeometry {
 /** A shallow arrow slit. It sits in the wall face and does not read as a post. */
 export function createArrowSlit(): BufferGeometry {
   return mergeParts([
-    placedBox(0.2, 0.48, 0.06, 0, 0, 0),
-    placedBox(0.08, 0.34, 0.04, 0, 0, -0.02),
+    placedBox(0.28, 0.72, 0.08, 0, 0, 0),
+    placedBox(0.1, 0.52, 0.05, 0, 0, -0.03),
   ]);
 }
