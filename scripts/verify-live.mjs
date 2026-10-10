@@ -135,9 +135,9 @@ function assertPage(html, pathname, expectedCanonical, expectedRobots) {
   assert.equal(normalizedRobots(html), expectedRobots, `${pathname}: wrong robots directive`);
 }
 
-function criticalAssets(rootHtml) {
+function criticalAssets(filmHtml) {
   const references = [];
-  for (const tag of rootHtml.match(/<(?:script|link)\b[^>]*>/gi) ?? []) {
+  for (const tag of filmHtml.match(/<(?:script|link)\b[^>]*>/gi) ?? []) {
     const isScript = tag.toLowerCase().startsWith('<script');
     if (!isScript && !(attribute(tag, 'rel') ?? '').split(/\s+/).includes('stylesheet')) continue;
     const reference = attribute(tag, isScript ? 'src' : 'href');
@@ -163,11 +163,13 @@ async function verifyAttempt() {
   ]);
 
   assertPage(rootHtml, '/', `${EXPECTED_ORIGIN}/`, undefined);
-  assert.equal(meta(rootHtml, 'property', 'og:image'), `${EXPECTED_ORIGIN}/social-preview.png`, '/: wrong social preview');
+  assert.equal(meta(rootHtml, 'property', 'og:image'), `${EXPECTED_ORIGIN}/profile-preview.png`, '/: wrong social preview');
+  assert.match(rootHtml, /I take agents from demo to production/, '/: landing page must carry the positioning line');
   assertPage(aboutHtml, '/about/', `${EXPECTED_ORIGIN}/about/`, undefined);
   assert.equal(meta(aboutHtml, 'property', 'og:image'), `${EXPECTED_ORIGIN}/profile-preview.png`, '/about/: wrong social preview');
-  assertPage(beijingHtml, '/beijing-loop/', `${EXPECTED_ORIGIN}/`, 'noindex,follow');
-  assert.equal(meta(beijingHtml, 'http-equiv', 'refresh'), '0; url=/', '/beijing-loop/: wrong refresh target');
+  assertPage(beijingHtml, '/beijing-loop/', `${EXPECTED_ORIGIN}/beijing-loop/`, undefined);
+  assert.equal(meta(beijingHtml, 'property', 'og:image'), `${EXPECTED_ORIGIN}/social-preview.png`, '/beijing-loop/: wrong social preview');
+  assert.equal(meta(beijingHtml, 'http-equiv', 'refresh'), undefined, '/beijing-loop/: the film must not redirect');
   assertPage(nestedHtml, nestedPath, nestedTarget, 'noindex,follow');
   assert.equal(meta(nestedHtml, 'http-equiv', 'refresh'), `0; url=${nestedTarget}`, `${nestedPath}: wrong refresh target`);
 
@@ -179,8 +181,8 @@ async function verifyAttempt() {
     assert.equal(sha256(bytes), approvedHashes.get(file), `/${file}: deployed bytes do not match the approved artifact`);
   }
 
-  const assets = criticalAssets(rootHtml);
-  assert.ok(assets.some((asset) => asset.endsWith('.js')), '/: no critical JavaScript asset found');
+  const assets = criticalAssets(beijingHtml);
+  assert.ok(assets.some((asset) => asset.endsWith('.js')), '/beijing-loop/: no critical JavaScript asset found');
   await Promise.all(assets.map((asset) => fetchBytes(
     asset,
     asset.endsWith('.css') ? /^text\/css\b/i : /^(?:text|application)\/(?:javascript|ecmascript)\b/i,

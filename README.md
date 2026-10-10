@@ -1,4 +1,11 @@
-# BEIJING / 北京 — ENDLESS SECOND RING
+# brickerp.github.io
+
+Personal site of Yupeng Lu, AI agent & backend engineer. The root `/` is a static
+landing page (positioning, proof, `/hire/`); `/about/` is the printed programme;
+`/work/quant/` holds the technical sheets; `/hire/` sells part-time contract work.
+The film below lives at `/beijing-loop/`.
+
+## BEIJING / 北京 — ENDLESS SECOND RING
 
 A seamless **first-person night drive** through an imagined Beijing. The camera
 travels at driver-eye height through twelve authored passages in Second-Ring
@@ -23,7 +30,8 @@ back at the same frame every forty-eight seconds.
 ```bash
 npm install
 npm run dev
-# http://localhost:5173/
+# http://localhost:5173/              landing page
+# http://localhost:5173/beijing-loop/ the film
 ```
 
 Production build:
@@ -119,7 +127,8 @@ src/
     controls.ts               semantic play, record and fullscreen controls
     recorder.ts               exact-cycle canvas MediaRecorder export
   styles/main.css             cinematic HUD tokens, safe areas and focus states
-index.html                    metadata and accessible artwork description
+index.html                    static landing page (positioning, proof, hire)
+beijing-loop/index.html       film entry: metadata and accessible artwork description
 scripts/                      build and browser/seam verification
 ```
 
@@ -154,25 +163,32 @@ programme stylesheet without a build step. `npm run generate:programme` reprints
 `public/programme/` and `public/profile-preview.png` from the deployed film (set
 `URL` to print from another build).
 
-Two resumes are printed from HTML sources by one script: `public/resume.pdf` (two
-pages, linked from the site) from `src/content/resume.html`, and
-`applications/resume-1p.pdf` (one page, for job applications, never deployed) from
-`src/content/resume-1p.html`. After editing a source, run `npm run generate:resume`
-(it prints with local Google Chrome; set `CHROME_PATH` to use another binary;
-`npm run generate:resume -- one-page` prints only that one), then approve each printed
-SHA-256 in the `sha256` field of `scripts/verify-resume.mjs`. The generator adds what
-Chrome's tagged PDF lacks: XMP metadata, author and keywords, a list body for every
-list item, and an accessible description for every link taken from its `aria-label`.
-Static and dist verification reject untagged, unlabeled, stale, wrong-length, or
-unapproved revisions.
+Three resumes are printed from HTML sources by one script: `public/resume.pdf` (two
+pages, linked from the site) from `src/content/resume.html`, and two for job
+applications that are never deployed: `applications/resume-1p.pdf` (one page, English)
+from `src/content/resume-1p.html` and `applications/resume-zh.pdf` (one A4 page,
+Chinese translation of the one-page resume) from `src/content/resume-zh.html`. After
+editing a source, run `npm run generate:resume` (it prints with local Google Chrome; set
+`CHROME_PATH` to use another binary; `npm run generate:resume -- one-page` or `-- zh`
+prints only that one), then approve each printed SHA-256 in the `sha256` field of
+`scripts/verify-resume.mjs`. The generator adds what Chrome's tagged PDF lacks: XMP
+metadata, author and keywords, a list body for every list item, and an accessible
+description for every link taken from its `aria-label`. PDF metadata and link
+descriptions stay ASCII (the Chinese resume's title is English); the page text is
+Chinese. Static and dist verification reject untagged, unlabeled, stale, wrong-length,
+or unapproved revisions.
 
-The profile data (`public-profile.json`), the full resume, and the one-page resume are
-three hand-maintained records of the same experience: update them together when the
-chronology changes. Only the two resumes are compared. `verify:static` rejects a
-one-page name, contact line, role line, or number that the full resume does not contain,
-a missing current role, and a one-page resume dated before the full one (review it and
-bump its `dcterms.modified`). Headline and summary may differ, since each resume targets
-a different kind of role. Nothing compares the profile data.
+The profile data (`public-profile.json`) and the three resumes are hand-maintained
+records of the same experience: update them together when the chronology changes.
+`verify:static` compares the two application resumes. The one-page resume may not state
+a name, contact line, role line, or number that the full resume does not contain, must
+list every current role, and may not be dated before the full one. The Chinese resume
+translates the one-page resume, so it must have exactly the one-page resume's role
+periods (`2026年7月 – 至今`), links, and body numbers (a phone number may sit in its
+header) and may not be dated before it. It also leaves out the work-authorization line the
+English resumes carry (`verify:static` rejects 永久居民 / 绿卡). When a check fails, review the resume it names
+and bump its `dcterms.modified`. Headline and summary may differ, since each resume
+targets a different kind of role. Nothing compares the profile data.
 
 ```bash
 npm run verify       # static/CI contracts, render telemetry, geometry + TypeScript
@@ -184,8 +200,8 @@ When running the local development server, the repository's browser and seam
 checks can also be used:
 
 ```bash
-PW_CHANNEL=chrome URL=http://127.0.0.1:5173/ npm run verify:browser
-PW_CHANNEL=chrome URL=http://127.0.0.1:5173/ npm run verify:seam
+PW_CHANNEL=chrome URL=http://127.0.0.1:5173/beijing-loop/ npm run verify:browser
+PW_CHANNEL=chrome URL=http://127.0.0.1:5173/beijing-loop/ npm run verify:seam
 ```
 
 The seam check compares the beginning and end of the deterministic cycle. Browser
@@ -198,9 +214,9 @@ view or camera mode. For a local production check:
 
 ```bash
 npm run preview -- --host 127.0.0.1 --port 4173
-URL='http://127.0.0.1:4173/?qa=1' EXPECT_PRODUCTION=1 npm run verify:browser
-URL='http://127.0.0.1:4173/?qa=1' npm run verify:seam
-URL='http://127.0.0.1:4173/?qa=1' npm run verify:performance
+URL='http://127.0.0.1:4173/beijing-loop/?qa=1' EXPECT_PRODUCTION=1 npm run verify:browser
+URL='http://127.0.0.1:4173/beijing-loop/?qa=1' npm run verify:seam
+URL='http://127.0.0.1:4173/beijing-loop/?qa=1' npm run verify:performance
 VERIFY_LAYOUT=1 URL='http://127.0.0.1:4173/' npm run verify:dist
 ```
 
@@ -214,7 +230,8 @@ without `?qa=1` does not install the test hook.
 ## Deploy to GitHub Pages
 
 `.github/workflows/deploy-pages.yml` builds and publishes the production bundle
-to the root user site at <https://brickerp.github.io/>. The workflow uses
+to the root user site at <https://brickerp.github.io/> (landing page at `/`, film at
+`/beijing-loop/`). The workflow uses
 `VITE_BASE=/` so static assets resolve from the GitHub Pages root.
 
 1. In the repository's **Settings → Pages**, select **GitHub Actions** as the

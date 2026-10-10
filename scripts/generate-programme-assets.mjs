@@ -7,7 +7,7 @@ import { chromium } from 'playwright';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(ROOT, 'public');
 const OUT = path.join(PUBLIC, 'programme');
-const FILM_URL = process.env.URL ?? 'https://brickerp.github.io/?qa=1';
+const FILM_URL = process.env.URL ?? 'https://brickerp.github.io/beijing-loop/?qa=1';
 const PREVIEW_ORIGIN = 'https://brickerp.github.io';
 
 const PAPER = [0xec, 0xe5, 0xd8];

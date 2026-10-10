@@ -19,7 +19,7 @@ const OUTPUT = join(
   'performance.json',
 );
 const DEFAULT_ORIGIN = 'http://127.0.0.1:4173';
-const TARGET_URL = process.env.URL || `${DEFAULT_ORIGIN}/?qa=1`;
+const TARGET_URL = process.env.URL || `${DEFAULT_ORIGIN}/beijing-loop/?qa=1`;
 const WARMUP_MS = 4_000;
 const SAMPLE_MS = 48_000;
 const BOUNDARY_WINDOW_MS = 250;

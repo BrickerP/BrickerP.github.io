@@ -14,9 +14,12 @@ import {
   FULL_RESUME,
   ONE_PAGE_RESUME,
   RESUME_VARIANTS,
+  ZH_RESUME,
   assertAccessibleResume,
   assertAccessibleResumeStructure,
+  assertChineseParity,
   assertOnePageParity,
+  pdfTextPattern,
 } from './verify-resume.mjs';
 
 const LINK_ANNOTATION = /\/Subtype \/Link\b[\s\S]*?\/URI \(((?:\\.|[^\\)])*)\)[\s\S]*?\/Contents \(((?:\\.|[^\\)])*)\)/g;
@@ -24,7 +27,7 @@ const LINK_ANNOTATION = /\/Subtype \/Link\b[\s\S]*?\/URI \(((?:\\.|[^\\)])*)\)[\
 async function fixture(variant) {
   const paths = resumePaths(variant);
   const [html, pdf] = await Promise.all([readFile(paths.source, 'utf8'), readFile(paths.output)]);
-  return { source: readResumeSource(html, variant.source), pdf };
+  return { source: readResumeSource(html, variant), pdf };
 }
 
 async function sources() {
@@ -72,7 +75,11 @@ test('structure checks reject stale identities, unlabeled links, and the wrong p
   const unlabeled = Buffer.from(text.replace(/\/Contents \((?:\\.|[^\\)])+\)/, '/Contents 0 0 R'), 'latin1');
   assert.throws(() => assertAccessibleResumeStructure(unlabeled, 'unlabeled', FULL_RESUME), /accessible description/);
   assert.throws(() => assertAccessibleResumeStructure(pdf, 'pages', { ...FULL_RESUME, pages: 1 }), /expected 1 pages/);
-  assert.throws(() => assertAccessibleResumeStructure(pdf, 'title', { ...FULL_RESUME, title: ONE_PAGE_RESUME.title }), /accessible document title/);
+  assert.throws(() => assertAccessibleResumeStructure(pdf, 'title', { ...FULL_RESUME, title: 'Yupeng Lu - Some Other Headline' }), /accessible document title/);
+  assert.throws(() => assertAccessibleResumeStructure(pdf, 'lang', { ...FULL_RESUME, lang: ZH_RESUME.lang }), /document language must be zh-CN/);
+  const chinese = await fixture(ZH_RESUME);
+  assert.throws(() => assertAccessibleResumeStructure(chinese.pdf, 'lang', { ...ZH_RESUME, lang: 'en-US' }), /document language must be en-US/);
+  assert.throws(() => readResumeSource('<html lang="en-US"><head></head></html>', ZH_RESUME), /must be zh-CN/);
 });
 
 test('the one-page resume only repeats headers, roles, and numbers from the full resume', async () => {
@@ -90,4 +97,47 @@ test('the one-page resume keeps every current role and is never older than the f
   assert.throws(() => assertOnePageParity(full, withoutQuant), /current role/);
   const newer = full.replace(/(name="dcterms\.modified" content=")[^"]+/, '$12099-01-01');
   assert.throws(() => assertOnePageParity(newer, onePage), /older than the full resume/);
+});
+
+test('the Chinese resume has exactly the one-page resume\'s role periods, links, and numbers', async () => {
+  const [full, onePage, chinese] = await Promise.all(
+    [FULL_RESUME, ONE_PAGE_RESUME, ZH_RESUME].map((variant) => readFile(resumePaths(variant).source, 'utf8')),
+  );
+  assertChineseParity(full, onePage, chinese);
+  assert.throws(() => assertChineseParity(full, onePage, chinese.replace('600+', '700+')), /“700” is not in src\/content\/resume-1p\.html/);
+  assert.throws(() => assertChineseParity(full, onePage.replace('600+', '700+'), chinese), /“600” is not in src\/content\/resume-1p\.html/);
+  assert.throws(() => assertChineseParity(full, onePage, chinese.replace('3 个月内合并 600+ 次变更，覆盖 19 个代码库', '近期合并多次变更')), /of src\/content\/resume-1p\.html is missing/);
+  assert.throws(() => assertChineseParity(full, onePage, chinese.replace('2026年7月 – 至今', '2026年8月 – 至今')), /period 2026-08~now is not in/);
+  assert.throws(() => assertChineseParity(full, onePage, chinese.replace('https://medo.dev/', 'https://example.com/')), /link https:\/\/example\.com\/ is not in/);
+  assert.throws(() => assertChineseParity(full, onePage.replace('https://medo.dev/', 'https://example.com/'), chinese), /link https:\/\/medo\.dev\/ is not in src\/content\/resume-1p\.html/);
+  assertChineseParity(full, onePage, chinese.replace('<p class="headline">', '<p class="contact"><a href="tel:+10000000000">+1 000 000 0000</a></p><p class="headline">'));
+});
+
+test('the Chinese resume keeps every role the one-page resume lists and is never older than it', async () => {
+  const [full, onePage, chinese] = await Promise.all(
+    [FULL_RESUME, ONE_PAGE_RESUME, ZH_RESUME].map((variant) => readFile(resumePaths(variant).source, 'utf8')),
+  );
+  const withoutQuant = chinese.replace(/<article class="entry">(?:(?!<article)[\s\S])*?量化交易系统创业项目[\s\S]*?<\/article>/, '');
+  assert.notEqual(withoutQuant, chinese, 'fixture must remove the Quant entry');
+  assert.throws(() => assertChineseParity(full, onePage, withoutQuant), /period 2026-04~now of src\/content\/resume-1p\.html is missing/);
+  const newer = onePage.replace(/(name="dcterms\.modified" content=")[^"]+/, '$12099-01-01');
+  assert.throws(() => assertChineseParity(full, newer, chinese), /older than the one-page resume/);
+});
+
+test('metadata patterns match PDF literal strings, including escaped parentheses and hyphens', () => {
+  const pattern = new RegExp(`/Title\\s*\\(${pdfTextPattern('Yupeng Lu - AI (x) & y\\z')}\\)`);
+  assert.match('/Title (Yupeng Lu - AI \\(x\\) & y\\\\z)', pattern);
+  assert.match('/Title (Yupeng Lu \\055 AI \\(x\\) & y\\\\z)', pattern);
+  assert.doesNotMatch('/Title (Yupeng Lu - AI (x) & y\\z)', pattern);
+});
+
+test('the Chinese resume leaves out work authorization', async () => {
+  const [full, onePage, chinese] = await Promise.all(
+    [FULL_RESUME, ONE_PAGE_RESUME, ZH_RESUME].map((variant) => readFile(resumePaths(variant).source, 'utf8')),
+  );
+  assert.doesNotMatch(chinese, /永久居民|绿卡|Permanent Resident/i);
+  const withLine = chinese.replace('<p class="headline">', '<p class="contact">美国永久居民<span class="sep">·</span>无需工作签证担保</p><p class="headline">');
+  assert.throws(() => assertChineseParity(full, onePage, withLine), /must not mention work authorization/);
+  const withEnglish = chinese.replace('<p class="headline">', '<p class="contact">US Permanent Resident</p><p class="headline">');
+  assert.throws(() => assertChineseParity(full, onePage, withEnglish), /must not mention work authorization/);
 });

@@ -32,9 +32,9 @@ export function canonicalHref(href) {
   return new URL(href).href;
 }
 
-export function readResumeSource(html, sourcePath) {
+export function readResumeSource(html, variant) {
   const lang = html.match(/<html\s+lang="([^"]+)"/i)?.[1];
-  assert.equal(lang, 'en-US', 'resume source: <html lang> must be en-US');
+  assert.equal(lang, variant.lang, `resume source: <html lang> must be ${variant.lang}`);
   const title = html.match(/<title>([^<]+)<\/title>/i)?.[1];
   assert.ok(title, 'resume source: missing <title>');
   const meta = (name) => {
@@ -64,7 +64,7 @@ export function readResumeSource(html, sourcePath) {
     keywords: meta('keywords'),
     modified,
     links,
-    creator: `brickerp.github.io resume generator (${sourcePath})`,
+    creator: `brickerp.github.io resume generator (${variant.source})`,
   };
 }
 
@@ -308,7 +308,7 @@ function printWithChrome(chrome, workspace, sourceFile) {
 export async function generateResume(variant, chrome = process.env.CHROME_PATH ?? DEFAULT_CHROME[process.platform]) {
   assert.ok(chrome, `no default Chrome path for ${process.platform}; set CHROME_PATH`);
   const paths = resumePaths(variant);
-  const source = readResumeSource(await readFile(paths.source, 'utf8'), variant.source);
+  const source = readResumeSource(await readFile(paths.source, 'utf8'), variant);
   const workspace = await mkdtemp(path.join(tmpdir(), 'brickerp-resume-'));
   try {
     const pdf = finalizeResumePdf(await printWithChrome(chrome, workspace, paths.source), source);
