@@ -17,10 +17,10 @@ const BUDGET = {
   javascript: {
     // Shadows, bloom, and the wet road. Measured with postprocessing around 166491 gzip.
     originMainGzipBaselineBytes: 166_491,
-    // 15% after the tier stack, continuous walls, skyline and street fabric. CI measured 189086 gzip.
+    // 15% after the tier stack, continuous walls, skyline and street fabric. CI measured 189975 gzip.
     maximumGrowthRatio: 0.15,
     absoluteGzipMaximumBytes: 195_000,
-    // CI measured 698073 raw for that same build.
+    // CI measured 700041 raw for that same build.
     rawMaximumBytes: 710_000,
   },
   // Programme redesign (2026-10) shares one stylesheet across the modal and /about/.
