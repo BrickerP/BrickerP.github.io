@@ -117,13 +117,35 @@ try {
   assert.ok(palaceDepth <= 5.43, `tiananmen depth ${palaceDepth} exceeds the set-back half-width`);
   assert.ok(palaceBox.max.y > 6, 'tiananmen tower is missing its hall');
 
-  const wall = kit.createCityWall({ length: 8, height: 4, depth: 2.4 });
-  const wallNormal = wall.getAttribute('normal');
-  let outward = 0;
-  for (let index = 0; index < wallNormal.count; index += 1) {
-    outward += Math.abs(wallNormal.getY(index)) + Math.abs(wallNormal.getX(index)) + Math.abs(wallNormal.getZ(index));
+  const buttress = kit.createButtress({ height: 4.2, base: 2.5, top: 2.15 });
+  const reachLimit = 2.5 / 2 + kit.BUTTRESS.reach + 0.2;
+  for (const [label, geometry] of Object.entries(buttress)) {
+    const box = new Box3().setFromBufferAttribute(geometry.getAttribute('position'));
+    assert.ok([box.min, box.max].every((corner) => [corner.x, corner.y, corner.z].every(Number.isFinite)), `buttress ${label} is not finite`);
+    assert.ok(box.max.x <= reachLimit, `buttress ${label} reaches ${box.max.x}, past ${reachLimit}`);
+    assert.ok(box.min.x >= -0.6, `buttress ${label} backs out of the wall at ${box.min.x}`);
+    assert.ok(box.max.y > 4.2, `buttress ${label} stops below the wall top`);
   }
-  assert.ok(outward > wallNormal.count * 0.5, 'battered wall normals collapsed');
+
+  // A tunnel cut as a hole that touches the outline leaves an upward face on the ground across the road.
+  for (const [label, geometry] of [
+    ['platform', kit.createGatePlatform(16.8, 6.35, 4.4, 2.2, 2.5, 2.2)],
+    ['surround', kit.createGateSurround(2.2, 2.5, 2.2)],
+  ]) {
+    const position = geometry.getAttribute('position');
+    const index = geometry.getIndex();
+    const edge1 = new Vector3();
+    const edge2 = new Vector3();
+    const corners = [new Vector3(), new Vector3(), new Vector3()];
+    for (let cursor = 0; cursor < index.count; cursor += 3) {
+      corners.forEach((corner, slot) => corner.fromBufferAttribute(position, index.getX(cursor + slot)));
+      edge1.subVectors(corners[1], corners[0]);
+      edge2.subVectors(corners[2], corners[0]);
+      const normal = edge1.cross(edge2).normalize();
+      const grounded = corners.every((corner) => corner.y < 0.01);
+      assert.ok(!(grounded && normal.y > 0.5), `gate ${label} has a face on the ground facing up`);
+    }
+  }
   console.log('kit check ok');
 } finally {
   rmSync(TEMP, { recursive: true, force: true });

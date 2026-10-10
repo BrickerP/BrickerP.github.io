@@ -150,6 +150,40 @@ export function placedFrustum(
   return geometry;
 }
 
+/** Give a non-indexed geometry a trivial index so it can merge with box and cylinder parts. */
+export function indexed(geometry: BufferGeometry): BufferGeometry {
+  if (!geometry.getIndex()) {
+    const count = geometry.getAttribute('position').count;
+    geometry.setIndex(Array.from({ length: count }, (_, index) => index));
+  }
+  return geometry;
+}
+
+/** Push triangle abc so that its face normal agrees with the `toward` direction. */
+export function pushOriented(
+  positions: number[],
+  indices: number[],
+  a: number,
+  b: number,
+  c: number,
+  toward: [number, number, number],
+): void {
+  const ax = positions[a * 3];
+  const ay = positions[a * 3 + 1];
+  const az = positions[a * 3 + 2];
+  const ux = positions[b * 3] - ax;
+  const uy = positions[b * 3 + 1] - ay;
+  const uz = positions[b * 3 + 2] - az;
+  const vx = positions[c * 3] - ax;
+  const vy = positions[c * 3 + 1] - ay;
+  const vz = positions[c * 3 + 2] - az;
+  const nx = uy * vz - uz * vy;
+  const ny = uz * vx - ux * vz;
+  const nz = ux * vy - uy * vx;
+  if (nx * toward[0] + ny * toward[1] + nz * toward[2] >= 0) indices.push(a, b, c);
+  else indices.push(a, c, b);
+}
+
 /** Merge parts and dispose them. One draw for a constructed assembly. */
 export function mergeParts(parts: BufferGeometry[]): BufferGeometry {
   const live = parts.filter((part) => part !== undefined);

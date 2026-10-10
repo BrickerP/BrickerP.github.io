@@ -37,18 +37,21 @@ float surfaceHash(vec2 cell) {
   return fract(sin(dot(cell, vec2(127.1, 311.7))) * 43758.5453);
 }
 float surfaceBrick(vec2 uv, vec2 brick, float mortar) {
+  vec2 aa = fwidth(uv / brick) * 1.25;
   float row = floor(uv.y / brick.y);
   uv.x += mod(row, 2.0) * brick.x * 0.5;
   vec2 id = floor(uv / brick);
   vec2 cell = fract(uv / brick);
-  vec2 aa = fwidth(uv / brick) * 1.25;
-  float mortarX = smoothstep(mortar / brick.x, mortar / brick.x + aa.x, cell.x)
-    * smoothstep(mortar / brick.x, mortar / brick.x + aa.x, 1.0 - cell.x);
-  float mortarY = smoothstep(mortar / brick.y, mortar / brick.y + aa.y, cell.y)
-    * smoothstep(mortar / brick.y, mortar / brick.y + aa.y, 1.0 - cell.y);
-  float joint = mortarX * mortarY;
+  vec2 gap = mortar / brick;
+  float jointX = smoothstep(gap.x, gap.x + aa.x, cell.x) * smoothstep(gap.x, gap.x + aa.x, 1.0 - cell.x);
+  float jointY = smoothstep(gap.y, gap.y + aa.y, cell.y) * smoothstep(gap.y, gap.y + aa.y, 1.0 - cell.y);
+  // A wall seen along its length smears the vertical joints first; the courses stay readable.
+  float seeX = 1.0 - smoothstep(0.6, 1.1, aa.x);
+  float seeY = 1.0 - smoothstep(0.6, 1.1, aa.y);
   float tone = 0.9 + 0.1 * surfaceHash(id);
-  return mix(0.78, tone, joint);
+  float full = mix(0.78, tone, jointX * jointY);
+  float courses = mix(0.86, 0.98, jointY);
+  return mix(0.94, mix(courses, full, seeX), seeY);
 }
 vec2 surfaceUv(vec3 world, vec3 normal) {
   vec3 n = abs(normal);
@@ -64,7 +67,8 @@ vec3 surfacePattern(vec3 world, vec3 normal, vec2 uv, float kind) {
   else if (kind < 2.5) feature = 0.15;
   else if (kind < 3.5) feature = 0.32;
   else if (kind < 4.5) feature = 0.6;
-  if (kind < 5.5 && length(fwidth(plane)) > feature * 2.2) {
+  bool masonry = kind < 1.5 || (kind > 2.5 && kind < 3.5);
+  if (!masonry && kind < 5.5 && length(fwidth(plane)) > feature * 2.2) {
     return vec3(0.94);
   }
   float value = 1.0;
@@ -74,7 +78,7 @@ vec3 surfacePattern(vec3 world, vec3 normal, vec2 uv, float kind) {
     float row = plane.y / 0.15;
     float ridge = abs(fract(row) - 0.72);
     float barrel = 0.5 + 0.5 * sin(plane.x / 0.14 * 6.28318);
-    value = mix(0.86, 1.0, smoothstep(0.0, 0.22, ridge)) * (0.92 + 0.08 * barrel);
+    value = mix(0.78, 1.0, smoothstep(0.0, 0.22, ridge)) * (0.86 + 0.14 * barrel);
   } else if (kind < 3.5) {
     value = mix(0.9, surfaceBrick(plane, vec2(0.55, 0.32), 0.016), 0.7);
   } else if (kind < 4.5) {
@@ -166,6 +170,14 @@ export function bindSurface(material: Material, kind: SurfaceKind): void {
          roughnessFactor = clamp(roughnessFactor * surfaceRoughMul, 0.04, 1.0);`,
       );
     }
+    // Street lamps wash the foot of a wall; the top falls into the dark.
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <emissivemap_fragment>',
+      `#include <emissivemap_fragment>
+       if (surfaceKind < 1.5 || (surfaceKind > 2.5 && surfaceKind < 3.5)) {
+         totalEmissiveRadiance *= 1.0 + 1.5 * exp(-max(vSurfaceWorld.y, 0.0) * 0.3);
+       }`,
+    );
   };
   typed.customProgramCacheKey = () => `surface-${kind}`;
 }
@@ -227,8 +239,17 @@ export function bindWetSurface(
   material.customProgramCacheKey = () => `wet-${surface}`;
 }
 
-/** Pane grid in world metres so a wide shopfront does not stretch into a light strip. */
-export function bindWindowLattice(material: MeshStandardMaterial): void {
+/**
+ * Pane grid in world metres so a wide shopfront does not stretch into a light strip.
+ * Variant 0 is a square grid, 1 a diamond lattice, 2 vertical slats.
+ */
+export function bindWindowLattice(material: MeshStandardMaterial, variant = 0): void {
+  const remap =
+    variant === 1
+      ? 'paneUv = vec2(paneUv.x + paneUv.y, paneUv.x - paneUv.y) * 0.62;'
+      : variant === 2
+        ? 'paneUv = vec2(paneUv.x * 3.2, paneUv.y * 0.55);'
+        : '';
   material.onBeforeCompile = (shader) => {
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vWindowWorld;')
@@ -253,6 +274,7 @@ export function bindWindowLattice(material: MeshStandardMaterial): void {
         vec2 paneUv = face.x > face.z ? vWindowWorld.zy : vWindowWorld.xy;
         if (face.y > face.x && face.y > face.z) paneUv = vWindowWorld.xz;
         paneUv *= vec2(2.6, 3.4);
+        ${remap}
         vec2 cell = fract(paneUv);
         vec2 paneId = floor(paneUv);
         float mortar = step(0.18, cell.x) * step(0.18, cell.y);
@@ -264,5 +286,5 @@ export function bindWindowLattice(material: MeshStandardMaterial): void {
         `,
       );
   };
-  material.customProgramCacheKey = () => 'window-lattice';
+  material.customProgramCacheKey = () => `window-lattice-${variant}`;
 }

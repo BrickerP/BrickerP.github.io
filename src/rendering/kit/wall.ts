@@ -1,21 +1,113 @@
-import { BufferGeometry, Float32BufferAttribute } from 'three';
-import { mergeParts, placedBox, placedCylinder, placedFrustum } from './geom';
+import { BufferGeometry, ExtrudeGeometry, Float32BufferAttribute, Shape } from 'three';
+import { indexed, mergeParts, placedBox, placedFrustum } from './geom';
 
-export interface CityWallOptions {
-  length: number;
-  height: number;
-  depth: number;
-  merlons?: number;
+/**
+ * A solid gate platform with a real tunnel. The opening is a rectangle that turns into a
+ * half-ellipse of height `vertical` above `spring`. Faces run along X; depth runs along Z.
+ * One outline with the tunnel cut into its bottom edge: a hole that touches the outline leaves a
+ * zero-height strip across the carriageway that fights the road for the same pixels.
+ */
+export function createGatePlatform(
+  span: number,
+  height: number,
+  depth: number,
+  openingHalf: number,
+  spring: number,
+  vertical: number,
+): BufferGeometry {
+  const shape = new Shape();
+  shape.moveTo(-span / 2, 0);
+  shape.lineTo(-openingHalf, 0);
+  shape.lineTo(-openingHalf, spring);
+  shape.absellipse(0, spring, openingHalf, vertical, Math.PI, 0, true, 0);
+  shape.lineTo(openingHalf, 0);
+  shape.lineTo(span / 2, 0);
+  shape.lineTo(span / 2, height);
+  shape.lineTo(-span / 2, height);
+  shape.lineTo(-span / 2, 0);
+  const geometry = new ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 32 });
+  geometry.translate(0, 0, -depth / 2);
+  return indexed(geometry);
 }
 
-/** A solid battered wall. The face runs from the ground to the parapet bed. */
-export function createCityWall(options: CityWallOptions): BufferGeometry {
-  const { length, height, depth } = options;
-  const body = height * 0.94;
-  return mergeParts([
-    placedFrustum(length, length * 0.985, depth, depth * 0.9, body, 0, body / 2, 0),
-    placedBox(length * 0.99, 0.14, depth * 0.62, 0, body * 0.58, 0),
-  ]);
+/** A stone frame around a tunnel mouth. Place one flush against each face of the platform. */
+export function createGateSurround(
+  openingHalf: number,
+  spring: number,
+  vertical: number,
+  border = 0.4,
+  depth = 0.26,
+): BufferGeometry {
+  const outer = openingHalf + border;
+  const shape = new Shape();
+  shape.moveTo(-outer, 0);
+  shape.lineTo(-outer, spring);
+  shape.absellipse(0, spring, outer, vertical + border, Math.PI, 0, true, 0);
+  shape.lineTo(outer, 0);
+  shape.lineTo(openingHalf, 0);
+  shape.lineTo(openingHalf, spring);
+  shape.absellipse(0, spring, openingHalf, vertical, 0, Math.PI, false, 0);
+  shape.lineTo(-openingHalf, 0);
+  shape.lineTo(-outer, 0);
+  const geometry = new ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 32 });
+  geometry.translate(0, 0, -depth / 2);
+  return indexed(geometry);
+}
+
+/** Spacing and size of a wall bastion, shared by the generator and the placer. */
+export const BUTTRESS = { reach: 1.5, length: 3.8, spacing: 16 } as const;
+
+export interface ButtressOptions {
+  /** Wall height at the face the bastion stands against. */
+  height: number;
+  /** Wall width at the foot and at the coping, so the bastion batters like the wall. */
+  base: number;
+  top: number;
+}
+
+/**
+ * A projecting bastion (马面) for a wall face. It reaches toward +X, runs along Z, and its back is
+ * buried in the wall. The brick body carries the crenels; plinth, string course and cap are stone.
+ */
+export function createButtress(options: ButtressOptions): { body: BufferGeometry; trim: BufferGeometry } {
+  const { height, base, top } = options;
+  const { reach, length } = BUTTRESS;
+  const batter = base - top;
+  const buried = 0.4;
+  const frontBase = base / 2 + reach;
+  const centre = (frontBase - buried) / 2;
+  const widthBase = frontBase + buried;
+  const widthTop = widthBase - batter;
+  const lengthTop = length - batter;
+  const frontTop = centre + widthTop / 2;
+  const capTop = height + 0.1;
+  const crenelY = capTop + 0.36;
+
+  const body: BufferGeometry[] = [placedFrustum(widthBase, widthTop, length, lengthTop, height, centre, height / 2, 0)];
+  const rows = Math.max(3, Math.round(lengthTop / 1.05));
+  for (let index = 0; index < rows; index += 1) {
+    const z = -lengthTop / 2 + 0.3 + (index * (lengthTop - 0.6)) / (rows - 1);
+    body.push(placedBox(0.46, 0.72, 0.6, frontTop, crenelY, z));
+  }
+  for (const side of [-1, 1]) {
+    for (const step of [1, 2]) {
+      body.push(placedBox(0.6, 0.72, 0.46, frontTop - 1.05 * step, crenelY, side * (lengthTop / 2 - 0.11)));
+    }
+  }
+
+  const bandY = height * 0.62;
+  const widthBand = widthBase - batter * 0.62;
+  const lengthBand = length - batter * 0.62;
+  const frontBand = centre + widthBand / 2;
+  const trim: BufferGeometry[] = [
+    placedBox(widthBase + 0.2, 0.34, length + 0.2, centre, 0.17, 0),
+    placedBox(0.12, 0.16, lengthBand + 0.24, frontBand + 0.04, bandY, 0),
+    placedBox(widthTop + 0.16, 0.14, lengthTop + 0.16, centre, height + 0.03, 0),
+  ];
+  for (const side of [-1, 1]) {
+    trim.push(placedBox(widthBand, 0.16, 0.12, centre, bandY, side * (lengthBand / 2 + 0.04)));
+  }
+  return { body: mergeParts(body), trim: mergeParts(trim) };
 }
 
 export interface HallOpening {
@@ -84,20 +176,6 @@ export function createCourtyardWall(length: number, height = 1.45): BufferGeomet
   ]);
 }
 
-export function createMerlons(options: CityWallOptions): BufferGeometry {
-  const merlons = options.merlons ?? Math.max(4, Math.round(options.length / 1.3));
-  const parts: BufferGeometry[] = [];
-  const bed = options.height * 0.94;
-  const merlonHeight = 0.58;
-  for (let index = 0; index < merlons; index += 1) {
-    const x = -options.length / 2 + (options.length / merlons) * (index + 0.5);
-    parts.push(
-      placedBox(0.72, merlonHeight, options.depth * 0.46, x, bed + merlonHeight / 2 - 0.1, 0),
-    );
-  }
-  return mergeParts(parts);
-}
-
 /**
  * An open semicircular vault, springing on the X axis and running through Z.
  * Ribs stay inside the ring thickness so the carriageway is not pinched.
@@ -142,9 +220,4 @@ export function createArch(radius: number, depth: number, thickness = 0.28): Buf
   ring.setIndex(indices);
   ring.computeVertexNormals();
   return ring;
-}
-
-/** Dark vault so a gate opening has depth instead of a flat gap. */
-export function createVault(radius: number, depth: number): BufferGeometry {
-  return placedCylinder(radius * 0.92, radius * 0.92, depth, 0, radius * 0.15, 0, 12, Math.PI / 2);
 }
