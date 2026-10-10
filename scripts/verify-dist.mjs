@@ -20,6 +20,35 @@ function assertPng(buffer, name) {
   assert.equal(buffer.readUInt32BE(20), 630, `${name}: height must be 630px`);
 }
 
+const POSITIONING = 'AI agent &amp; backend engineer — I take agents from demo to production: MCP tools, guardrails, evals, billing, real-time systems.';
+
+/** Visible text of an HTML document: tags are removed until none remain, then whitespace collapses. */
+function visibleText(html) {
+  let text = html;
+  let previous;
+  do {
+    previous = text;
+    text = text.replace(/<[^>]*>/g, '');
+  } while (text !== previous);
+  return text.replace(/\s+/g, ' ');
+}
+
+const home = await read('index.html');
+assert.match(home, /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/brickerp\.github\.io\/["']/i, 'dist landing canonical');
+assert.ok(visibleText(home).includes(POSITIONING), 'dist landing must carry the one-line positioning');
+assert.match(home, /"@type"\s*:\s*"WebSite"/, 'dist landing WebSite JSON-LD');
+assert.doesNotMatch(home, /<script\b[^>]*src=/i, 'dist landing must stay static');
+assert.match(home, /<a\b[^>]*href=["']\/beijing-loop\/["']/i, 'dist landing must keep the film reachable');
+
+const film = await read('beijing-loop/index.html');
+assert.match(film, /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/brickerp\.github\.io\/beijing-loop\/["']/i, 'dist film canonical');
+assert.match(film, /"@type"\s*:\s*"CreativeWork"/, 'dist film CreativeWork JSON-LD');
+assert.match(film, /<script\b[^>]*type=["']module["'][^>]*src=["'](?:\.\.\/|\/)assets\/[^"']+\.js["']/i, 'dist film must load the built runtime bundle');
+
+const hire = await read('hire/index.html');
+assert.match(hire, /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/brickerp\.github\.io\/hire\/["']/i, 'dist hire canonical');
+assert.ok(visibleText(hire).includes(POSITIONING), 'dist hire must carry the one-line positioning');
+
 const about = await read('about/index.html');
 assert.match(about, /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/brickerp\.github\.io\/about\/["']/i, 'dist about canonical');
 assert.match(about, /(?:property=["']og:image["'][^>]*content|content)=["']https:\/\/brickerp\.github\.io\/profile-preview\.png["']/i, 'dist about profile image');
@@ -35,11 +64,8 @@ assert.match(redirect, /name=["']robots["'][^>]*content=["']noindex,follow["']/i
 assert.match(redirect, /rel=["']canonical["'][^>]*href=["']https:\/\/brickerp\.github\.io\/poe2-build-lab\/guides\/classes-explained\.html["']/i, 'nested redirect canonical');
 assert.match(redirect, /http-equiv=["']refresh["'][^>]*content=["']0; url=https:\/\/brickerp\.github\.io\/poe2-build-lab\/guides\/classes-explained\.html["']/i, 'nested redirect refresh');
 
-const legacyBeijingLoop = await read('beijing-loop/index.html');
-assert.match(legacyBeijingLoop, /name=["']robots["'][^>]*content=["']noindex, follow["']/i, 'legacy Beijing loop robots');
-assert.match(legacyBeijingLoop, /rel=["']canonical["'][^>]*href=["']https:\/\/brickerp\.github\.io\/["']/i, 'legacy Beijing loop canonical');
-assert.match(legacyBeijingLoop, /http-equiv=["']refresh["'][^>]*content=["']0; url=\/["']/i, 'legacy Beijing loop refresh');
-assert.match(legacyBeijingLoop, /<a\b[^>]*href=["']\/["']/i, 'legacy Beijing loop destination link');
+assert.doesNotMatch(film, /name=["']robots["']/i, 'film page must be indexable, not a redirect stub');
+assert.doesNotMatch(film, /http-equiv=["']refresh["']/i, 'film page must not redirect');
 
 for (const image of ['social-preview.png', 'profile-preview.png']) {
   assertPng(await readFile(path.join(DIST, image)), `dist/${image}`);
@@ -48,12 +74,14 @@ assertAccessibleResume(await readFile(path.join(DIST, 'resume.pdf')), 'dist/resu
 
 if (HTTP_ORIGIN) {
   const cases = [
+    { pathname: '/', type: /^text\/html\b/i, body: /"WebSite"[\s\S]*I take agents from demo to production/ },
+    { pathname: '/hire/', type: /^text\/html\b/i, body: /I take agents from demo to production[\s\S]*overlaps my employer/ },
     { pathname: '/about/', type: /^text\/html\b/i, body: /profile-preview\.png/ },
     { pathname: '/work/quant/', type: /^text\/html\b/i, body: /"TechArticle"[\s\S]*Pending re-measure/ },
     {
       pathname: '/beijing-loop/',
       type: /^text\/html\b/i,
-      body: /noindex, follow[\s\S]*https:\/\/brickerp\.github\.io\//,
+      body: /"CreativeWork"[\s\S]*https:\/\/brickerp\.github\.io\/beijing-loop\//,
     },
     {
       pathname: '/poe2/guides/classes-explained.html',
@@ -112,4 +140,4 @@ if (HTTP_ORIGIN && process.env.VERIFY_LAYOUT === '1') {
   }
 }
 
-console.log(`Dist integrity verified${HTTP_ORIGIN ? ` over ${HTTP_ORIGIN}` : ' on disk'}: profile, redirects, previews, resume${process.env.VERIFY_LAYOUT === '1' ? ', and mobile proof targets' : ''}.`);
+console.log(`Dist integrity verified${HTTP_ORIGIN ? ` over ${HTTP_ORIGIN}` : ' on disk'}: landing, film, hire, profile, redirects, previews, resume${process.env.VERIFY_LAYOUT === '1' ? ', and mobile proof targets' : ''}.`);

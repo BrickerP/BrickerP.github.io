@@ -1,4 +1,11 @@
-# BEIJING / 北京 — ENDLESS SECOND RING
+# brickerp.github.io
+
+Personal site of Yupeng Lu, AI agent & backend engineer. The root `/` is a static
+landing page (positioning, proof, `/hire/`); `/about/` is the printed programme;
+`/work/quant/` holds the technical sheets; `/hire/` sells part-time contract work.
+The film below lives at `/beijing-loop/`.
+
+## BEIJING / 北京 — ENDLESS SECOND RING
 
 A seamless **first-person night drive** through an imagined Beijing. The camera
 travels at driver-eye height through twelve authored passages in Second-Ring
@@ -23,7 +30,8 @@ back at the same frame every forty-eight seconds.
 ```bash
 npm install
 npm run dev
-# http://localhost:5173/
+# http://localhost:5173/              landing page
+# http://localhost:5173/beijing-loop/ the film
 ```
 
 Production build:
@@ -119,7 +127,8 @@ src/
     controls.ts               semantic play, record and fullscreen controls
     recorder.ts               exact-cycle canvas MediaRecorder export
   styles/main.css             cinematic HUD tokens, safe areas and focus states
-index.html                    metadata and accessible artwork description
+index.html                    static landing page (positioning, proof, hire)
+beijing-loop/index.html       film entry: metadata and accessible artwork description
 scripts/                      build and browser/seam verification
 ```
 
@@ -191,8 +200,8 @@ When running the local development server, the repository's browser and seam
 checks can also be used:
 
 ```bash
-PW_CHANNEL=chrome URL=http://127.0.0.1:5173/ npm run verify:browser
-PW_CHANNEL=chrome URL=http://127.0.0.1:5173/ npm run verify:seam
+PW_CHANNEL=chrome URL=http://127.0.0.1:5173/beijing-loop/ npm run verify:browser
+PW_CHANNEL=chrome URL=http://127.0.0.1:5173/beijing-loop/ npm run verify:seam
 ```
 
 The seam check compares the beginning and end of the deterministic cycle. Browser
@@ -205,9 +214,9 @@ view or camera mode. For a local production check:
 
 ```bash
 npm run preview -- --host 127.0.0.1 --port 4173
-URL='http://127.0.0.1:4173/?qa=1' EXPECT_PRODUCTION=1 npm run verify:browser
-URL='http://127.0.0.1:4173/?qa=1' npm run verify:seam
-URL='http://127.0.0.1:4173/?qa=1' npm run verify:performance
+URL='http://127.0.0.1:4173/beijing-loop/?qa=1' EXPECT_PRODUCTION=1 npm run verify:browser
+URL='http://127.0.0.1:4173/beijing-loop/?qa=1' npm run verify:seam
+URL='http://127.0.0.1:4173/beijing-loop/?qa=1' npm run verify:performance
 VERIFY_LAYOUT=1 URL='http://127.0.0.1:4173/' npm run verify:dist
 ```
 
@@ -221,7 +230,8 @@ without `?qa=1` does not install the test hook.
 ## Deploy to GitHub Pages
 
 `.github/workflows/deploy-pages.yml` builds and publishes the production bundle
-to the root user site at <https://brickerp.github.io/>. The workflow uses
+to the root user site at <https://brickerp.github.io/> (landing page at `/`, film at
+`/beijing-loop/`). The workflow uses
 `VITE_BASE=/` so static assets resolve from the GitHub Pages root.
 
 1. In the repository's **Settings → Pages**, select **GitHub Actions** as the

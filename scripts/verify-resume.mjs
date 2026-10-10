@@ -7,18 +7,18 @@ export const FULL_RESUME = {
   source: 'src/content/resume.html',
   output: 'public/resume.pdf',
   lang: 'en-US',
-  title: 'Yupeng Lu - Backend Engineer - Live Trading Systems & AI Platforms',
+  title: 'Yupeng Lu - AI Agent & Backend Engineer',
   pages: 2,
-  sha256: 'b56d169549ae9c74fe9a403fa65d714afc694a1ebe4302a9f0dfdc5f9ab8406c',
+  sha256: 'ff08f7e94bdc2d8155507b1b9fba572611d31baa11cfb2eb62e3218086865d68',
 };
 export const ONE_PAGE_RESUME = {
   id: 'one-page',
   source: 'src/content/resume-1p.html',
   output: 'applications/resume-1p.pdf',
   lang: 'en-US',
-  title: 'Yupeng Lu - AI Agent Engineer',
+  title: 'Yupeng Lu - AI Agent & Backend Engineer',
   pages: 1,
-  sha256: '36f53bbf71cf560a29d90ad0b019f9325f7a08ea554bc15a1a8e27fa43ad89ff',
+  sha256: 'd6bf2dd54dd23a7cddb033fbbb04b6d759b42e01dd78f6977d4255ce3a8a77fd',
 };
 export const ZH_RESUME = {
   id: 'zh',

@@ -156,14 +156,15 @@ function jsonLd(profile) {
           email: emailAddress(profile),
           sameAs,
           knowsAbout: [
-            'live trading systems',
-            'execution safety',
-            'SQLite',
-            'performance engineering',
             'AI agents',
             'Model Context Protocol',
             'tool-use contracts',
             'evidence-gated software releases',
+            'Stripe billing',
+            'real-time systems',
+            'execution safety',
+            'SQLite',
+            'performance engineering',
             'WebGL',
           ],
         },
@@ -199,14 +200,14 @@ function renderRegions(profile, programmeCss) {
   const email = actionById(profile, profile.identity.emailLinkId);
   const resume = actionById(profile, 'resume');
   const title = `${profile.name} — ${profile.role}`;
-  const description = `${title}. ${profile.summary}`;
+  const description = `${profile.name}. ${profile.summary}`;
   const imageAlt = `${title} profile card.`;
   const reelsMeta = `${profile.experience.length} reels · ${firstReelLabel(profile)} – now<br>Overlaps are concurrent work`;
   return {
     HEAD: `  <meta name="description" content="${escapeHtml(description)}">\n  <link rel="canonical" href="https://brickerp.github.io/about/">\n  <meta property="og:title" content="${escapeHtml(title)}">\n  <meta property="og:description" content="${escapeHtml(profile.summary)}">\n  <meta property="og:type" content="profile">\n  <meta property="og:url" content="https://brickerp.github.io/about/">\n  <meta property="og:site_name" content="${escapeHtml(profile.name)} — BrickerP">\n  <meta property="og:image" content="https://brickerp.github.io/profile-preview.png">\n  <meta property="og:image:width" content="1200">\n  <meta property="og:image:height" content="630">\n  <meta property="og:image:alt" content="${escapeHtml(imageAlt)}">\n  <meta name="twitter:card" content="summary_large_image">\n  <meta name="twitter:title" content="${escapeHtml(title)}">\n  <meta name="twitter:description" content="${escapeHtml(profile.summary)}">\n  <meta name="twitter:image" content="https://brickerp.github.io/profile-preview.png">\n  <meta name="twitter:image:alt" content="${escapeHtml(imageAlt)}">\n  <title>${escapeHtml(title)}</title>`,
     JSON_LD: `  <script type="application/ld+json">\n${jsonLd(profile)}\n  </script>`,
     STYLE: `  <style>\n${indent(programmeCss.trimEnd(), 4)}\n  </style>`,
-    NAV: `    <nav aria-label="Primary navigation">\n      <a href="/">Generative artwork</a>\n      <a href="/work/quant/">Work</a>\n      <a href="${escapeHtml(resume.href)}">Resume</a>\n      <a href="${escapeHtml(email.href)}">Email</a>\n    </nav>`,
+    NAV: `    <nav aria-label="Primary navigation">\n      <a href="/hire/">Work with me</a>\n      <a href="/work/quant/">Technical sheet</a>\n      <a href="/beijing-loop/">Film</a>\n      <a href="${escapeHtml(resume.href)}">Resume</a>\n      <a href="${escapeHtml(email.href)}">Email</a>\n    </nav>`,
     SPINE: indent(spineMarkup(profile), 6),
     HERO: indent(hero(profile), 8),
     REELS: indent(sectionMarkup('reels-heading', 'h2', 'The reels', reelsMeta, reelsBody(profile, 'h3', 930)), 10),
@@ -215,7 +216,7 @@ function renderRegions(profile, programmeCss) {
       8,
     ),
     STUB: indent(`${stubMarkup(profile)}\n${colophon(profile)}`, 8),
-    FOOTER: `  <footer class="site-foot"><p>© ${escapeHtml(profile.dateModified.slice(0, 4))} ${escapeHtml(profile.name)} · <a href="/">Beijing — Endless Second Ring</a></p></footer>`,
+    FOOTER: `  <footer class="site-foot"><p>© ${escapeHtml(profile.dateModified.slice(0, 4))} ${escapeHtml(profile.name)} · <a href="/">Home</a> · <a href="/hire/">Work with me</a> · <a href="/beijing-loop/">Beijing — Endless Second Ring</a></p></footer>`,
   };
 }
 

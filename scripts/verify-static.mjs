@@ -35,6 +35,17 @@ function attribute(html, selector, name) {
   return undefined;
 }
 
+/** Visible text of an HTML document: tags are removed until none remain, then whitespace collapses. */
+function visibleText(html) {
+  let text = html;
+  let previous;
+  do {
+    previous = text;
+    text = text.replace(/<[^>]*>/g, '');
+  } while (text !== previous);
+  return text.replace(/\s+/g, ' ');
+}
+
 function decodeHtml(value) {
   return value
     .replaceAll('&lt;', '<')
@@ -96,13 +107,19 @@ async function assertLocalReferences(html, file) {
     }
     const clean = reference.split(/[?#]/, 1)[0];
     if (!clean || clean === '/') continue;
-    const candidate = clean.startsWith('/')
-      ? path.join(ROOT, 'public', clean.slice(1))
-      : path.resolve(ROOT, path.dirname(file), clean);
-    const resolved = clean.endsWith('/') ? path.join(candidate, 'index.html') : candidate;
-    await access(resolved).catch(() => {
-      throw new Error(`${file}: missing local reference ${reference}`);
-    });
+    // Root-relative references resolve against public/ first, then against the
+    // repository root, where Vite's HTML entries (such as /beijing-loop/) live.
+    const candidates = clean.startsWith('/')
+      ? [path.join(ROOT, 'public', clean.slice(1)), path.join(ROOT, clean.slice(1))]
+      : [path.resolve(ROOT, path.dirname(file), clean)];
+    const resolved = candidates.map((candidate) =>
+      clean.endsWith('/') ? path.join(candidate, 'index.html') : candidate,
+    );
+    const found = await Promise.any(resolved.map((candidate) => access(candidate))).then(
+      () => true,
+      () => false,
+    );
+    if (!found) throw new Error(`${file}: missing local reference ${reference}`);
   }
 }
 
@@ -117,8 +134,10 @@ async function walk(directory) {
 }
 
 const rootHtml = await text('index.html');
+const filmHtml = await text('beijing-loop/index.html');
 const aboutHtml = await text('public/about/index.html');
 const sheetHtml = await text('public/work/quant/index.html');
+const hireHtml = await text('public/hire/index.html');
 const profileLoopCard = await text('public/profile-loop-card.svg');
 const controlsSource = await text('src/ui/controls.ts');
 const stylesSource = await text('src/styles/main.css');
@@ -129,9 +148,45 @@ const actionMarkup = controlsSource.match(
 )?.[0] ?? '';
 const publicProfile = await readPublicProfile();
 await assertAboutIsGenerated();
-assertPageMetadata(rootHtml, 'index.html', `${SITE_ORIGIN}/`, 'social-preview.png');
+assertPageMetadata(rootHtml, 'index.html', `${SITE_ORIGIN}/`, 'profile-preview.png');
+assertPageMetadata(filmHtml, 'beijing-loop/index.html', `${SITE_ORIGIN}/beijing-loop/`, 'social-preview.png');
 assertPageMetadata(aboutHtml, 'public/about/index.html', `${SITE_ORIGIN}/about/`, 'profile-preview.png');
 assertPageMetadata(sheetHtml, 'public/work/quant/index.html', `${SITE_ORIGIN}/work/quant/`, 'profile-preview.png');
+assertPageMetadata(hireHtml, 'public/hire/index.html', `${SITE_ORIGIN}/hire/`, 'profile-preview.png');
+
+// One positioning line, verbatim, on every public surface that introduces the author.
+const POSITIONING = 'AI agent & backend engineer — I take agents from demo to production: MCP tools, guardrails, evals, billing, real-time systems.';
+assert.equal(publicProfile.summary, POSITIONING, 'public profile: summary must be the one-line positioning, verbatim');
+assert.equal(publicProfile.role, POSITIONING.split(' — ')[0], 'public profile: role must be the title clause of the positioning line');
+for (const [file, html] of [
+  ['index.html', rootHtml],
+  ['public/hire/index.html', hireHtml],
+  ['public/about/index.html', aboutHtml],
+]) {
+  assert.ok(visibleText(html).includes(escapeHtml(POSITIONING)), `${file}: must carry the one-line positioning verbatim`);
+}
+for (const [file, html] of [
+  ['index.html', rootHtml],
+  ['beijing-loop/index.html', filmHtml],
+  ['public/about/index.html', aboutHtml],
+  ['public/hire/index.html', hireHtml],
+  ['src/content/resume.html', await text('src/content/resume.html')],
+  ['src/content/resume-1p.html', await text('src/content/resume-1p.html')],
+]) {
+  assert.doesNotMatch(html, /re-measure pending|pending re-measure/i, `${file}: no surface may lead with a pending measurement`);
+  assert.doesNotMatch(html, /AI x Finance|markets (?:&|and) macro/i, `${file}: finance is an exhibit, not the positioning`);
+}
+for (const file of ['src/content/resume.html', 'src/content/resume-1p.html']) {
+  assert.ok(
+    (await text(file)).includes(`<p class="headline">${escapeHtml(POSITIONING).replaceAll('—', '&mdash;')}</p>`),
+    `${file}: headline must be the one-line positioning`,
+  );
+}
+assert.match(hireHtml, /overlaps my employer['’]s product/i, 'hire: must state the employer no-overlap boundary');
+assert.match(rootHtml, /<a\b[^>]*href=["']\/hire\/["']/i, 'index.html: landing must reach /hire/');
+assert.match(rootHtml, /<a\b[^>]*href=["']\/beijing-loop\/["']/i, 'index.html: landing must keep the film reachable');
+assert.match(filmHtml, /<a\b[^>]*href=["']\/["']/i, 'beijing-loop: film must link back to the landing page');
+assert.match(hireHtml, /<a\b[^>]*href=["']\/beijing-loop\/["']/i, 'hire: footer must keep the film reachable');
 assert.match(
   controlsSource,
   /<p class="ui-eyebrow">LOOP 01<\/p>[\s\S]*?<h1 class="ui-title" id="experience-title">ENDLESS SECOND RING<\/h1>[\s\S]*?<p class="ui-sub">BEIJING <span lang="zh-CN">\/ 北京<\/span> <span aria-hidden="true">·<\/span> 48-SECOND GENERATIVE DRIVE<\/p>/,
@@ -250,12 +305,21 @@ assert.doesNotMatch(
 );
 const rootFavicon = linkHref(rootHtml, 'icon');
 assert.ok(rootFavicon?.startsWith('data:image/svg+xml,'), 'index.html: missing inline SVG favicon');
-assert.equal(linkHref(aboutHtml, 'icon'), rootFavicon, 'about: favicon must match the root artwork identity');
+assert.equal(linkHref(filmHtml, 'icon'), rootFavicon, 'beijing-loop: favicon must match the site identity');
+assert.equal(linkHref(aboutHtml, 'icon'), rootFavicon, 'about: favicon must match the site identity');
+assert.equal(linkHref(hireHtml, 'icon'), rootFavicon, 'hire: favicon must match the site identity');
 
 const rootData = jsonLd(rootHtml, 'index.html').flatMap((item) => item['@graph'] ?? [item]);
 assert.ok(rootData.some((item) => item['@type'] === 'WebSite'), 'index.html: WebSite JSON-LD missing');
-assert.ok(rootData.some((item) => item['@type'] === 'CreativeWork'), 'index.html: CreativeWork JSON-LD missing');
-assert.ok(!rootData.some((item) => item['@type'] === 'ProfilePage'), 'index.html: artwork must not claim ProfilePage');
+assert.ok(rootData.some((item) => item['@type'] === 'WebPage'), 'index.html: WebPage JSON-LD missing');
+assert.ok(!rootData.some((item) => item['@type'] === 'ProfilePage'), 'index.html: landing must not duplicate the About ProfilePage');
+const filmData = jsonLd(filmHtml, 'beijing-loop/index.html').flatMap((item) => item['@graph'] ?? [item]);
+assert.ok(filmData.some((item) => item['@type'] === 'WebSite'), 'beijing-loop: WebSite JSON-LD missing');
+assert.ok(
+  filmData.some((item) => item['@type'] === 'CreativeWork' && item.url === `${SITE_ORIGIN}/beijing-loop/`),
+  'beijing-loop: CreativeWork JSON-LD must describe the film at its own route',
+);
+assert.ok(!filmData.some((item) => item['@type'] === 'ProfilePage'), 'beijing-loop: artwork must not claim ProfilePage');
 
 const aboutData = jsonLd(aboutHtml, 'public/about/index.html');
 const profile = aboutData.find((item) => item['@type'] === 'ProfilePage');
@@ -263,7 +327,7 @@ assert.equal(profile?.mainEntity?.['@type'], 'Person', 'about: ProfilePage mainE
 const profileTitle = `${publicProfile.name} — ${publicProfile.role}`;
 assert.equal(
   meta(aboutHtml, 'name', 'description'),
-  `${profileTitle}. ${publicProfile.summary}`,
+  `${publicProfile.name}. ${publicProfile.summary}`,
   'about: description drifted from public profile',
 );
 assert.equal(meta(aboutHtml, 'property', 'og:title'), profileTitle, 'about: og:title drifted from public profile');
@@ -310,18 +374,28 @@ assert.equal(profile.mainEntity.jobTitle, publicProfile.role, 'about: JSON-LD ro
 assert.equal(profile.mainEntity.email, email, 'about: JSON-LD email drifted from public profile');
 assert.deepEqual(profile.mainEntity.sameAs, sameAs, 'about: JSON-LD sameAs drifted from public profile');
 assert.equal(profile.dateModified, publicProfile.dateModified, 'about: JSON-LD dateModified drifted from public profile');
-assert.match(rootHtml, /<span\s+lang=["']zh-CN["']>北京<\/span>/, 'index.html: Chinese text needs an explicit language span');
+assert.match(filmHtml, /<span\s+lang=["']zh-CN["']>北京<\/span>/, 'beijing-loop: Chinese text needs an explicit language span');
+assert.match(filmHtml, /<script\b[^>]*type=["']module["'][^>]*src=["']\/src\/main\.ts["']/, 'beijing-loop: the film must boot from the shared runtime entry');
+assert.doesNotMatch(rootHtml, /<script\b[^>]*src=/i, 'index.html: the landing page stays static; the film runtime lives at /beijing-loop/');
+assert.doesNotMatch(filmHtml, /name=["']robots["']/i, 'beijing-loop: the film is an indexable page, not a redirect');
 
 // Technical sheet № 01: the programme must reach it, it must reach back, and every
-// number it prints must sit next to a method and an explicit pending marker.
+// number it prints must sit next to a method. The sheet may hold exactly one
+// pending placeholder: the post-fix cell that is filled only by a measured session.
 assert.match(aboutHtml, /<a\b[^>]*href=["']\/work\/quant\/["']/i, 'about: primary navigation must link the technical sheet');
+assert.match(aboutHtml, /<nav\b[^>]*aria-label=["']Primary navigation["'][\s\S]*?<a\b[^>]*href=["']\/hire\/["'][\s\S]*?<\/nav>/i, 'about: primary navigation must reach /hire/');
 assert.match(sheetHtml, /<a\b[^>]*href=["']\/about\/["']/i, 'work/quant: must link back to the full programme');
-assert.equal(linkHref(sheetHtml, 'icon'), rootFavicon, 'work/quant: favicon must match the root artwork identity');
+assert.match(sheetHtml, /<a\b[^>]*href=["']\/hire\/["']/i, 'work/quant: must reach /hire/');
+assert.equal(linkHref(sheetHtml, 'icon'), rootFavicon, 'work/quant: favicon must match the site identity');
 const sheetData = jsonLd(sheetHtml, 'public/work/quant/index.html');
 const sheet = sheetData.find((item) => item['@type'] === 'TechArticle');
 assert.equal(sheet?.author?.['@id'], profile.mainEntity['@id'], 'work/quant: TechArticle author must be the About Person');
 assert.match(sheetHtml, /id=["']method-heading["']/, 'work/quant: the measured section needs its method box');
-assert.ok(sheetHtml.includes('Pending re-measure'), 'work/quant: unmeasured cells must say so');
+assert.equal(
+  (sheetHtml.match(/Pending re-measure/g) ?? []).length,
+  1,
+  'work/quant: exactly one unmeasured cell may carry the pending placeholder',
+);
 for (const fact of ['~2.4 s', '~9.2 s', '2026-10-08', '2026-10-09']) {
   assert.ok(sheetHtml.includes(fact), `work/quant: missing recorded fact “${fact}”`);
 }
@@ -333,7 +407,9 @@ assert.ok(
 const sitemap = await text('public/sitemap.xml');
 assert.match(sitemap, /<loc>https:\/\/brickerp\.github\.io\/<\/loc>/, 'sitemap: root URL missing');
 assert.match(sitemap, /<loc>https:\/\/brickerp\.github\.io\/about\/<\/loc>/, 'sitemap: about URL missing');
+assert.match(sitemap, /<loc>https:\/\/brickerp\.github\.io\/hire\/<\/loc>/, 'sitemap: hire URL missing');
 assert.match(sitemap, /<loc>https:\/\/brickerp\.github\.io\/work\/quant\/<\/loc>/, 'sitemap: technical sheet URL missing');
+assert.match(sitemap, /<loc>https:\/\/brickerp\.github\.io\/beijing-loop\/<\/loc>/, 'sitemap: film URL missing');
 assert.doesNotMatch(sitemap, /\/poe2\//, 'sitemap: legacy PoE2 redirects must not be indexed');
 
 const notFound = await text('public/404.html');
@@ -343,28 +419,8 @@ assert.match(
   '404 page must link directly to the current PoE2 site',
 );
 assert.doesNotMatch(notFound, /href=["']\/poe2\/["']/i, '404 page must not advertise the legacy PoE2 archive');
-
-const legacyBeijingLoop = await text('public/beijing-loop/index.html');
-assert.equal(
-  meta(legacyBeijingLoop, 'name', 'robots'),
-  'noindex, follow',
-  'public/beijing-loop/index.html: wrong robots directive',
-);
-assert.equal(
-  linkHref(legacyBeijingLoop, 'canonical'),
-  `${SITE_ORIGIN}/`,
-  'public/beijing-loop/index.html: wrong target canonical',
-);
-assert.equal(
-  meta(legacyBeijingLoop, 'http-equiv', 'refresh'),
-  '0; url=/',
-  'public/beijing-loop/index.html: wrong instant redirect',
-);
-assert.match(
-  legacyBeijingLoop,
-  /<a\b[^>]*href=["']\/["']/i,
-  'public/beijing-loop/index.html: missing accessible destination link',
-);
+assert.match(notFound, /href=["']\/["']/i, '404 page must link the home page');
+assert.match(notFound, /href=["']\/beijing-loop\/["']/i, '404 page must link the film at its route');
 
 for (const route of redirectPaths) {
   const file = `public/poe2/${route || 'index.html'}`;
@@ -395,6 +451,7 @@ for (const file of poe2Files.filter((entry) => entry.endsWith('.html'))) {
 }
 
 await assertLocalReferences(rootHtml, 'index.html');
+await assertLocalReferences(filmHtml, 'beijing-loop/index.html');
 for (const file of publicFiles.filter((entry) => entry.endsWith('.html'))) {
   const relative = path.relative(ROOT, file);
   await assertLocalReferences(await readFile(file, 'utf8'), relative);
@@ -415,4 +472,4 @@ for (const variant of RESUME_VARIANTS) {
 assertOnePageParity(await text(FULL_RESUME.source), await text(ONE_PAGE_RESUME.source));
 assertChineseParity(await text(FULL_RESUME.source), await text(ONE_PAGE_RESUME.source), await text(ZH_RESUME.source));
 
-console.log(`Static integrity verified: root, about, sitemap, and ${redirectPaths.length} PoE2 redirects.`);
+console.log(`Static integrity verified: landing, film, about, hire, technical sheet, sitemap, and ${redirectPaths.length} PoE2 redirects.`);

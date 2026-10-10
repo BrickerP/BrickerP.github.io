@@ -1,15 +1,25 @@
 {
   "name": "Yupeng Lu",
-  "role": "Backend Engineer — live trading systems & AI platforms",
-  "dateModified": "2026-10-09",
-  "status": "US Permanent Resident · No sponsorship required",
-  "summary": "I build live systems and publish the numbers: trading execution on Alpaca, agent platforms at Baidu, and a deterministic 48-second WebGL film with CI performance gates.",
+  "role": "AI agent & backend engineer",
+  "dateModified": "2026-10-10",
+  "status": "Part-time contract · ~20 h/week · Diamond Bar, California (PT) · US Permanent Resident",
+  "summary": "AI agent & backend engineer — I take agents from demo to production: MCP tools, guardrails, evals, billing, real-time systems.",
   "experienceNote": "Baidu (MeDo) is the primary role; the Quant Trading Systems Venture is a concurrent engineering role.",
-  "focus": "Alpaca execution · SQLite · AWS Lambda / S3 · Three.js / WebGL · MCP · tool-use contracts · evals & release gates · Stripe Billing · Java / Spring Boot · TypeScript · Python · Kubernetes · ClickHouse",
+  "focus": "MCP servers & tool contracts · agent skills & CLIs · evals & release gates · Stripe Billing · TypeScript / Node · Python · Java / Spring Boot · AWS / EKS · Kubernetes · ClickHouse · SQLite · Alpaca execution · Three.js / WebGL",
   "publicProof": [
     {
-      "label": "Technical sheet № 01 — live trading execution",
-      "detail": "System diagram, execution-safety invariants, and the 2026-10-08 scan-latency regression with its method box. Strategy and P&L stay private.",
+      "label": "TypeScript CLI + MCP package (Cookiy)",
+      "detail": "Public agent surfaces: cookiy-cli on npm with MCP-first / REST-fallback workflows for interviews, synthetic users, surveys, recruitment, playback, and billing; 41 tools across 4 MCP servers behind them.",
+      "href": "https://github.com/cookiy-ai/cookiy-cli"
+    },
+    {
+      "label": "User-research skill (Cookiy)",
+      "detail": "Public end-to-end AI interview workflows for Claude, Codex, Cursor, and OpenClaw-style clients.",
+      "href": "https://github.com/cookiy-ai/user-research-skill"
+    },
+    {
+      "label": "Technical sheet № 01 — production real-time system",
+      "detail": "Order path and execution-safety invariants of the live Alpaca trading system I co-run, with a measured latency regression and its method box. Strategy and P&L stay private.",
       "href": "https://brickerp.github.io/work/quant/"
     },
     {
@@ -18,19 +28,9 @@
       "href": "https://d2c9pzwpavuktk.cloudfront.net/"
     },
     {
-      "label": "fed-pulse",
-      "detail": "Stdlib-only Python CLI: latest FOMC minutes + Treasury yield curve → plain-English rate-pressure brief and one-page HTML dashboard.",
+      "label": "Side projects — fed-pulse · auction-tape",
+      "detail": "Two stdlib-only Python CLIs over public macro data (FOMC minutes + Treasury yields; Treasury auction demand): offline tests, CI, LLM optional.",
       "href": "https://github.com/BrickerP/fed-pulse"
-    },
-    {
-      "label": "User-research skill",
-      "detail": "Public end-to-end AI interview workflows for Claude, Codex, Cursor, and OpenClaw-style clients.",
-      "href": "https://github.com/cookiy-ai/user-research-skill"
-    },
-    {
-      "label": "TypeScript CLI",
-      "detail": "Public interviews, synthetic-user, survey, recruitment, playback, billing, and REST/MCP workflows.",
-      "href": "https://github.com/cookiy-ai/cookiy-cli"
     }
   ],
   "primaryActions": [

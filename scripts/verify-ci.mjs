@@ -51,7 +51,7 @@ function assertBrowserBudget(source) {
 
   const verifyStep = workflowStepBlock(browserJob, 'Verify browser behavior');
   const boundedCommand = verifyStep.match(
-    /^          URL='http:\/\/127\.0\.0\.1:4173\/\?qa=1' EXPECT_PRODUCTION=1 timeout --signal=TERM --kill-after=30s (\d+)m npm run verify:browser 2>&1 \| tee \.omx\/handoff\/ci\/browser-verify\.log\s*$/m,
+    /^          URL='http:\/\/127\.0\.0\.1:4173\/beijing-loop\/\?qa=1' EXPECT_PRODUCTION=1 timeout --signal=TERM --kill-after=30s (\d+)m npm run verify:browser 2>&1 \| tee \.omx\/handoff\/ci\/browser-verify\.log\s*$/m,
   );
   assert.ok(boundedCommand, 'Browser QA must wrap the production browser suite in its own bounded deadline');
   const innerMinutes = Number(boundedCommand[1]);
@@ -131,6 +131,11 @@ assert.ok((workflow.match(/node-version-file: \.node-version/g) ?? []).length >=
 assert.match(workflow, /uses: actions\/upload-artifact@[^\s#]+[^\n]*[\s\S]*path: dist/, 'build must upload the single dist artifact');
 assert.match(workflow, /name: Verify built static artifact[\s\S]*npm run verify:dist/, 'build must verify the exact dist before upload');
 assert.match(workflow, /VERIFY_LAYOUT=1 URL='http:\/\/127\.0\.0\.1:4173\/' npm run verify:dist/, 'downloaded dist needs an HTTP and mobile target-size smoke gate');
+assert.equal(
+  (workflow.match(/URL='http:\/\/127\.0\.0\.1:4173\/beijing-loop\/\?qa=1'/g) ?? []).length,
+  3,
+  'browser and both seam lanes must target the film at /beijing-loop/ with the explicit QA hook',
+);
 assert.ok((workflow.match(/uses: actions\/download-artifact@/g) ?? []).length >= 5, 'QA, publish, and live smoke jobs must consume the built dist');
 assert.equal(
   (workflow.match(/artifact-ids: \$\{\{ needs\.build\.outputs\.dist-artifact-id \}\}/g) ?? []).length,

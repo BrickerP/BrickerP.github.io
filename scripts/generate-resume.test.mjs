@@ -75,7 +75,7 @@ test('structure checks reject stale identities, unlabeled links, and the wrong p
   const unlabeled = Buffer.from(text.replace(/\/Contents \((?:\\.|[^\\)])+\)/, '/Contents 0 0 R'), 'latin1');
   assert.throws(() => assertAccessibleResumeStructure(unlabeled, 'unlabeled', FULL_RESUME), /accessible description/);
   assert.throws(() => assertAccessibleResumeStructure(pdf, 'pages', { ...FULL_RESUME, pages: 1 }), /expected 1 pages/);
-  assert.throws(() => assertAccessibleResumeStructure(pdf, 'title', { ...FULL_RESUME, title: ONE_PAGE_RESUME.title }), /accessible document title/);
+  assert.throws(() => assertAccessibleResumeStructure(pdf, 'title', { ...FULL_RESUME, title: 'Yupeng Lu - Some Other Headline' }), /accessible document title/);
   assert.throws(() => assertAccessibleResumeStructure(pdf, 'lang', { ...FULL_RESUME, lang: ZH_RESUME.lang }), /document language must be zh-CN/);
   const chinese = await fixture(ZH_RESUME);
   assert.throws(() => assertAccessibleResumeStructure(chinese.pdf, 'lang', { ...ZH_RESUME, lang: 'en-US' }), /document language must be en-US/);

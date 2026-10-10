@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 
-const URL = process.env.URL || 'http://127.0.0.1:5173/';
+const URL = process.env.URL || 'http://127.0.0.1:5173/beijing-loop/';
 const OUT = 'docs/verify';
 const LOOP_SECONDS = 48;
 const REDUCED_POSTER_PHASE = 0.53 / 48;
@@ -1862,7 +1862,7 @@ for (const aboutViewport of [
   );
   assert.match(
     ((await aboutPage.locator('.about-role').textContent()) ?? '').trim(),
-    /Backend Engineer — live trading systems & AI platforms/i,
+    /AI agent & backend engineer/i,
     `${aboutViewport.name}: about role`,
   );
   assert.equal(
@@ -1896,11 +1896,11 @@ for (const aboutViewport of [
   assert.deepEqual(
     await proofLinks.evaluateAll((links) => links.map((link) => link.getAttribute('href'))),
     [
+      'https://github.com/cookiy-ai/cookiy-cli',
+      'https://github.com/cookiy-ai/user-research-skill',
       'https://brickerp.github.io/work/quant/',
       'https://d2c9pzwpavuktk.cloudfront.net/',
       'https://github.com/BrickerP/fed-pulse',
-      'https://github.com/cookiy-ai/user-research-skill',
-      'https://github.com/cookiy-ai/cookiy-cli',
     ],
     `${aboutViewport.name}: public proof links use the verified public surfaces`,
   );
