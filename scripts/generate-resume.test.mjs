@@ -130,3 +130,14 @@ test('metadata patterns match PDF literal strings, including escaped parentheses
   assert.match('/Title (Yupeng Lu \\055 AI \\(x\\) & y\\\\z)', pattern);
   assert.doesNotMatch('/Title (Yupeng Lu - AI (x) & y\\z)', pattern);
 });
+
+test('the Chinese resume leaves out work authorization', async () => {
+  const [full, onePage, chinese] = await Promise.all(
+    [FULL_RESUME, ONE_PAGE_RESUME, ZH_RESUME].map((variant) => readFile(resumePaths(variant).source, 'utf8')),
+  );
+  assert.doesNotMatch(chinese, /永久居民|绿卡|Permanent Resident/i);
+  const withLine = chinese.replace('<p class="headline">', '<p class="contact">美国永久居民<span class="sep">·</span>无需工作签证担保</p><p class="headline">');
+  assert.throws(() => assertChineseParity(full, onePage, withLine), /must not mention work authorization/);
+  const withEnglish = chinese.replace('<p class="headline">', '<p class="contact">US Permanent Resident</p><p class="headline">');
+  assert.throws(() => assertChineseParity(full, onePage, withEnglish), /must not mention work authorization/);
+});

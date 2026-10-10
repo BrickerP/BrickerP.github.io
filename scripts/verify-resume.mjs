@@ -27,7 +27,7 @@ export const ZH_RESUME = {
   lang: 'zh-CN',
   title: 'Yupeng Lu - AI Agent Engineer - Chinese resume',
   pages: 1,
-  sha256: '19e7f2bd16e4c6109092d6a966477be11864f4de2f068b0596b85e6554d4583b',
+  sha256: '8531893c8285560f39e7747de4ef580c30962afed532e55fe6d4928024ba7b05',
 };
 export const RESUME_VARIANTS = [FULL_RESUME, ONE_PAGE_RESUME, ZH_RESUME];
 
@@ -238,13 +238,19 @@ function assertSameSet(actual, expected, describe) {
   for (const item of expected) assert.ok(actual.has(item), describe(item, 'missing'));
 }
 
+const CHINESE_FORBIDDEN_TEXT = ['永久居民', '绿卡', 'Permanent Resident', 'Green Card'];
+
 /**
  * The Chinese resume translates the one-page resume, so its text cannot be compared line by line. Its role
  * periods, links, and numbers must be exactly the one-page resume's (a phone number may sit in the header),
- * which in turn only repeats the full resume; and it may not be dated before the one-page resume.
+ * which in turn only repeats the full resume; it may not be dated before the one-page resume, and it leaves
+ * out the work-authorization line the English resumes carry.
  */
 export function assertChineseParity(fullHtml, onePageHtml, chineseHtml) {
   const together = 'translate every change';
+  for (const word of CHINESE_FORBIDDEN_TEXT) {
+    assert.ok(!chineseHtml.toLowerCase().includes(word.toLowerCase()), `Chinese resume: must not mention work authorization (“${word}”); the owner asked for it to be left out`);
+  }
   const chinesePeriods = periods(chineseHtml);
   assert.ok(chinesePeriods.size > 0, 'Chinese resume: no role periods found (write them as “2026年7月 – 至今”)');
   assertSameSet(chinesePeriods, periods(onePageHtml), (period, kind) =>

@@ -176,7 +176,8 @@ a name, contact line, role line, or number that the full resume does not contain
 list every current role, and may not be dated before the full one. The Chinese resume
 translates the one-page resume, so it must have exactly the one-page resume's role
 periods (`2026年7月 – 至今`), links, and body numbers (a phone number may sit in its
-header) and may not be dated before it. When a check fails, review the resume it names
+header) and may not be dated before it. It also leaves out the work-authorization line the
+English resumes carry (`verify:static` rejects 永久居民 / 绿卡). When a check fails, review the resume it names
 and bump its `dcterms.modified`. Headline and summary may differ, since each resume
 targets a different kind of role. Nothing compares the profile data.
 
