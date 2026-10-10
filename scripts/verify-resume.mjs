@@ -9,7 +9,7 @@ export const FULL_RESUME = {
   lang: 'en-US',
   title: 'Yupeng Lu - AI Agent & Backend Engineer',
   pages: 2,
-  sha256: 'ff08f7e94bdc2d8155507b1b9fba572611d31baa11cfb2eb62e3218086865d68',
+  sha256: '4a80d018aefe1492817a0b92141e3f0e8208e8e742e780c34e02c7da1b7853bb',
 };
 export const ONE_PAGE_RESUME = {
   id: 'one-page',
@@ -18,7 +18,7 @@ export const ONE_PAGE_RESUME = {
   lang: 'en-US',
   title: 'Yupeng Lu - AI Agent & Backend Engineer',
   pages: 1,
-  sha256: 'd6bf2dd54dd23a7cddb033fbbb04b6d759b42e01dd78f6977d4255ce3a8a77fd',
+  sha256: '2d968417b3152eade0de0af72b90bc45e69f7932a8b326e334d7da0c39fa1f10',
 };
 export const ZH_RESUME = {
   id: 'zh',
@@ -27,7 +27,7 @@ export const ZH_RESUME = {
   lang: 'zh-CN',
   title: 'Yupeng Lu - AI Agent Engineer - Chinese resume',
   pages: 1,
-  sha256: '8531893c8285560f39e7747de4ef580c30962afed532e55fe6d4928024ba7b05',
+  sha256: 'd8d5187a914b894a73b1ad10e6bfbae8ec4a611eb162077875705487d23a1bca',
 };
 export const RESUME_VARIANTS = [FULL_RESUME, ONE_PAGE_RESUME, ZH_RESUME];
 
