@@ -8,7 +8,9 @@ import {
   FULL_RESUME,
   ONE_PAGE_RESUME,
   RESUME_VARIANTS,
+  ZH_RESUME,
   assertAccessibleResume,
+  assertChineseParity,
   assertOnePageParity,
 } from './verify-resume.mjs';
 
@@ -411,5 +413,6 @@ for (const variant of RESUME_VARIANTS) {
   assertAccessibleResume(await readFile(path.join(ROOT, variant.output)), variant.output, variant);
 }
 assertOnePageParity(await text(FULL_RESUME.source), await text(ONE_PAGE_RESUME.source));
+assertChineseParity(await text(FULL_RESUME.source), await text(ONE_PAGE_RESUME.source), await text(ZH_RESUME.source));
 
 console.log(`Static integrity verified: root, about, sitemap, and ${redirectPaths.length} PoE2 redirects.`);

@@ -6,6 +6,7 @@ export const FULL_RESUME = {
   id: 'full',
   source: 'src/content/resume.html',
   output: 'public/resume.pdf',
+  lang: 'en-US',
   title: 'Yupeng Lu - Backend Engineer - Live Trading Systems & AI Platforms',
   pages: 2,
   sha256: 'b56d169549ae9c74fe9a403fa65d714afc694a1ebe4302a9f0dfdc5f9ab8406c',
@@ -14,11 +15,21 @@ export const ONE_PAGE_RESUME = {
   id: 'one-page',
   source: 'src/content/resume-1p.html',
   output: 'applications/resume-1p.pdf',
+  lang: 'en-US',
   title: 'Yupeng Lu - AI Agent Engineer',
   pages: 1,
   sha256: '36f53bbf71cf560a29d90ad0b019f9325f7a08ea554bc15a1a8e27fa43ad89ff',
 };
-export const RESUME_VARIANTS = [FULL_RESUME, ONE_PAGE_RESUME];
+export const ZH_RESUME = {
+  id: 'zh',
+  source: 'src/content/resume-zh.html',
+  output: 'applications/resume-zh.pdf',
+  lang: 'zh-CN',
+  title: 'Yupeng Lu - AI Agent Engineer - Chinese resume',
+  pages: 1,
+  sha256: '19e7f2bd16e4c6109092d6a966477be11864f4de2f068b0596b85e6554d4583b',
+};
+export const RESUME_VARIANTS = [FULL_RESUME, ONE_PAGE_RESUME, ZH_RESUME];
 
 const STALE_IDENTITIES = ['yupeng-dev'];
 const ACTIVE_CONTENT = /\/(?:JavaScript|JS|OpenAction|AA|Launch|EmbeddedFile|AcroForm|Encrypt)\b/;
@@ -35,14 +46,16 @@ function structureCounts(pdf) {
   return counts;
 }
 
-function titlePattern(title) {
-  const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replaceAll(' - ', ' (?:-|\\\\055) ');
-  return new RegExp(`/Title\\s*\\(${escaped}\\)`);
+const PDF_HYPHEN = '(?:-|\\\\055)';
+
+function pdfTextPattern(text) {
+  const literal = text.replace(/[\\()]/g, '\\$&');
+  return literal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replaceAll('-', PDF_HYPHEN);
 }
 
-function assertDocumentMetadata(pdf, name, title) {
-  assert.match(pdf, /\/Lang\s*\(en(?:-|\\055)US\)/, `${name}: document language must be en-US`);
-  assert.match(pdf, titlePattern(title), `${name}: accessible document title “${title}” is missing`);
+function assertDocumentMetadata(pdf, name, variant) {
+  assert.match(pdf, new RegExp(`/Lang\\s*\\(${pdfTextPattern(variant.lang)}\\)`), `${name}: document language must be ${variant.lang}`);
+  assert.match(pdf, new RegExp(`/Title\\s*\\(${pdfTextPattern(variant.title)}\\)`), `${name}: accessible document title “${variant.title}” is missing`);
   assert.match(pdf, /\/Author\s*\(Yupeng Lu\)/, `${name}: document author is missing`);
   assert.match(pdf, /\/Metadata\s+\d+\s+0\s+R\b/, `${name}: XMP metadata stream is missing`);
   assert.match(pdf, /\/ViewerPreferences\s*<<[\s\S]*?\/DisplayDocTitle\s+true[\s\S]*?>>/, `${name}: title display preference is missing`);
@@ -95,7 +108,7 @@ export function assertAccessibleResumeStructure(buffer, name, variant) {
   for (const identity of STALE_IDENTITIES) {
     assert.ok(!pdf.toLowerCase().includes(identity), `${name}: stale identity “${identity}”`);
   }
-  assertDocumentMetadata(pdf, name, variant.title);
+  assertDocumentMetadata(pdf, name, variant);
   assertTaggedStructure(pdf, name, pages);
   assertTaggedLinks(pdf, name, pages);
   assertEmbeddedFonts(pdf, name);
@@ -174,4 +187,76 @@ export function assertOnePageParity(fullHtml, onePageHtml) {
     assert.ok(full.numbers.has(number), `one-page resume: “${number}” is not in ${FULL_RESUME.source}; ${together}`);
   }
   assert.ok(one.modified >= full.modified, `one-page resume: older than the full resume; review ${ONE_PAGE_RESUME.source} and bump its dcterms.modified`);
+}
+
+const MONTH_NUMBER = { Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6, Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12 };
+
+function bodyText(html) {
+  return textOf(html.slice(html.indexOf('<body')));
+}
+
+function monthKey(year, month) {
+  return `${year}-${String(month).padStart(2, '0')}`;
+}
+
+/** Role periods as `YYYY-MM~YYYY-MM` or `YYYY-MM~now`, read from "Jul 2026 – Present" and "2026年7月 – 至今". */
+function periods(html) {
+  const text = bodyText(html);
+  const found = new Set();
+  for (const [, startMonth, startYear, endMonth, endYear] of text.matchAll(/\b([A-Z][a-z]{2}) (\d{4}) – (?:([A-Z][a-z]{2}) (\d{4})|Present)/g)) {
+    if (!(startMonth in MONTH_NUMBER) || (endMonth && !(endMonth in MONTH_NUMBER))) continue;
+    found.add(`${monthKey(startYear, MONTH_NUMBER[startMonth])}~${endMonth ? monthKey(endYear, MONTH_NUMBER[endMonth]) : 'now'}`);
+  }
+  for (const [, startYear, startMonth, endYear, endMonth] of text.matchAll(/(\d{4})年(\d{1,2})月 – (?:(\d{4})年(\d{1,2})月|至今)/g)) {
+    found.add(`${monthKey(startYear, startMonth)}~${endYear ? monthKey(endYear, endMonth) : 'now'}`);
+  }
+  return found;
+}
+
+/** Digit runs in the resume body (not the header, where a phone number may go) outside dates. */
+function numberRuns(html) {
+  const text = bodyText(html.replace(/<header[\s\S]*?<\/header>/, '')).replace(/\b[A-Z][a-z]{2} \d{4}\b/g, ' ').replace(/\d{4}年(?:\d{1,2}月)?/g, ' ');
+  return new Set(text.match(/\d+(?:[.,]\d+)*/g) ?? []);
+}
+
+function links(html) {
+  return new Set([...html.matchAll(/<a\b[^>]*\bhref="([^"]+)"/g)].map(([, href]) => href).filter((href) => !href.startsWith('tel:')));
+}
+
+function modifiedOf(html) {
+  return html.match(/<meta\s+name="dcterms\.modified"\s+content="([^"]+)"/)?.[1] ?? '';
+}
+
+function assertSameSet(actual, expected, describe) {
+  for (const item of actual) assert.ok(expected.has(item), describe(item, 'extra'));
+  for (const item of expected) assert.ok(actual.has(item), describe(item, 'missing'));
+}
+
+/**
+ * The Chinese resume translates the one-page resume, so its text cannot be compared line by line. Its role
+ * periods, links, and numbers must be exactly the one-page resume's (a phone number may sit in the header),
+ * which in turn only repeats the full resume; and it may not be dated before the one-page resume.
+ */
+export function assertChineseParity(fullHtml, onePageHtml, chineseHtml) {
+  const together = 'translate every change';
+  const chinesePeriods = periods(chineseHtml);
+  assert.ok(chinesePeriods.size > 0, 'Chinese resume: no role periods found (write them as “2026年7月 – 至今”)');
+  assertSameSet(chinesePeriods, periods(onePageHtml), (period, kind) =>
+    kind === 'extra'
+      ? `Chinese resume: period ${period} is not in ${ONE_PAGE_RESUME.source}; ${together}`
+      : `Chinese resume: period ${period} of ${ONE_PAGE_RESUME.source} is missing; ${together}`);
+  const fullPeriods = periods(fullHtml);
+  for (const period of chinesePeriods) assert.ok(fullPeriods.has(period), `Chinese resume: period ${period} is not in ${FULL_RESUME.source}`);
+  assertSameSet(numberRuns(chineseHtml), numberRuns(onePageHtml), (number, kind) =>
+    kind === 'extra'
+      ? `Chinese resume: “${number}” is not in ${ONE_PAGE_RESUME.source}; ${together}`
+      : `Chinese resume: “${number}” of ${ONE_PAGE_RESUME.source} is missing; ${together}`);
+  assertSameSet(links(chineseHtml), links(onePageHtml), (href, kind) =>
+    kind === 'extra'
+      ? `Chinese resume: link ${href} is not in ${ONE_PAGE_RESUME.source}; ${together}`
+      : `Chinese resume: link ${href} of ${ONE_PAGE_RESUME.source} is missing; ${together}`);
+  assert.ok(
+    modifiedOf(chineseHtml) >= modifiedOf(onePageHtml),
+    `Chinese resume: older than the one-page resume; review ${ZH_RESUME.source} and bump its dcterms.modified`,
+  );
 }
