@@ -22,9 +22,20 @@ function assertPng(buffer, name) {
 
 const POSITIONING = 'AI agent &amp; backend engineer — I take agents from demo to production: MCP tools, guardrails, evals, billing, real-time systems.';
 
+/** Visible text of an HTML document: tags are removed until none remain, then whitespace collapses. */
+function visibleText(html) {
+  let text = html;
+  let previous;
+  do {
+    previous = text;
+    text = text.replace(/<[^>]*>/g, '');
+  } while (text !== previous);
+  return text.replace(/\s+/g, ' ');
+}
+
 const home = await read('index.html');
 assert.match(home, /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/brickerp\.github\.io\/["']/i, 'dist landing canonical');
-assert.ok(home.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').includes(POSITIONING), 'dist landing must carry the one-line positioning');
+assert.ok(visibleText(home).includes(POSITIONING), 'dist landing must carry the one-line positioning');
 assert.match(home, /"@type"\s*:\s*"WebSite"/, 'dist landing WebSite JSON-LD');
 assert.doesNotMatch(home, /<script\b[^>]*src=/i, 'dist landing must stay static');
 assert.match(home, /<a\b[^>]*href=["']\/beijing-loop\/["']/i, 'dist landing must keep the film reachable');
@@ -36,7 +47,7 @@ assert.match(film, /<script\b[^>]*type=["']module["'][^>]*src=["'](?:\.\.\/|\/)a
 
 const hire = await read('hire/index.html');
 assert.match(hire, /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/brickerp\.github\.io\/hire\/["']/i, 'dist hire canonical');
-assert.ok(hire.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').includes(POSITIONING), 'dist hire must carry the one-line positioning');
+assert.ok(visibleText(hire).includes(POSITIONING), 'dist hire must carry the one-line positioning');
 
 const about = await read('about/index.html');
 assert.match(about, /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/brickerp\.github\.io\/about\/["']/i, 'dist about canonical');

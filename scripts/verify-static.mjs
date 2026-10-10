@@ -33,6 +33,17 @@ function attribute(html, selector, name) {
   return undefined;
 }
 
+/** Visible text of an HTML document: tags are removed until none remain, then whitespace collapses. */
+function visibleText(html) {
+  let text = html;
+  let previous;
+  do {
+    previous = text;
+    text = text.replace(/<[^>]*>/g, '');
+  } while (text !== previous);
+  return text.replace(/\s+/g, ' ');
+}
+
 function decodeHtml(value) {
   return value
     .replaceAll('&lt;', '<')
@@ -150,10 +161,7 @@ for (const [file, html] of [
   ['public/hire/index.html', hireHtml],
   ['public/about/index.html', aboutHtml],
 ]) {
-  assert.ok(
-    html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').includes(escapeHtml(POSITIONING)),
-    `${file}: must carry the one-line positioning verbatim`,
-  );
+  assert.ok(visibleText(html).includes(escapeHtml(POSITIONING)), `${file}: must carry the one-line positioning verbatim`);
 }
 for (const [file, html] of [
   ['index.html', rootHtml],
