@@ -1,0 +1,5 @@
+Self-hosted subsets (SIL Open Font License 1.1):
+- serif-*.woff2: Source Serif Pro (Adobe)
+- caveat.woff2: Caveat (Impallari Type)
+- mono-400.woff2: IBM Plex Mono (IBM)
+https://openfontlicense.org
