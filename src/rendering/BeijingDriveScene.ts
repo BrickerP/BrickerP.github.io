@@ -550,12 +550,7 @@ export class BeijingDriveScene {
     dome.scale(1, 0.72, 1);
     this.openCircuitNode = new Mesh(
       this.trackGeometry(dome),
-      this.standard(PALETTE.signature, {
-        metalness: 0,
-        roughness: 0.5,
-        emissive: PALETTE.signature,
-        emissiveIntensity: 0.5,
-      }),
+      this.standard(PALETTE.signature, { metalness: 0, roughness: 0.72 }),
     );
     this.openCircuitNode.name = OPEN_CIRCUIT_NODE_NAME;
     this.place(this.openCircuitNode, OPEN_CIRCUIT_NODE_PHASE, OPEN_CIRCUIT_CARRIER_OFFSET, 0.04);
