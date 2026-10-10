@@ -1,7 +1,7 @@
 import {
   ACESFilmicToneMapping,
   Color,
-  PCFSoftShadowMap,
+  PCFShadowMap,
   SRGBColorSpace,
   Vector2,
   WebGLRenderer,
@@ -87,7 +87,7 @@ export class BeijingLoopApp {
     this.renderer.toneMapping = ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.08;
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = PCFSoftShadowMap;
+    this.renderer.shadowMap.type = PCFShadowMap;
     this.renderer.setClearColor(new Color(PALETTE.skyTop), 1);
 
     this.canvas = this.renderer.domElement;
