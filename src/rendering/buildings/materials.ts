@@ -13,6 +13,8 @@ export interface CityMaterials {
   glazeBlue: MeshStandardMaterial;
   stone: MeshStandardMaterial;
   concrete: MeshStandardMaterial;
+  /** Lit concrete for flyover decks, piers and portals: their faces turn away from the key light. */
+  soffit: MeshStandardMaterial;
   bark: MeshStandardMaterial;
   glass: MeshStandardMaterial;
   timber: MeshStandardMaterial;

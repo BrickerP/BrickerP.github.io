@@ -280,6 +280,11 @@ export class BeijingDriveScene {
       emissive: '#243038',
       emissiveIntensity: 0.22,
     });
+    const soffit = this.surface('#7C8A92', 'concrete', {
+      roughness: 0.9,
+      emissive: '#4A5A64',
+      emissiveIntensity: 0.85,
+    });
     const bark = this.surface('#6A5340', 'bark', {
       roughness: 0.94,
       emissive: '#2A2018',
@@ -382,6 +387,7 @@ export class BeijingDriveScene {
       glazeBlue,
       stone,
       concrete,
+      soffit,
       bark,
       glass,
       timber,
@@ -561,18 +567,9 @@ export class BeijingDriveScene {
     this.root.add(rim);
   }
 
-  /** A lit concrete for soffits: the underside faces away from the key light, so it carries its own glow. */
-  private soffitMaterial(): MeshStandardMaterial {
-    return this.surface('#7C8A92', 'concrete', {
-      roughness: 0.9,
-      emissive: '#4A5A64',
-      emissiveIntensity: 0.85,
-    });
-  }
-
   /** Curved second-ring flyover kept outside the carriageway: a swept deck on girders and bent piers. */
   private buildRingBridge(): void {
-    const material = this.soffitMaterial();
+    const material = this.cityMaterials.soffit;
     const bridge = new Group();
     this.place(bridge, 0.392, 14.8, 0, Math.PI / 2);
     const radius = 9.2;
@@ -618,8 +615,7 @@ export class BeijingDriveScene {
    * edge beams and parapets, carried by bent piers; the portal boxes at the end stay as they were.
    */
   private buildOverpassDeck(): void {
-    const concrete = this.cityMaterials.concrete;
-    const material = this.soffitMaterial();
+    const material = this.cityMaterials.soffit;
     const frames = sweepFrames(0.909, 0.9945, 0, 1.6);
     const girders: SweepOutline[] = [-7.6, -5.1, -2.55, 0, 2.55, 5.1, 7.6].map((u) => [
       [u - 0.28, 5.55],
@@ -667,11 +663,11 @@ export class BeijingDriveScene {
     this.root.add(bents);
     const portalProgress = 0.993;
     for (const side of [-1, 1]) {
-      const cheek = this.box(0.7, 8.4, 2.4, concrete);
+      const cheek = this.box(0.7, 8.4, 2.4, material);
       this.place(cheek, portalProgress, side * 6.5, 4.2);
       this.root.add(cheek);
     }
-    const lintel = this.box(14.2, 3.6, 2.2, concrete);
+    const lintel = this.box(14.2, 3.6, 2.2, material);
     this.place(lintel, portalProgress, 0, 8.6);
     this.root.add(lintel);
   }

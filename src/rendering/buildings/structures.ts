@@ -719,7 +719,7 @@ export function buildStreetGate(mats: CityMaterials): Group {
 export function buildOverpassPier(mats: CityMaterials): Group {
   const group = new Group();
   const batch = beginAssembly(group);
-  batch.add(createPierBent(8.2), mats.concrete);
+  batch.add(createPierBent(8.2), mats.soffit);
   batch.finish();
   return group;
 }
