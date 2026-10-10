@@ -541,7 +541,7 @@ export class BeijingDriveScene {
     this.place(closureRing, OPEN_CIRCUIT_NODE_PHASE, OPEN_CIRCUIT_CARRIER_OFFSET, 0.03);
     this.root.add(closureRing);
     const dome = new SphereGeometry(0.42, 28, 10, 0, Math.PI * 2, 0, Math.PI / 2);
-    dome.scale(1, 0.42, 1);
+    dome.scale(1, 0.72, 1);
     this.openCircuitNode = new Mesh(
       this.trackGeometry(dome),
       this.standard(PALETTE.signature, {
