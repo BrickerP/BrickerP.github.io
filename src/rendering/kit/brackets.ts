@@ -35,7 +35,6 @@ export function addBracketRun(
 ): void {
   const offsets = bracketOffsets(span);
   const mesh = new InstancedMesh(geometry, material, offsets.length);
-  mesh.frustumCulled = false;
   const local = new Matrix4();
   const quaternion = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), rotationY);
   const scale = new Vector3(1, 1, 1);
@@ -44,6 +43,7 @@ export function addBracketRun(
     mesh.setMatrixAt(index, local);
   });
   mesh.instanceMatrix.needsUpdate = true;
+  mesh.computeBoundingSphere();
   mesh.userData.shadowRole = 'skip';
   parent.add(mesh);
 }
@@ -59,7 +59,6 @@ export function addBracketRing(
 ): void {
   const total = Math.max(8, count);
   const mesh = new InstancedMesh(geometry, material, total);
-  mesh.frustumCulled = false;
   mesh.userData.shadowRole = 'skip';
   const local = new Matrix4();
   const outward = new Vector3();
@@ -74,5 +73,6 @@ export function addBracketRing(
     mesh.setMatrixAt(index, local);
   }
   mesh.instanceMatrix.needsUpdate = true;
+  mesh.computeBoundingSphere();
   parent.add(mesh);
 }

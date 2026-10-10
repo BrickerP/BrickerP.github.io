@@ -136,7 +136,7 @@ Adjacent passages overlap through shared silhouettes, fog occlusion, walls, tree
 
 The implementation uses Vite, TypeScript, Three.js, and plain CSS. It adds no map SDK, tile service, runtime data service, UI framework, or downloaded font.
 
-Repeated street bays and bracket rows are instanced after construction. The browser regression keeps that graph within `300–2499` objects. Construction resolves world matrices once and disables automatic scene world-matrix updates; any future dynamic scene transform must explicitly update its world matrix or deliberately restore automatic updates. The camera remains outside this static scene hierarchy and updates independently.
+Repeated street bays and bracket rows are instanced after construction, in 32 m cells with real bounds, so the view and the shadow map skip every cell outside the frame. The browser regression keeps that graph within `300–2499` objects. Construction resolves world matrices once and disables automatic scene world-matrix updates; any future dynamic scene transform must explicitly update its world matrix or deliberately restore automatic updates. The camera remains outside this static scene hierarchy and updates independently.
 
 ## Determinism, lifecycle, and compatibility
 
