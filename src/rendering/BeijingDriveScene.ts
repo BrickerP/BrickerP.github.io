@@ -47,6 +47,7 @@ import { createLampPole, createPierBent, createSweep, type SweepFrame, type Swee
 import { sweepFrames } from './pathSweep';
 import { CENTRAL_AXIS_LANDMARKS } from './spatialContract';
 import { assembleCity, type CityMaterials } from './assembleCity';
+import { instanceCell } from './chunks';
 
 const TAU = Math.PI * 2;
 const OPEN_CIRCUIT_CARRIER_OFFSET = 0.62;
@@ -100,6 +101,7 @@ export class BeijingDriveScene {
   private openCircuitCarrier!: Mesh;
   private openCircuitNode!: Mesh;
   private readonly wetLamps = Array.from({ length: 24 }, () => new Vector4());
+  private readonly lightFrame = samplePathFrame(0);
   private capturePerformanceMode = false;
   private disposed = false;
   private readonly builtPassages = new Set<PassageId>();
@@ -172,7 +174,7 @@ export class BeijingDriveScene {
     const wave = 0.5 + 0.5 * Math.cos(progress * TAU);
     this.waterMaterial.emissiveIntensity = 0.18 + wave * 0.035;
     this.keyLight.intensity = 1.95 + wave * 0.16;
-    const frame = samplePathFrame(progress);
+    const frame = samplePathFrame(progress, this.lightFrame);
     const focusX = frame.point.x * DRIVE_PATH_SCALE + frame.tangent.x * 14;
     const focusZ = frame.point.z * DRIVE_PATH_SCALE + frame.tangent.z * 14;
     this.keyLight.position.set(focusX - 14, 22, focusZ - 8);
@@ -589,7 +591,6 @@ export class BeijingDriveScene {
       [[1.4, 6.85], [1.75, 6.85], [1.75, 7.55], [1.4, 7.55]],
     ];
     const deck = new Mesh(this.trackGeometry(createSweep(frames, outlines)), material);
-    deck.frustumCulled = false;
     deck.castShadow = true;
     deck.receiveShadow = true;
     bridge.add(deck);
@@ -627,7 +628,6 @@ export class BeijingDriveScene {
       [[8.4, 6.8], [8.9, 6.8], [8.9, 7.65], [8.4, 7.65]],
     ];
     const deck = new Mesh(this.trackGeometry(createSweep(frames, outlines)), material);
-    deck.frustumCulled = false;
     deck.castShadow = true;
     deck.receiveShadow = true;
     this.root.add(deck);
@@ -637,7 +637,6 @@ export class BeijingDriveScene {
     }
     const bent = this.trackGeometry(createPierBent(5.55));
     const bents = new InstancedMesh(bent, material, stamps.length);
-    bents.frustumCulled = false;
     bents.castShadow = true;
     const matrix = new Matrix4();
     const turn = new Quaternion();
@@ -655,6 +654,7 @@ export class BeijingDriveScene {
       bents.setMatrixAt(index, matrix);
     });
     bents.instanceMatrix.needsUpdate = true;
+    bents.computeBoundingSphere();
     this.root.add(bents);
     const portalProgress = 0.993;
     for (const side of [-1, 1]) {
@@ -737,7 +737,6 @@ export class BeijingDriveScene {
     });
     if (stamps.length === 0) return;
     const contacts = new InstancedMesh(geometry, material, stamps.length);
-    contacts.frustumCulled = false;
     contacts.renderOrder = 1;
     const matrix = new Matrix4();
     const position = new Vector3();
@@ -751,6 +750,7 @@ export class BeijingDriveScene {
       contacts.setMatrixAt(index, matrix);
     });
     contacts.instanceMatrix.needsUpdate = true;
+    contacts.computeBoundingSphere();
     this.root.add(contacts);
   }
 
@@ -766,22 +766,34 @@ export class BeijingDriveScene {
       if (list) list.push(object);
       else groups.set(key, [object]);
     });
+    const cellPosition = new Vector3();
     for (const meshes of groups.values()) {
       if (meshes.length < 6) continue;
-      const source = meshes[0];
-      const instanced = new InstancedMesh(source.geometry, source.material, meshes.length);
-      instanced.castShadow = source.castShadow;
-      instanced.receiveShadow = source.receiveShadow;
-      instanced.frustumCulled = false;
-      const matrix = new Matrix4();
-      for (let index = 0; index < meshes.length; index += 1) {
-        const mesh = meshes[index];
-        matrix.copy(mesh.matrixWorld);
-        instanced.setMatrixAt(index, matrix);
-        mesh.removeFromParent();
+      const cells = new Map<string, Mesh[]>();
+      for (const mesh of meshes) {
+        mesh.getWorldPosition(cellPosition);
+        const key = instanceCell(cellPosition.x, cellPosition.z);
+        const cell = cells.get(key);
+        if (cell) cell.push(mesh);
+        else cells.set(key, [mesh]);
       }
-      instanced.instanceMatrix.needsUpdate = true;
-      this.root.add(instanced);
+      for (const cell of cells.values()) {
+        if (cell.length < 2) continue;
+        const source = cell[0];
+        const instanced = new InstancedMesh(source.geometry, source.material, cell.length);
+        instanced.castShadow = source.castShadow;
+        instanced.receiveShadow = source.receiveShadow;
+        const matrix = new Matrix4();
+        for (let index = 0; index < cell.length; index += 1) {
+          const mesh = cell[index];
+          matrix.copy(mesh.matrixWorld);
+          instanced.setMatrixAt(index, matrix);
+          mesh.removeFromParent();
+        }
+        instanced.instanceMatrix.needsUpdate = true;
+        instanced.computeBoundingSphere();
+        this.root.add(instanced);
+      }
     }
   }
 

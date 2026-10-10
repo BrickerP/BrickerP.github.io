@@ -124,7 +124,6 @@ function wallRun(host: CityHost, spec: WallSpec): void {
   const wall = new Mesh(host.track(createSweep(frames, body)), mats.grayBrick);
   const coping = new Mesh(host.track(createSweep(frames, trim)), mats.stone);
   for (const mesh of [wall, coping]) {
-    mesh.frustumCulled = false;
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     host.root.add(mesh);

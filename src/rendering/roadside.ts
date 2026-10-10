@@ -29,7 +29,6 @@ function addSweep(
   cast = true,
 ): void {
   const mesh = new Mesh(host.track(createSweep(frames, outlines)), material);
-  mesh.frustumCulled = false;
   mesh.castShadow = cast;
   mesh.receiveShadow = true;
   host.root.add(mesh);
