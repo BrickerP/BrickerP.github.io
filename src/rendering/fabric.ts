@@ -25,6 +25,7 @@ const RUNS: FabricRun[] = [
   { from: 0.34, to: 0.41, side: -1, kind: 'old', rows: [16] },
   { from: 0.418, to: 0.5, side: 0, kind: 'old', rows: [17, 24] },
   { from: 0.505, to: 0.585, side: 0, kind: 'old', rows: [15.5, 22.5] },
+  { from: 0.586, to: 0.66, side: -1, kind: 'old', rows: [15.5, 22.5] },
   { from: 0.59, to: 0.668, side: 1, kind: 'modern', rows: [16.5, 26] },
   { from: 0.672, to: 0.752, side: 0, kind: 'modern', rows: [17, 26] },
   { from: 0.756, to: 0.832, side: 1, kind: 'modern', rows: [16.5, 25] },
