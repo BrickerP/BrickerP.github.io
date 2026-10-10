@@ -85,6 +85,10 @@ function expectedContentType(relative) {
   if (relative.endsWith('.pdf')) return /^application\/pdf\b/i;
   if (relative.endsWith('.txt')) return /^text\/plain\b/i;
   if (relative.endsWith('.xml')) return /^(?:application|text)\/xml\b/i;
+  if (relative.endsWith('.woff2')) return /^font\/woff2\b/i;
+  if (relative.endsWith('.woff')) return /^font\/woff\b/i;
+  if (relative.endsWith('.ttf')) return /^font\/ttf\b/i;
+  if (relative.endsWith('.otf')) return /^font\/otf\b/i;
   throw new Error(`unsupported deployed file type: ${relative}`);
 }
 
