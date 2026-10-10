@@ -223,6 +223,27 @@ a{color:inherit}
   .film-tile:hover .film-tile__frame img{transform:scale(1.08)}
 }
 html,body{overflow-x:clip}
+
+/* review fixes: no overlap, numbers above fold */
+.hero{min-height:auto;padding:96px var(--pad) 72px;align-items:center}
+.hero__copy{min-width:0}
+.name{font-size:clamp(52px,7.2vw,104px)}
+.name-alt{position:relative;z-index:3}
+.pos{font-size:clamp(18px,1.8vw,26px);position:relative;z-index:3}
+.hero__film{align-self:center}
+.film-tile{transform:none}
+.hnums{list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:22px;position:relative;z-index:3}
+.hnums li{background:var(--ink);color:var(--paper);padding:10px 12px;border-top:5px solid var(--red);font-family:var(--f-b);font-size:13px;line-height:1.3}
+.hnums strong{display:block;font-family:var(--f-d);font-size:clamp(28px,3vw,42px);line-height:1;margin-bottom:4px;color:var(--paper)}
+.hero__cta{margin-top:20px}
+.g-bar,.g-bar2{top:auto;bottom:40px}
+@media (max-width:900px){
+  .hero{padding:84px var(--pad) 64px}
+  .hero__film{order:0}
+  .name{font-size:clamp(46px,14vw,72px)}
+  .hnums{gap:8px}.hnums li{padding:8px;font-size:12px}
+  .g-num{display:none}
+}
 </style>
 </head>
 <body class="page-home">
@@ -242,18 +263,19 @@ html,body{overflow-x:clip}
 <section class="hero" aria-labelledby="hero-name">
   <div class="hero__geo" aria-hidden="true">
     <div class="g g-sun"></div>
-    <div class="g g-ring"></div>
     <div class="g g-bar"></div>
     <div class="g g-bar2"></div>
-    <div class="g g-wedge"></div>
-    <div class="g g-dot"></div>
-    <div class="g g-num">№01</div>
   </div>
   <div class="hero__copy">
     <p class="kicker"><span>AI agents</span><span>Backend</span><span>Production</span></p>
     <h1 id="hero-name" class="name misreg" data-text="YUPENG LU">YUPENG LU</h1>
     <p class="name-alt">Yupeng Lu · BrickerP · Diamond Bar, California (PT)</p>
     <p class="pos">AI agent &amp; backend engineer — I take agents from demo to production: MCP tools, guardrails, evals, billing, real-time systems.</p>
+    <ol class="hnums" aria-label="Key numbers">
+      <li><strong>1,040</strong><span>merged PRs at Cookiy</span></li>
+      <li><strong>600+</strong><span>merged changes, 19 repos at Baidu MeDo</span></li>
+      <li><strong>41</strong><span>tools across 4 MCP servers</span></li>
+    </ol>
     <div class="hero__cta">
       <a class="btn" href="#contact">Contact <span aria-hidden="true">→</span></a>
       <span class="stamp">Open to part-time / contract · ~20 h/week · US permanent resident · no sponsorship needed</span>
@@ -272,24 +294,6 @@ html,body{overflow-x:clip}
     </a>
   </div>
   <div class="hero__strip" aria-hidden="true"><div class="marq"><span>MCP ✦ GUARDRAILS ✦ EVALS ✦ BILLING ✦ REAL-TIME ✦ 北京 ✦ SECOND RING ✦ </span><span>MCP ✦ GUARDRAILS ✦ EVALS ✦ BILLING ✦ REAL-TIME ✦ 北京 ✦ SECOND RING ✦ </span></div></div>
-</section>
-
-<section class="nums" aria-label="Key numbers">
-  <div class="nums__wedge" aria-hidden="true"></div>
-  <ol class="nums__list">
-    <li class="num">
-      <strong class="num__v">1,040</strong>
-      <span class="num__l">merged PRs at Cookiy — contract-first agent platform</span>
-    </li>
-    <li class="num num--red">
-      <strong class="num__v">600+</strong>
-      <span class="num__l">merged changes across 19 repos at Baidu MeDo</span>
-    </li>
-    <li class="num">
-      <strong class="num__v">41</strong>
-      <span class="num__l">tools across 4 MCP servers — public Cookiy surfaces</span>
-    </li>
-  </ol>
 </section>
 
 <section id="work" class="work" aria-labelledby="work-h">
