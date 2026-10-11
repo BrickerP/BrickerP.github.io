@@ -137,6 +137,7 @@ const rootHtml = await text('index.html');
 const filmHtml = await text('beijing-loop/index.html');
 const aboutHtml = await text('public/about/index.html');
 const sheetHtml = await text('public/work/quant/index.html');
+const architectureHtml = await text('public/work/quant/architecture/index.html');
 const hireHtml = await text('public/hire/index.html');
 const profileLoopCard = await text('public/profile-loop-card.svg');
 const controlsSource = await text('src/ui/controls.ts');
@@ -152,6 +153,7 @@ assertPageMetadata(rootHtml, 'index.html', `${SITE_ORIGIN}/`, 'profile-preview.p
 assertPageMetadata(filmHtml, 'beijing-loop/index.html', `${SITE_ORIGIN}/beijing-loop/`, 'social-preview.png');
 assertPageMetadata(aboutHtml, 'public/about/index.html', `${SITE_ORIGIN}/about/`, 'profile-preview.png');
 assertPageMetadata(sheetHtml, 'public/work/quant/index.html', `${SITE_ORIGIN}/work/quant/`, 'profile-preview.png');
+assertPageMetadata(architectureHtml, 'public/work/quant/architecture/index.html', `${SITE_ORIGIN}/work/quant/architecture/`, 'profile-preview.png');
 assertPageMetadata(hireHtml, 'public/hire/index.html', `${SITE_ORIGIN}/hire/`, 'profile-preview.png');
 
 // One positioning line, verbatim, on every public surface that introduces the author.
@@ -459,6 +461,7 @@ assert.match(aboutHtml, /<nav\b[^>]*aria-label=["']Primary navigation["'][\s\S]*
 assert.match(sheetHtml, /<a\b[^>]*href=["']\/about\/["']/i, 'work/quant: must link back to the full programme');
 assert.match(sheetHtml, /<a\b[^>]*href=["']\/hire\/["']/i, 'work/quant: must reach /hire/');
 assert.equal(linkHref(sheetHtml, 'icon'), rootFavicon, 'work/quant: favicon must match the site identity');
+assert.match(sheetHtml, /<a\b[^>]*href=["']\/work\/quant\/architecture\/["']/i, 'work/quant: must link the architecture hub');
 const sheetData = jsonLd(sheetHtml, 'public/work/quant/index.html');
 const sheet = sheetData.find((item) => item['@type'] === 'TechArticle');
 assert.equal(sheet?.author?.['@id'], profile.mainEntity['@id'], 'work/quant: TechArticle author must be the About Person');
@@ -473,11 +476,52 @@ assert.ok(
   'public profile: Exhibits must include the technical sheet',
 );
 
+// Architecture hub: six positive eras, each figure linked, source README linked back.
+const SOURCE_README = 'https://github.com/BrickerP/quant-trading/blob/develop/docs/architecture/README.md';
+assert.equal(linkHref(architectureHtml, 'icon'), rootFavicon, 'work/quant/architecture: favicon must match the site identity');
+assert.match(architectureHtml, /<a\b[^>]*href=["']\/work\/quant\/["']/i, 'work/quant/architecture: must link back to the technical sheet');
+assert.match(architectureHtml, /<a\b[^>]*href=["']\/about\/["']/i, 'work/quant/architecture: must link back to the full programme');
+assert.match(architectureHtml, /<a\b[^>]*href=["']\/hire\/["']/i, 'work/quant/architecture: must reach /hire/');
+assert.match(
+  architectureHtml,
+  new RegExp(`<a\\b[^>]*href=["']${escapeRegExp(SOURCE_README)}["']`, 'i'),
+  'work/quant/architecture: must link the quant-trading architecture README',
+);
+assert.doesNotMatch(
+  architectureHtml,
+  /NOT oakrelay|no CF yet|\babsent\b|\bfuture\b|foresight|placeholder|\bretired\b|\bgone\b|\bmissing\b|not yet|no gateway/i,
+  'work/quant/architecture: eras stay positive; no foresight or absence labels',
+);
+const architectureData = jsonLd(architectureHtml, 'public/work/quant/architecture/index.html');
+const architectureArticle = architectureData.find((item) => item['@type'] === 'TechArticle');
+assert.equal(architectureArticle?.author?.['@id'], profile.mainEntity['@id'], 'work/quant/architecture: TechArticle author must be the About Person');
+assert.equal(architectureArticle?.isPartOf?.['@id'], 'https://brickerp.github.io/work/quant/#sheet', 'work/quant/architecture: must belong to the technical sheet');
+assert.equal(architectureArticle?.citation, SOURCE_README, 'work/quant/architecture: citation must be the source README');
+const eraFigures = [
+  ['fig-01', 'fig-01-92d444f.png', '92d444f'],
+  ['fig-02', 'fig-02-a42ae99.png', 'a42ae99'],
+  ['fig-03', 'fig-03-eafff22.png', 'eafff22'],
+  ['fig-04', 'fig-04-c01b8f0.png', 'c01b8f0'],
+  ['fig-05', 'fig-05-be85f71.png', 'be85f71'],
+  ['fig-06', 'fig-06-cfa3bc9.png', 'cfa3bc9'],
+];
+for (const [id, file, shortsha] of eraFigures) {
+  assert.match(architectureHtml, new RegExp(`id=["']${id}["']`), `work/quant/architecture: missing ${id}`);
+  assert.match(architectureHtml, new RegExp(`href=["']#${id}["']`), `work/quant/architecture: era table must link ${id}`);
+  assert.match(architectureHtml, new RegExp(`href=["']${file}["']`), `work/quant/architecture: must link ${file}`);
+  assert.ok(architectureHtml.includes(shortsha), `work/quant/architecture: missing shortsha ${shortsha}`);
+  const png = await readFile(path.join(ROOT, 'public/work/quant/architecture', file));
+  assert.equal(png.subarray(1, 4).toString('ascii'), 'PNG', `${file} must be a real PNG`);
+  assert.equal(png.readUInt32BE(16), 1900, `${file} width must be 1900px`);
+  assert.equal(png.readUInt32BE(20), 1360, `${file} height must be 1360px`);
+}
+
 const sitemap = await text('public/sitemap.xml');
 assert.match(sitemap, /<loc>https:\/\/brickerp\.github\.io\/<\/loc>/, 'sitemap: root URL missing');
 assert.match(sitemap, /<loc>https:\/\/brickerp\.github\.io\/about\/<\/loc>/, 'sitemap: about URL missing');
 assert.match(sitemap, /<loc>https:\/\/brickerp\.github\.io\/hire\/<\/loc>/, 'sitemap: hire URL missing');
 assert.match(sitemap, /<loc>https:\/\/brickerp\.github\.io\/work\/quant\/<\/loc>/, 'sitemap: technical sheet URL missing');
+assert.match(sitemap, /<loc>https:\/\/brickerp\.github\.io\/work\/quant\/architecture\/<\/loc>/, 'sitemap: architecture hub URL missing');
 assert.match(sitemap, /<loc>https:\/\/brickerp\.github\.io\/beijing-loop\/<\/loc>/, 'sitemap: film URL missing');
 assert.doesNotMatch(sitemap, /\/poe2\//, 'sitemap: legacy PoE2 redirects must not be indexed');
 
@@ -541,4 +585,4 @@ for (const variant of RESUME_VARIANTS) {
 assertOnePageParity(await text(FULL_RESUME.source), await text(ONE_PAGE_RESUME.source));
 assertChineseParity(await text(FULL_RESUME.source), await text(ONE_PAGE_RESUME.source), await text(ZH_RESUME.source));
 
-console.log(`Static integrity verified: landing, film, about, hire, technical sheet, sitemap, and ${redirectPaths.length} PoE2 redirects.`);
+console.log(`Static integrity verified: landing, film, about, hire, technical sheet, architecture hub, sitemap, and ${redirectPaths.length} PoE2 redirects.`);

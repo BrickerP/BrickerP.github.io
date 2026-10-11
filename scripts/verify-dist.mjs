@@ -68,6 +68,15 @@ const sheet = await read('work/quant/index.html');
 assert.match(sheet, /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/brickerp\.github\.io\/work\/quant\/["']/i, 'dist technical sheet canonical');
 assert.match(sheet, /"@type"\s*:\s*"TechArticle"/, 'dist technical sheet TechArticle JSON-LD');
 assert.match(sheet, /<!-- PROGRAMME:STYLE:START -->\s*<style>/, 'dist technical sheet must inline the programme stylesheet');
+assert.match(sheet, /href=["']\/work\/quant\/architecture\/["']/i, 'dist technical sheet must link the architecture hub');
+
+const architecture = await read('work/quant/architecture/index.html');
+assert.match(architecture, /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/brickerp\.github\.io\/work\/quant\/architecture\/["']/i, 'dist architecture hub canonical');
+assert.match(architecture, /"@type"\s*:\s*"TechArticle"/, 'dist architecture hub TechArticle JSON-LD');
+assert.match(architecture, /<!-- PROGRAMME:STYLE:START -->\s*<style>/, 'dist architecture hub must inline the programme stylesheet');
+assert.match(architecture, /quant-trading\/blob\/develop\/docs\/architecture\/README\.md/, 'dist architecture hub must link the source README');
+assert.match(architecture, /href=["']fig-01-92d444f\.png["']/, 'dist architecture hub must link Fig.01');
+assert.match(architecture, /href=["']fig-06-cfa3bc9\.png["']/, 'dist architecture hub must link Fig.06');
 
 const redirect = await read('poe2/guides/classes-explained.html');
 assert.match(redirect, /name=["']robots["'][^>]*content=["']noindex,follow["']/i, 'nested redirect robots');
@@ -88,6 +97,7 @@ if (HTTP_ORIGIN) {
     { pathname: '/hire/', type: /^text\/html\b/i, body: /I take agents from demo to production[\s\S]*overlaps my employer[\s\S]*#contact/ },
     { pathname: '/about/', type: /^text\/html\b/i, body: /profile-preview\.png/ },
     { pathname: '/work/quant/', type: /^text\/html\b/i, body: /"TechArticle"[\s\S]*Cron removed/ },
+    { pathname: '/work/quant/architecture/', type: /^text\/html\b/i, body: /Fig\.01[\s\S]*fig-06-cfa3bc9\.png/ },
     {
       pathname: '/beijing-loop/',
       type: /^text\/html\b/i,

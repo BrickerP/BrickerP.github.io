@@ -2,7 +2,7 @@
 
 Personal site of Yupeng Lu, AI agent & backend engineer. The root `/` is a static
 landing page (positioning, proof, `/hire/`); `/about/` is the printed programme;
-`/work/quant/` holds the technical sheets; `/hire/` sells part-time contract work.
+`/work/quant/` holds technical sheet № 01; `/work/quant/architecture/` holds era diagrams Fig.01–06; `/hire/` sells part-time contract work.
 The film below lives at `/beijing-loop/`.
 
 ## BEIJING / 北京 — ENDLESS SECOND RING
@@ -158,7 +158,7 @@ The profile shared by the in-app intro and `/about/` lives in
 `src/ui/programme.ts` and `src/styles/programme.css`. After editing any of them, run
 `npm run generate:about`; `npm run verify:static` rejects any committed
 generated-region drift. The same run reprints the `PROGRAMME:STYLE` region of each
-technical sheet under `public/work/` (currently `/work/quant/`), so the sheets share the
+technical sheet under `public/work/` (`/work/quant/` and `/work/quant/architecture/`), so the sheets share the
 programme stylesheet without a build step. `npm run generate:programme` reprints the halftone plates in
 `public/programme/` and `public/profile-preview.png` from the deployed film (set
 `URL` to print from another build).

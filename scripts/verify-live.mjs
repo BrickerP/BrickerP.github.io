@@ -156,11 +156,12 @@ async function verifyAttempt() {
   const nestedPath = '/poe2/guides/classes-explained.html';
   const nestedTarget = `${EXPECTED_ORIGIN}/poe2-build-lab/guides/classes-explained.html`;
   const deployedFiles = await verifyDistParity();
-  const [rootHtml, aboutHtml, beijingHtml, nestedHtml, socialPreview, profilePreview, resume] = await Promise.all([
+  const [rootHtml, aboutHtml, beijingHtml, nestedHtml, architectureHtml, socialPreview, profilePreview, resume] = await Promise.all([
     fetchHtml('/'),
     fetchHtml('/about/'),
     fetchHtml('/beijing-loop/'),
     fetchHtml(nestedPath),
+    fetchHtml('/work/quant/architecture/'),
     fetchBytes('/social-preview.png', /^image\/png\b/i),
     fetchBytes('/profile-preview.png', /^image\/png\b/i),
     fetchBytes('/resume.pdf', /^application\/pdf\b/i),
@@ -176,6 +177,9 @@ async function verifyAttempt() {
   assert.equal(meta(beijingHtml, 'http-equiv', 'refresh'), undefined, '/beijing-loop/: the film must not redirect');
   assertPage(nestedHtml, nestedPath, nestedTarget, 'noindex,follow');
   assert.equal(meta(nestedHtml, 'http-equiv', 'refresh'), `0; url=${nestedTarget}`, `${nestedPath}: wrong refresh target`);
+  assertPage(architectureHtml, '/work/quant/architecture/', `${EXPECTED_ORIGIN}/work/quant/architecture/`, undefined);
+  assert.match(architectureHtml, /quant-trading\/blob\/develop\/docs\/architecture\/README\.md/, '/work/quant/architecture/: source README missing');
+  assert.match(architectureHtml, /id=["']fig-01["'][\s\S]*id=["']fig-06["']/, '/work/quant/architecture/: Fig.01–Fig.06 missing');
 
   for (const [file, bytes] of [
     ['social-preview.png', socialPreview],
