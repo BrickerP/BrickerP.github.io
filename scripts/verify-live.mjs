@@ -156,12 +156,13 @@ async function verifyAttempt() {
   const nestedPath = '/poe2/guides/classes-explained.html';
   const nestedTarget = `${EXPECTED_ORIGIN}/poe2-build-lab/guides/classes-explained.html`;
   const deployedFiles = await verifyDistParity();
-  const [rootHtml, aboutHtml, beijingHtml, nestedHtml, architectureHtml, socialPreview, profilePreview, resume] = await Promise.all([
+  const [rootHtml, aboutHtml, beijingHtml, nestedHtml, architectureHtml, hireHtml, socialPreview, profilePreview, resume] = await Promise.all([
     fetchHtml('/'),
     fetchHtml('/about/'),
     fetchHtml('/beijing-loop/'),
     fetchHtml(nestedPath),
     fetchHtml('/work/quant/architecture/'),
+    fetchHtml('/hire/'),
     fetchBytes('/social-preview.png', /^image\/png\b/i),
     fetchBytes('/profile-preview.png', /^image\/png\b/i),
     fetchBytes('/resume.pdf', /^application\/pdf\b/i),
@@ -170,6 +171,12 @@ async function verifyAttempt() {
   assertPage(rootHtml, '/', `${EXPECTED_ORIGIN}/`, undefined);
   assert.equal(meta(rootHtml, 'property', 'og:image'), `${EXPECTED_ORIGIN}/profile-preview.png`, '/: wrong social preview');
   assert.match(rootHtml, /I take agents from demo to production/, '/: landing page must carry the positioning line');
+  assert.match(rootHtml, /id=["']contact["']/i, '/: #contact must stay on the homepage');
+  const hireTarget = `${EXPECTED_ORIGIN}/#contact`;
+  assertPage(hireHtml, '/hire/', hireTarget, 'noindex,follow');
+  assert.equal(meta(hireHtml, 'http-equiv', 'refresh'), `0; url=${hireTarget}`, '/hire/: wrong refresh target');
+  assert.match(hireHtml, /location\.replace\(["']https:\/\/brickerp\.github\.io\/#contact["']\)/, '/hire/: missing silent location replace');
+  assert.doesNotMatch(hireHtml, /I take agents from demo to production|overlaps my employer/i, '/hire/: marketing page must stay gone');
   assertPage(aboutHtml, '/about/', `${EXPECTED_ORIGIN}/about/`, undefined);
   assert.equal(meta(aboutHtml, 'property', 'og:image'), `${EXPECTED_ORIGIN}/profile-preview.png`, '/about/: wrong social preview');
   assertPage(beijingHtml, '/beijing-loop/', `${EXPECTED_ORIGIN}/beijing-loop/`, undefined);
