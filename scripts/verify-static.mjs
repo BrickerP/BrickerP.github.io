@@ -154,7 +154,6 @@ assertPageMetadata(filmHtml, 'beijing-loop/index.html', `${SITE_ORIGIN}/beijing-
 assertPageMetadata(aboutHtml, 'public/about/index.html', `${SITE_ORIGIN}/about/`, 'profile-preview.png');
 assertPageMetadata(sheetHtml, 'public/work/quant/index.html', `${SITE_ORIGIN}/work/quant/`, 'profile-preview.png');
 assertPageMetadata(architectureHtml, 'public/work/quant/architecture/index.html', `${SITE_ORIGIN}/work/quant/architecture/`, 'profile-preview.png');
-assertPageMetadata(hireHtml, 'public/hire/index.html', `${SITE_ORIGIN}/hire/`, 'profile-preview.png');
 
 // One positioning line, verbatim, on every public surface that introduces the author.
 const POSITIONING = 'AI agent & backend engineer — I take agents from demo to production: MCP tools, guardrails, evals, billing, real-time systems.';
@@ -162,7 +161,6 @@ assert.equal(publicProfile.summary, POSITIONING, 'public profile: summary must b
 assert.equal(publicProfile.role, POSITIONING.split(' — ')[0], 'public profile: role must be the title clause of the positioning line');
 for (const [file, html] of [
   ['index.html', rootHtml],
-  ['public/hire/index.html', hireHtml],
   ['public/about/index.html', aboutHtml],
 ]) {
   assert.ok(visibleText(html).includes(escapeHtml(POSITIONING)), `${file}: must carry the one-line positioning verbatim`);
@@ -184,13 +182,19 @@ for (const file of ['src/content/resume.html', 'src/content/resume-1p.html']) {
     `${file}: headline must be the one-line positioning`,
   );
 }
-assert.match(hireHtml, /overlaps my employer['’]s product/i, 'hire: must state the employer no-overlap boundary');
-assert.match(hireHtml, /http-equiv=["']refresh["'][^>]*content=["']0; url=https:\/\/brickerp\.github\.io\/#contact["']/i, 'hire: must meta-refresh to /#contact');
+const HIRE_TARGET = `${SITE_ORIGIN}/#contact`;
+assert.equal(meta(hireHtml, 'name', 'robots')?.replace(/\s/g, ''), 'noindex,follow', 'hire: redirect must stay out of the index');
+assert.match(hireHtml, new RegExp(`<link\\b[^>]*rel=["']canonical["'][^>]*href=["']${escapeRegExp(HIRE_TARGET)}["']`, 'i'), 'hire: canonical must be /#contact');
+assert.equal(meta(hireHtml, 'http-equiv', 'refresh'), `0; url=${HIRE_TARGET}`, 'hire: must meta-refresh to /#contact');
+assert.match(hireHtml, /location\.replace\(["']https:\/\/brickerp\.github\.io\/#contact["']\)/, 'hire: must replace the location with /#contact');
 assert.match(hireHtml, /href=["']https:\/\/brickerp\.github\.io\/#contact["']/i, 'hire: must link /#contact');
+assert.doesNotMatch(visibleText(hireHtml), /I take agents from demo to production|Hire Yupeng|overlaps my employer|Part-time \/ contract/i, 'hire: must not keep a marketing page');
+assert.doesNotMatch(hireHtml, /property=["']og:|name=["']twitter:/i, 'hire: must not publish social cards');
+assert.match(rootHtml, /id=["']contact["']/i, 'index.html: #contact must stay on the homepage');
+assert.match(rootHtml, /overlaps my employer['’]s product/i, 'index.html: #contact must keep the employer no-overlap boundary');
 assert.match(rootHtml, /<a\b[^>]*href=["'](?:\/hire\/|#contact)["']/i, 'index.html: landing must reach Contact (/#contact or /hire/)');
 assert.match(rootHtml, /<a\b[^>]*href=["']\/beijing-loop\/["']/i, 'index.html: landing must keep the film reachable');
 assert.match(filmHtml, /<a\b[^>]*href=["']\/["']/i, 'beijing-loop: film must link back to the landing page');
-assert.match(hireHtml, /<a\b[^>]*href=["']\/beijing-loop\/["']/i, 'hire: footer must keep the film reachable');
 assert.match(
   controlsSource,
   /<p class="ui-eyebrow">LOOP 01<\/p>[\s\S]*?<h1 class="ui-title" id="experience-title">ENDLESS SECOND RING<\/h1>[\s\S]*?<p class="ui-sub">BEIJING <span lang="zh-CN">\/ 北京<\/span> <span aria-hidden="true">·<\/span> 48-SECOND GENERATIVE DRIVE<\/p>/,
@@ -311,7 +315,6 @@ const rootFavicon = linkHref(rootHtml, 'icon');
 assert.ok(rootFavicon?.startsWith('data:image/svg+xml,'), 'index.html: missing inline SVG favicon');
 assert.equal(linkHref(filmHtml, 'icon'), rootFavicon, 'beijing-loop: favicon must match the site identity');
 assert.equal(linkHref(aboutHtml, 'icon'), rootFavicon, 'about: favicon must match the site identity');
-assert.equal(linkHref(hireHtml, 'icon'), rootFavicon, 'hire: favicon must match the site identity');
 
 const rootData = jsonLd(rootHtml, 'index.html').flatMap((item) => item['@graph'] ?? [item]);
 assert.ok(rootData.some((item) => item['@type'] === 'WebSite'), 'index.html: WebSite JSON-LD missing');
@@ -532,7 +535,7 @@ for (const [id, file, shortsha] of eraFigures) {
 const sitemap = await text('public/sitemap.xml');
 assert.match(sitemap, /<loc>https:\/\/brickerp\.github\.io\/<\/loc>/, 'sitemap: root URL missing');
 assert.match(sitemap, /<loc>https:\/\/brickerp\.github\.io\/about\/<\/loc>/, 'sitemap: about URL missing');
-assert.match(sitemap, /<loc>https:\/\/brickerp\.github\.io\/hire\/<\/loc>/, 'sitemap: hire URL missing');
+assert.doesNotMatch(sitemap, /\/hire\//, 'sitemap: /hire/ is a compatibility redirect and must not be indexed');
 assert.match(sitemap, /<loc>https:\/\/brickerp\.github\.io\/work\/quant\/<\/loc>/, 'sitemap: technical sheet URL missing');
 assert.match(sitemap, /<loc>https:\/\/brickerp\.github\.io\/work\/quant\/architecture\/<\/loc>/, 'sitemap: architecture hub URL missing');
 assert.match(sitemap, /<loc>https:\/\/brickerp\.github\.io\/beijing-loop\/<\/loc>/, 'sitemap: film URL missing');

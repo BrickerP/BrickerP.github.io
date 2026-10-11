@@ -52,6 +52,7 @@ assert.doesNotMatch(homeChunk, /WebGLRenderer|REVISION.*three/i, 'dist landing c
 assert.match(homeChunk, /prefers-reduced-motion/, 'dist landing chunk must still honor reduced motion');
 assert.ok(homeChunk.length < 20_000, `dist landing pendulum chunk too large (${homeChunk.length} bytes)`);
 assert.match(home, /<a\b[^>]*href=["']\/beijing-loop\/["']/i, 'dist landing must keep the film reachable');
+assert.match(home, /id=["']contact["']/i, 'dist landing must keep #contact');
 
 const film = await read('beijing-loop/index.html');
 assert.match(film, /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/brickerp\.github\.io\/beijing-loop\/["']/i, 'dist film canonical');
@@ -59,9 +60,11 @@ assert.match(film, /"@type"\s*:\s*"CreativeWork"/, 'dist film CreativeWork JSON-
 assert.match(film, /<script\b[^>]*type=["']module["'][^>]*src=["'](?:\.\.\/|\/)assets\/[^"']+\.js["']/i, 'dist film must load the built runtime bundle');
 
 const hire = await read('hire/index.html');
-assert.match(hire, /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/brickerp\.github\.io\/hire\/["']/i, 'dist hire canonical');
-assert.ok(visibleText(hire).includes(POSITIONING), 'dist hire must carry the one-line positioning');
+assert.match(hire, /name=["']robots["'][^>]*content=["']noindex,follow["']/i, 'dist hire robots');
+assert.match(hire, /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/brickerp\.github\.io\/#contact["']/i, 'dist hire canonical');
 assert.match(hire, /http-equiv=["']refresh["'][^>]*content=["']0; url=https:\/\/brickerp\.github\.io\/#contact["']/i, 'dist hire must redirect to /#contact');
+assert.match(hire, /location\.replace\(["']https:\/\/brickerp\.github\.io\/#contact["']\)/, 'dist hire must replace the location with /#contact');
+assert.doesNotMatch(visibleText(hire), /I take agents from demo to production|Hire Yupeng|overlaps my employer/i, 'dist hire must not keep hire marketing copy');
 
 const about = await read('about/index.html');
 assert.match(about, /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/brickerp\.github\.io\/about\/["']/i, 'dist about canonical');
@@ -98,7 +101,7 @@ assertAccessibleResume(await readFile(path.join(DIST, 'resume.pdf')), 'dist/resu
 if (HTTP_ORIGIN) {
   const cases = [
     { pathname: '/', type: /^text\/html\b/i, body: /"WebSite"[\s\S]*I take agents from demo to production/ },
-    { pathname: '/hire/', type: /^text\/html\b/i, body: /I take agents from demo to production[\s\S]*overlaps my employer[\s\S]*#contact/ },
+    { pathname: '/hire/', type: /^text\/html\b/i, body: /noindex,follow[\s\S]*url=https:\/\/brickerp\.github\.io\/#contact/ },
     { pathname: '/about/', type: /^text\/html\b/i, body: /profile-preview\.png/ },
     { pathname: '/work/quant/', type: /^text\/html\b/i, body: /"TechArticle"[\s\S]*Cron removed/ },
     { pathname: '/work/quant/architecture/', type: /^text\/html\b/i, body: /Fig\.01[\s\S]*fig-06-cfa3bc9\.png/ },
