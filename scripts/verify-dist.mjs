@@ -42,6 +42,9 @@ const homeScriptSrcs = [...home.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/g
 assert.ok(homeScriptSrcs.length === 1, `dist landing must load exactly one module script, got ${homeScriptSrcs.join(', ') || '(none)'}`);
 assert.match(homeScriptSrcs[0], /(?:\.?\.?\/)?assets\/[^"']+\.js$/i, 'dist landing script must be a built assets/*.js chunk');
 assert.match(home, /id=["']pendulum-outer["']/i, 'dist landing must keep the double-pendulum outer bob');
+assert.match(home, /id=["']pendulum-twin-outer["']/i, 'dist landing must keep the twin pendulum');
+assert.match(home, /id=["']pendulum-reset["']/i, 'dist landing must keep the pendulum reset control');
+assert.match(home, /id=["']pendulum-delta["']/i, 'dist landing must keep the Δθ control');
 assert.doesNotMatch(home, /id=["']orbit-body["']|src\/orbit\.ts/i, 'dist landing must not keep the Kepler orbit');
 const homeChunkPath = path.join(DIST, homeScriptSrcs[0].replace(/^\//, '').replace(/^\.\//, ''));
 const homeChunk = await readFile(homeChunkPath, 'utf8');

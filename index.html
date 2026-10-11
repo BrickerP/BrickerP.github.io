@@ -115,17 +115,30 @@ a:hover{color:var(--red)}
 
 .hero__copy{position:relative;z-index:1}
 .fig{position:relative;z-index:0}
-.pendulum{display:block;width:100%;height:auto;aspect-ratio:400/272;color:var(--ink)}
+.pendulum{display:block;width:100%;height:auto;aspect-ratio:400/272;color:var(--ink);touch-action:none;cursor:grab;user-select:none}
 .pendulum .beam,.pendulum .stem,.pendulum .rod{fill:none;stroke:currentColor;stroke-linecap:round}
 .pendulum .beam,.pendulum .rod{stroke-width:1.45}
 .pendulum .stem{stroke-width:1.2}
-.pendulum .trail{fill:none;stroke:var(--red);stroke-linecap:round;stroke-linejoin:round}
-.pendulum .trail--fade{stroke-width:1.35;opacity:.28}
-.pendulum .trail--ink{stroke-width:1.7;opacity:.72}
+.pendulum .twin{opacity:.48}
+.pendulum .twin .rod{stroke-width:1.15}
+.pendulum .trail{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.pendulum .trail--primary{stroke:var(--red);stroke-width:1.65}
+.pendulum .trail--twin{stroke:var(--ink);stroke-width:1.2}
+.pendulum .trail-b0{opacity:.84}
+.pendulum .trail-b1{opacity:.48}
+.pendulum .trail-b2{opacity:.24}
+.pendulum .trail-b3{opacity:.1}
 .pendulum .pivot,.pendulum .bob--inner{fill:var(--ink)}
 .pendulum .bob--outer{fill:var(--red)}
-.pendulum text{font-family:var(--hand);font-size:17px;fill:var(--red)}
+.pendulum .grab{fill:transparent}
+.pendulum text{font-family:var(--hand);font-size:17px;fill:var(--red);cursor:default}
 .pendulum text.m{font-family:var(--serif);font-style:italic;font-size:13px;fill:var(--soft)}
+.pendulum-bar{display:flex;align-items:center;gap:4px 18px;flex-wrap:wrap;margin-top:2px}
+.pendulum-bar button,.pendulum-delta{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);background:none;border:0;padding:0;min-height:44px;display:inline-flex;align-items:center;gap:10px}
+.pendulum-bar button{border-bottom:1px solid var(--ink);cursor:pointer}
+.pendulum-bar button:hover,.pendulum-delta:hover{color:var(--red)}
+.pendulum-delta input{width:min(148px,38vw);accent-color:var(--red);margin:0}
+.pendulum-bar .mono{min-width:4.2em}
 .film{display:block;margin-top:10px;text-decoration:none;color:var(--graphite);background:#fffdf7;padding:10px 10px 12px;border:1px solid var(--rule);box-shadow:0 1px 0 var(--rule),0 10px 24px -18px rgba(31,58,95,.5)}
 .film__frame{aspect-ratio:16/9;overflow:hidden;background:#0b1520}
 .film__frame img{width:100%;height:100%;object-fit:cover}
@@ -203,7 +216,7 @@ a:hover{color:var(--red)}
 }
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
-  .pendulum .trail{opacity:0}
+  .pendulum .trail-b0,.pendulum .trail-b1,.pendulum .trail-b2,.pendulum .trail-b3{opacity:0}
 }
 </style>
 </head>
@@ -241,20 +254,43 @@ a:hover{color:var(--red)}
       </div>
     </div>
     <div class="fig">
-      <svg class="pendulum" viewBox="0 0 400 272" role="img" aria-labelledby="pendulum-t" data-l1="92" data-l2="79.12" data-ox="200" data-oy="42" data-th1="1.2" data-th2="-1.6" data-calm-th1="0.16" data-calm-th2="-0.12">
-        <title id="pendulum-t">Fig. 1 — a double pendulum released from rest. The outer bob leaves a short trail; the motion is chaotic.</title>
+      <svg class="pendulum" viewBox="0 0 400 272" role="group" aria-labelledby="pendulum-t" data-l1="92" data-l2="79.12" data-ox="200" data-oy="42" data-th1="1.2" data-th2="-1.6" data-calm-th1="0.16" data-calm-th2="-0.12">
+        <title id="pendulum-t">Fig. 1 — a double pendulum and a pale twin that starts Δθ₂ away. Drag a bob to set the release. Reset clears both trails.</title>
         <line class="beam" x1="164" y1="28" x2="236" y2="28"/>
         <line class="stem" x1="200" y1="28" x2="200" y2="42"/>
-        <path id="pendulum-trail-fade" class="trail trail--fade" d=""/>
-        <path id="pendulum-trail" class="trail trail--ink" d=""/>
+        <g aria-hidden="true">
+          <path class="trail trail--twin trail-b3" d=""/>
+          <path class="trail trail--twin trail-b2" d=""/>
+          <path class="trail trail--twin trail-b1" d=""/>
+          <path class="trail trail--twin trail-b0" d=""/>
+          <path class="trail trail--primary trail-b3" d=""/>
+          <path class="trail trail--primary trail-b2" d=""/>
+          <path class="trail trail--primary trail-b1" d=""/>
+          <path id="pendulum-trail" class="trail trail--primary trail-b0" d=""/>
+        </g>
+        <g class="twin" aria-hidden="true">
+          <line id="pendulum-twin-rod-a" class="rod" x1="200" y1="42" x2="285.75" y2="75.34"/>
+          <line id="pendulum-twin-rod-b" class="rod" x1="285.75" y1="75.34" x2="206.64" y2="74.21"/>
+          <circle id="pendulum-twin-inner" class="bob bob--inner" cx="285.75" cy="75.34" r="4.4"/>
+          <circle id="pendulum-twin-outer" class="bob bob--outer" cx="206.64" cy="74.21" r="5.4"/>
+        </g>
         <line id="pendulum-rod-a" class="rod" x1="200" y1="42" x2="285.75" y2="75.34"/>
         <line id="pendulum-rod-b" class="rod" x1="285.75" y1="75.34" x2="206.66" y2="73.03"/>
         <circle id="pendulum-inner" class="bob bob--inner" cx="285.75" cy="75.34" r="5.2"/>
         <circle id="pendulum-outer" class="bob bob--outer" cx="206.66" cy="73.03" r="6.2"/>
         <circle class="pivot" cx="200" cy="42" r="2.6"/>
+        <circle id="pendulum-grab-inner" class="grab" cx="285.75" cy="75.34" r="22" aria-hidden="true"/>
+        <circle id="pendulum-grab-outer" class="grab" cx="206.66" cy="73.03" r="22" aria-hidden="true"/>
         <text class="m" x="14" y="258">Fig. 1 — double pendulum</text>
-        <text x="386" y="260" text-anchor="end">sensitive to the start</text>
+        <text x="386" y="260" text-anchor="end">drag a bob</text>
       </svg>
+      <div class="pendulum-bar">
+        <button type="button" id="pendulum-reset">Reset</button>
+        <label class="pendulum-delta">Δθ₂
+          <input id="pendulum-delta" type="range" min="0.002" max="0.06" step="0.001" value="0.015" aria-describedby="pendulum-delta-read">
+        </label>
+        <span id="pendulum-delta-read" class="mono">0.015</span>
+      </div>
       <a class="film" href="/beijing-loop/">
         <div class="film__frame"><img src="/social-preview.png" width="1200" height="630" decoding="async" fetchpriority="high" alt="First-person night drive through an imagined Beijing — Endless Second Ring." /></div>
         <p class="film__cap"><b>Beijing — Endless Second Ring</b><span class="mono">Film · watch →</span></p>
