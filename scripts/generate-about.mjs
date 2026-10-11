@@ -25,7 +25,10 @@ export { escapeHtml };
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ABOUT_PATH = path.join(ROOT, 'public/about/index.html');
-export const SHEET_PATHS = ['public/work/quant/index.html'].map((file) => path.join(ROOT, file));
+export const SHEET_PATHS = [
+  'public/work/quant/index.html',
+  'public/work/quant/architecture/index.html',
+].map((file) => path.join(ROOT, file));
 const PROFILE_PATH = path.join(ROOT, 'src/content/public-profile.json');
 const PROGRAMME_CSS_PATH = path.join(ROOT, 'src/styles/programme.css');
 const MONTH = /^\d{4}-(?:0[1-9]|1[0-2])$/;

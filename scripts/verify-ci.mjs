@@ -215,6 +215,7 @@ for (const route of [
   "fetchHtml('/')",
   "fetchHtml('/about/')",
   "fetchHtml('/beijing-loop/')",
+  "fetchHtml('/work/quant/architecture/')",
   "fetchBytes('/social-preview.png'",
   "fetchBytes('/profile-preview.png'",
   "fetchBytes('/resume.pdf'",
