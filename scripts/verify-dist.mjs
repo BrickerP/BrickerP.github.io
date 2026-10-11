@@ -37,16 +37,17 @@ const home = await read('index.html');
 assert.match(home, /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/brickerp\.github\.io\/["']/i, 'dist landing canonical');
 assert.ok(visibleText(home).includes(POSITIONING), 'dist landing must carry the one-line positioning');
 assert.match(home, /"@type"\s*:\s*"WebSite"/, 'dist landing WebSite JSON-LD');
-// Dist landing may load the hashed Kepler orbit chunk only — never the film bundle.
+// Dist landing may load the hashed double-pendulum chunk only — never the film bundle.
 const homeScriptSrcs = [...home.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/gi)].map((m) => m[1]);
 assert.ok(homeScriptSrcs.length === 1, `dist landing must load exactly one module script, got ${homeScriptSrcs.join(', ') || '(none)'}`);
 assert.match(homeScriptSrcs[0], /(?:\.?\.?\/)?assets\/[^"']+\.js$/i, 'dist landing script must be a built assets/*.js chunk');
-assert.match(home, /id=["']orbit-path["']/i, 'dist landing must keep the Kepler path');
-assert.match(home, /id=["']orbit-body["']/i, 'dist landing must keep the orbit body at periapsis');
+assert.match(home, /id=["']pendulum-outer["']/i, 'dist landing must keep the double-pendulum outer bob');
+assert.doesNotMatch(home, /id=["']orbit-body["']|src\/orbit\.ts/i, 'dist landing must not keep the Kepler orbit');
 const homeChunkPath = path.join(DIST, homeScriptSrcs[0].replace(/^\//, '').replace(/^\.\//, ''));
 const homeChunk = await readFile(homeChunkPath, 'utf8');
 assert.doesNotMatch(homeChunk, /WebGLRenderer|REVISION.*three/i, 'dist landing chunk must not be the Three.js film runtime');
-assert.ok(homeChunk.length < 20_000, `dist landing orbit chunk too large (${homeChunk.length} bytes)`);
+assert.match(homeChunk, /prefers-reduced-motion/, 'dist landing chunk must still honor reduced motion');
+assert.ok(homeChunk.length < 20_000, `dist landing pendulum chunk too large (${homeChunk.length} bytes)`);
 assert.match(home, /<a\b[^>]*href=["']\/beijing-loop\/["']/i, 'dist landing must keep the film reachable');
 
 const film = await read('beijing-loop/index.html');
