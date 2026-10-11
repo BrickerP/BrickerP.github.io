@@ -35,7 +35,7 @@
       "headline": "Technical sheet № 01 — Live trading execution",
       "description": "The order path of a private live-trading system on Alpaca, its execution-safety invariants, and the 2026-10-08 scan-latency regression traced to a backfill cron holding SQLite's write lock.",
       "datePublished": "2026-10-09",
-      "dateModified": "2026-10-10",
+      "dateModified": "2026-10-11",
       "inLanguage": "en",
       "image": "https://brickerp.github.io/profile-preview.png",
       "author": { "@id": "https://brickerp.github.io/about/#yupeng-lu" },
@@ -703,6 +703,7 @@
     <a class="brand" href="/">BrickerP</a>
     <nav aria-label="Primary navigation">
       <a href="/hire/">Work with me</a>
+      <a href="/work/quant/architecture/">Architecture</a>
       <a href="/about/">Programme</a>
       <a href="/beijing-loop/">Film</a>
       <a href="/resume.pdf">Resume</a>
@@ -815,6 +816,7 @@
             </tbody>
           </table>
           <p class="sheet-prose" style="margin-top:22px">SQLite keeps the live state on one host as one file: one writer, no network hop inside the order path, and a single artifact to reconcile against the broker at startup. The regression in 03 is the cost of that choice the moment a second writer appears.</p>
+          <p class="sheet-prose">Era diagrams for this path, Fig.01 through Fig.06, are printed on the <a href="/work/quant/architecture/">architecture hub</a>.</p>
         </section>
 
         <hr class="programme-rule">
@@ -917,6 +919,7 @@
               <h3>Public</h3>
               <ul>
                 <li>This sheet: the order path, the invariants in 02, and the method in 03.</li>
+                <li>The <a href="/work/quant/architecture/">architecture hub</a>: era diagrams Fig.01–Fig.06.</li>
                 <li>The <a href="https://d2c9pzwpavuktk.cloudfront.net/" target="_blank" rel="noopener noreferrer">live research dashboard ↗</a>, published by the Lambda in 01.</li>
                 <li>The reel on the <a href="/about/">full programme</a> and in the <a href="/resume.pdf">resume</a>.</li>
               </ul>
@@ -938,6 +941,6 @@
       </div>
     </main>
   </div>
-  <footer class="site-foot"><p>© 2026 Yupeng Lu · <a href="/">Home</a> · <a href="/hire/">Work with me</a> · <a href="/about/">Full programme</a> · <a href="/beijing-loop/">Beijing — Endless Second Ring</a></p></footer>
+  <footer class="site-foot"><p>© 2026 Yupeng Lu · <a href="/">Home</a> · <a href="/work/quant/architecture/">Architecture</a> · <a href="/hire/">Work with me</a> · <a href="/about/">Full programme</a> · <a href="/beijing-loop/">Beijing — Endless Second Ring</a></p></footer>
 </body>
 </html>
