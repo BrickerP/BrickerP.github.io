@@ -380,27 +380,20 @@ assert.deepEqual(profile.mainEntity.sameAs, sameAs, 'about: JSON-LD sameAs drift
 assert.equal(profile.dateModified, publicProfile.dateModified, 'about: JSON-LD dateModified drifted from public profile');
 assert.match(filmHtml, /<span\s+lang=["']zh-CN["']>北京<\/span>/, 'beijing-loop: Chinese text needs an explicit language span');
 assert.match(filmHtml, /<script\b[^>]*type=["']module["'][^>]*src=["']\/src\/main\.ts["']/, 'beijing-loop: the film must boot from the shared runtime entry');
-// Landing may load one small Kepler orbit module; the film/Three.js runtime stays at /beijing-loop/.
+// Landing may load one small double-pendulum module; the film/Three.js runtime stays at /beijing-loop/.
 const rootScriptSrcs = [...rootHtml.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/gi)].map((m) => m[1]);
 assert.deepEqual(
   rootScriptSrcs,
-  ['/src/orbit.ts'],
-  'index.html: only the Kepler orbit module may load on the landing page',
+  ['/src/pendulum.ts'],
+  'index.html: only the double-pendulum module may load on the landing page',
 );
-assert.match(
-  rootHtml,
-  /id=["']orbit-path["'][\s\S]*id=["']orbit-body["']/i,
-  'index.html: Fig. 1 must expose orbit-path and orbit-body for no-JS periapsis',
-);
-const orbitSvg = rootHtml.match(/<svg class="orbit"[\s\S]*?<\/svg>/i)?.[0];
-assert.ok(orbitSvg, 'index.html: Fig. 1 orbit figure missing');
-assert.equal((orbitSvg.match(/<path\b/gi) ?? []).length, 1, 'index.html: Fig. 1 must draw one orbit path, not several');
-assert.equal((orbitSvg.match(/<ellipse\b/gi) ?? []).length, 0, 'index.html: Fig. 1 must not add extra ellipses');
-assert.doesNotMatch(orbitSvg, /\bclass=["'][^"']*\bfl\b/, 'index.html: Fig. 1 must not draw field lines');
-assert.doesNotMatch(orbitSvg, /stroke-dasharray/, 'index.html: Fig. 1 must not use decorative dashed strokes');
-assert.match(orbitSvg, /equal time/, 'index.html: equal-time stations need their label');
-assert.match(orbitSvg, /empty focus/, 'index.html: the vacant focus needs its label');
+assert.doesNotMatch(rootHtml, /src\/orbit\.ts|orbit-body|orbit-path/, 'index.html: Kepler orbit figure must be gone');
+const pendulumSvg = rootHtml.match(/<svg class="pendulum"[\s\S]*?<\/svg>/i)?.[0];
+assert.ok(pendulumSvg, 'index.html: Fig. 1 pendulum figure missing');
+assert.doesNotMatch(pendulumSvg, /stroke-dasharray/, 'index.html: Fig. 1 must not use decorative dashed strokes');
+assert.match(pendulumSvg, /double pendulum/, 'index.html: Fig. 1 needs its double-pendulum label');
 assert.match(rootHtml, /prefers-reduced-motion:\s*reduce/, 'index.html: reduced-motion rule missing');
+assert.match(rootHtml, /\.pendulum \.trail\{opacity:0\}/, 'index.html: reduced motion must hide the pendulum trail');
 
 function tagAttrs(html, id) {
   const tag = html.match(new RegExp(`<[a-z]+[^>]*\\bid=["']${id}["'][^>]*>`, 'i'))?.[0];
@@ -408,50 +401,50 @@ function tagAttrs(html, id) {
   return tag;
 }
 function tagAttr(tag, name) {
-  const value = tag.match(new RegExp(`\\b${name}=["']([^"']+)["']`, 'i'))?.[1];
+  const value = tag.match(new RegExp(`\\b${name}=["']([^"']*)["']`, 'i'))?.[1];
   assert.ok(value !== undefined, `missing ${name} on ${tag.slice(0, 48)}`);
   return value;
 }
-const pathTag = tagAttrs(orbitSvg, 'orbit-path');
-const massTag = tagAttrs(orbitSvg, 'orbit-mass');
-const bodyTag = tagAttrs(orbitSvg, 'orbit-body');
-const ox = Number(tagAttr(pathTag, 'data-cx'));
-const oy = Number(tagAttr(pathTag, 'data-cy'));
-const semiMajor = Number(tagAttr(pathTag, 'data-a'));
-const semiMinor = Number(tagAttr(pathTag, 'data-b'));
-const tilt = (Number(tagAttr(pathTag, 'data-tilt')) * Math.PI) / 180;
-const eccentricity = Math.sqrt(1 - (semiMinor * semiMinor) / (semiMajor * semiMajor));
+function svgData(name) {
+  const value = pendulumSvg.match(new RegExp(`\\bdata-${name}=["']([^"']+)["']`, 'i'))?.[1];
+  assert.ok(value !== undefined, `index.html: pendulum missing data-${name}`);
+  return Number(value);
+}
+const arm1 = svgData('l1');
+const arm2 = svgData('l2');
+const originX = svgData('ox');
+const originY = svgData('oy');
+const theta1 = svgData('th1');
+const theta2 = svgData('th2');
+const calm1 = svgData('calm-th1');
+const calm2 = svgData('calm-th2');
+assert.ok(arm1 > 0 && arm2 > 0, 'index.html: pendulum arm lengths must be positive');
+assert.ok(Math.abs(theta1) > 1 && Math.abs(theta2) > 1, 'index.html: release angles must leave the small-angle regime');
+assert.ok(Math.abs(calm1) < 0.35 && Math.abs(calm2) < 0.35, 'index.html: reduced-motion pose must hang near vertical');
+const releaseX1 = originX + arm1 * Math.sin(theta1);
+const releaseY1 = originY + arm1 * Math.cos(theta1);
+const releaseX2 = releaseX1 + arm2 * Math.sin(theta2);
+const releaseY2 = releaseY1 + arm2 * Math.cos(theta2);
+const innerTag = tagAttrs(pendulumSvg, 'pendulum-inner');
+const outerTag = tagAttrs(pendulumSvg, 'pendulum-outer');
 assert.ok(
-  Math.abs(eccentricity - Number(tagAttr(pathTag, 'data-eccentricity'))) < 1e-9,
-  'index.html: data-eccentricity must be sqrt(1 - b²/a²) for the drawn ellipse',
+  Math.hypot(Number(tagAttr(innerTag, 'cx')) - releaseX1, Number(tagAttr(innerTag, 'cy')) - releaseY1) < 0.03,
+  'index.html: inner bob must sit at the release pose',
 );
-const focusDistance = semiMajor * eccentricity;
-const focusX = ox + focusDistance * Math.cos(tilt);
-const focusY = oy + focusDistance * Math.sin(tilt);
 assert.ok(
-  Math.hypot(Number(tagAttr(massTag, 'cx')) - focusX, Number(tagAttr(massTag, 'cy')) - focusY) < 0.05,
-  'index.html: central mass must sit at the ellipse focus',
+  Math.hypot(Number(tagAttr(outerTag, 'cx')) - releaseX2, Number(tagAttr(outerTag, 'cy')) - releaseY2) < 0.03,
+  'index.html: outer bob must sit at the release pose',
 );
-const periX = ox + semiMajor * Math.cos(tilt);
-const periY = oy + semiMajor * Math.sin(tilt);
-assert.ok(
-  Math.hypot(Number(tagAttr(bodyTag, 'cx')) - periX, Number(tagAttr(bodyTag, 'cy')) - periY) < 0.05,
-  'index.html: orbit body must be parked at periapsis in the static markup',
-);
-const pathStart = tagAttr(pathTag, 'd').match(/^M\s+([\d.]+)\s+([\d.]+)/);
-assert.ok(pathStart, 'index.html: orbit path must start at periapsis');
-assert.ok(
-  Math.hypot(Number(pathStart[1]) - periX, Number(pathStart[2]) - periY) < 0.05,
-  'index.html: orbit path must start at periapsis',
-);
-const orbitSource = await text('src/orbit.ts');
+assert.equal(tagAttr(tagAttrs(pendulumSvg, 'pendulum-trail'), 'd'), '', 'index.html: trail starts empty for no-JS');
+const pendulumSource = await text('src/pendulum.ts');
 assert.doesNotMatch(
-  orbitSource,
+  pendulumSource,
   /(?:from\s+['"]three['"]|require\(['"]three['"]\)|WebGLRenderer)/,
-  'src/orbit.ts: Kepler module must not import Three.js',
+  'src/pendulum.ts: pendulum module must not import Three.js',
 );
-assert.match(orbitSource, /getPointAtLength/, 'src/orbit.ts: must place the body with SVG getPointAtLength');
-assert.match(orbitSource, /eccentricAnomaly|Kepler/, 'src/orbit.ts: must use Kepler / equal-area timing');
+assert.match(pendulumSource, /function rk4/, 'src/pendulum.ts: must integrate with RK4');
+assert.match(pendulumSource, /prefers-reduced-motion/, 'src/pendulum.ts: must honor reduced motion');
+assert.match(pendulumSource, /calmTh1/, 'src/pendulum.ts: must park at the calm pose');
 assert.doesNotMatch(filmHtml, /name=["']robots["']/i, 'beijing-loop: the film is an indexable page, not a redirect');
 
 // Technical sheet № 01: the programme must reach it, it must reach back, and every

@@ -115,15 +115,17 @@ a:hover{color:var(--red)}
 
 .hero__copy{position:relative;z-index:1}
 .fig{position:relative;z-index:0}
-.orbit{display:block;width:100%;height:auto;aspect-ratio:400/232;color:var(--ink)}
-.orbit .path{fill:none;stroke:var(--ink);stroke-width:1.45}
-.orbit .tick{fill:var(--ink);opacity:.5}
-.orbit .focus-empty{fill:none;stroke:var(--ink);stroke-width:1.15;opacity:.75}
-.orbit .mass{fill:var(--ink)}
-.orbit .body{fill:var(--red)}
-.orbit text{font-family:var(--hand);font-size:17px;fill:var(--red)}
-.orbit text.m{font-family:var(--serif);font-style:italic;font-size:13px;fill:var(--soft)}
-.orbit text.mark{font-family:var(--serif);font-style:italic;font-size:12px;fill:#F6F1E4;font-weight:600}
+.pendulum{display:block;width:100%;height:auto;aspect-ratio:400/272;color:var(--ink)}
+.pendulum .beam,.pendulum .stem,.pendulum .rod{fill:none;stroke:currentColor;stroke-linecap:round}
+.pendulum .beam,.pendulum .rod{stroke-width:1.45}
+.pendulum .stem{stroke-width:1.2}
+.pendulum .trail{fill:none;stroke:var(--red);stroke-linecap:round;stroke-linejoin:round}
+.pendulum .trail--fade{stroke-width:1.35;opacity:.28}
+.pendulum .trail--ink{stroke-width:1.7;opacity:.72}
+.pendulum .pivot,.pendulum .bob--inner{fill:var(--ink)}
+.pendulum .bob--outer{fill:var(--red)}
+.pendulum text{font-family:var(--hand);font-size:17px;fill:var(--red)}
+.pendulum text.m{font-family:var(--serif);font-style:italic;font-size:13px;fill:var(--soft)}
 .film{display:block;margin-top:10px;text-decoration:none;color:var(--graphite);background:#fffdf7;padding:10px 10px 12px;border:1px solid var(--rule);box-shadow:0 1px 0 var(--rule),0 10px 24px -18px rgba(31,58,95,.5)}
 .film__frame{aspect-ratio:16/9;overflow:hidden;background:#0b1520}
 .film__frame img{width:100%;height:100%;object-fit:cover}
@@ -201,6 +203,7 @@ a:hover{color:var(--red)}
 }
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
+  .pendulum .trail{opacity:0}
 }
 </style>
 </head>
@@ -208,7 +211,7 @@ a:hover{color:var(--red)}
 <a class="skip" href="#main">Skip to content</a>
 <header class="nav">
   <div class="wrap">
-    <a class="nav__logo" href="/" aria-label="Yupeng Lu, home"><svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><ellipse cx="16" cy="16" rx="13" ry="5.5" fill="none" stroke="#1F3A5F" stroke-width="1.6" transform="rotate(-25 16 16)"/><circle cx="16" cy="16" r="3.4" fill="#1F3A5F"/><circle cx="27" cy="11" r="2.2" fill="#C2412D"/></svg>Yupeng Lu</a>
+    <a class="nav__logo" href="/" aria-label="Yupeng Lu, home"><svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><path d="M7 6h18M16 6v4" fill="none" stroke="#1F3A5F" stroke-width="1.6" stroke-linecap="round"/><path d="M16 10l8 9-9 7" fill="none" stroke="#1F3A5F" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="19" r="2.2" fill="#1F3A5F"/><circle cx="15" cy="26" r="2.5" fill="#C2412D"/></svg>Yupeng Lu</a>
     <nav aria-label="Primary">
       <a href="#work">Work</a>
       <a href="#about">About</a>
@@ -238,31 +241,19 @@ a:hover{color:var(--red)}
       </div>
     </div>
     <div class="fig">
-      <svg class="orbit" viewBox="0 0 400 232" role="img" aria-labelledby="orbit-t">
-        <title id="orbit-t">Fig. 1 — one elliptical orbit with the central mass at a focus. The body stays on that ellipse and moves faster near periapsis than at apoapsis.</title>
-        <path id="orbit-path" class="path" d="M 296 104 A 96 78 0 0 1 200 182 A 96 78 0 0 1 104 104 A 96 78 0 0 1 200 26 A 96 78 0 0 1 296 104" data-cx="200" data-cy="104" data-a="96" data-b="78" data-tilt="0" data-eccentricity="0.582961190818051"/>
-        <g aria-hidden="true">
-          <circle class="tick" cx="296.00" cy="104.00" r="1.7"/>
-          <circle class="tick" cx="250.20" cy="170.48" r="1.7"/>
-          <circle class="tick" cx="194.40" cy="181.87" r="1.7"/>
-          <circle class="tick" cx="153.21" cy="172.11" r="1.7"/>
-          <circle class="tick" cx="125.38" cy="153.07" r="1.7"/>
-          <circle class="tick" cx="109.27" cy="129.50" r="1.7"/>
-          <circle class="tick" cx="104.00" cy="104.00" r="1.7"/>
-          <circle class="tick" cx="109.27" cy="78.50" r="1.7"/>
-          <circle class="tick" cx="125.38" cy="54.93" r="1.7"/>
-          <circle class="tick" cx="153.21" cy="35.89" r="1.7"/>
-          <circle class="tick" cx="194.40" cy="26.13" r="1.7"/>
-          <circle class="tick" cx="250.20" cy="37.52" r="1.7"/>
-          <text class="m" x="8" y="92">equal time</text>
-          <circle id="orbit-empty-focus" class="focus-empty" cx="144.04" cy="104" r="3.4"/>
-          <text class="m" x="158" y="136" text-anchor="middle">empty focus</text>
-        </g>
-        <circle id="orbit-mass" class="mass" cx="255.96" cy="104" r="9"/>
-        <text class="mark" x="255.96" y="108" text-anchor="middle">M</text>
-        <circle id="orbit-body" class="body" cx="296" cy="104" r="6"/>
-        <text class="m" x="14" y="16">Fig. 1 — one focus</text>
-        <text x="292" y="222" text-anchor="middle">faster at periapsis</text>
+      <svg class="pendulum" viewBox="0 0 400 272" role="img" aria-labelledby="pendulum-t" data-l1="92" data-l2="79.12" data-ox="200" data-oy="42" data-th1="1.2" data-th2="-1.6" data-calm-th1="0.16" data-calm-th2="-0.12">
+        <title id="pendulum-t">Fig. 1 — a double pendulum released from rest. The outer bob leaves a short trail; the motion is chaotic.</title>
+        <line class="beam" x1="164" y1="28" x2="236" y2="28"/>
+        <line class="stem" x1="200" y1="28" x2="200" y2="42"/>
+        <path id="pendulum-trail-fade" class="trail trail--fade" d=""/>
+        <path id="pendulum-trail" class="trail trail--ink" d=""/>
+        <line id="pendulum-rod-a" class="rod" x1="200" y1="42" x2="285.75" y2="75.34"/>
+        <line id="pendulum-rod-b" class="rod" x1="285.75" y1="75.34" x2="206.66" y2="73.03"/>
+        <circle id="pendulum-inner" class="bob bob--inner" cx="285.75" cy="75.34" r="5.2"/>
+        <circle id="pendulum-outer" class="bob bob--outer" cx="206.66" cy="73.03" r="6.2"/>
+        <circle class="pivot" cx="200" cy="42" r="2.6"/>
+        <text class="m" x="14" y="258">Fig. 1 — double pendulum</text>
+        <text x="386" y="260" text-anchor="end">sensitive to the start</text>
       </svg>
       <a class="film" href="/beijing-loop/">
         <div class="film__frame"><img src="/social-preview.png" width="1200" height="630" decoding="async" fetchpriority="high" alt="First-person night drive through an imagined Beijing — Endless Second Ring." /></div>
@@ -380,7 +371,7 @@ a:hover{color:var(--red)}
     <p>© 2026 Yupeng Lu · AI agent &amp; backend engineer</p>
   </div>
 </footer>
-<!-- Kepler orbit module: homepage only; film runtime stays at /beijing-loop/. -->
-<script type="module" src="/src/orbit.ts"></script>
+<!-- Double pendulum module: homepage only; film runtime stays at /beijing-loop/. -->
+<script type="module" src="/src/pendulum.ts"></script>
 </body>
 </html>
