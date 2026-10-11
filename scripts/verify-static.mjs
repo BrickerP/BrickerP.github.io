@@ -183,13 +183,32 @@ for (const file of ['src/content/resume.html', 'src/content/resume-1p.html']) {
   );
 }
 const HIRE_TARGET = `${SITE_ORIGIN}/#contact`;
+function documentTitle(html) {
+  return decodeHtml(html.match(/<title>([^<]*)<\/title>/i)?.[1] ?? '');
+}
 assert.equal(meta(hireHtml, 'name', 'robots')?.replace(/\s/g, ''), 'noindex,follow', 'hire: redirect must stay out of the index');
 assert.match(hireHtml, new RegExp(`<link\\b[^>]*rel=["']canonical["'][^>]*href=["']${escapeRegExp(HIRE_TARGET)}["']`, 'i'), 'hire: canonical must be /#contact');
+assert.equal(meta(hireHtml, 'property', 'og:url'), HIRE_TARGET, 'hire: og:url must be /#contact, not /hire/');
 assert.equal(meta(hireHtml, 'http-equiv', 'refresh'), `0; url=${HIRE_TARGET}`, 'hire: must meta-refresh to /#contact');
 assert.match(hireHtml, /location\.replace\(["']https:\/\/brickerp\.github\.io\/#contact["']\)/, 'hire: must replace the location with /#contact');
 assert.match(hireHtml, /href=["']https:\/\/brickerp\.github\.io\/#contact["']/i, 'hire: must link /#contact');
-assert.doesNotMatch(visibleText(hireHtml), /I take agents from demo to production|Hire Yupeng|overlaps my employer|Part-time \/ contract/i, 'hire: must not keep a marketing page');
-assert.doesNotMatch(hireHtml, /property=["']og:|name=["']twitter:/i, 'hire: must not publish social cards');
+assert.equal(documentTitle(hireHtml), documentTitle(rootHtml), 'hire: title must match the homepage contact story');
+assert.equal(meta(hireHtml, 'name', 'description'), meta(rootHtml, 'name', 'description'), 'hire: description must match the homepage');
+for (const [key, name] of [
+  ['property', 'og:title'],
+  ['property', 'og:description'],
+  ['property', 'og:image'],
+  ['property', 'og:image:alt'],
+  ['name', 'twitter:card'],
+  ['name', 'twitter:title'],
+  ['name', 'twitter:description'],
+  ['name', 'twitter:image'],
+  ['name', 'twitter:image:alt'],
+]) {
+  assert.equal(meta(hireHtml, key, name), meta(rootHtml, key, name), `hire: ${name} must match the homepage`);
+}
+assert.doesNotMatch(hireHtml, /hire/i, 'hire: head and body must not say Hire or point at /hire/');
+assert.doesNotMatch(visibleText(hireHtml), /I take agents from demo to production|overlaps my employer|Part-time \/ contract/i, 'hire: must not keep a visible marketing page');
 assert.match(rootHtml, /id=["']contact["']/i, 'index.html: #contact must stay on the homepage');
 assert.match(rootHtml, /overlaps my employer['’]s product/i, 'index.html: #contact must keep the employer no-overlap boundary');
 assert.match(rootHtml, /<a\b[^>]*href=["'](?:\/hire\/|#contact)["']/i, 'index.html: landing must reach Contact (/#contact or /hire/)');

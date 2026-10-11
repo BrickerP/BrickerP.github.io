@@ -62,9 +62,14 @@ assert.match(film, /<script\b[^>]*type=["']module["'][^>]*src=["'](?:\.\.\/|\/)a
 const hire = await read('hire/index.html');
 assert.match(hire, /name=["']robots["'][^>]*content=["']noindex,follow["']/i, 'dist hire robots');
 assert.match(hire, /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/brickerp\.github\.io\/#contact["']/i, 'dist hire canonical');
+assert.match(hire, /property=["']og:url["'][^>]*content=["']https:\/\/brickerp\.github\.io\/#contact["']/i, 'dist hire og:url');
+assert.match(hire, /property=["']og:title["'][^>]*content=["']Yupeng Lu — AI agent &amp; backend engineer["']/i, 'dist hire og:title must match the homepage');
+assert.match(hire, /property=["']og:image["'][^>]*content=["']https:\/\/brickerp\.github\.io\/profile-preview\.png["']/i, 'dist hire og:image must match the homepage');
+assert.match(hire, /name=["']twitter:title["'][^>]*content=["']Yupeng Lu — AI agent &amp; backend engineer["']/i, 'dist hire twitter:title must match the homepage');
 assert.match(hire, /http-equiv=["']refresh["'][^>]*content=["']0; url=https:\/\/brickerp\.github\.io\/#contact["']/i, 'dist hire must redirect to /#contact');
 assert.match(hire, /location\.replace\(["']https:\/\/brickerp\.github\.io\/#contact["']\)/, 'dist hire must replace the location with /#contact');
-assert.doesNotMatch(visibleText(hire), /I take agents from demo to production|Hire Yupeng|overlaps my employer/i, 'dist hire must not keep hire marketing copy');
+assert.doesNotMatch(hire, /hire/i, 'dist hire must not say Hire or point at /hire/');
+assert.doesNotMatch(visibleText(hire), /I take agents from demo to production|overlaps my employer/i, 'dist hire must not keep a visible marketing page');
 
 const about = await read('about/index.html');
 assert.match(about, /<link\b[^>]*rel=["']canonical["'][^>]*href=["']https:\/\/brickerp\.github\.io\/about\/["']/i, 'dist about canonical');
@@ -101,7 +106,12 @@ assertAccessibleResume(await readFile(path.join(DIST, 'resume.pdf')), 'dist/resu
 if (HTTP_ORIGIN) {
   const cases = [
     { pathname: '/', type: /^text\/html\b/i, body: /"WebSite"[\s\S]*I take agents from demo to production/ },
-    { pathname: '/hire/', type: /^text\/html\b/i, body: /noindex,follow[\s\S]*url=https:\/\/brickerp\.github\.io\/#contact/ },
+    {
+      pathname: '/hire/',
+      type: /^text\/html\b/i,
+      body: /noindex,follow[\s\S]*og:title[\s\S]*Yupeng Lu — AI agent[\s\S]*url=https:\/\/brickerp\.github\.io\/#contact/,
+      absent: /hire/i,
+    },
     { pathname: '/about/', type: /^text\/html\b/i, body: /profile-preview\.png/ },
     { pathname: '/work/quant/', type: /^text\/html\b/i, body: /"TechArticle"[\s\S]*Cron removed/ },
     { pathname: '/work/quant/architecture/', type: /^text\/html\b/i, body: /Fig\.01[\s\S]*fig-06-cfa3bc9\.png/ },
@@ -127,6 +137,7 @@ if (HTTP_ORIGIN) {
     if (definition.png) assertPng(bytes, definition.pathname);
     if (definition.resume) assertAccessibleResume(bytes, definition.pathname, FULL_RESUME);
     if (definition.body) assert.match(bytes.toString('utf8'), definition.body, `${definition.pathname}: response body contract`);
+    if (definition.absent) assert.doesNotMatch(bytes.toString('utf8'), definition.absent, `${definition.pathname}: forbidden text`);
   }
 }
 

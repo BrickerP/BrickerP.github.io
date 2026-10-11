@@ -174,9 +174,17 @@ async function verifyAttempt() {
   assert.match(rootHtml, /id=["']contact["']/i, '/: #contact must stay on the homepage');
   const hireTarget = `${EXPECTED_ORIGIN}/#contact`;
   assertPage(hireHtml, '/hire/', hireTarget, 'noindex,follow');
+  assert.equal(meta(hireHtml, 'property', 'og:url'), hireTarget, '/hire/: og:url must be /#contact');
+  assert.equal(meta(hireHtml, 'property', 'og:title'), meta(rootHtml, 'property', 'og:title'), '/hire/: og:title must match the homepage');
+  assert.equal(meta(hireHtml, 'property', 'og:description'), meta(rootHtml, 'property', 'og:description'), '/hire/: og:description must match the homepage');
+  assert.equal(meta(hireHtml, 'property', 'og:image'), meta(rootHtml, 'property', 'og:image'), '/hire/: og:image must match the homepage');
+  assert.equal(meta(hireHtml, 'name', 'description'), meta(rootHtml, 'name', 'description'), '/hire/: description must match the homepage');
+  assert.equal(meta(hireHtml, 'name', 'twitter:title'), meta(rootHtml, 'name', 'twitter:title'), '/hire/: twitter:title must match the homepage');
+  assert.equal(meta(hireHtml, 'name', 'twitter:description'), meta(rootHtml, 'name', 'twitter:description'), '/hire/: twitter:description must match the homepage');
+  assert.equal(meta(hireHtml, 'name', 'twitter:image'), meta(rootHtml, 'name', 'twitter:image'), '/hire/: twitter:image must match the homepage');
   assert.equal(meta(hireHtml, 'http-equiv', 'refresh'), `0; url=${hireTarget}`, '/hire/: wrong refresh target');
   assert.match(hireHtml, /location\.replace\(["']https:\/\/brickerp\.github\.io\/#contact["']\)/, '/hire/: missing silent location replace');
-  assert.doesNotMatch(hireHtml, /I take agents from demo to production|overlaps my employer/i, '/hire/: marketing page must stay gone');
+  assert.doesNotMatch(hireHtml, /hire/i, '/hire/: must not say Hire or point at /hire/');
   assertPage(aboutHtml, '/about/', `${EXPECTED_ORIGIN}/about/`, undefined);
   assert.equal(meta(aboutHtml, 'property', 'og:image'), `${EXPECTED_ORIGIN}/profile-preview.png`, '/about/: wrong social preview');
   assertPage(beijingHtml, '/beijing-loop/', `${EXPECTED_ORIGIN}/beijing-loop/`, undefined);
