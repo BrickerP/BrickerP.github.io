@@ -392,10 +392,57 @@ assert.match(
   /id=["']orbit-path["'][\s\S]*id=["']orbit-body["']/i,
   'index.html: Fig. 1 must expose orbit-path and orbit-body for no-JS periapsis',
 );
-assert.match(
-  rootHtml,
-  /id=["']orbit-body["'][^>]*\bcx=["']317\.38["'][^>]*\bcy=["']83\.05["']/i,
+const orbitSvg = rootHtml.match(/<svg class="orbit"[\s\S]*?<\/svg>/i)?.[0];
+assert.ok(orbitSvg, 'index.html: Fig. 1 orbit figure missing');
+assert.equal((orbitSvg.match(/<path\b/gi) ?? []).length, 1, 'index.html: Fig. 1 must draw one orbit path, not several');
+assert.equal((orbitSvg.match(/<ellipse\b/gi) ?? []).length, 0, 'index.html: Fig. 1 must not add extra ellipses');
+assert.doesNotMatch(orbitSvg, /\bclass=["'][^"']*\bfl\b/, 'index.html: Fig. 1 must not draw field lines');
+assert.doesNotMatch(orbitSvg, /stroke-dasharray/, 'index.html: Fig. 1 must not use decorative dashed strokes');
+assert.match(orbitSvg, /equal time/, 'index.html: equal-time stations need their label');
+assert.match(orbitSvg, /empty focus/, 'index.html: the vacant focus needs its label');
+assert.match(rootHtml, /prefers-reduced-motion:\s*reduce/, 'index.html: reduced-motion rule missing');
+
+function tagAttrs(html, id) {
+  const tag = html.match(new RegExp(`<[a-z]+[^>]*\\bid=["']${id}["'][^>]*>`, 'i'))?.[0];
+  assert.ok(tag, `index.html: #${id} missing`);
+  return tag;
+}
+function tagAttr(tag, name) {
+  const value = tag.match(new RegExp(`\\b${name}=["']([^"']+)["']`, 'i'))?.[1];
+  assert.ok(value !== undefined, `missing ${name} on ${tag.slice(0, 48)}`);
+  return value;
+}
+const pathTag = tagAttrs(orbitSvg, 'orbit-path');
+const massTag = tagAttrs(orbitSvg, 'orbit-mass');
+const bodyTag = tagAttrs(orbitSvg, 'orbit-body');
+const ox = Number(tagAttr(pathTag, 'data-cx'));
+const oy = Number(tagAttr(pathTag, 'data-cy'));
+const semiMajor = Number(tagAttr(pathTag, 'data-a'));
+const semiMinor = Number(tagAttr(pathTag, 'data-b'));
+const tilt = (Number(tagAttr(pathTag, 'data-tilt')) * Math.PI) / 180;
+const eccentricity = Math.sqrt(1 - (semiMinor * semiMinor) / (semiMajor * semiMajor));
+assert.ok(
+  Math.abs(eccentricity - Number(tagAttr(pathTag, 'data-eccentricity'))) < 1e-9,
+  'index.html: data-eccentricity must be sqrt(1 - b²/a²) for the drawn ellipse',
+);
+const focusDistance = semiMajor * eccentricity;
+const focusX = ox + focusDistance * Math.cos(tilt);
+const focusY = oy + focusDistance * Math.sin(tilt);
+assert.ok(
+  Math.hypot(Number(tagAttr(massTag, 'cx')) - focusX, Number(tagAttr(massTag, 'cy')) - focusY) < 0.05,
+  'index.html: central mass must sit at the ellipse focus',
+);
+const periX = ox + semiMajor * Math.cos(tilt);
+const periY = oy + semiMajor * Math.sin(tilt);
+assert.ok(
+  Math.hypot(Number(tagAttr(bodyTag, 'cx')) - periX, Number(tagAttr(bodyTag, 'cy')) - periY) < 0.05,
   'index.html: orbit body must be parked at periapsis in the static markup',
+);
+const pathStart = tagAttr(pathTag, 'd').match(/^M\s+([\d.]+)\s+([\d.]+)/);
+assert.ok(pathStart, 'index.html: orbit path must start at periapsis');
+assert.ok(
+  Math.hypot(Number(pathStart[1]) - periX, Number(pathStart[2]) - periY) < 0.05,
+  'index.html: orbit path must start at periapsis',
 );
 const orbitSource = await text('src/orbit.ts');
 assert.doesNotMatch(

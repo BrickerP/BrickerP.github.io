@@ -4,16 +4,13 @@
  * The red body stays on the stroked SVG path via getPointAtLength. Timing
  * follows Kepler's second law (equal areas in equal times): mean anomaly
  * advances uniformly, eccentric anomaly is solved, then mapped onto path
- * length. A short on-path trail and SVG glow polish the body. Homepage-only;
- * no Three.js.
+ * length. No-JS and reduced-motion leave the markup: the track, and the
+ * body parked at periapsis. Homepage-only; no Three.js.
  */
 
-const PERIOD_MS = 18_000;
+const PERIOD_MS = 12_000;
 const E_SAMPLES = 256;
 const PATH_SAMPLES = 720;
-/** Trail length as a fraction of the full orbit path. */
-const TRAIL_FRAC = 0.09;
-const TRAIL_STEPS = 14;
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -121,28 +118,6 @@ function placeBody(body: SVGCircleElement, x: number, y: number): void {
   body.setAttribute('cy', y.toFixed(2));
 }
 
-/** Short trail along the same SVG path, behind the body. */
-function paintTrail(
-  path: SVGPathElement,
-  trail: SVGPathElement,
-  s: number,
-  total: number,
-): void {
-  const span = total * TRAIL_FRAC;
-  let d = '';
-  for (let i = TRAIL_STEPS; i >= 0; i -= 1) {
-    let t = s - (span * i) / TRAIL_STEPS;
-    while (t < 0) t += total;
-    const p = path.getPointAtLength(t);
-    d += `${i === TRAIL_STEPS ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`;
-  }
-  trail.setAttribute('d', d);
-}
-
-function clearTrail(trail: SVGPathElement | null): void {
-  trail?.setAttribute('d', '');
-}
-
 function boot(): void {
   if (prefersReducedMotion()) return;
 
@@ -151,17 +126,14 @@ function boot(): void {
 
   const path = root.querySelector<SVGPathElement>('#orbit-path');
   const body = root.querySelector<SVGCircleElement>('#orbit-body');
-  const trail = root.querySelector<SVGPathElement>('#orbit-trail');
   if (!path || !body) return;
 
   const e = Number(path.dataset.eccentricity);
   const lengthLut = buildEccentricLengthLut(path);
-  const total = path.getTotalLength();
 
   const parkPeriapsis = () => {
     const p = path.getPointAtLength(lengthForEccentricAnomaly(lengthLut, 0));
     placeBody(body, p.x, p.y);
-    clearTrail(trail);
   };
   parkPeriapsis();
 
@@ -176,7 +148,6 @@ function boot(): void {
     const s = lengthForEccentricAnomaly(lengthLut, E);
     const p = path.getPointAtLength(s);
     placeBody(body, p.x, p.y);
-    if (trail) paintTrail(path, trail, s, total);
     raf = requestAnimationFrame(tick);
   };
 

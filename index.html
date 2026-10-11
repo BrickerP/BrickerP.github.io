@@ -115,16 +115,15 @@ a:hover{color:var(--red)}
 
 .hero__copy{position:relative;z-index:1}
 .fig{position:relative;z-index:0}
-.orbit{display:block;width:100%;height:auto;max-height:210px;color:var(--ink)}
-.orbit .fl{fill:none;stroke:var(--ink);stroke-width:1;opacity:.32;stroke-dasharray:3 5;animation:flow 14s linear infinite}
-.orbit .fl:nth-child(2n){animation-duration:19s}
-.orbit .path{fill:none;stroke:var(--ink);stroke-width:1.1;opacity:.42}
-.orbit .path--stable{stroke-width:1.35;opacity:.78}
-.orbit .trail{fill:none;stroke:var(--red);stroke-width:2.2;opacity:.4;stroke-linecap:round;stroke-linejoin:round}
-.orbit .body{fill:var(--red);filter:url(#orbit-glow)}
+.orbit{display:block;width:100%;height:auto;aspect-ratio:400/232;color:var(--ink)}
+.orbit .path{fill:none;stroke:var(--ink);stroke-width:1.45}
+.orbit .tick{fill:var(--ink);opacity:.5}
+.orbit .focus-empty{fill:none;stroke:var(--ink);stroke-width:1.15;opacity:.75}
+.orbit .mass{fill:var(--ink)}
+.orbit .body{fill:var(--red)}
 .orbit text{font-family:var(--hand);font-size:17px;fill:var(--red)}
-.orbit text.m{font-family:var(--serif);font-style:italic;font-size:14px;fill:var(--soft)}
-@keyframes flow{to{stroke-dashoffset:-160}}
+.orbit text.m{font-family:var(--serif);font-style:italic;font-size:13px;fill:var(--soft)}
+.orbit text.mark{font-family:var(--serif);font-style:italic;font-size:12px;fill:#F6F1E4;font-weight:600}
 .film{display:block;margin-top:10px;text-decoration:none;color:var(--graphite);background:#fffdf7;padding:10px 10px 12px;border:1px solid var(--rule);box-shadow:0 1px 0 var(--rule),0 10px 24px -18px rgba(31,58,95,.5)}
 .film__frame{aspect-ratio:16/9;overflow:hidden;background:#0b1520}
 .film__frame img{width:100%;height:100%;object-fit:cover}
@@ -186,7 +185,6 @@ a:hover{color:var(--red)}
 
 @media (max-width:900px){
   .hero .wrap,.about .grid{grid-template-columns:1fr}
-  .fig .orbit{max-height:150px}
   .labs{grid-template-columns:1fr}
 }
 @media (max-width:600px){
@@ -203,8 +201,6 @@ a:hover{color:var(--red)}
 }
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
-  .orbit .fl{animation:none}
-  .orbit .trail{opacity:0}
 }
 </style>
 </head>
@@ -242,36 +238,31 @@ a:hover{color:var(--red)}
       </div>
     </div>
     <div class="fig">
-      <svg class="orbit" viewBox="0 0 400 210" role="img" aria-labelledby="orbit-t">
-        <title id="orbit-t">Fig. 1 — a small body in a stable Kepler orbit around a central mass (demo → production)</title>
-        <defs>
-          <filter id="orbit-glow" x="-120%" y="-120%" width="340%" height="340%" color-interpolation-filters="sRGB">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="1.8" result="soft"/>
-            <feFlood flood-color="#C2412D" flood-opacity="0.45" result="tint"/>
-            <feComposite in="tint" in2="soft" operator="in" result="glow"/>
-            <feMerge>
-              <feMergeNode in="glow"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
-        </defs>
+      <svg class="orbit" viewBox="0 0 400 232" role="img" aria-labelledby="orbit-t">
+        <title id="orbit-t">Fig. 1 — one elliptical orbit with the central mass at a focus. The body stays on that ellipse and moves faster near periapsis than at apoapsis.</title>
+        <path id="orbit-path" class="path" d="M 296 104 A 96 78 0 0 1 200 182 A 96 78 0 0 1 104 104 A 96 78 0 0 1 200 26 A 96 78 0 0 1 296 104" data-cx="200" data-cy="104" data-a="96" data-b="78" data-tilt="0" data-eccentricity="0.582961190818051"/>
         <g aria-hidden="true">
-          <path class="fl" d="M10 40 C120 70 280 70 390 40"/>
-          <path class="fl" d="M10 170 C120 140 280 140 390 170"/>
-          <path class="fl" d="M10 75 C130 95 270 95 390 75"/>
-          <path class="fl" d="M10 135 C130 115 270 115 390 135"/>
+          <circle class="tick" cx="296.00" cy="104.00" r="1.7"/>
+          <circle class="tick" cx="250.20" cy="170.48" r="1.7"/>
+          <circle class="tick" cx="194.40" cy="181.87" r="1.7"/>
+          <circle class="tick" cx="153.21" cy="172.11" r="1.7"/>
+          <circle class="tick" cx="125.38" cy="153.07" r="1.7"/>
+          <circle class="tick" cx="109.27" cy="129.50" r="1.7"/>
+          <circle class="tick" cx="104.00" cy="104.00" r="1.7"/>
+          <circle class="tick" cx="109.27" cy="78.50" r="1.7"/>
+          <circle class="tick" cx="125.38" cy="54.93" r="1.7"/>
+          <circle class="tick" cx="153.21" cy="35.89" r="1.7"/>
+          <circle class="tick" cx="194.40" cy="26.13" r="1.7"/>
+          <circle class="tick" cx="250.20" cy="37.52" r="1.7"/>
+          <text class="m" x="8" y="92">equal time</text>
+          <circle id="orbit-empty-focus" class="focus-empty" cx="144.04" cy="104" r="3.4"/>
+          <text class="m" x="158" y="136" text-anchor="middle">empty focus</text>
         </g>
-        <!-- Three orbital ellipses; the body rides the stable mid path (Kepler / equal-area). -->
-        <path class="path" d="M 338.86 46.18 A 152 64 -24 1 1 61.14 169.82 A 152 64 -24 1 1 338.86 46.18" pathLength="1000"/>
-        <path id="orbit-path" class="path path--stable" d="M 317.38 83.05 A 120 62 -12 1 1 82.62 132.95 A 120 62 -12 1 1 317.38 83.05" pathLength="1000" data-cx="200" data-cy="108" data-a="120" data-b="62" data-tilt="-12" data-eccentricity="0.856187"/>
-        <path class="path" d="M 277.89 103.92 A 78 40 -3 1 1 122.11 112.08 A 78 40 -3 1 1 277.89 103.92" pathLength="1000"/>
-        <!-- Central mass at the primary focus; body parked at periapsis for no-JS / reduced-motion. -->
-        <circle cx="300.5" cy="86.64" r="9" fill="#1F3A5F"/>
-        <!-- Trail stays empty until JS animates; hidden with reduced-motion / no-JS. -->
-        <path id="orbit-trail" class="trail" d="" aria-hidden="true"/>
-        <circle id="orbit-body" class="body" cx="317.38" cy="83.05" r="5.5"/>
-        <text class="m" x="18" y="24">Fig. 1 — demo → production</text>
-        <text x="262" y="196">stable orbit = shipped</text>
+        <circle id="orbit-mass" class="mass" cx="255.96" cy="104" r="9"/>
+        <text class="mark" x="255.96" y="108" text-anchor="middle">M</text>
+        <circle id="orbit-body" class="body" cx="296" cy="104" r="6"/>
+        <text class="m" x="14" y="16">Fig. 1 — one focus</text>
+        <text x="292" y="222" text-anchor="middle">faster at periapsis</text>
       </svg>
       <a class="film" href="/beijing-loop/">
         <div class="film__frame"><img src="/social-preview.png" width="1200" height="630" decoding="async" fetchpriority="high" alt="First-person night drive through an imagined Beijing — Endless Second Ring." /></div>
