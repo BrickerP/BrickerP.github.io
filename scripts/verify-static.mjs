@@ -380,7 +380,31 @@ assert.deepEqual(profile.mainEntity.sameAs, sameAs, 'about: JSON-LD sameAs drift
 assert.equal(profile.dateModified, publicProfile.dateModified, 'about: JSON-LD dateModified drifted from public profile');
 assert.match(filmHtml, /<span\s+lang=["']zh-CN["']>北京<\/span>/, 'beijing-loop: Chinese text needs an explicit language span');
 assert.match(filmHtml, /<script\b[^>]*type=["']module["'][^>]*src=["']\/src\/main\.ts["']/, 'beijing-loop: the film must boot from the shared runtime entry');
-assert.doesNotMatch(rootHtml, /<script\b[^>]*src=/i, 'index.html: the landing page stays static; the film runtime lives at /beijing-loop/');
+// Landing may load one small Kepler orbit module; the film/Three.js runtime stays at /beijing-loop/.
+const rootScriptSrcs = [...rootHtml.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["']/gi)].map((m) => m[1]);
+assert.deepEqual(
+  rootScriptSrcs,
+  ['/src/orbit.ts'],
+  'index.html: only the Kepler orbit module may load on the landing page',
+);
+assert.match(
+  rootHtml,
+  /id=["']orbit-path["'][\s\S]*id=["']orbit-body["']/i,
+  'index.html: Fig. 1 must expose orbit-path and orbit-body for no-JS periapsis',
+);
+assert.match(
+  rootHtml,
+  /id=["']orbit-body["'][^>]*\bcx=["']317\.38["'][^>]*\bcy=["']83\.05["']/i,
+  'index.html: orbit body must be parked at periapsis in the static markup',
+);
+const orbitSource = await text('src/orbit.ts');
+assert.doesNotMatch(
+  orbitSource,
+  /(?:from\s+['"]three['"]|require\(['"]three['"]\)|WebGLRenderer)/,
+  'src/orbit.ts: Kepler module must not import Three.js',
+);
+assert.match(orbitSource, /getPointAtLength/, 'src/orbit.ts: must place the body with SVG getPointAtLength');
+assert.match(orbitSource, /eccentricAnomaly|Kepler/, 'src/orbit.ts: must use Kepler / equal-area timing');
 assert.doesNotMatch(filmHtml, /name=["']robots["']/i, 'beijing-loop: the film is an indexable page, not a redirect');
 
 // Technical sheet № 01: the programme must reach it, it must reach back, and every
