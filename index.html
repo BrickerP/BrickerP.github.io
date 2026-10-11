@@ -113,17 +113,18 @@ a:hover{color:var(--red)}
 .btn:hover{background:var(--red);color:var(--paper)}
 .status{font-size:15px;line-height:1.45;color:var(--graphite);border-left:2px solid var(--red);padding-left:12px;max-width:30em}
 
-.fig{position:relative}
+.hero__copy{position:relative;z-index:1}
+.fig{position:relative;z-index:0}
 .orbit{display:block;width:100%;height:auto;max-height:210px;color:var(--ink)}
-.orbit .fl{fill:none;stroke:var(--ink);stroke-width:1;opacity:.38;stroke-dasharray:3 5;animation:flow 14s linear infinite}
+.orbit .fl{fill:none;stroke:var(--ink);stroke-width:1;opacity:.32;stroke-dasharray:3 5;animation:flow 14s linear infinite}
 .orbit .fl:nth-child(2n){animation-duration:19s}
-.orbit .path{fill:none;stroke:var(--ink);stroke-width:1.2;opacity:.7}
-.orbit .body{fill:var(--red)}
-.orbit .spin{transform-origin:200px 105px;animation:orbit 18s linear infinite}
+.orbit .path{fill:none;stroke:var(--ink);stroke-width:1.1;opacity:.42}
+.orbit .path--stable{stroke-width:1.35;opacity:.78}
+.orbit .trail{fill:none;stroke:var(--red);stroke-width:2.2;opacity:.4;stroke-linecap:round;stroke-linejoin:round}
+.orbit .body{fill:var(--red);filter:url(#orbit-glow)}
 .orbit text{font-family:var(--hand);font-size:17px;fill:var(--red)}
 .orbit text.m{font-family:var(--serif);font-style:italic;font-size:14px;fill:var(--soft)}
 @keyframes flow{to{stroke-dashoffset:-160}}
-@keyframes orbit{to{transform:rotate(360deg)}}
 .film{display:block;margin-top:10px;text-decoration:none;color:var(--graphite);background:#fffdf7;padding:10px 10px 12px;border:1px solid var(--rule);box-shadow:0 1px 0 var(--rule),0 10px 24px -18px rgba(31,58,95,.5)}
 .film__frame{aspect-ratio:16/9;overflow:hidden;background:#0b1520}
 .film__frame img{width:100%;height:100%;object-fit:cover}
@@ -202,7 +203,8 @@ a:hover{color:var(--red)}
 }
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
-  .orbit .fl,.orbit .spin{animation:none}
+  .orbit .fl{animation:none}
+  .orbit .trail{opacity:0}
 }
 </style>
 </head>
@@ -241,16 +243,33 @@ a:hover{color:var(--red)}
     </div>
     <div class="fig">
       <svg class="orbit" viewBox="0 0 400 210" role="img" aria-labelledby="orbit-t">
-        <title id="orbit-t">Fig. 1 — a small body in a stable orbit around a central mass, with field lines</title>
+        <title id="orbit-t">Fig. 1 — a small body in a stable Kepler orbit around a central mass (demo → production)</title>
+        <defs>
+          <filter id="orbit-glow" x="-120%" y="-120%" width="340%" height="340%" color-interpolation-filters="sRGB">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="1.8" result="soft"/>
+            <feFlood flood-color="#C2412D" flood-opacity="0.45" result="tint"/>
+            <feComposite in="tint" in2="soft" operator="in" result="glow"/>
+            <feMerge>
+              <feMergeNode in="glow"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
         <g aria-hidden="true">
           <path class="fl" d="M10 40 C120 70 280 70 390 40"/>
           <path class="fl" d="M10 170 C120 140 280 140 390 170"/>
           <path class="fl" d="M10 75 C130 95 270 95 390 75"/>
           <path class="fl" d="M10 135 C130 115 270 115 390 135"/>
         </g>
-        <ellipse class="path" cx="200" cy="105" rx="120" ry="44" transform="rotate(-12 200 105)"/>
-        <circle cx="200" cy="105" r="9" fill="#1F3A5F"/>
-        <g class="spin"><g transform="rotate(-12 200 105)"><circle class="body" cx="320" cy="105" r="5.5"/></g></g>
+        <!-- Three orbital ellipses; the body rides the stable mid path (Kepler / equal-area). -->
+        <path class="path" d="M 338.86 46.18 A 152 64 -24 1 1 61.14 169.82 A 152 64 -24 1 1 338.86 46.18" pathLength="1000"/>
+        <path id="orbit-path" class="path path--stable" d="M 317.38 83.05 A 120 62 -12 1 1 82.62 132.95 A 120 62 -12 1 1 317.38 83.05" pathLength="1000" data-cx="200" data-cy="108" data-a="120" data-b="62" data-tilt="-12" data-eccentricity="0.856187"/>
+        <path class="path" d="M 277.89 103.92 A 78 40 -3 1 1 122.11 112.08 A 78 40 -3 1 1 277.89 103.92" pathLength="1000"/>
+        <!-- Central mass at the primary focus; body parked at periapsis for no-JS / reduced-motion. -->
+        <circle cx="300.5" cy="86.64" r="9" fill="#1F3A5F"/>
+        <!-- Trail stays empty until JS animates; hidden with reduced-motion / no-JS. -->
+        <path id="orbit-trail" class="trail" d="" aria-hidden="true"/>
+        <circle id="orbit-body" class="body" cx="317.38" cy="83.05" r="5.5"/>
         <text class="m" x="18" y="24">Fig. 1 — demo → production</text>
         <text x="262" y="196">stable orbit = shipped</text>
       </svg>
@@ -370,5 +389,7 @@ a:hover{color:var(--red)}
     <p>© 2026 Yupeng Lu · AI agent &amp; backend engineer</p>
   </div>
 </footer>
+<!-- Kepler orbit module: homepage only; film runtime stays at /beijing-loop/. -->
+<script type="module" src="/src/orbit.ts"></script>
 </body>
 </html>
