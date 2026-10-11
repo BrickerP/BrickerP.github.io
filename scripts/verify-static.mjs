@@ -393,7 +393,14 @@ assert.ok(pendulumSvg, 'index.html: Fig. 1 pendulum figure missing');
 assert.doesNotMatch(pendulumSvg, /stroke-dasharray/, 'index.html: Fig. 1 must not use decorative dashed strokes');
 assert.match(pendulumSvg, /double pendulum/, 'index.html: Fig. 1 needs its double-pendulum label');
 assert.match(rootHtml, /prefers-reduced-motion:\s*reduce/, 'index.html: reduced-motion rule missing');
-assert.match(rootHtml, /\.pendulum \.trail\{opacity:0\}/, 'index.html: reduced motion must hide the pendulum trail');
+assert.match(
+  rootHtml,
+  /\.pendulum \.trail-b0,\.pendulum \.trail-b1,\.pendulum \.trail-b2,\.pendulum \.trail-b3\{opacity:0\}/,
+  'index.html: reduced motion must hide the pendulum trails',
+);
+assert.match(rootHtml, /id=["']pendulum-reset["']/, 'index.html: pendulum needs a Reset control');
+assert.match(rootHtml, /id=["']pendulum-delta["']/, 'index.html: pendulum needs a Δθ control');
+assert.match(rootHtml, /id=["']pendulum-twin-outer["']/, 'index.html: pendulum needs its twin');
 
 function tagAttrs(html, id) {
   const tag = html.match(new RegExp(`<[a-z]+[^>]*\\bid=["']${id}["'][^>]*>`, 'i'))?.[0];
@@ -436,6 +443,15 @@ assert.ok(
   'index.html: outer bob must sit at the release pose',
 );
 assert.equal(tagAttr(tagAttrs(pendulumSvg, 'pendulum-trail'), 'd'), '', 'index.html: trail starts empty for no-JS');
+const delta = Number(tagAttr(tagAttrs(rootHtml, 'pendulum-delta'), 'value'));
+assert.ok(delta >= 0.002 && delta <= 0.06, 'index.html: Δθ₂ must be a small perturbation');
+const twinOuter = tagAttrs(pendulumSvg, 'pendulum-twin-outer');
+const twinX = releaseX1 + arm2 * Math.sin(theta2 + delta);
+const twinY = releaseY1 + arm2 * Math.cos(theta2 + delta);
+assert.ok(
+  Math.hypot(Number(tagAttr(twinOuter, 'cx')) - twinX, Number(tagAttr(twinOuter, 'cy')) - twinY) < 0.03,
+  'index.html: twin outer bob must sit Δθ₂ off the release pose',
+);
 const pendulumSource = await text('src/pendulum.ts');
 assert.doesNotMatch(
   pendulumSource,
@@ -445,6 +461,10 @@ assert.doesNotMatch(
 assert.match(pendulumSource, /function rk4/, 'src/pendulum.ts: must integrate with RK4');
 assert.match(pendulumSource, /prefers-reduced-motion/, 'src/pendulum.ts: must honor reduced motion');
 assert.match(pendulumSource, /calmTh1/, 'src/pendulum.ts: must park at the calm pose');
+assert.match(pendulumSource, /TRAIL_MS = 28_000/, 'src/pendulum.ts: trails must keep a long history');
+assert.match(pendulumSource, /pointerdown/, 'src/pendulum.ts: bobs must be draggable');
+assert.match(pendulumSource, /pendulum-delta/, 'src/pendulum.ts: must read the Δθ control');
+assert.match(pendulumSource, /pendulum-twin-outer/, 'src/pendulum.ts: must draw the twin');
 assert.doesNotMatch(filmHtml, /name=["']robots["']/i, 'beijing-loop: the film is an indexable page, not a redirect');
 
 // Technical sheet № 01: the programme must reach it, it must reach back, and every

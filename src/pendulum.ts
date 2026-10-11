@@ -1,10 +1,12 @@
 /**
  * Fig. 1 — double pendulum for the homepage hero.
  *
- * Equal masses, ℓ₂/ℓ₁ = 0.86, released from rest. The state is integrated
- * with classical RK4 on the Lagrangian equations (θ = 0 hangs down). The
- * outer bob leaves a short fading trail. No-JS shows the release pose.
- * Reduced motion parks both arms near the vertical and drops the trail.
+ * Equal masses, ℓ₂/ℓ₁ = 0.86. A pale twin is released from the same pose
+ * plus a small Δθ₂, so the two outer trails split. Drag a bob to choose the
+ * release, or move Δθ₂. Both trails keep a long history and fade with age;
+ * Reset clears them and restores the marked initial conditions.
+ * Classical RK4 on the Lagrangian equations (θ = 0 hangs down).
+ * Reduced motion parks both arms near the vertical and drops the trails.
  * Homepage only; no Three.js.
  */
 
@@ -16,11 +18,15 @@ const L1 = 1;
 const STEP = 1 / 240;
 const TIME_SCALE = 0.42;
 const MAX_FRAME_S = 0.05;
-const TRAIL_MS = 1800;
-const FADE_AT = 0.45;
+/** Wall-clock history kept on each outer bob. Old ink fades; Reset clears it. */
+const TRAIL_MS = 28_000;
+const TRAIL_BANDS = 4;
+const TRAIL_CAP = 720;
+const DEFAULT_DELTA = 0.015;
 
 type State = [number, number, number, number];
 type Sample = { x: number; y: number; t: number };
+type Drag = 'inner' | 'outer';
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -78,6 +84,11 @@ function advance(s: State, wallSeconds: number, l2: number): State {
   return next.every(Number.isFinite) ? next : s;
 }
 
+/** Angle from the downward vertical toward +x (screen y grows downward). */
+function angleFrom(x: number, y: number, px: number, py: number): number {
+  return Math.atan2(x - px, y - py);
+}
+
 function pathOf(points: readonly Sample[]): string {
   if (points.length < 2) return '';
   let d = `M${points[0]!.x.toFixed(1)} ${points[0]!.y.toFixed(1)}`;
@@ -96,85 +107,151 @@ function boot(): void {
   const rodB = root.querySelector<SVGLineElement>('#pendulum-rod-b');
   const inner = root.querySelector<SVGCircleElement>('#pendulum-inner');
   const outer = root.querySelector<SVGCircleElement>('#pendulum-outer');
-  const fade = root.querySelector<SVGPathElement>('#pendulum-trail-fade');
-  const ink = root.querySelector<SVGPathElement>('#pendulum-trail');
+  const grabInner = root.querySelector<SVGCircleElement>('#pendulum-grab-inner');
+  const grabOuter = root.querySelector<SVGCircleElement>('#pendulum-grab-outer');
+  const twinRodA = root.querySelector<SVGLineElement>('#pendulum-twin-rod-a');
+  const twinRodB = root.querySelector<SVGLineElement>('#pendulum-twin-rod-b');
+  const twinInner = root.querySelector<SVGCircleElement>('#pendulum-twin-inner');
+  const twinOuter = root.querySelector<SVGCircleElement>('#pendulum-twin-outer');
+  const deltaInput = document.querySelector<HTMLInputElement>('#pendulum-delta');
+  const deltaRead = document.querySelector<HTMLElement>('#pendulum-delta-read');
+  const resetBtn = document.querySelector<HTMLButtonElement>('#pendulum-reset');
   const l1 = readNum(root.dataset, 'l1');
   const l2px = readNum(root.dataset, 'l2');
   const ox = readNum(root.dataset, 'ox');
   const oy = readNum(root.dataset, 'oy');
-  const th1 = readNum(root.dataset, 'th1');
-  const th2 = readNum(root.dataset, 'th2');
+  const release1 = readNum(root.dataset, 'th1');
+  const release2 = readNum(root.dataset, 'th2');
   const calm1 = readNum(root.dataset, 'calmTh1');
   const calm2 = readNum(root.dataset, 'calmTh2');
-  if (!rodA || !rodB || !inner || !outer || !fade || !ink) return;
+  if (!rodA || !rodB || !inner || !outer || !grabInner || !grabOuter) return;
+  if (!twinRodA || !twinRodB || !twinInner || !twinOuter) return;
   if (l1 === null || l2px === null || ox === null || oy === null) return;
-  if (th1 === null || th2 === null || calm1 === null || calm2 === null) return;
+  if (release1 === null || release2 === null || calm1 === null || calm2 === null) return;
   if (l1 <= 0 || l2px <= 0) return;
 
-  const l2 = l2px / l1;
-  const trail: Sample[] = [];
+  const primaryBands = [0, 1, 2, 3].map((band) =>
+    root.querySelector<SVGPathElement>(`.trail--primary.trail-b${band}`),
+  );
+  const twinBands = [0, 1, 2, 3].map((band) =>
+    root.querySelector<SVGPathElement>(`.trail--twin.trail-b${band}`),
+  );
+  if (primaryBands.some((band) => !band) || twinBands.some((band) => !band)) return;
 
-  const place = (a: number, b: number): { x: number; y: number } => {
+  const l2 = l2px / l1;
+  const primaryTrail: Sample[] = [];
+  const twinTrail: Sample[] = [];
+  let delta = clampDelta(deltaInput ? Number(deltaInput.value) : DEFAULT_DELTA);
+  let state: State = [release1, 0, release2, 0];
+  let twin: State = [release1, 0, release2 + delta, 0];
+  let drag: Drag | null = null;
+  let running = false;
+  let raf = 0;
+  let last = 0;
+
+  const showDelta = (): void => {
+    if (deltaInput) deltaInput.value = delta.toFixed(3);
+    if (deltaRead) deltaRead.textContent = delta.toFixed(3);
+  };
+
+  const joints = (a: number, b: number) => {
     const x1 = ox + l1 * Math.sin(a);
     const y1 = oy + l1 * Math.cos(a);
-    const x2 = x1 + l2px * Math.sin(b);
-    const y2 = y1 + l2px * Math.cos(b);
-    rodA.setAttribute('x1', ox.toFixed(2));
-    rodA.setAttribute('y1', oy.toFixed(2));
-    rodA.setAttribute('x2', x1.toFixed(2));
-    rodA.setAttribute('y2', y1.toFixed(2));
-    rodB.setAttribute('x1', x1.toFixed(2));
-    rodB.setAttribute('y1', y1.toFixed(2));
-    rodB.setAttribute('x2', x2.toFixed(2));
-    rodB.setAttribute('y2', y2.toFixed(2));
-    inner.setAttribute('cx', x1.toFixed(2));
-    inner.setAttribute('cy', y1.toFixed(2));
-    outer.setAttribute('cx', x2.toFixed(2));
-    outer.setAttribute('cy', y2.toFixed(2));
+    return { x1, y1, x2: x1 + l2px * Math.sin(b), y2: y1 + l2px * Math.cos(b) };
+  };
+
+  const paintArm = (
+    a: number,
+    b: number,
+    rod1: SVGLineElement,
+    rod2: SVGLineElement,
+    bob1: SVGCircleElement,
+    bob2: SVGCircleElement,
+    grab1: SVGCircleElement | null,
+    grab2: SVGCircleElement | null,
+  ): { x: number; y: number } => {
+    const { x1, y1, x2, y2 } = joints(a, b);
+    rod1.setAttribute('x1', ox.toFixed(2));
+    rod1.setAttribute('y1', oy.toFixed(2));
+    rod1.setAttribute('x2', x1.toFixed(2));
+    rod1.setAttribute('y2', y1.toFixed(2));
+    rod2.setAttribute('x1', x1.toFixed(2));
+    rod2.setAttribute('y1', y1.toFixed(2));
+    rod2.setAttribute('x2', x2.toFixed(2));
+    rod2.setAttribute('y2', y2.toFixed(2));
+    bob1.setAttribute('cx', x1.toFixed(2));
+    bob1.setAttribute('cy', y1.toFixed(2));
+    bob2.setAttribute('cx', x2.toFixed(2));
+    bob2.setAttribute('cy', y2.toFixed(2));
+    if (grab1) {
+      grab1.setAttribute('cx', x1.toFixed(2));
+      grab1.setAttribute('cy', y1.toFixed(2));
+    }
+    if (grab2) {
+      grab2.setAttribute('cx', x2.toFixed(2));
+      grab2.setAttribute('cy', y2.toFixed(2));
+    }
     return { x: x2, y: y2 };
   };
 
-  const clearTrail = (): void => {
-    trail.length = 0;
-    fade.setAttribute('d', '');
-    ink.setAttribute('d', '');
+  const place = (): { primary: { x: number; y: number }; twin: { x: number; y: number } } => ({
+    primary: paintArm(state[0], state[2], rodA, rodB, inner, outer, grabInner, grabOuter),
+    twin: paintArm(twin[0], twin[2], twinRodA, twinRodB, twinInner, twinOuter, null, null),
+  });
+
+  const clearTrails = (): void => {
+    primaryTrail.length = 0;
+    twinTrail.length = 0;
+    for (const band of [...primaryBands, ...twinBands]) band?.setAttribute('d', '');
   };
 
-  const paintTrail = (now: number): void => {
+  const paintTrail = (bands: Array<SVGPathElement | null>, points: Sample[], now: number): void => {
     const cutoff = now - TRAIL_MS;
-    while (trail.length > 2 && trail[0]!.t < cutoff) trail.shift();
-    const split = cutoff + TRAIL_MS * FADE_AT;
-    let index = 0;
-    while (index < trail.length && trail[index]!.t < split) index += 1;
-    const head = Math.max(0, index - 1);
-    fade.setAttribute('d', pathOf(trail.slice(0, head + 1)));
-    ink.setAttribute('d', pathOf(trail.slice(head)));
+    while (points.length > 2 && points[0]!.t < cutoff) points.shift();
+    while (points.length > TRAIL_CAP) points.shift();
+    const slices: Sample[][] = Array.from({ length: TRAIL_BANDS }, () => []);
+    let previous = 0;
+    for (let i = 0; i < points.length; i += 1) {
+      const point = points[i]!;
+      const age = Math.min(1, Math.max(0, (now - point.t) / TRAIL_MS));
+      const band = Math.min(TRAIL_BANDS - 1, Math.floor(age * TRAIL_BANDS));
+      if (i > 0 && band !== previous) slices[previous]!.push(point);
+      slices[band]!.push(point);
+      previous = band;
+    }
+    for (let band = 0; band < TRAIL_BANDS; band += 1) {
+      bands[band]?.setAttribute('d', pathOf(slices[band]!));
+    }
   };
 
-  const remember = (x: number, y: number, now: number): void => {
-    const prev = trail[trail.length - 1];
+  const remember = (points: Sample[], x: number, y: number, now: number): void => {
+    const prev = points[points.length - 1];
     if (prev) {
       const dx = x - prev.x;
       const dy = y - prev.y;
-      if (dx * dx + dy * dy < 1.7) {
+      if (dx * dx + dy * dy < 2.4) {
         prev.x = x;
         prev.y = y;
         prev.t = now;
         return;
       }
     }
-    trail.push({ x, y, t: now });
+    points.push({ x, y, t: now });
   };
 
-  let state: State = [th1, 0, th2, 0];
-  let running = false;
-  let raf = 0;
-  let last = 0;
-
-  const park = (a: number, b: number): void => {
+  const reseed = (a: number, b: number): void => {
     state = [a, 0, b, 0];
-    place(a, b);
-    clearTrail();
+    twin = [a, 0, b + delta, 0];
+    place();
+    clearTrails();
+    last = performance.now();
+  };
+
+  const parkCalm = (): void => {
+    state = [calm1, 0, calm2, 0];
+    twin = [calm1, 0, calm2 + delta, 0];
+    place();
+    clearTrails();
   };
 
   const stop = (): void => {
@@ -183,45 +260,133 @@ function boot(): void {
   };
 
   const tick = (now: number): void => {
-    if (!running) return;
+    if (!running || drag) return;
     const wall = last === 0 ? 0 : (now - last) / 1000;
     last = now;
-    if (wall > 0) state = advance(state, wall, l2);
-    const tip = place(state[0], state[2]);
-    remember(tip.x, tip.y, now);
-    paintTrail(now);
+    if (wall > 0) {
+      state = advance(state, wall, l2);
+      twin = advance(twin, wall, l2);
+    }
+    const tips = place();
+    remember(primaryTrail, tips.primary.x, tips.primary.y, now);
+    remember(twinTrail, tips.twin.x, tips.twin.y, now);
+    paintTrail(primaryBands, primaryTrail, now);
+    paintTrail(twinBands, twinTrail, now);
     raf = requestAnimationFrame(tick);
   };
 
   const start = (): void => {
-    if (running) return;
+    if (running || drag) return;
     running = true;
     last = 0;
     raf = requestAnimationFrame(tick);
   };
 
+  const svgPoint = (event: PointerEvent): { x: number; y: number } | null => {
+    const ctm = root.getScreenCTM();
+    if (!ctm) return null;
+    const point = root.createSVGPoint();
+    point.x = event.clientX;
+    point.y = event.clientY;
+    const local = point.matrixTransform(ctm.inverse());
+    return { x: local.x, y: local.y };
+  };
+
+  const onPointerDown = (event: PointerEvent): void => {
+    if (event.button !== 0) return;
+    const target = event.target;
+    if (target instanceof Element && target.closest('text')) return;
+    const point = svgPoint(event);
+    if (!point || point.y > 236) return;
+    const { x1, y1, x2, y2 } = joints(state[0], state[2]);
+    const toInner = Math.hypot(point.x - x1, point.y - y1);
+    const toOuter = Math.hypot(point.x - x2, point.y - y2);
+    if (Math.min(toInner, toOuter) > 56) return;
+    drag = toInner <= toOuter ? 'inner' : 'outer';
+    root.setPointerCapture(event.pointerId);
+    stop();
+    clearTrails();
+    event.preventDefault();
+  };
+
+  const onPointerMove = (event: PointerEvent): void => {
+    if (!drag) return;
+    const point = svgPoint(event);
+    if (!point) return;
+    if (drag === 'inner') state[0] = angleFrom(point.x, point.y, ox, oy);
+    else {
+      const { x1, y1 } = joints(state[0], state[2]);
+      state[2] = angleFrom(point.x, point.y, x1, y1);
+    }
+    state[1] = 0;
+    state[3] = 0;
+    twin = [state[0], 0, state[2] + delta, 0];
+    place();
+  };
+
+  const onPointerUp = (): void => {
+    if (!drag) return;
+    drag = null;
+    reseed(state[0], state[2]);
+    if (!mq.matches) start();
+  };
+
   const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-  if (prefersReducedMotion()) park(calm1, calm2);
-  else start();
+  showDelta();
+  if (prefersReducedMotion()) parkCalm();
+  else reseed(release1, release2);
+
+  if (!mq.matches) start();
 
   mq.addEventListener('change', (event) => {
+    drag = null;
     if (event.matches) {
       stop();
-      park(calm1, calm2);
+      parkCalm();
       return;
     }
-    park(th1, th2);
+    reseed(release1, release2);
     start();
   });
 
   document.addEventListener('visibilitychange', () => {
-    if (mq.matches) return;
+    if (mq.matches || drag) return;
     if (document.hidden) {
       stop();
       return;
     }
     start();
   });
+
+  root.addEventListener('pointerdown', onPointerDown);
+  root.addEventListener('pointermove', onPointerMove);
+  root.addEventListener('pointerup', onPointerUp);
+  root.addEventListener('pointercancel', onPointerUp);
+
+  deltaInput?.addEventListener('input', () => {
+    delta = clampDelta(Number(deltaInput.value));
+    showDelta();
+    reseed(state[0], state[2]);
+    if (!mq.matches) start();
+  });
+
+  resetBtn?.addEventListener('click', () => {
+    drag = null;
+    delta = clampDelta(deltaInput ? Number(deltaInput.defaultValue) : DEFAULT_DELTA);
+    showDelta();
+    if (mq.matches) {
+      stop();
+      parkCalm();
+      return;
+    }
+    reseed(release1, release2);
+    start();
+  });
+}
+
+function clampDelta(value: number): number {
+  if (!Number.isFinite(value)) return DEFAULT_DELTA;
+  return Math.min(0.06, Math.max(0.002, value));
 }
 
 boot();
