@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { FULL_RESUME, assertAccessibleResume } from './verify-resume.mjs';
-import { readPublicProfile } from './generate-about.mjs';
+import { RESUME_VARIANTS, assertAccessibleResume } from './verify-resume.mjs';
+import { escapeHtml, readPublicProfile } from './generate-about.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.join(ROOT, 'dist');
@@ -20,7 +20,7 @@ function assertPng(buffer, name) {
   assert.equal(buffer.readUInt32BE(20), 630, `${name}: height must be 630px`);
 }
 
-const POSITIONING = 'AI agent &amp; backend engineer — I take agents from demo to production: MCP tools, guardrails, evals, billing, real-time systems.';
+const POSITIONING = escapeHtml(publicProfile.summary);
 
 /** Visible text of an HTML document: tags are removed until none remain, then whitespace collapses. */
 function visibleText(html) {
@@ -101,11 +101,14 @@ assert.doesNotMatch(film, /http-equiv=["']refresh["']/i, 'film page must not red
 for (const image of ['social-preview.png', 'profile-preview.png']) {
   assertPng(await readFile(path.join(DIST, image)), `dist/${image}`);
 }
-assertAccessibleResume(await readFile(path.join(DIST, 'resume.pdf')), 'dist/resume.pdf', FULL_RESUME);
+for (const variant of RESUME_VARIANTS) {
+  const relative = path.relative('public', variant.output);
+  assertAccessibleResume(await readFile(path.join(DIST, relative)), `dist/${relative}`, variant);
+}
 
 if (HTTP_ORIGIN) {
   const cases = [
-    { pathname: '/', type: /^text\/html\b/i, body: /"WebSite"[\s\S]*I take agents from demo to production/ },
+    { pathname: '/', type: /^text\/html\b/i, body: /"WebSite"/, positioning: true },
     {
       pathname: '/hire/',
       type: /^text\/html\b/i,
@@ -127,7 +130,11 @@ if (HTTP_ORIGIN) {
     },
     { pathname: '/social-preview.png', type: /^image\/png\b/i, png: true },
     { pathname: '/profile-preview.png', type: /^image\/png\b/i, png: true },
-    { pathname: '/resume.pdf', type: /^application\/pdf\b/i, resume: true },
+    ...RESUME_VARIANTS.map((variant) => ({
+      pathname: `/${path.relative('public', variant.output)}`,
+      type: /^application\/pdf\b/i,
+      resume: variant,
+    })),
   ];
   for (const definition of cases) {
     const response = await fetch(new URL(definition.pathname, HTTP_ORIGIN));
@@ -135,7 +142,8 @@ if (HTTP_ORIGIN) {
     assert.match(response.headers.get('content-type') ?? '', definition.type, `${definition.pathname}: wrong content type`);
     const bytes = Buffer.from(await response.arrayBuffer());
     if (definition.png) assertPng(bytes, definition.pathname);
-    if (definition.resume) assertAccessibleResume(bytes, definition.pathname, FULL_RESUME);
+    if (definition.resume) assertAccessibleResume(bytes, definition.pathname, definition.resume);
+    if (definition.positioning) assert.ok(visibleText(bytes.toString('utf8')).includes(POSITIONING), `${definition.pathname}: positioning drift`);
     if (definition.body) assert.match(bytes.toString('utf8'), definition.body, `${definition.pathname}: response body contract`);
     if (definition.absent) assert.doesNotMatch(bytes.toString('utf8'), definition.absent, `${definition.pathname}: forbidden text`);
   }
@@ -178,4 +186,4 @@ if (HTTP_ORIGIN && process.env.VERIFY_LAYOUT === '1') {
   }
 }
 
-console.log(`Dist integrity verified${HTTP_ORIGIN ? ` over ${HTTP_ORIGIN}` : ' on disk'}: landing, film, hire, profile, redirects, previews, resume${process.env.VERIFY_LAYOUT === '1' ? ', and mobile proof targets' : ''}.`);
+console.log(`Dist integrity verified${HTTP_ORIGIN ? ` over ${HTTP_ORIGIN}` : ' on disk'}: landing, film, hire, profile, redirects, previews, ${RESUME_VARIANTS.length} resumes${process.env.VERIFY_LAYOUT === '1' ? ', and mobile proof targets' : ''}.`);

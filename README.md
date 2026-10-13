@@ -163,24 +163,33 @@ programme stylesheet without a build step. `npm run generate:programme` reprints
 `public/programme/` and `public/profile-preview.png` from the deployed film (set
 `URL` to print from another build).
 
-Three resumes are printed from HTML sources by one script: `public/resume.pdf` (two
-pages, linked from the site) from `src/content/resume.html`, and two for job
-applications that are never deployed: `applications/resume-1p.pdf` (one page, English)
-from `src/content/resume-1p.html` and `applications/resume-zh.pdf` (one A4 page,
-Chinese translation of the one-page resume) from `src/content/resume-zh.html`. After
-editing a source, run `npm run generate:resume` (it prints with local Google Chrome; set
+Three public resumes are printed from HTML sources by one script. The approved
+content is recorded in `applications/resume-agent-engineer-zh.md` and its English
+translation, `applications/resume-agent-engineer-en.md`.
+
+| Version | HTML source | Public PDF |
+| --- | --- | --- |
+| English, two pages | `src/content/resume.html` | [resume.pdf](https://brickerp.github.io/resume.pdf) |
+| English, one page | `src/content/resume-1p.html` | [resume-1p.pdf](https://brickerp.github.io/resume-1p.pdf) |
+| Chinese, one A4 page | `src/content/resume-zh.html` | [resume-zh.pdf](https://brickerp.github.io/resume-zh.pdf) |
+
+Each PDF is written directly to `public/`, linked from the site, and deployed by
+GitHub Pages. Update the Markdown content and corresponding HTML sources together.
+After editing a source, run `npm run generate:resume` (it prints with local Google Chrome; set
 `CHROME_PATH` to use another binary; `npm run generate:resume -- one-page` or `-- zh`
 prints only that one), then approve each printed SHA-256 in the `sha256` field of
 `scripts/verify-resume.mjs`. The generator adds what Chrome's tagged PDF lacks: XMP
 metadata, author and keywords, a list body for every list item, and an accessible
 description for every link taken from its `aria-label`. PDF metadata and link
 descriptions stay ASCII (the Chinese resume's title is English); the page text is
-Chinese. Static and dist verification reject untagged, unlabeled, stale, wrong-length,
-or unapproved revisions.
+Chinese. Static, dist, and live verification check all three PDFs and reject
+untagged, unlabeled, stale, wrong-length, or unapproved revisions. HTTP checks also
+require a PDF content type; the post-deploy smoke check compares the deployed files
+with the immutable build artifact.
 
 The profile data (`public-profile.json`) and the three resumes are hand-maintained
 records of the same experience: update them together when the chronology changes.
-`verify:static` compares the two application resumes. The one-page resume may not state
+`verify:static` compares the shorter resumes against the full version. The one-page resume may not state
 a name, contact line, role line, or number that the full resume does not contain, must
 list every current role, and may not be dated before the full one. The Chinese resume
 translates the one-page resume, so it must have exactly the one-page resume's role
