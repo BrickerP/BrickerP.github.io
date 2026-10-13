@@ -24,6 +24,11 @@ import {
 
 const LINK_ANNOTATION = /\/Subtype \/Link\b[\s\S]*?\/URI \(((?:\\.|[^\\)])*)\)[\s\S]*?\/Contents \(((?:\\.|[^\\)])*)\)/g;
 
+function replaceFixture(source, before, after) {
+  assert.ok(source.includes(before), `fixture must contain ${before}`);
+  return source.replace(before, after);
+}
+
 async function fixture(variant) {
   const paths = resumePaths(variant);
   const [html, pdf] = await Promise.all([readFile(paths.source, 'utf8'), readFile(paths.output)]);
@@ -85,14 +90,14 @@ test('structure checks reject stale identities, unlabeled links, and the wrong p
 test('the one-page resume only repeats headers, roles, and numbers from the full resume', async () => {
   const { full, onePage } = await sources();
   assertOnePageParity(full, onePage);
-  assert.throws(() => assertOnePageParity(full, onePage.replace('600+', '700+')), /700\+/);
+  assert.throws(() => assertOnePageParity(full, replaceFixture(onePage, '6,750,000', '6,750,001')), /6,750,001/);
   assert.throws(() => assertOnePageParity(full, onePage.replace('Jul 2026 – Present', 'Jul 2026 – Aug 2026')), /role line/);
   assert.throws(() => assertOnePageParity(full, onePage.replace('<h1>Yupeng Lu</h1>', '<h1>Y. Lu</h1>')), /header/);
 });
 
 test('the one-page resume keeps every current role and is never older than the full resume', async () => {
   const { full, onePage } = await sources();
-  const withoutQuant = onePage.replace(/<article class="entry">(?:(?!<article)[\s\S])*?Quant Trading Systems Venture[\s\S]*?<\/article>/, '');
+  const withoutQuant = onePage.replace(/<article class="entry">(?:(?!<article)[\s\S])*?Live Trading System[\s\S]*?<\/article>/, '');
   assert.notEqual(withoutQuant, onePage, 'fixture must remove the Quant entry');
   assert.throws(() => assertOnePageParity(full, withoutQuant), /current role/);
   const newer = full.replace(/(name="dcterms\.modified" content=")[^"]+/, '$12099-01-01');
@@ -104,12 +109,12 @@ test('the Chinese resume has exactly the one-page resume\'s role periods, links,
     [FULL_RESUME, ONE_PAGE_RESUME, ZH_RESUME].map((variant) => readFile(resumePaths(variant).source, 'utf8')),
   );
   assertChineseParity(full, onePage, chinese);
-  assert.throws(() => assertChineseParity(full, onePage, chinese.replace('600+', '700+')), /“700” is not in src\/content\/resume-1p\.html/);
-  assert.throws(() => assertChineseParity(full, onePage.replace('600+', '700+'), chinese), /“600” is not in src\/content\/resume-1p\.html/);
-  assert.throws(() => assertChineseParity(full, onePage, chinese.replace('3 个月内合并 600+ 次变更，覆盖 19 个代码库', '近期合并多次变更')), /of src\/content\/resume-1p\.html is missing/);
+  assert.throws(() => assertChineseParity(full, onePage, replaceFixture(chinese, '6,750,000', '6,750,001')), /“6,750,001” is not in src\/content\/resume-1p\.html/);
+  assert.throws(() => assertChineseParity(full, replaceFixture(onePage, '6,750,000', '6,750,001'), chinese), /“6,750,000” is not in src\/content\/resume-1p\.html/);
+  assert.throws(() => assertChineseParity(full, onePage, replaceFixture(chinese, '6,750,000', '若干')), /of src\/content\/resume-1p\.html is missing/);
   assert.throws(() => assertChineseParity(full, onePage, chinese.replace('2026年7月 – 至今', '2026年8月 – 至今')), /period 2026-08~now is not in/);
-  assert.throws(() => assertChineseParity(full, onePage, chinese.replace('https://medo.dev/', 'https://example.com/')), /link https:\/\/example\.com\/ is not in/);
-  assert.throws(() => assertChineseParity(full, onePage.replace('https://medo.dev/', 'https://example.com/'), chinese), /link https:\/\/medo\.dev\/ is not in src\/content\/resume-1p\.html/);
+  assert.throws(() => assertChineseParity(full, onePage, replaceFixture(chinese, 'https://github.com/BrickerP', 'https://example.com/')), /link https:\/\/example\.com\/ is not in/);
+  assert.throws(() => assertChineseParity(full, replaceFixture(onePage, 'https://github.com/BrickerP', 'https://example.com/'), chinese), /link https:\/\/github\.com\/BrickerP is not in src\/content\/resume-1p\.html/);
   assertChineseParity(full, onePage, chinese.replace('<p class="headline">', '<p class="contact"><a href="tel:+10000000000">+1 000 000 0000</a></p><p class="headline">'));
 });
 
@@ -117,7 +122,7 @@ test('the Chinese resume keeps every role the one-page resume lists and is never
   const [full, onePage, chinese] = await Promise.all(
     [FULL_RESUME, ONE_PAGE_RESUME, ZH_RESUME].map((variant) => readFile(resumePaths(variant).source, 'utf8')),
   );
-  const withoutQuant = chinese.replace(/<article class="entry">(?:(?!<article)[\s\S])*?量化交易系统创业项目[\s\S]*?<\/article>/, '');
+  const withoutQuant = chinese.replace(/<article class="entry">(?:(?!<article)[\s\S])*?实盘交易系统[\s\S]*?<\/article>/, '');
   assert.notEqual(withoutQuant, chinese, 'fixture must remove the Quant entry');
   assert.throws(() => assertChineseParity(full, onePage, withoutQuant), /period 2026-04~now of src\/content\/resume-1p\.html is missing/);
   const newer = onePage.replace(/(name="dcterms\.modified" content=")[^"]+/, '$12099-01-01');

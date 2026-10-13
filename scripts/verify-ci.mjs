@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { RESUME_VARIANTS } from './verify-resume.mjs';
 
 const workflow = await readFile('.github/workflows/deploy-pages.yml', 'utf8');
 const packageJson = JSON.parse(await readFile('package.json', 'utf8'));
@@ -218,11 +219,23 @@ for (const route of [
   "fetchHtml('/work/quant/architecture/')",
   "fetchBytes('/social-preview.png'",
   "fetchBytes('/profile-preview.png'",
-  "fetchBytes('/resume.pdf'",
   "'/poe2/guides/classes-explained.html'",
 ]) {
   assert.ok(liveSmoke.includes(route), `live smoke is missing required proof target ${route}`);
 }
+assert.deepEqual(
+  RESUME_VARIANTS.map(({ output }) => output).sort(),
+  ['public/resume-1p.pdf', 'public/resume-zh.pdf', 'public/resume.pdf'],
+  'live smoke must cover all three public resume variants',
+);
+assert.match(liveSmoke, /Promise\.all\(RESUME_VARIANTS\.map\(async \(variant\) => \{/, 'live smoke must fetch every resume variant');
+assert.ok(liveSmoke.includes("const pathname = `/${path.relative('public', variant.output)}`;"), 'live resume paths must come from the variant outputs');
+assert.ok(liveSmoke.includes('bytes: await fetchBytes(pathname, /^application\\/pdf\\b/i)'), 'live resumes must use PDF content-type checks');
+assert.match(
+  liveSmoke,
+  /for \(const \{ variant, pathname, bytes \} of resumes\) \{\s*assertAccessibleResume\(bytes, pathname, variant\);/,
+  'every live resume needs accessibility and approved SHA-256 verification',
+);
 assert.match(liveSmoke, /AbortSignal\.timeout\(requestTimeoutMs\)/, 'live requests need bounded timeouts');
 assert.match(liveSmoke, /sha256\(bytes\)/, 'approved binary assets need byte-level verification');
 assert.match(liveSmoke, /verifyDistParity\(\)/, 'live smoke must compare every deployed file with the immutable dist');

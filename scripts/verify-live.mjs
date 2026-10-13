@@ -3,6 +3,8 @@ import { createHash } from 'node:crypto';
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { RESUME_VARIANTS, assertAccessibleResume } from './verify-resume.mjs';
+import { escapeHtml, readPublicProfile } from './generate-about.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const EXPECTED_ORIGIN = 'https://brickerp.github.io';
@@ -13,6 +15,7 @@ const requestTimeoutMs = positiveInteger('REQUEST_TIMEOUT_MS', 8_000);
 const retryDelayMs = positiveInteger('RETRY_DELAY_MS', 5_000);
 const maxAttempts = positiveInteger('MAX_ATTEMPTS', 12);
 const deadlineMs = positiveInteger('SMOKE_DEADLINE_MS', 120_000);
+const publicProfile = await readPublicProfile();
 
 assert.ok(deploymentUrl, 'DEPLOYMENT_URL or a deployment URL argument is required');
 const baseUrl = new URL(deploymentUrl);
@@ -97,7 +100,7 @@ async function expectedHash(relativePath) {
 }
 
 const approvedHashes = new Map(await Promise.all(
-  ['social-preview.png', 'profile-preview.png', 'resume.pdf'].map(async (file) => [file, await expectedHash(file)]),
+  ['social-preview.png', 'profile-preview.png'].map(async (file) => [file, await expectedHash(file)]),
 ));
 
 async function fetchBytes(pathname, contentType) {
@@ -156,7 +159,7 @@ async function verifyAttempt() {
   const nestedPath = '/poe2/guides/classes-explained.html';
   const nestedTarget = `${EXPECTED_ORIGIN}/poe2-build-lab/guides/classes-explained.html`;
   const deployedFiles = await verifyDistParity();
-  const [rootHtml, aboutHtml, beijingHtml, nestedHtml, architectureHtml, hireHtml, socialPreview, profilePreview, resume] = await Promise.all([
+  const [rootHtml, aboutHtml, beijingHtml, nestedHtml, architectureHtml, hireHtml, socialPreview, profilePreview, resumes] = await Promise.all([
     fetchHtml('/'),
     fetchHtml('/about/'),
     fetchHtml('/beijing-loop/'),
@@ -165,12 +168,15 @@ async function verifyAttempt() {
     fetchHtml('/hire/'),
     fetchBytes('/social-preview.png', /^image\/png\b/i),
     fetchBytes('/profile-preview.png', /^image\/png\b/i),
-    fetchBytes('/resume.pdf', /^application\/pdf\b/i),
+    Promise.all(RESUME_VARIANTS.map(async (variant) => {
+      const pathname = `/${path.relative('public', variant.output)}`;
+      return { variant, pathname, bytes: await fetchBytes(pathname, /^application\/pdf\b/i) };
+    })),
   ]);
 
   assertPage(rootHtml, '/', `${EXPECTED_ORIGIN}/`, undefined);
   assert.equal(meta(rootHtml, 'property', 'og:image'), `${EXPECTED_ORIGIN}/profile-preview.png`, '/: wrong social preview');
-  assert.match(rootHtml, /I take agents from demo to production/, '/: landing page must carry the positioning line');
+  assert.ok(rootHtml.includes(escapeHtml(publicProfile.summary)), '/: landing page must carry the positioning line');
   assert.match(rootHtml, /id=["']contact["']/i, '/: #contact must stay on the homepage');
   const hireTarget = `${EXPECTED_ORIGIN}/#contact`;
   assertPage(hireHtml, '/hire/', hireTarget, 'noindex,follow');
@@ -199,9 +205,11 @@ async function verifyAttempt() {
   for (const [file, bytes] of [
     ['social-preview.png', socialPreview],
     ['profile-preview.png', profilePreview],
-    ['resume.pdf', resume],
   ]) {
     assert.equal(sha256(bytes), approvedHashes.get(file), `/${file}: deployed bytes do not match the approved artifact`);
+  }
+  for (const { variant, pathname, bytes } of resumes) {
+    assertAccessibleResume(bytes, pathname, variant);
   }
 
   const assets = criticalAssets(beijingHtml);
@@ -220,6 +228,7 @@ for (let attempt = 1; attempt <= maxAttempts && Date.now() - startedAt < deadlin
     const { assets, deployedFiles } = await verifyAttempt();
     console.log(`Live Pages smoke passed on attempt ${attempt}: ${baseUrl.href}`);
     console.log(`Exact immutable-dist parity: ${deployedFiles.length} files`);
+    console.log(`Approved accessible resumes: ${RESUME_VARIANTS.map(({ output }) => `/${path.relative('public', output)}`).join(', ')}`);
     console.log(`Critical assets: ${assets.join(', ')}`);
     process.exit(0);
   } catch (error) {

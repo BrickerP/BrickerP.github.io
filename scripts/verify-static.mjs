@@ -156,8 +156,8 @@ assertPageMetadata(sheetHtml, 'public/work/quant/index.html', `${SITE_ORIGIN}/wo
 assertPageMetadata(architectureHtml, 'public/work/quant/architecture/index.html', `${SITE_ORIGIN}/work/quant/architecture/`, 'profile-preview.png');
 
 // One positioning line, verbatim, on every public surface that introduces the author.
-const POSITIONING = 'AI agent & backend engineer — I take agents from demo to production: MCP tools, guardrails, evals, billing, real-time systems.';
-assert.equal(publicProfile.summary, POSITIONING, 'public profile: summary must be the one-line positioning, verbatim');
+const POSITIONING = publicProfile.summary;
+assert.ok(POSITIONING.includes(' — '), 'public profile: summary must start with the role followed by an em dash');
 assert.equal(publicProfile.role, POSITIONING.split(' — ')[0], 'public profile: role must be the title clause of the positioning line');
 for (const [file, html] of [
   ['index.html', rootHtml],
@@ -178,8 +178,8 @@ for (const [file, html] of [
 }
 for (const file of ['src/content/resume.html', 'src/content/resume-1p.html']) {
   assert.ok(
-    (await text(file)).includes(`<p class="headline">${escapeHtml(POSITIONING).replaceAll('—', '&mdash;')}</p>`),
-    `${file}: headline must be the one-line positioning`,
+    (await text(file)).includes('<p class="headline">AI Agent &amp; Backend Engineer</p>'),
+    `${file}: headline must state the engineering role`,
   );
 }
 const HIRE_TARGET = `${SITE_ORIGIN}/#contact`;
