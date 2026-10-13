@@ -848,13 +848,13 @@
               <caption>Scan batch latency · before and after the write-lock fix</caption>
               <thead><tr><th scope="col">Metric</th><th scope="col">Baseline</th><th scope="col">2026-10-08 regression</th><th scope="col">2026-10-09 post-fix</th></tr></thead>
               <tbody>
-                <tr><th scope="row">Scan batch latency, p95</th><td data-col="Baseline" class="num">~2.4 s</td><td data-col="2026-10-08 regression" class="num">~9.2 s<small>Backfill cron active</small></td><td data-col="2026-10-09 post-fix" class="num">Cron removed<small>2026-10-09</small></td></tr>
+                <tr><th scope="row">Scan batch latency, p95</th><td data-col="Baseline" class="num">~2.4 s</td><td data-col="2026-10-08 regression" class="num">~9.2 s<small>Backfill cron active</small></td><td data-col="2026-10-09 post-fix" class="num">≈1.55 s<small>Cron removed 2026-10-09 · measured 2026-10-12 13:26–14:59 ET · p50 0.71 s, p99 1.69 s, n=276 · morning not measured</small></td></tr>
               </tbody>
             </table>
             <figure>
               <svg class="sheet-chart" viewBox="0 0 640 260" width="640" height="260" role="img" aria-labelledby="chart-title chart-desc" focusable="false">
                 <title id="chart-title">Scan batch p95 latency over three dates</title>
-                <desc id="chart-desc">Baseline about 2.4 seconds; 2026-10-08 regression about 9.2 seconds; on 2026-10-09 the backfill cron was removed from the live host.</desc>
+                <desc id="chart-desc">Baseline about 2.4 seconds; 2026-10-08 regression about 9.2 seconds; on 2026-10-09 the backfill cron was removed from the live host; 2026-10-12 afternoon about 1.55 seconds (p50 0.71, p99 1.69, n=276, 13:26–14:59 ET; morning not measured).</desc>
                 <rect width="640" height="260" fill="#ece5d8"/>
                 <g font-family="ui-monospace,Menlo,monospace" font-size="9" letter-spacing="1.4" fill="#46525c">
                   <text x="22" y="24">SCAN BATCH P95 · SECONDS</text>
@@ -885,7 +885,9 @@
                     <text x="354" y="54">~9.2 s</text>
                   </g>
                   <line x1="510" y1="40" x2="510" y2="206" stroke="#d9684b" stroke-width="1.6" stroke-dasharray="4 4"/>
-                  <circle cx="510" cy="206" r="6.5" fill="#ece5d8" stroke="#d9684b" stroke-width="2"/>
+                  <line x1="340" y1="58.8" x2="510" y2="181.2" stroke="#101a22" stroke-width="1.5"/>
+                  <circle cx="510" cy="181.2" r="5" fill="#d9684b"/>
+                  <text x="522" y="176" fill="#d9684b" font-weight="700" font-size="11" letter-spacing=".4">≈1.55 s · 10-12 PM</text>
                 </g>
               </svg>
               <figcaption>Ink points are log reads marked ~ · the vermilion rule marks the 2026-10-09 fix (cron removed)</figcaption>
@@ -897,13 +899,13 @@
                 <dt>Window</dt><dd>One full regular session, 09:30–16:00 ET. p50 and p95 over every batch in the session.</dd>
                 <dt>Host</dt><dd>The live scanner host, unchanged between before and after.</dd>
                 <dt>Before</dt><dd>Session of 2026-10-08, backfill cron active (every 5 minutes).</dd>
-                <dt>After</dt><dd>First full session after 2026-10-09 with the cron removed.</dd>
+                <dt>After</dt><dd>2026-10-12, cron removed; afternoon window only (13:26–14:59 ET, n=276 batches). Morning not measured.</dd>
                 <dt>Publish</dt><dd>Values land in the table with their session date. A tilde marks a read from logs rather than a controlled benchmark.</dd>
               </dl>
             </aside>
             <div class="sheet-rca">
               <p class="sheet-prose">On 2026-10-08 scan-batch p95 rose from about 2.4 s to about 9.2 s with no change to the scanner itself. The cause was a backfill cron running every five minutes on the same host. SQLite admits one writer at a time; while the backfill held the write lock, the scanner's own ledger writes queued behind it, so each batch inherited the backfill's lock-hold time.</p>
-              <p class="sheet-prose">The cron was removed from the live host on 2026-10-09. The single-writer invariant was restored; a later full-session p95 will be printed here only when measured under the method above.</p>
+              <p class="sheet-prose">The cron was removed from the live host on 2026-10-09. The single-writer invariant was restored. On the 2026-10-12 afternoon (13:26–14:59 ET, n=276) p95 measured ≈1.55 s (p50 0.71 s, p99 1.69 s); the morning was not measured. The 2026-10-08 baseline was 9.2 s.</p>
             </div>
           </div>
         </section>
