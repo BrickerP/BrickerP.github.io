@@ -161,6 +161,7 @@ html.paper-live body{background-image:none;background-color:transparent}
 .ink{position:absolute;left:-24px;top:calc(100% - 7px);height:18px;max-width:none;pointer-events:none;overflow:visible;clip-path:inset(0 100% 0 0);transition:clip-path .16s steps(3,end)}
 .ink path{fill:var(--red)}
 .lab:hover .ink,.lab:focus-within .ink{clip-path:inset(0 0 0 0)}
+@media (hover:none){.ink{clip-path:inset(0 0 0 0)}}
 .lab:hover .ink.a,.lab:focus-within .ink.a{transition:clip-path .42s steps(var(--n,8),end)}
 .lab:hover .ink.b,.lab:focus-within .ink.b{transition:clip-path .36s steps(var(--n,8),end) .17s}
 .pen-note{position:absolute;right:16px;bottom:10px;font-family:var(--hand);font-size:20px;line-height:1.1;color:var(--red);opacity:0;transition:opacity .28s ease .3s;pointer-events:none;white-space:nowrap}
