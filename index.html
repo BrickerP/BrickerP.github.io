@@ -148,27 +148,42 @@ a:hover{color:var(--red)}
 .film:hover b{color:var(--red)}
 
 .paper-ripple{position:fixed;inset:0;z-index:-1;pointer-events:none}
-.pendulum .onion{fill:none;stroke:currentColor;stroke-linecap:round}
-.pendulum .onion .rod{stroke-width:1.05}
-.pendulum .onion circle{stroke:none}
-.pendulum .onion .bob--inner{fill:var(--ink)}
-.pendulum .onion .bob--outer{fill:var(--red)}
+html.paper-live body{background-image:none;background-color:transparent}
 .pendulum .burst{fill:none;stroke:currentColor;stroke-width:1;stroke-linecap:round}
 .pendulum .burst-dot{fill:var(--red);stroke:none}
+.pendulum .pinch{fill:none;stroke:var(--red);stroke-width:1.2}
+.pendulum .note{opacity:0;transition:opacity .6s ease}
+.pendulum .note.show{opacity:1}
 .pendulum-bar .stamp{margin-left:auto;text-transform:none;letter-spacing:.04em;min-width:0}
-.pendulum-bar button[aria-pressed="false"]{color:var(--soft);border-bottom-color:var(--rule)}
+.pendulum-bar button[disabled]{color:var(--soft);border-bottom-color:var(--rule);cursor:default}
 
-.pen{position:absolute;left:-7px;top:-7px;width:calc(100% + 14px);height:calc(100% + 14px);overflow:visible;pointer-events:none}
-.pen__loop{fill:none;stroke:var(--red);stroke-width:1.3px;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset .62s ease .06s}
-.lab:hover .pen__loop,.lab:focus-within .pen__loop{stroke-dashoffset:0}
-.pen-note{position:absolute;right:16px;bottom:10px;font-family:var(--hand);font-size:20px;line-height:1.1;color:var(--red);transform:rotate(-2.4deg);opacity:0;transition:opacity .28s ease .3s;pointer-events:none;white-space:nowrap}
+.pen{position:absolute;left:0;right:0;bottom:-7px;width:100%;height:10px;overflow:visible;pointer-events:none}
+.pen path{fill:none;stroke:var(--red);stroke-width:2.1px;stroke-linecap:round}
+.pen__a{stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset .34s cubic-bezier(.3,.7,.4,1)}
+.pen__b{stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset .3s steps(6,end) .12s}
+.lab:hover .pen__a,.lab:hover .pen__b,.lab:focus-within .pen__a,.lab:focus-within .pen__b{stroke-dashoffset:0}
+.pen-note{position:absolute;right:16px;bottom:10px;font-family:var(--hand);font-size:20px;line-height:1.1;color:var(--red);opacity:0;transition:opacity .28s ease .3s;pointer-events:none;white-space:nowrap}
+.pen-note--a{transform:rotate(-1.6deg)}
+.pen-note--b{transform:rotate(-2.9deg)}
+.pen-note--c{transform:rotate(-3.4deg)}
+.pen-note--d{transform:rotate(-1.9deg)}
+.pen-note--e{transform:rotate(-0.5deg)}
 .lab:hover .pen-note,.lab:focus-within .pen-note{opacity:.92}
-.margin-flip{position:fixed;right:calc((100vw - var(--max))/2 - 58px);bottom:16vh;z-index:5;pointer-events:none;opacity:.78;display:none}
-.margin-flip svg{display:block;width:40px;height:48px;overflow:visible}
-.margin-flip .flip-figure{fill:none;stroke:var(--graphite);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.margin-flip .flip-head{fill:var(--graphite);stroke:none}
-.margin-flip .flip-pencil{fill:none;stroke:var(--red);stroke-width:2;stroke-linecap:round}
+.margin-flip{position:fixed;right:calc((100vw - var(--max))/2 - 64px);top:12vh;z-index:5;pointer-events:none;transform-origin:50% 92%;display:none}
+.margin-flip svg{display:block;width:15px;height:66px;overflow:visible}
+.margin-flip .pencil-eraser{fill:var(--red);stroke:var(--graphite);stroke-width:1.2;stroke-linejoin:round}
+.margin-flip .pencil-ferrule{fill:#FBF7EC;stroke:var(--graphite);stroke-width:1.2;stroke-linejoin:round}
+.margin-flip .pencil-body{fill:#FBF7EC;stroke:var(--graphite);stroke-width:1.2;stroke-linejoin:round}
+.margin-flip .pencil-wood{fill:#F1E8D3;stroke:var(--graphite);stroke-width:1.2;stroke-linejoin:round}
+.margin-flip .pencil-lead{fill:var(--graphite)}
+.margin-flip .pencil-line{fill:none;stroke:var(--graphite);stroke-width:.9;opacity:.5}
 @media (min-width:1340px){.margin-flip{display:block}}
+.margin-curl{position:fixed;right:0;bottom:0;width:84px;height:84px;z-index:5;pointer-events:none;display:none;transition:opacity .5s ease}
+.margin-curl svg{display:block;width:100%;height:100%}
+.margin-curl .curl-under{fill:rgba(31,58,95,.05)}
+.margin-curl .curl-shade{fill:rgba(31,58,95,.1)}
+.margin-curl .curl-flap{fill:#FFFDF7;stroke:rgba(31,58,95,.3);stroke-width:1;stroke-linejoin:round}
+@media (min-width:760px){.margin-curl{display:block}}
 
 .sec{padding:clamp(56px,8vw,104px) 0;border-top:1px solid var(--rule)}
 .sec-h{display:flex;align-items:baseline;gap:14px 20px;flex-wrap:wrap;margin-bottom:clamp(24px,3vw,40px)}
@@ -177,7 +192,7 @@ a:hover{color:var(--red)}
 .labs{list-style:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(20px,2.6vw,36px)}
 .lab{position:relative;display:flex;flex-direction:column;background:rgba(255,253,247,.86);border:1px solid var(--rule);padding:22px 24px 20px;min-width:0}
 .lab__n{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--rule);padding-bottom:10px;margin-bottom:12px}
-.lab h3{font-family:var(--serif);font-weight:600;color:var(--ink);font-size:clamp(21px,1.8vw,25px);line-height:1.25}
+.lab h3{position:relative;font-family:var(--serif);font-weight:600;color:var(--ink);font-size:clamp(21px,1.8vw,25px);line-height:1.25}
 .lab h3 a{text-decoration:none}
 .lab h3 a::after{content:"";position:absolute;inset:0}
 .lab:has(h3 a):hover{border-color:var(--ink)}
@@ -240,7 +255,7 @@ a:hover{color:var(--red)}
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   .pendulum .trail-b0,.pendulum .trail-b1,.pendulum .trail-b2,.pendulum .trail-b3{opacity:0}
-  .pen__loop,.pen-note{transition:none}
+  .pen__a,.pen__b,.pen-note{transition:none}
 }
 </style>
 </head>
@@ -292,7 +307,6 @@ a:hover{color:var(--red)}
           <path class="trail trail--primary trail-b1" d=""/>
           <path id="pendulum-trail" class="trail trail--primary trail-b0" d=""/>
         </g>
-        <g id="pendulum-onions" aria-hidden="true"></g>
         <g id="pendulum-burst" aria-hidden="true"></g>
         <g class="twin" aria-hidden="true">
           <line id="pendulum-twin-rod-a" class="rod" x1="200" y1="42" x2="285.75" y2="75.34"/>
@@ -309,10 +323,11 @@ a:hover{color:var(--red)}
         <circle id="pendulum-grab-outer" class="grab" cx="206.66" cy="73.03" r="22" aria-hidden="true"/>
         <text class="m" x="14" y="258">Fig. 1 — double pendulum</text>
         <text x="386" y="260" text-anchor="end">drag a bob</text>
+        <text id="pendulum-note" class="note" x="14" y="22" aria-hidden="true">same release, 0.008 rad apart</text>
       </svg>
       <div class="pendulum-bar">
         <button type="button" id="pendulum-reset">Reset</button>
-        <button type="button" id="pendulum-onion" aria-pressed="true">Onion skin</button>
+        <button type="button" id="pendulum-repeat" aria-label="Re-run the twin experiment">Re-run</button>
         <label class="pendulum-delta">Δθ₂
           <input id="pendulum-delta" type="range" min="0.002" max="0.06" step="0.001" value="0.015" aria-describedby="pendulum-delta-read">
         </label>
@@ -333,59 +348,54 @@ a:hover{color:var(--red)}
     <ol class="labs">
       <li class="lab">
         <p class="lab__n"><span class="mono">Exp. 01 · live system · 2026</span><span class="mono">AWS</span></p>
-        <h3><a href="/work/quant/">Technical sheet № 01 — live trading execution</a></h3>
+        <h3><a href="/work/quant/">Technical sheet № 01 — live trading execution</a><svg class="pen" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true"><path class="pen__a" pathLength="1" vector-effect="non-scaling-stroke" d="M1.6 6.2 C2.4 4.6 3.2 4.2 4.6 4.3 C22 3.1 44 5.7 63 4.1 C77 2.9 90 4.9 103 3.2"/><path class="pen__b" pathLength="1" vector-effect="non-scaling-stroke" d="M5.2 7.3 C25 6.2 48 8 70 6.8 C82 6.1 92 7.2 96.5 6.5"/></svg></h3>
         <dl>
           <dt>Setup</dt><dd>Alpaca execution path on AWS</dd>
           <dt>Safety</dt><dd>fill-dedupe · reconcile · brackets</dd>
           <dt>Result</dt><dd>live dashboard on CloudFront</dd>
         </dl>
         <span class="lab__go">Read the sheet →</span>
-        <svg class="pen" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="pen__loop" pathLength="1" vector-effect="non-scaling-stroke" d="M62 5 C36 3 13 14 7 36 C1 58 13 82 38 92 C63 101 91 91 95 64 C99 40 84 13 58 7 C40 4 25 12 15 25"/></svg>
-        <span class="pen-note" aria-hidden="true">start here</span>
+        <span class="pen-note pen-note--a" aria-hidden="true">start here</span>
       </li>
       <li class="lab">
         <p class="lab__n"><span class="mono">Exp. 02 · WebGL film</span><span class="mono">Three.js · CI gates</span></p>
-        <h3><a href="/beijing-loop/">Beijing — Endless Second Ring</a></h3>
+        <h3><a href="/beijing-loop/">Beijing — Endless Second Ring</a><svg class="pen" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true"><path class="pen__a" pathLength="1" vector-effect="non-scaling-stroke" d="M1.8 3.7 C24 2.9 50 4.5 74 3.6 C86 3.1 95 3.8 99.2 3.4"/><path class="pen__b" pathLength="1" vector-effect="non-scaling-stroke" d="M2.6 5.1 C26 5.3 52 6.1 76 6.7 C87 7 95 7.4 99.6 7.2"/></svg></h3>
         <dl>
           <dt>Duration</dt><dd><b>48 s</b> deterministic night drive</dd>
           <dt>Gates</dt><dd><b>12</b> passages · performance gates</dd>
         </dl>
         <span class="lab__go">Watch the film →</span>
-        <svg class="pen" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="pen__loop" pathLength="1" vector-effect="non-scaling-stroke" d="M62 5 C36 3 13 14 7 36 C1 58 13 82 38 92 C63 101 91 91 95 64 C99 40 84 13 58 7 C40 4 25 12 15 25"/></svg>
-        <span class="pen-note" aria-hidden="true">one take</span>
+        <span class="pen-note pen-note--b" aria-hidden="true">one take</span>
       </li>
       <li class="lab">
         <p class="lab__n"><span class="mono">Exp. 03 · Cloudflare Workers</span><span class="mono">live demo</span></p>
-        <h3><a href="https://open-ledger.brickerp.workers.dev">open-ledger</a></h3>
+        <h3><a href="https://open-ledger.brickerp.workers.dev">open-ledger</a><svg class="pen" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true"><path class="pen__a" pathLength="1" vector-effect="non-scaling-stroke" d="M1.8 4.4 C22 3.3 46 5.6 68 4.3 C82 3.5 92 4.5 98 3.9"/><path class="pen__b" pathLength="1" vector-effect="non-scaling-stroke" d="M3.8 6.9 C26 6 52 7.5 74 6.6 C86 6 94 6.6 97.2 6 C98.8 5.6 99.2 4.6 98.4 3.6"/></svg></h3>
         <dl>
           <dt>Method</dt><dd>hash chain · append-only fills</dd>
           <dt>Check</dt><dd>verify in the browser</dd>
         </dl>
         <span class="lab__go">Open the ledger ↗</span>
-        <svg class="pen" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="pen__loop" pathLength="1" vector-effect="non-scaling-stroke" d="M62 5 C36 3 13 14 7 36 C1 58 13 82 38 92 C63 101 91 91 95 64 C99 40 84 13 58 7 C40 4 25 12 15 25"/></svg>
-        <span class="pen-note" aria-hidden="true">verify it yourself</span>
+        <span class="pen-note pen-note--c" aria-hidden="true">verify it yourself</span>
       </li>
       <li class="lab">
         <p class="lab__n"><span class="mono">Exp. 04 · public MCP / CLI</span><span class="mono">Cookiy AI</span></p>
-        <h3><a href="https://www.npmjs.com/package/cookiy-cli">cookiy-cli · cookiy-mcp</a></h3>
+        <h3><a href="https://www.npmjs.com/package/cookiy-cli">cookiy-cli · cookiy-mcp</a><svg class="pen" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true"><path class="pen__a" pathLength="1" vector-effect="non-scaling-stroke" d="M1.8 4.7 C30 3.7 62 5.5 99.4 4"/><path class="pen__b" pathLength="1" vector-effect="non-scaling-stroke" d="M48 7.1 C64 6.4 80 7.3 96 6.6"/></svg></h3>
         <dl>
           <dt>Surface</dt><dd>MCP tools · TypeScript CLI</dd>
           <dt>Workflow</dt><dd>Studies · interviews · reports</dd>
         </dl>
         <span class="lab__go">cookiy-cli on npm ↗</span>
-        <svg class="pen" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="pen__loop" pathLength="1" vector-effect="non-scaling-stroke" d="M62 5 C36 3 13 14 7 36 C1 58 13 82 38 92 C63 101 91 91 95 64 C99 40 84 13 58 7 C40 4 25 12 15 25"/></svg>
-        <span class="pen-note" aria-hidden="true">it's on npm</span>
+        <span class="pen-note pen-note--d" aria-hidden="true">it's on npm</span>
       </li>
       <li class="lab lab--private">
         <p class="lab__n"><span class="mono">Exp. 05 · private · Baidu MeDo</span><span class="mono">not public</span></p>
-        <h3>Agent platform &amp; revenue backend</h3>
+        <h3>Agent platform &amp; revenue backend<svg class="pen" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true"><path class="pen__a" pathLength="1" vector-effect="non-scaling-stroke" d="M1.8 4.3 C11 3.4 19 5.2 29 4.4 C41 3.4 51 5.4 63 4.5 C75 3.6 85 5.2 96.5 4.2"/><path class="pen__b" pathLength="1" vector-effect="non-scaling-stroke" d="M3 7.1 C14 6.3 24 7.7 36 6.8 C50 5.8 61 7.6 73 6.6 C84 5.9 92 7.1 96.4 6.4"/></svg></h3>
         <dl>
           <dt>Platform</dt><dd>Hosted backends · resource lifecycle</dd>
           <dt>Billing</dt><dd>Service extraction · event correctness</dd>
         </dl>
         <span class="lab__go">Described in the resume</span>
-        <svg class="pen" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="pen__loop" pathLength="1" vector-effect="non-scaling-stroke" d="M62 5 C36 3 13 14 7 36 C1 58 13 82 38 92 C63 101 91 91 95 64 C99 40 84 13 58 7 C40 4 25 12 15 25"/></svg>
-        <span class="pen-note" aria-hidden="true">ask me about this</span>
+        <span class="pen-note pen-note--e" aria-hidden="true">ask me about this</span>
       </li>
     </ol>
     <p class="also">Also: <a href="https://d2c9pzwpavuktk.cloudfront.net/">live trading dashboard ↗</a>&nbsp;· <a href="https://ledger-mcp.brickerp.workers.dev">ledger-mcp ↗</a>&nbsp;· <a href="/about/">full programme →</a>&nbsp;· <a href="/resume.pdf">resume (PDF)</a></p>

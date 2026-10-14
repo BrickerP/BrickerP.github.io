@@ -25,7 +25,7 @@ const DAMP = 0.992;
 const STEP_PX = 8;
 const SPLAT_MS = 1500;
 /** Peak field below which the render loop may sleep. */
-const SLEEP = 0.004;
+const SLEEP = 0.015;
 const SPLASH_COUNT = 24;
 
 type Splat = { x: number; y: number; born: number; seed: number };
@@ -167,9 +167,14 @@ export function bootPaper(): void {
     for (const splat of splats) {
       const age = (now - splat.born) / SPLAT_MS;
       if (age >= 1) continue;
+      const radius = 2.6 + age * 3.4;
+      // A faint bleed ring first — ink on paper spreads before it dries.
+      ctx.fillStyle = `rgba(${INK},${(0.08 * (1 - age)).toFixed(3)})`;
+      ctx.beginPath();
+      ctx.arc(splat.x, splat.y, radius * 2.1, 0, Math.PI * 2);
+      ctx.fill();
       const alpha = (0.4 * (1 - age) * (1 - age)).toFixed(3);
       ctx.fillStyle = `rgba(${INK},${alpha})`;
-      const radius = 2.6 + age * 3.4;
       for (let n = 0; n < 3; n += 1) {
         const angle = fuzz(splat.seed, n) * Math.PI * 2;
         const spread = radius * 0.42;
@@ -212,11 +217,13 @@ export function bootPaper(): void {
   function sleep(): void {
     if (!awake) return;
     awake = false;
+    document.documentElement.classList.remove('paper-live');
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
 
   function wake(): void {
+    document.documentElement.classList.add('paper-live');
     awake = true;
     if (raf === 0) raf = requestAnimationFrame(frame);
   }
@@ -225,7 +232,7 @@ export function bootPaper(): void {
     raf = 0;
     if (mq.matches || !awake) return;
     if (pending > 0) {
-      inject(pendingX, pendingY, Math.min(26, pending * 0.5));
+      inject(pendingX, pendingY, Math.min(0.85, pending * 0.02));
       pending = 0;
     }
     const peak = step();
@@ -242,7 +249,7 @@ export function bootPaper(): void {
 
   function drop(x: number, y: number, scale: number): void {
     splats.push({ x, y, born: performance.now(), seed: Math.random() * 999 });
-    inject(x, y, 44 * scale);
+    inject(x, y, 1.6 * scale);
     pending = 0;
     wake();
   }
