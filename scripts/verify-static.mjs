@@ -489,6 +489,29 @@ assert.match(pendulumSource, /pendulum-delta/, 'src/pendulum.ts: must read the Î
 assert.match(pendulumSource, /pendulum-twin-outer/, 'src/pendulum.ts: must draw the twin');
 assert.doesNotMatch(filmHtml, /name=["']robots["']/i, 'beijing-loop: the film is an indexable page, not a redirect');
 
+// The living notebook: paper ripple, onion skin, margin traces, pen marks.
+// Every living piece must stay dependency-free and fold away under reduced motion.
+const paperSource = await text('src/paper.ts');
+const marginsSource = await text('src/margins.ts');
+assert.match(pendulumSource, /from\s+['"]\.\/paper['"]/, 'src/pendulum.ts: must boot the paper ripple');
+assert.match(pendulumSource, /from\s+['"]\.\/margins['"]/, 'src/pendulum.ts: must boot the margin traces');
+assert.match(paperSource, /prefers-reduced-motion/, 'src/paper.ts: the ripple must honor reduced motion');
+assert.doesNotMatch(paperSource, /\bthree\b/, 'src/paper.ts: the ripple stays dependency-free');
+assert.match(marginsSource, /prefers-reduced-motion/, 'src/margins.ts: the walker must honor reduced motion');
+assert.match(marginsSource, /notebook-page/, 'src/margins.ts: must count the notebook pages');
+assert.match(marginsSource, /America\/Los_Angeles/, 'src/margins.ts: the stamp keeps Pacific time');
+assert.match(rootHtml, /id=["']pendulum-onion["'][^>]*aria-pressed=["']true["']/, 'index.html: onion skin must start pressed');
+assert.match(rootHtml, /id=["']pendulum-onions["']/, 'index.html: the onion layer must exist');
+assert.match(rootHtml, /id=["']pendulum-burst["']/, 'index.html: the burst layer must exist');
+assert.match(rootHtml, /id=["']notebook-stamp["']/, 'index.html: the live stamp must exist');
+assert.match(rootHtml, /id=["']notebook-page["']/, 'index.html: the visit counter must exist');
+assert.equal(
+  (rootHtml.match(/class=["']pen["']/g) ?? []).length,
+  (rootHtml.match(/class=["']lab\b/g) ?? []).length,
+  'index.html: every lab entry needs its pen overlay',
+);
+assert.match(pendulumSvg, /id=["']pendulum-onions["'][\s\S]*?id=["']pendulum-burst["']/, 'index.html: onion and burst layers stay inside Fig. 1');
+
 // Technical sheet â„– 01: the programme must reach it, it must reach back, and every
 // number it prints must sit next to a method. No pending placeholder wording.
 assert.match(aboutHtml, /<a\b[^>]*href=["']\/work\/quant\/["']/i, 'about: primary navigation must link the technical sheet');
