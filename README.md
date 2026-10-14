@@ -199,6 +199,14 @@ English resumes carry (`verify:static` rejects 永久居民 / 绿卡). When a ch
 and bump its `dcterms.modified`. Headline and summary may differ, since each resume
 targets a different kind of role. Nothing compares the profile data.
 
+The landing page's film plate (`public/film-loop.webm`, `film-loop.mp4`, `film-poster.jpg`)
+is a print of the film's own recorder: temporarily raise `CAPTURE_WIDTH`/`CAPTURE_HEIGHT` in
+`src/app/BeijingLoopApp.ts` to 1280×720 and `videoBitsPerSecond` in `src/ui/recorder.ts` to
+12 Mbps, press Record on `/beijing-loop/` (the download is one exact cycle), then re-encode —
+`libvpx-vp9 -crf 42` at 960×540 for the WebM, `libx264 -crf 28` for the mp4, and the poster
+from the WebM's first frames. The committed constants stay 320×180 / 2 Mbps so the CI
+software renderer can keep sustaining the capture.
+
 ```bash
 npm run verify       # static/CI contracts, render telemetry, geometry + TypeScript
 npm run build        # typecheck + production bundle
