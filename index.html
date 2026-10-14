@@ -147,6 +147,29 @@ a:hover{color:var(--red)}
 .film__cap .mono{white-space:nowrap}
 .film:hover b{color:var(--red)}
 
+.paper-ripple{position:fixed;inset:0;z-index:-1;pointer-events:none}
+.pendulum .onion{fill:none;stroke:currentColor;stroke-linecap:round}
+.pendulum .onion .rod{stroke-width:1.05}
+.pendulum .onion circle{stroke:none}
+.pendulum .onion .bob--inner{fill:var(--ink)}
+.pendulum .onion .bob--outer{fill:var(--red)}
+.pendulum .burst{fill:none;stroke:currentColor;stroke-width:1;stroke-linecap:round}
+.pendulum .burst-dot{fill:var(--red);stroke:none}
+.pendulum-bar .stamp{margin-left:auto;text-transform:none;letter-spacing:.04em;min-width:0}
+.pendulum-bar button[aria-pressed="false"]{color:var(--soft);border-bottom-color:var(--rule)}
+
+.pen{position:absolute;left:-7px;top:-7px;width:calc(100% + 14px);height:calc(100% + 14px);overflow:visible;pointer-events:none}
+.pen__loop{fill:none;stroke:var(--red);stroke-width:1.3px;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset .62s ease .06s}
+.lab:hover .pen__loop,.lab:focus-within .pen__loop{stroke-dashoffset:0}
+.pen-note{position:absolute;right:16px;bottom:10px;font-family:var(--hand);font-size:20px;line-height:1.1;color:var(--red);transform:rotate(-2.4deg);opacity:0;transition:opacity .28s ease .3s;pointer-events:none;white-space:nowrap}
+.lab:hover .pen-note,.lab:focus-within .pen-note{opacity:.92}
+.margin-flip{position:fixed;right:calc((100vw - var(--max))/2 - 58px);bottom:16vh;z-index:5;pointer-events:none;opacity:.78;display:none}
+.margin-flip svg{display:block;width:40px;height:48px;overflow:visible}
+.margin-flip .flip-figure{fill:none;stroke:var(--graphite);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.margin-flip .flip-head{fill:var(--graphite);stroke:none}
+.margin-flip .flip-pencil{fill:none;stroke:var(--red);stroke-width:2;stroke-linecap:round}
+@media (min-width:1340px){.margin-flip{display:block}}
+
 .sec{padding:clamp(56px,8vw,104px) 0;border-top:1px solid var(--rule)}
 .sec-h{display:flex;align-items:baseline;gap:14px 20px;flex-wrap:wrap;margin-bottom:clamp(24px,3vw,40px)}
 .sec-h h2{font-family:var(--serif);font-weight:600;color:var(--ink);font-size:clamp(28px,3vw,40px);line-height:1.15}
@@ -217,6 +240,7 @@ a:hover{color:var(--red)}
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   .pendulum .trail-b0,.pendulum .trail-b1,.pendulum .trail-b2,.pendulum .trail-b3{opacity:0}
+  .pen__loop,.pen-note{transition:none}
 }
 </style>
 </head>
@@ -239,7 +263,7 @@ a:hover{color:var(--red)}
 <section class="hero" aria-labelledby="hero-name">
   <div class="wrap">
     <div class="hero__copy">
-      <p class="entry"><span class="mono">Notebook · p. 1 · 2026</span><span class="hand">field notes, not a demo</span></p>
+      <p class="entry"><span class="mono">Notebook · p. <span id="notebook-page">1</span> · 2026</span><span class="hand">field notes, not a demo</span></p>
       <h1 id="hero-name" class="name">Yupeng Lu</h1>
       <p class="name-alt mono">BrickerP · Diamond Bar, California (PT)</p>
       <p class="pos">AI agent &amp; backend engineer — I build agent workflows and the backend systems that run them.</p>
@@ -268,6 +292,8 @@ a:hover{color:var(--red)}
           <path class="trail trail--primary trail-b1" d=""/>
           <path id="pendulum-trail" class="trail trail--primary trail-b0" d=""/>
         </g>
+        <g id="pendulum-onions" aria-hidden="true"></g>
+        <g id="pendulum-burst" aria-hidden="true"></g>
         <g class="twin" aria-hidden="true">
           <line id="pendulum-twin-rod-a" class="rod" x1="200" y1="42" x2="285.75" y2="75.34"/>
           <line id="pendulum-twin-rod-b" class="rod" x1="285.75" y1="75.34" x2="206.64" y2="74.21"/>
@@ -286,10 +312,12 @@ a:hover{color:var(--red)}
       </svg>
       <div class="pendulum-bar">
         <button type="button" id="pendulum-reset">Reset</button>
+        <button type="button" id="pendulum-onion" aria-pressed="true">Onion skin</button>
         <label class="pendulum-delta">Δθ₂
           <input id="pendulum-delta" type="range" min="0.002" max="0.06" step="0.001" value="0.015" aria-describedby="pendulum-delta-read">
         </label>
         <span id="pendulum-delta-read" class="mono">0.015</span>
+        <span id="notebook-stamp" class="mono stamp" hidden></span>
       </div>
       <a class="film" href="/beijing-loop/">
         <div class="film__frame"><img src="/social-preview.png" width="1200" height="630" decoding="async" fetchpriority="high" alt="First-person night drive through an imagined Beijing — Endless Second Ring." /></div>
@@ -312,6 +340,8 @@ a:hover{color:var(--red)}
           <dt>Result</dt><dd>live dashboard on CloudFront</dd>
         </dl>
         <span class="lab__go">Read the sheet →</span>
+        <svg class="pen" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="pen__loop" pathLength="1" vector-effect="non-scaling-stroke" d="M62 5 C36 3 13 14 7 36 C1 58 13 82 38 92 C63 101 91 91 95 64 C99 40 84 13 58 7 C40 4 25 12 15 25"/></svg>
+        <span class="pen-note" aria-hidden="true">start here</span>
       </li>
       <li class="lab">
         <p class="lab__n"><span class="mono">Exp. 02 · WebGL film</span><span class="mono">Three.js · CI gates</span></p>
@@ -321,6 +351,8 @@ a:hover{color:var(--red)}
           <dt>Gates</dt><dd><b>12</b> passages · performance gates</dd>
         </dl>
         <span class="lab__go">Watch the film →</span>
+        <svg class="pen" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="pen__loop" pathLength="1" vector-effect="non-scaling-stroke" d="M62 5 C36 3 13 14 7 36 C1 58 13 82 38 92 C63 101 91 91 95 64 C99 40 84 13 58 7 C40 4 25 12 15 25"/></svg>
+        <span class="pen-note" aria-hidden="true">one take</span>
       </li>
       <li class="lab">
         <p class="lab__n"><span class="mono">Exp. 03 · Cloudflare Workers</span><span class="mono">live demo</span></p>
@@ -330,6 +362,8 @@ a:hover{color:var(--red)}
           <dt>Check</dt><dd>verify in the browser</dd>
         </dl>
         <span class="lab__go">Open the ledger ↗</span>
+        <svg class="pen" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="pen__loop" pathLength="1" vector-effect="non-scaling-stroke" d="M62 5 C36 3 13 14 7 36 C1 58 13 82 38 92 C63 101 91 91 95 64 C99 40 84 13 58 7 C40 4 25 12 15 25"/></svg>
+        <span class="pen-note" aria-hidden="true">verify it yourself</span>
       </li>
       <li class="lab">
         <p class="lab__n"><span class="mono">Exp. 04 · public MCP / CLI</span><span class="mono">Cookiy AI</span></p>
@@ -339,6 +373,8 @@ a:hover{color:var(--red)}
           <dt>Workflow</dt><dd>Studies · interviews · reports</dd>
         </dl>
         <span class="lab__go">cookiy-cli on npm ↗</span>
+        <svg class="pen" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="pen__loop" pathLength="1" vector-effect="non-scaling-stroke" d="M62 5 C36 3 13 14 7 36 C1 58 13 82 38 92 C63 101 91 91 95 64 C99 40 84 13 58 7 C40 4 25 12 15 25"/></svg>
+        <span class="pen-note" aria-hidden="true">it's on npm</span>
       </li>
       <li class="lab lab--private">
         <p class="lab__n"><span class="mono">Exp. 05 · private · Baidu MeDo</span><span class="mono">not public</span></p>
@@ -348,6 +384,8 @@ a:hover{color:var(--red)}
           <dt>Billing</dt><dd>Service extraction · event correctness</dd>
         </dl>
         <span class="lab__go">Described in the resume</span>
+        <svg class="pen" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="pen__loop" pathLength="1" vector-effect="non-scaling-stroke" d="M62 5 C36 3 13 14 7 36 C1 58 13 82 38 92 C63 101 91 91 95 64 C99 40 84 13 58 7 C40 4 25 12 15 25"/></svg>
+        <span class="pen-note" aria-hidden="true">ask me about this</span>
       </li>
     </ol>
     <p class="also">Also: <a href="https://d2c9pzwpavuktk.cloudfront.net/">live trading dashboard ↗</a>&nbsp;· <a href="https://ledger-mcp.brickerp.workers.dev">ledger-mcp ↗</a>&nbsp;· <a href="/about/">full programme →</a>&nbsp;· <a href="/resume.pdf">resume (PDF)</a></p>

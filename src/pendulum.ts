@@ -7,8 +7,13 @@
  * Reset clears them and restores the marked initial conditions.
  * Classical RK4 on the Lagrangian equations (θ = 0 hangs down).
  * Reduced motion parks both arms near the vertical and drops the trails.
- * Homepage only; no Three.js.
+ * The primary arm can leave an onion skin of its last poses; a run of
+ * rapid clicks releases fifty twins. The homepage also boots the paper
+ * ripple and the margin traces. Homepage only; no Three.js.
  */
+
+import { bootPaper } from './paper';
+import { bootMargins } from './margins';
 
 const G = 9.81;
 const M1 = 1;
@@ -23,6 +28,17 @@ const TRAIL_MS = 28_000;
 const TRAIL_BANDS = 4;
 const TRAIL_CAP = 720;
 const DEFAULT_DELTA = 0.015;
+/** Onion skin: a stop-motion row of past poses for the primary arm. */
+const ONION_MS = 110;
+const ONION_KEEP = 12;
+const ONION_LIFE = 1400;
+/** The easter egg: rapid clicks on the figure release fifty twins. */
+const BURST_COUNT = 50;
+const BURST_MS = 7000;
+const CLICK_COUNT = 5;
+const CLICK_WINDOW_MS = 2600;
+const CLICK_COOLDOWN_MS = 9000;
+const NS = 'http://www.w3.org/2000/svg';
 
 type State = [number, number, number, number];
 type Sample = { x: number; y: number; t: number };
@@ -149,6 +165,147 @@ function boot(): void {
   let raf = 0;
   let last = 0;
 
+  const onionBtn = document.querySelector<HTMLButtonElement>('#pendulum-onion');
+  const onionLayer = root.querySelector<SVGGElement>('#pendulum-onions');
+  const burstLayer = root.querySelector<SVGGElement>('#pendulum-burst');
+
+  // Onion skin — the primary arm leaves a short row of its past poses,
+  // sampled at a stop-motion cadence so the fan stays readable.
+  type Onion = { a: number; b: number; t: number };
+  type OnionSlot = {
+    g: SVGGElement;
+    rod1: SVGLineElement;
+    rod2: SVGLineElement;
+    bob1: SVGCircleElement;
+    bob2: SVGCircleElement;
+  };
+  const onions: Onion[] = [];
+  const onionPool: OnionSlot[] = [];
+  let onionOn = !onionBtn || onionBtn.getAttribute('aria-pressed') !== 'false';
+  let nextOnion = 0;
+
+  const onionSlot = (index: number): OnionSlot => {
+    const existing = onionPool[index];
+    if (existing) return existing;
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('class', 'onion');
+    g.setAttribute('opacity', '0');
+    const rod1 = document.createElementNS(NS, 'line');
+    rod1.setAttribute('class', 'rod');
+    const rod2 = document.createElementNS(NS, 'line');
+    rod2.setAttribute('class', 'rod');
+    const bob1 = document.createElementNS(NS, 'circle');
+    bob1.setAttribute('class', 'bob bob--inner');
+    bob1.setAttribute('r', '4.2');
+    const bob2 = document.createElementNS(NS, 'circle');
+    bob2.setAttribute('class', 'bob bob--outer');
+    bob2.setAttribute('r', '5');
+    g.append(rod1, rod2, bob1, bob2);
+    onionLayer?.appendChild(g);
+    const slot: OnionSlot = { g, rod1, rod2, bob1, bob2 };
+    onionPool[index] = slot;
+    return slot;
+  };
+
+  const clearOnions = (): void => {
+    onions.length = 0;
+    nextOnion = 0;
+    for (const slot of onionPool) slot.g.setAttribute('opacity', '0');
+  };
+
+  const paintOnions = (now: number): void => {
+    while (onions.length > 0 && now - onions[0]!.t > ONION_LIFE) onions.shift();
+    for (let i = 0; i < onions.length; i += 1) {
+      const pose = onions[i]!;
+      const slot = onionSlot(i);
+      const age = (now - pose.t) / ONION_LIFE;
+      const { x1, y1, x2, y2 } = joints(pose.a, pose.b);
+      slot.rod1.setAttribute('x1', ox.toFixed(1));
+      slot.rod1.setAttribute('y1', oy.toFixed(1));
+      slot.rod1.setAttribute('x2', x1.toFixed(1));
+      slot.rod1.setAttribute('y2', y1.toFixed(1));
+      slot.rod2.setAttribute('x1', x1.toFixed(1));
+      slot.rod2.setAttribute('y1', y1.toFixed(1));
+      slot.rod2.setAttribute('x2', x2.toFixed(1));
+      slot.rod2.setAttribute('y2', y2.toFixed(1));
+      slot.bob1.setAttribute('cx', x1.toFixed(1));
+      slot.bob1.setAttribute('cy', y1.toFixed(1));
+      slot.bob2.setAttribute('cx', x2.toFixed(1));
+      slot.bob2.setAttribute('cy', y2.toFixed(1));
+      slot.g.setAttribute('opacity', (0.3 * (1 - age)).toFixed(3));
+    }
+    for (let i = onions.length; i < onionPool.length; i += 1) {
+      onionPool[i]!.g.setAttribute('opacity', '0');
+    }
+  };
+
+  // The easter egg — a run of quick clicks releases fifty twins that
+  // spread with the current Δθ₂ and fade out together.
+  let burst: State[] | null = null;
+  let burstBorn = 0;
+  let burstPaths: SVGPathElement[] = [];
+  let burstDots: SVGCircleElement[] = [];
+  let clicks: number[] = [];
+  let clicksLocked = 0;
+  let downWasDrag = false;
+  const burstOrigin = `M${ox.toFixed(1)} ${oy.toFixed(1)}`;
+
+  const endBurst = (): void => {
+    for (const path of burstPaths) path.remove();
+    for (const dot of burstDots) dot.remove();
+    burst = null;
+    burstPaths = [];
+    burstDots = [];
+    burstLayer?.setAttribute('opacity', '0');
+  };
+
+  const release = (): void => {
+    if (mq.matches || burst || !burstLayer) return;
+    const next: State[] = [];
+    for (let i = 0; i < BURST_COUNT; i += 1) {
+      const spread = (i / (BURST_COUNT - 1) - 0.5) * 0.06;
+      next.push([state[0] + spread * 0.3, 0, state[2] + spread, 0]);
+    }
+    burst = next;
+    burstBorn = performance.now();
+    burstPaths = next.map(() => {
+      const path = document.createElementNS(NS, 'path');
+      path.setAttribute('class', 'burst');
+      burstLayer.appendChild(path);
+      return path;
+    });
+    burstDots = next.map(() => {
+      const dot = document.createElementNS(NS, 'circle');
+      dot.setAttribute('class', 'burst-dot');
+      dot.setAttribute('r', '2');
+      burstLayer.appendChild(dot);
+      return dot;
+    });
+    start();
+  };
+
+  const paintBurst = (now: number, wall: number): void => {
+    if (!burst) return;
+    const age = now - burstBorn;
+    if (age >= BURST_MS) {
+      endBurst();
+      return;
+    }
+    const fade = Math.min(1, (BURST_MS - age) / 1500) * 0.32;
+    burstLayer?.setAttribute('opacity', fade.toFixed(3));
+    for (let i = 0; i < burst.length; i += 1) {
+      const pose = advance(burst[i]!, wall, l2);
+      burst[i] = pose;
+      const { x1, y1, x2, y2 } = joints(pose[0], pose[2]);
+      burstPaths[i]!.setAttribute(
+        'd',
+        `${burstOrigin}L${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`,
+      );
+      burstDots[i]!.setAttribute('cx', x2.toFixed(1));
+      burstDots[i]!.setAttribute('cy', y2.toFixed(1));
+    }
+  };
+
   const showDelta = (): void => {
     if (deltaInput) deltaInput.value = delta.toFixed(3);
     if (deltaRead) deltaRead.textContent = delta.toFixed(3);
@@ -244,6 +401,7 @@ function boot(): void {
     twin = [a, 0, b + delta, 0];
     place();
     clearTrails();
+    clearOnions();
     last = performance.now();
   };
 
@@ -252,6 +410,7 @@ function boot(): void {
     twin = [calm1, 0, calm2 + delta, 0];
     place();
     clearTrails();
+    clearOnions();
   };
 
   const stop = (): void => {
@@ -272,6 +431,15 @@ function boot(): void {
     remember(twinTrail, tips.twin.x, tips.twin.y, now);
     paintTrail(primaryBands, primaryTrail, now);
     paintTrail(twinBands, twinTrail, now);
+    if (onionOn && !mq.matches) {
+      if (now >= nextOnion) {
+        onions.push({ a: state[0], b: state[2], t: now });
+        nextOnion = now + ONION_MS;
+        while (onions.length > ONION_KEEP) onions.shift();
+      }
+      paintOnions(now);
+    }
+    paintBurst(now, wall);
     raf = requestAnimationFrame(tick);
   };
 
@@ -303,6 +471,7 @@ function boot(): void {
     const toOuter = Math.hypot(point.x - x2, point.y - y2);
     if (Math.min(toInner, toOuter) > 56) return;
     drag = toInner <= toOuter ? 'inner' : 'outer';
+    downWasDrag = true;
     root.setPointerCapture(event.pointerId);
     stop();
     clearTrails();
@@ -340,8 +509,10 @@ function boot(): void {
 
   mq.addEventListener('change', (event) => {
     drag = null;
+    downWasDrag = false;
     if (event.matches) {
       stop();
+      endBurst();
       parkCalm();
       return;
     }
@@ -363,6 +534,24 @@ function boot(): void {
   root.addEventListener('pointerup', onPointerUp);
   root.addEventListener('pointercancel', onPointerUp);
 
+  // Count quick tap-taps on the figure; a run of them releases the twins.
+  root.addEventListener('pointerup', (event) => {
+    if (downWasDrag) {
+      downWasDrag = false;
+      return;
+    }
+    if (event.button !== 0 || mq.matches) return;
+    const now = performance.now();
+    if (now < clicksLocked) return;
+    clicks = clicks.filter((t) => now - t < CLICK_WINDOW_MS);
+    clicks.push(now);
+    if (clicks.length >= CLICK_COUNT) {
+      clicks = [];
+      clicksLocked = now + CLICK_COOLDOWN_MS;
+      release();
+    }
+  });
+
   deltaInput?.addEventListener('input', () => {
     delta = clampDelta(Number(deltaInput.value));
     showDelta();
@@ -382,6 +571,12 @@ function boot(): void {
     reseed(release1, release2);
     start();
   });
+
+  onionBtn?.addEventListener('click', () => {
+    onionOn = !onionOn;
+    onionBtn.setAttribute('aria-pressed', onionOn ? 'true' : 'false');
+    if (!onionOn) clearOnions();
+  });
 }
 
 function clampDelta(value: number): number {
@@ -390,3 +585,5 @@ function clampDelta(value: number): number {
 }
 
 boot();
+bootPaper();
+bootMargins();
