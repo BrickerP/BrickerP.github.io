@@ -510,12 +510,27 @@ assert.match(rootHtml, /id=["']pendulum-burst["']/, 'index.html: the burst layer
 assert.match(rootHtml, /id=["']notebook-stamp["']/, 'index.html: the live stamp must exist');
 assert.match(rootHtml, /id=["']notebook-page["']/, 'index.html: the visit counter must exist');
 assert.match(pendulumSvg, /id=["']pendulum-burst["']/, 'index.html: the burst layer stays inside Fig. 1');
-const penA = [...rootHtml.matchAll(/class=["']pen__a["'][^>]*\bd=["']([^"']+)["']/g)].map((match) => match[1]);
-const penB = [...rootHtml.matchAll(/class=["']pen__b["'][^>]*\bd=["']([^"']+)["']/g)].map((match) => match[1]);
-assert.equal(penA.length, 5, 'index.html: every lab entry needs its first pen stroke');
-assert.equal(penB.length, 5, 'index.html: every lab entry needs its second pen stroke');
-assert.equal(new Set(penA).size, 5, 'index.html: no two first pen strokes may match');
-assert.equal(new Set(penB).size, 5, 'index.html: no two second pen strokes may match');
+// The reader's pen: one underlined key phrase per lab entry, five hands that
+// must not repeat, drawn in real pixels (never a stretched viewBox), and
+// the lab entry's whole-card link must stay whole.
+const pensSource = await text('src/pens.ts');
+assert.match(pendulumSource, /from\s+['"]\.\/pens['"]/, 'src/pendulum.ts: must boot the reader\'s pen');
+const inkSpans = [...rootHtml.matchAll(/class=["']ul["'][^>]*data-ink=["'](\d+)["']/g)].map((match) => match[1]);
+assert.deepEqual(inkSpans, ['0', '1', '2', '3', '4'], 'index.html: every lab entry needs its underlined phrase, in order');
+const inkSeeds = [...pensSource.matchAll(/seed:\s*(\d+)/g)].map((match) => match[1]);
+assert.equal(inkSeeds.length, 10, 'src/pens.ts: five hands, two strokes each');
+assert.equal(new Set(inkSeeds).size, 10, 'src/pens.ts: no two strokes may share a seed');
+assert.doesNotMatch(pensSource, /vector-effect|non-scaling-stroke/, 'src/pens.ts: pen strokes must not rely on non-scaling strokes');
+assert.match(
+  rootHtml,
+  /@media \(prefers-reduced-motion:reduce\)\{[\s\S]*?\.ink[\s\S]*?transition:none/,
+  'index.html: reduced motion must stop the ink from animating',
+);
+assert.doesNotMatch(
+  rootHtml,
+  /\.lab h3\{[^}]*position:\s*relative/,
+  'index.html: a positioned h3 would shrink the lab entry\'s whole-card link',
+);
 
 // Technical sheet № 01: the programme must reach it, it must reach back, and every
 // number it prints must sit next to a method. No pending placeholder wording.

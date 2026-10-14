@@ -13,12 +13,16 @@
  * storage or time-zone data is unavailable.
  */
 
+import { rng, wander } from './hand';
+
 const NS = 'http://www.w3.org/2000/svg';
 const PAGE_KEY = 'brickerp-notebook-page';
 /** Pencil stepping: at most one 7px step per ~82ms (~12 fps flipbook). */
 const STEP_MS = 82;
 const STEP_PX = 7;
 const WOBBLE = 1.1;
+/** The pencil lies on the page at a slant, tip toward the text. */
+const BASE_TILT = 12;
 /** Gust flutter: ten ~96ms frames, three decreasing flutters. */
 const GUST_MS = 96;
 const GUST_SHAPE = [0.34, 0.6, 0.12, 0.86, 0.3, 1, 0.22, 0.5, 0.16, 0.07];
@@ -83,6 +87,38 @@ interface Pencil {
   low(): boolean;
 }
 
+/**
+ * The pencil, drawn top-down with the tip pointing at the page. Every edge
+ * wanders a little (a seeded hand, so it is the same pencil every visit):
+ * rounded eraser, crimped ferrule, a barrel with two facet lines and pencil
+ * hatching on its shaded side, a sharpened cone with its scalloped paint
+ * edge and grain, and the graphite tip.
+ */
+function drawPencil(svg: SVGSVGElement): void {
+  const random = rng(7);
+  const add = (cls: string, d: string): void => {
+    const node = document.createElementNS(NS, 'path');
+    node.setAttribute('class', cls);
+    node.setAttribute('d', d);
+    svg.appendChild(node);
+  };
+  svg.setAttribute('viewBox', '0 0 24 110');
+  add('pencil-eraser', 'M4.7 11.2 L4.7 6.3 Q4.9 1.6 12 1.4 Q19.1 1.6 19.3 6.3 L19.3 11.2 Z');
+  add('pencil-ferrule', wander([[4.7, 11.2], [19.3, 11.2], [19.3, 21.2], [4.7, 21.2]], true, random, 0.12));
+  for (const y of [13.6, 15.9, 18.2]) add('pencil-line', wander([[5.1, y], [18.9, y]], false, random, 0.1));
+  add('pencil-body', wander([[4.7, 21.2], [19.3, 21.2], [19.3, 86.5], [4.7, 86.5]], true, random, 0.2));
+  add('pencil-line', wander([[8.7, 22], [8.7, 85.8]], false, random, 0.18));
+  add('pencil-line', wander([[15.3, 22], [15.3, 85.8]], false, random, 0.18));
+  for (let y = 29; y <= 84; y += 4.6) {
+    add('pencil-hatch', wander([[5.1, y], [8.3, y - 2.9]], false, random, 0.08, 4));
+  }
+  add('pencil-wood', wander([[4.7, 86.5], [19.3, 86.5], [12, 107]], true, random, 0.14));
+  add('pencil-line', 'M4.9 86.8 Q8.4 91.6 12 87 Q15.6 91.6 19.1 86.8');
+  add('pencil-line', wander([[8.8, 93], [10.9, 99.4]], false, random, 0.1, 4));
+  add('pencil-line', wander([[15.2, 93], [13.1, 99.4]], false, random, 0.1, 4));
+  add('pencil-lead', wander([[10.3, 99.6], [13.7, 99.6], [12, 107.3]], true, random, 0.06, 4));
+}
+
 /** The reader's pencil: a flipbook bookmark that keeps your place. */
 function placePencil(): Pencil | null {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
@@ -92,40 +128,20 @@ function placePencil(): Pencil | null {
   host.className = 'margin-flip';
   host.setAttribute('aria-hidden', 'true');
   const svg = document.createElementNS(NS, 'svg');
-  svg.setAttribute('viewBox', '0 0 24 108');
-  const shape = (tag: 'path' | 'circle', cls: string, attrs: Record<string, string>): SVGElement => {
-    const node = document.createElementNS(NS, tag);
-    node.setAttribute('class', cls);
-    for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, value);
-    svg.appendChild(node);
-    return node;
-  };
-  // Eraser, ferrule with its two seams, barrel with facets, sharpened cone
-  // with grain lines, graphite tip. Drawn top-down; the tip points down.
-  shape('path', 'pencil-eraser', { d: 'M4.6 1.5 Q12 -1.6 19.4 1.5 L19.4 5.2 L4.6 5.2 Z' });
-  shape('path', 'pencil-ferrule', { d: 'M4.6 5.2 L19.4 5.2 L19.4 12 L4.6 12 Z' });
-  shape('path', 'pencil-line', { d: 'M8.2 5.6 L8.2 11.6' });
-  shape('path', 'pencil-line', { d: 'M15.8 5.6 L15.8 11.6' });
-  shape('path', 'pencil-body', { d: 'M4.6 12 L19.4 12 L19.4 84 L4.6 84 Z' });
-  shape('path', 'pencil-line', { d: 'M8.4 12.8 L8.4 83.2' });
-  shape('path', 'pencil-line', { d: 'M15.6 12.8 L15.6 83.2' });
-  shape('path', 'pencil-wood', { d: 'M4.6 84 L12 106.6 L19.4 84 Z' });
-  shape('path', 'pencil-line', { d: 'M8.8 87.6 L11 94.6' });
-  shape('path', 'pencil-line', { d: 'M15.2 87.6 L13 94.6' });
-  shape('path', 'pencil-lead', { d: 'M10.3 96.2 L12 106.6 L13.7 96.2 Z' });
+  drawPencil(svg);
   host.appendChild(svg);
   document.body.appendChild(host);
 
   let topPx = window.innerHeight * 0.12;
   let targetPx = topPx;
-  let wobble = 0;
+  let wobbleDeg = 0;
   let lastStep = 0;
   let pressUntil = 0;
   let raf = 0;
 
   const place = (): void => {
     host.style.top = `${topPx.toFixed(1)}px`;
-    const tilt = performance.now() < pressUntil ? 5.5 : wobble;
+    const tilt = BASE_TILT + (performance.now() < pressUntil ? 4.5 : wobbleDeg);
     host.style.transform = `rotate(${tilt.toFixed(2)}deg)`;
   };
 
@@ -145,7 +161,7 @@ function placePencil(): Pencil | null {
     if (moving && now - lastStep >= STEP_MS) {
       lastStep = now;
       topPx += Math.sign(targetPx - topPx) * Math.min(STEP_PX, Math.abs(targetPx - topPx));
-      wobble = wobble >= 0 ? -WOBBLE : WOBBLE;
+      wobbleDeg = wobbleDeg >= 0 ? -WOBBLE : WOBBLE;
       place();
     }
     if (moving || now < pressUntil) {
@@ -180,6 +196,23 @@ function cornerPaper(pencil: Pencil | null): void {
   host.setAttribute('aria-hidden', 'true');
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('viewBox', '0 0 100 100');
+  // The underside of the lifted sheet: darker at the hinge, bright at the
+  // free edge — the one cue that makes a folded triangle read as paper.
+  const defs = document.createElementNS(NS, 'defs');
+  const sheen = document.createElementNS(NS, 'linearGradient');
+  sheen.setAttribute('id', 'curl-sheen');
+  sheen.setAttribute('x1', '1');
+  sheen.setAttribute('y1', '1');
+  sheen.setAttribute('x2', '0');
+  sheen.setAttribute('y2', '0');
+  for (const [offset, color] of [['0', '#E3DCC8'], ['0.45', '#F6F1E4'], ['1', '#FFFFFF']] as const) {
+    const stop = document.createElementNS(NS, 'stop');
+    stop.setAttribute('offset', offset);
+    stop.setAttribute('stop-color', color);
+    sheen.appendChild(stop);
+  }
+  defs.appendChild(sheen);
+  svg.appendChild(defs);
   const path = (cls: string): SVGPathElement => {
     const node = document.createElementNS(NS, 'path');
     node.setAttribute('class', cls);

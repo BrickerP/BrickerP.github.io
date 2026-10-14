@@ -10,12 +10,14 @@
  * Every so often the figure quietly re-runs the twin experiment: nine
  * twins leave the same pose within ±0.008 rad, hold together as one thick
  * arm, then visibly part into a fan. A run of rapid clicks releases fifty.
- * The homepage also boots the paper ripple and the margin traces.
+ * The homepage also boots the paper ripple, the margin traces and the
+ * reader's pen.
  * Homepage only; no Three.js.
  */
 
 import { bootPaper } from './paper';
 import { bootMargins } from './margins';
+import { bootPens } from './pens';
 
 const G = 9.81;
 const M1 = 1;
@@ -590,3 +592,4 @@ function clampDelta(value: number): number {
 boot();
 bootPaper();
 bootMargins();
+bootPens();
