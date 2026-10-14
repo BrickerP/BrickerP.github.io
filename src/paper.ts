@@ -2,12 +2,12 @@
  * Living paper — the homepage grid gains a local ripple under the cursor.
  *
  * A coarse wave field on the grid's own 24px cell steps with a damped 2D
- * wave equation. Pointer motion injects energy; a click drops a spot of
- * ink plus a stronger impulse; pressing `K` splashes ink across the sheet.
- * While the field or the ink is alive this module paints the full graph
- * paper on a fixed canvas; once it settles the canvas clears and the CSS
- * background takes over again, so an idle page costs nothing. Mouse only,
- * and never under reduced motion.
+ * wave equation. Pointer motion injects energy and a click presses one
+ * quick dent — the sheet yields like paper, and leaves no mark. While
+ * the field is alive this module paints the full graph paper on a fixed
+ * canvas; once it settles the canvas clears and the CSS background takes
+ * over again, so an idle page costs nothing. Mouse only, and never under
+ * reduced motion.
  */
 
 const PAPER = '#F6F1E4';
@@ -23,18 +23,8 @@ const C2 = 0.32;
 const DAMP = 0.992;
 /** Distance between samples along a line, in pixels. */
 const STEP_PX = 8;
-const SPLAT_MS = 1500;
 /** Peak field below which the render loop may sleep. */
 const SLEEP = 0.015;
-const SPLASH_COUNT = 24;
-
-type Splat = { x: number; y: number; born: number; seed: number };
-
-/** Deterministic fuzz for ink shapes — no state, same seed, same blot. */
-function fuzz(seed: number, n: number): number {
-  const value = Math.sin(seed * 12.9898 + n * 78.233) * 43758.5453;
-  return value - Math.floor(value);
-}
 
 /** The -1px background offset, wrapped into [0, pitch). */
 function phase(scrollY: number, pitch: number): number {
@@ -62,7 +52,6 @@ export function bootPaper(): void {
   let rows = 2;
   let cur = new Float32Array(4);
   let prev = new Float32Array(4);
-  let splats: Splat[] = [];
   let raf = 0;
   let awake = false;
   let pendingX = 0;
@@ -163,55 +152,13 @@ export function bootPaper(): void {
     }
   }
 
-  function paintInk(now: number): void {
-    for (const splat of splats) {
-      const age = (now - splat.born) / SPLAT_MS;
-      if (age >= 1) continue;
-      const radius = 2.6 + age * 3.4;
-      // A faint bleed ring first — ink on paper spreads before it dries.
-      ctx.fillStyle = `rgba(${INK},${(0.08 * (1 - age)).toFixed(3)})`;
-      ctx.beginPath();
-      ctx.arc(splat.x, splat.y, radius * 2.1, 0, Math.PI * 2);
-      ctx.fill();
-      const alpha = (0.4 * (1 - age) * (1 - age)).toFixed(3);
-      ctx.fillStyle = `rgba(${INK},${alpha})`;
-      for (let n = 0; n < 3; n += 1) {
-        const angle = fuzz(splat.seed, n) * Math.PI * 2;
-        const spread = radius * 0.42;
-        ctx.beginPath();
-        ctx.arc(
-          splat.x + Math.cos(angle) * spread,
-          splat.y + Math.sin(angle) * spread,
-          Math.max(0.7, radius * (0.5 + fuzz(splat.seed, n + 3) * 0.4)),
-          0,
-          Math.PI * 2,
-        );
-        ctx.fill();
-      }
-      for (let n = 0; n < 3; n += 1) {
-        const angle = fuzz(splat.seed, n + 7) * Math.PI * 2;
-        const distance = radius * (1.5 + fuzz(splat.seed, n + 11) * 1.6);
-        ctx.beginPath();
-        ctx.arc(
-          splat.x + Math.cos(angle) * distance,
-          splat.y + Math.sin(angle) * distance,
-          0.6 + fuzz(splat.seed, n + 13) * 0.9,
-          0,
-          Math.PI * 2,
-        );
-        ctx.fill();
-      }
-    }
-  }
-
-  function render(now: number): void {
+  function render(): void {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.fillStyle = PAPER;
     ctx.fillRect(0, 0, width, height);
     const scrollY = window.scrollY;
     strokes(FINE, scrollY, `rgba(${INK},.075)`);
     strokes(COARSE, scrollY, `rgba(${INK},.14)`);
-    if (splats.length > 0) paintInk(now);
   }
 
   function sleep(): void {
@@ -228,7 +175,7 @@ export function bootPaper(): void {
     if (raf === 0) raf = requestAnimationFrame(frame);
   }
 
-  function frame(now: number): void {
+  function frame(): void {
     raf = 0;
     if (mq.matches || !awake) return;
     if (pending > 0) {
@@ -236,20 +183,19 @@ export function bootPaper(): void {
       pending = 0;
     }
     const peak = step();
-    render(now);
-    splats = splats.filter((splat) => now - splat.born < SPLAT_MS);
+    render();
     const scrollMoved = window.scrollY !== lastScroll;
     lastScroll = window.scrollY;
-    if (peak > SLEEP || splats.length > 0 || scrollMoved || pending > 0) {
+    if (peak > SLEEP || scrollMoved || pending > 0) {
       raf = requestAnimationFrame(frame);
     } else {
       sleep();
     }
   }
 
-  function drop(x: number, y: number, scale: number): void {
-    splats.push({ x, y, born: performance.now(), seed: Math.random() * 999 });
-    inject(x, y, 1.6 * scale);
+  /** A click presses one quick dent into the sheet — no ink is left. */
+  function pulse(x: number, y: number): void {
+    inject(x, y, 1.4);
     pending = 0;
     wake();
   }
@@ -280,34 +226,11 @@ export function bootPaper(): void {
 
   window.addEventListener('pointerdown', (event) => {
     if (mq.matches || event.button !== 0) return;
-    const target = event.target;
-    if (
-      target instanceof Element &&
-      target.closest('a,button,input,select,textarea,label,[role="button"]')
-    ) {
-      return;
-    }
     pointerSeen = true;
     lastX = event.clientX;
     lastY = event.clientY;
-    drop(event.clientX, event.clientY, 1);
+    pulse(event.clientX, event.clientY);
   }, { passive: true });
-
-  window.addEventListener('keydown', (event) => {
-    if (mq.matches) return;
-    if (event.key !== 'k' && event.key !== 'K') return;
-    if (event.metaKey || event.ctrlKey || event.altKey || event.repeat) return;
-    const target = event.target;
-    if (
-      target instanceof Element &&
-      target.closest('input,textarea,select,[contenteditable]')
-    ) {
-      return;
-    }
-    for (let i = 0; i < SPLASH_COUNT; i += 1) {
-      drop(Math.random() * width, Math.random() * height, 0.65);
-    }
-  });
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {

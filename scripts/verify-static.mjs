@@ -532,6 +532,58 @@ assert.doesNotMatch(
   'index.html: a positioned h3 would shrink the lab entry\'s whole-card link',
 );
 
+// The film plate: the fold carries a one-line hook, the second screen plays
+// the loop (muted, looping, poster-first, mp4 fallback), and the plate
+// pauses off screen and under reduced motion.
+assert.match(rootHtml, /id=["']film["']/, 'index.html: the film needs its own screen');
+assert.match(
+  rootHtml,
+  /<a\b(?=[^>]*\bclass=["']hook["'])(?=[^>]*\bhref=["']#film["'])[^>]*>/,
+  'index.html: the fold must carry the hook to the film screen',
+);
+assert.match(
+  rootHtml,
+  /<video\b(?=[^>]*\bclass=["']plate__video["'])(?=[^>]*\bmuted\b)(?=[^>]*\bloop\b)(?=[^>]*\bplaysinline\b)(?=[^>]*\bposter=["']\/film-poster\.jpg["'])[^>]*>/,
+  'index.html: the plate must be a muted looping video with its poster',
+);
+assert.match(
+  rootHtml,
+  /<source\b[^>]*src=["']\/film-loop\.webm["'][^>]*type=["']video\/webm["']/,
+  'index.html: the plate must offer the webm loop',
+);
+assert.match(
+  rootHtml,
+  /<source\b[^>]*src=["']\/film-loop\.mp4["'][^>]*type=["']video\/mp4["']/,
+  'index.html: the plate must offer an mp4 fallback',
+);
+const plateSource = await text('src/plate.ts');
+assert.match(pendulumSource, /from\s+['"]\.\/plate['"]/, 'src/pendulum.ts: must boot the film plate');
+assert.match(plateSource, /prefers-reduced-motion/, 'src/plate.ts: the plate must honor reduced motion');
+assert.match(plateSource, /IntersectionObserver/, 'src/plate.ts: the plate plays only on screen');
+
+// The hand-drawn rulings: three seeded frames that boil on a step-end loop,
+// swapped in while the straight CSS border steps aside.
+const rulingSource = await text('src/ruling.ts');
+assert.match(pendulumSource, /from\s+['"]\.\/ruling['"]/, 'src/pendulum.ts: must boot the hand-drawn rulings');
+assert.ok(
+  (rootHtml.match(/\bdata-ruled\b/g) ?? []).length >= 8,
+  'index.html: the plate, every lab entry, the margin note and the status card must carry data-ruled',
+);
+assert.match(rootHtml, /\.ruling__frame\{[^}]*animation:ruling-boil/, 'index.html: rulings must boil in stepped frames');
+assert.match(rulingSource, /wander/, 'src/ruling.ts: rulings drawn by the same wandering hand');
+
+// The click mark is retired; the paper answers a click with a dent only.
+assert.doesNotMatch(
+  paperSource,
+  /SPLASH_COUNT|splats|keydown/,
+  'src/paper.ts: the ink mark and the K splash are retired',
+);
+
+// Contact: the status card replaced the red checks, and Exp. 06 keeps the story.
+assert.match(rootHtml, /class=["']status-card["']/, 'index.html: #contact must print the status card');
+assert.doesNotMatch(rootHtml, /class=["']contact__list["']/, 'index.html: the red checklist must be gone');
+assert.match(rootHtml, /Exp\. 06 — your project/, 'index.html: the contact title must keep the Exp. 06 story');
+
 // Technical sheet № 01: the programme must reach it, it must reach back, and every
 // number it prints must sit next to a method. No pending placeholder wording.
 assert.match(aboutHtml, /<a\b[^>]*href=["']\/work\/quant\/["']/i, 'about: primary navigation must link the technical sheet');

@@ -10,14 +10,16 @@
  * Every so often the figure quietly re-runs the twin experiment: nine
  * twins leave the same pose within ±0.008 rad, hold together as one thick
  * arm, then visibly part into a fan. A run of rapid clicks releases fifty.
- * The homepage also boots the paper ripple, the margin traces and the
- * reader's pen.
+ * The homepage also boots the paper ripple, the margin traces, the
+ * reader's pen, the hand-drawn rulings and the film plate.
  * Homepage only; no Three.js.
  */
 
 import { bootPaper } from './paper';
 import { bootMargins } from './margins';
 import { bootPens } from './pens';
+import { bootRuling } from './ruling';
+import { bootPlate } from './plate';
 
 const G = 9.81;
 const M1 = 1;
@@ -593,3 +595,5 @@ boot();
 bootPaper();
 bootMargins();
 bootPens();
+bootRuling();
+bootPlate();

@@ -94,27 +94,26 @@ a:hover{color:var(--red)}
 .nav nav a:hover{color:var(--red)}
 .nav nav a.nav__cta{color:var(--red);text-decoration:underline;text-decoration-color:var(--red)}
 
-.hero{padding:clamp(28px,4vh,48px) 0 clamp(36px,5vw,64px)}
-.hero .wrap{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:clamp(28px,4vw,64px);align-items:start}
+.hero{padding:clamp(24px,3.5vh,40px) 0 clamp(16px,2.2vw,26px)}
+.hero .wrap{display:grid;grid-template-rows:minmax(0,1fr) auto;gap:clamp(22px,3.2vw,42px);min-height:calc(100vh - 57px)}
+@supports(height:100svh){.hero .wrap{min-height:calc(100svh - 57px)}}
+.hero__body{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.88fr);gap:clamp(28px,4vw,64px);align-items:center;align-content:center}
 .entry{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;margin-bottom:10px}
 .name{font-family:var(--serif);font-weight:600;color:var(--ink);font-size:clamp(40px,4.6vw,62px);line-height:1.04;letter-spacing:-.01em}
 .name-alt{margin-top:6px}
 .pos{margin-top:16px;font-size:clamp(19px,1.65vw,23px);line-height:1.42;color:var(--ink);max-width:31em}
 .pos em{font-style:italic}
-.meas{list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin-top:22px;border-top:1px solid var(--ink);border-bottom:1px solid var(--rule)}
-.meas li{padding:12px 14px 12px 0;min-width:0}
-.meas li+li{padding-left:16px;border-left:1px dashed var(--rule)}
-.meas .sym{font-family:var(--serif);font-style:italic;color:var(--soft);font-size:15px}
-.meas strong{display:block;font-family:var(--serif);font-weight:600;color:var(--ink);font-size:clamp(30px,2.8vw,40px);line-height:1.1;font-variant-numeric:tabular-nums}
-.meas strong small{font-family:var(--mono);font-weight:400;font-size:12px;letter-spacing:.04em;color:var(--red);margin-left:4px;text-transform:none}
-.meas span.l{display:block;font-size:14.5px;line-height:1.35;color:var(--graphite);margin-top:2px}
 .cta{display:flex;align-items:center;gap:14px 22px;flex-wrap:wrap;margin-top:22px}
 .btn{display:inline-flex;align-items:center;gap:.5em;font-family:var(--mono);font-size:14px;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;color:var(--paper);background:var(--ink);padding:0 20px;min-height:48px;border-radius:2px;transition:background .2s}
 .btn:hover{background:var(--red);color:var(--paper)}
 .status{font-size:15px;line-height:1.45;color:var(--graphite);border-left:2px solid var(--red);padding-left:12px;max-width:30em}
 
 .hero__copy{position:relative;z-index:1}
-.fig{position:relative;z-index:0}
+.fig{position:relative;z-index:0;width:min(100%,370px);justify-self:end}
+.hook{display:flex;align-items:baseline;gap:10px 18px;flex-wrap:wrap;text-decoration:none;color:var(--graphite);border-top:1px solid var(--rule);padding-top:14px}
+.hook__name{font-family:var(--serif);font-style:italic;font-size:clamp(16px,1.35vw,19px);color:var(--ink)}
+.hook__go{margin-left:auto}
+.hook:hover .hook__name,.hook:hover .hook__go{color:var(--red)}
 .pendulum{display:block;width:100%;height:auto;aspect-ratio:400/272;color:var(--ink);touch-action:none;cursor:grab;user-select:none}
 .pendulum .beam,.pendulum .stem,.pendulum .rod{fill:none;stroke:currentColor;stroke-linecap:round}
 .pendulum .beam,.pendulum .rod{stroke-width:1.45}
@@ -139,13 +138,15 @@ a:hover{color:var(--red)}
 .pendulum-bar button:hover,.pendulum-delta:hover{color:var(--red)}
 .pendulum-delta input{width:min(148px,38vw);accent-color:var(--red);margin:0}
 .pendulum-bar .mono{min-width:4.2em}
-.film{display:block;margin-top:10px;text-decoration:none;color:var(--graphite);background:#fffdf7;padding:10px 10px 12px;border:1px solid var(--rule);box-shadow:0 1px 0 var(--rule),0 10px 24px -18px rgba(31,58,95,.5)}
-.film__frame{aspect-ratio:16/9;overflow:hidden;background:#0b1520}
-.film__frame img{width:100%;height:100%;object-fit:cover}
-.film__cap{display:flex;justify-content:space-between;gap:12px;align-items:baseline;margin-top:8px;font-size:15px}
-.film__cap b{font-weight:600;color:var(--ink)}
-.film__cap .mono{white-space:nowrap}
-.film:hover b{color:var(--red)}
+.film-screen{padding:clamp(60px,9vw,110px) 0 clamp(80px,11vw,140px)}
+.plate{margin:0 auto;max-width:1040px}
+.plate__frame{position:relative;background:#fffdf7;border:1px solid var(--rule);padding:clamp(10px,1.2vw,14px);box-shadow:0 1px 0 var(--rule),0 18px 40px -30px rgba(31,58,95,.5)}
+.plate__frame.has-ruling{border-color:transparent}
+.plate__video{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#0b1520}
+.plate__cap{display:flex;justify-content:space-between;gap:10px 28px;align-items:baseline;flex-wrap:wrap;margin-top:14px}
+.plate__cap h2{font-family:var(--serif);font-weight:600;color:var(--ink);font-size:clamp(21px,2.1vw,29px);line-height:1.2;margin-top:4px}
+.plate__watch{font-family:var(--mono);font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);text-decoration:none;border-bottom:1px solid var(--ink);display:inline-flex;align-items:center;min-height:44px}
+.plate__watch:hover{color:var(--red);border-bottom-color:var(--red)}
 
 .paper-ripple{position:fixed;inset:0;z-index:-1;pointer-events:none}
 html.paper-live body{background-image:none;background-color:transparent}
@@ -191,19 +192,34 @@ html.paper-live body{background-image:none;background-color:transparent}
 .sec{padding:clamp(56px,8vw,104px) 0;border-top:1px solid var(--rule)}
 .sec-h{display:flex;align-items:baseline;gap:14px 20px;flex-wrap:wrap;margin-bottom:clamp(24px,3vw,40px)}
 .sec-h h2{font-family:var(--serif);font-weight:600;color:var(--ink);font-size:clamp(28px,3vw,40px);line-height:1.15}
+.sec-h .scope{flex-basis:100%;margin:2px 0 -10px;color:var(--soft)}
 
 .labs{list-style:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(20px,2.6vw,36px)}
 .lab{position:relative;display:flex;flex-direction:column;background:rgba(255,253,247,.86);border:1px solid var(--rule);padding:22px 24px 20px;min-width:0}
+.lab.has-ruling{border-color:transparent}
+.lab--featured{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.65fr);gap:clamp(24px,3vw,52px);align-items:center;padding:clamp(26px,2.6vw,34px) clamp(26px,2.8vw,40px)}
+.lab__main{display:flex;flex-direction:column;min-width:0}
+.lab--featured h3{font-size:clamp(24px,2.4vw,32px)}
+.lab__fact{margin-top:12px;font-size:15.5px;line-height:1.5;color:var(--graphite)}
+.lab__fact b{font-weight:600;color:var(--ink)}
+.lab__evidence{margin:0;min-width:0}
+.lab__evidence svg{display:block;width:100%;height:auto;overflow:visible}
+.lab__evidence figcaption{margin-top:10px;line-height:1.5}
+.spark-axis{stroke:var(--rule);stroke-width:1}
+.spark-line{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.spark-dot{fill:var(--ink)}
+.spark-dot--incident{fill:var(--red)}
+.redact{letter-spacing:.04em}
 .lab__n{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--rule);padding-bottom:10px;margin-bottom:12px}
 .lab h3{font-family:var(--serif);font-weight:600;color:var(--ink);font-size:clamp(21px,1.8vw,25px);line-height:1.25}
 .lab h3 a{text-decoration:none}
 .lab h3 a::after{content:"";position:absolute;inset:0}
-.lab:has(h3 a):hover{border-color:var(--ink)}
+.lab:has(h3 a):not(.has-ruling):hover{border-color:var(--ink)}
 .lab:has(h3 a):hover h3 a{color:var(--red)}
-.lab dl{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 14px;margin-top:12px;font-size:15.5px}
-.lab dt{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--soft);padding-top:3px}
-.lab dd b{font-weight:600;color:var(--ink)}
+.lab.has-ruling:has(h3 a):hover .ruling path{stroke:var(--ink)}
 .lab__go{margin-top:auto;padding-top:14px;font-family:var(--mono);font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink)}
+a.lab__go{text-decoration:none}
+a.lab__go:hover{color:var(--red)}
 .lab--private .lab__go{color:var(--soft)}
 .also{margin-top:28px;font-size:16px}
 .also a{display:inline-flex;align-items:center;min-height:44px}
@@ -213,7 +229,9 @@ html.paper-live body{background-image:none;background-color:transparent}
 .facts{list-style:none;margin-top:22px;display:grid;gap:0}
 .facts li{display:grid;grid-template-columns:7.5em minmax(0,1fr);gap:12px;padding:10px 0;border-bottom:1px dashed var(--rule)}
 .facts li span:first-child{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--soft);padding-top:4px}
-.deriv{background:rgba(255,253,247,.86);border:1px solid var(--rule);padding:20px 22px}
+.deriv{position:relative;background:rgba(255,253,247,.86);border:1px solid var(--rule);padding:20px 22px}
+.deriv.has-ruling{border-color:transparent}
+.deriv.has-ruling .ruling path{stroke:var(--rule)}
 .deriv ol{list-style:none;display:grid;gap:0}
 .deriv li{position:relative;padding:12px 0 12px 34px}
 .deriv li+li{border-top:1px dashed var(--rule)}
@@ -226,9 +244,20 @@ html.paper-live body{background-image:none;background-color:transparent}
 
 .contact .wrap>*{max-width:860px}
 .contact__sub{font-size:clamp(18px,1.5vw,21px);color:var(--ink);max-width:36em}
-.contact__list{list-style:none;margin:22px 0 28px;display:grid}
-.contact__list li{padding:9px 0 9px 26px;border-bottom:1px dashed var(--rule);position:relative}
-.contact__list li::before{content:"✓";position:absolute;left:2px;top:9px;color:var(--red);font-family:var(--hand);font-size:20px;line-height:1.2}
+.status-card{position:relative;background:rgba(255,253,247,.86);border:1px solid var(--rule);padding:20px 22px;margin:24px 0 30px;max-width:640px}
+.status-card.has-ruling{border-color:transparent}
+.status-card__rows{margin-top:10px;display:grid}
+.status-card__rows>div{display:grid;grid-template-columns:7.5em minmax(0,1fr);gap:12px;padding:10px 0;border-bottom:1px dashed var(--rule)}
+.status-card__rows>div:last-child{border-bottom:0;padding-bottom:2px}
+.status-card dt{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--soft);padding-top:4px}
+.status-card dd{color:var(--graphite)}
+.ruling{position:absolute;inset:0;pointer-events:none}
+.ruling svg{position:absolute;inset:-4px;width:calc(100% + 8px);height:calc(100% + 8px);overflow:visible}
+.ruling path{fill:none;stroke:var(--rule);stroke-width:1}
+.ruling__frame{opacity:0;animation:ruling-boil .72s step-end infinite}
+.ruling__frame--1{animation-delay:.24s}
+.ruling__frame--2{animation-delay:.48s}
+@keyframes ruling-boil{0%{opacity:1}33.33%{opacity:0}100%{opacity:0}}
 .contact__mail{display:flex;align-items:center;gap:14px 22px;flex-wrap:wrap}
 .contact__mail .addr{font-family:var(--mono);font-size:15px;color:var(--ink)}
 .contact__links{display:flex;flex-wrap:wrap;gap:0 22px;margin-top:22px;font-family:var(--mono);font-size:13px;letter-spacing:.05em;text-transform:uppercase}
@@ -240,24 +269,23 @@ html.paper-live body{background-image:none;background-color:transparent}
 .foot p{display:flex;flex-wrap:wrap;align-items:center}
 
 @media (max-width:900px){
-  .hero .wrap,.about .grid{grid-template-columns:1fr}
+  .hero__body,.about .grid{grid-template-columns:1fr}
+  .fig{justify-self:center}
   .labs{grid-template-columns:1fr}
+  .lab--featured{grid-template-columns:1fr}
 }
 @media (max-width:600px){
   .ul{white-space:normal}
   .nav nav a:not(.nav__cta):not(.keep){display:none}
-  .meas{grid-template-columns:1fr}
-  .meas li{display:grid;grid-template-columns:9.2em minmax(0,1fr);gap:4px 14px;align-items:baseline;padding:10px 0}
-  .meas li+li{padding-left:0;border-left:0;border-top:1px dashed var(--rule)}
-  .meas .sym{display:none}
-  .meas strong{font-size:30px}
   .facts li{grid-template-columns:1fr;gap:0}
-  .lab dl{grid-template-columns:1fr;gap:0}
-  .lab dd{margin-bottom:6px}
-  .film__cap{flex-wrap:wrap}
+  .status-card__rows>div{grid-template-columns:1fr;gap:0}
+  .status-card dt{padding-top:0}
+  .plate__cap{flex-direction:column;align-items:flex-start;gap:6px}
 }
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
+  .ruling__frame{animation:none}
+  .ruling__frame--0{opacity:1}
   .pendulum .trail-b0,.pendulum .trail-b1,.pendulum .trail-b2,.pendulum .trail-b3{opacity:0}
   .ink,.lab:hover .ink.a,.lab:hover .ink.b,.lab:focus-within .ink.a,.lab:focus-within .ink.b,.pen-note{transition:none}
 }
@@ -281,19 +309,15 @@ html.paper-live body{background-image:none;background-color:transparent}
 <main id="main">
 <section class="hero" aria-labelledby="hero-name">
   <div class="wrap">
+    <div class="hero__body">
     <div class="hero__copy">
       <p class="entry"><span class="mono">Notebook · p. <span id="notebook-page">1</span> · 2026</span><span class="hand">field notes, not a demo</span></p>
       <h1 id="hero-name" class="name">Yupeng Lu</h1>
-      <p class="name-alt mono">BrickerP · Diamond Bar, California (PT)</p>
+      <p class="name-alt mono">Diamond Bar, California (PT)</p>
       <p class="pos">AI agent &amp; backend engineer — I build agent workflows and the backend systems that run them.</p>
-      <ol class="meas" aria-label="Engineering focus">
-        <li><span class="sym">01</span><strong>AI<small>execution</small></strong><span class="l">Tools · context · streaming</span></li>
-        <li><span class="sym">02</span><strong>Infra<small>platforms</small></strong><span class="l">Services · billing · databases</span></li>
-        <li><span class="sym">03</span><strong>Ops<small>reliability</small></strong><span class="l">Testing · recovery · operations</span></li>
-      </ol>
       <div class="cta">
         <a class="btn" href="#contact">Contact <span aria-hidden="true">→</span></a>
-        <p class="status">Open to part-time / contract · ~20 h/week · US permanent resident · no sponsorship needed</p>
+        <p class="status">Open to part-time / contract · ~20 h/week · no sponsorship needed</p>
       </div>
     </div>
     <div class="fig">
@@ -338,67 +362,88 @@ html.paper-live body{background-image:none;background-color:transparent}
         <span id="pendulum-delta-read" class="mono">0.015</span>
         <span id="notebook-stamp" class="mono stamp" hidden></span>
       </div>
-      <a class="film" href="/beijing-loop/">
-        <div class="film__frame"><img src="/social-preview.png" width="1200" height="630" decoding="async" fetchpriority="high" alt="First-person night drive through an imagined Beijing — Endless Second Ring." /></div>
-        <p class="film__cap"><b>Beijing — Endless Second Ring</b><span class="mono">Film · watch →</span></p>
-      </a>
     </div>
+    </div>
+    <a class="hook" href="#film">
+      <span class="mono">Plate № 01</span>
+      <span class="hook__name">Beijing — Endless Second Ring</span>
+      <span class="hook__go mono">Watch <span aria-hidden="true">↓</span></span>
+    </a>
+  </div>
+</section>
+
+<section id="film" class="film-screen" aria-labelledby="film-h">
+  <div class="wrap">
+    <figure class="plate">
+      <div class="plate__frame" data-ruled>
+        <video class="plate__video" muted loop playsinline preload="none" poster="/film-poster.jpg" aria-label="Beijing — Endless Second Ring: a first-person night drive through an imagined Beijing">
+          <source src="/film-loop.webm" type="video/webm" />
+          <source src="/film-loop.mp4" type="video/mp4" />
+        </video>
+      </div>
+      <figcaption class="plate__cap">
+        <div>
+          <span class="mono">Plate № 01 · 48 s loop</span>
+          <h2 id="film-h">Beijing — Endless Second Ring</h2>
+        </div>
+        <a class="plate__watch" href="/beijing-loop/">Watch the film <span aria-hidden="true">→</span></a>
+      </figcaption>
+    </figure>
   </div>
 </section>
 
 <section id="work" class="sec work" aria-labelledby="work-h">
   <div class="wrap">
-    <header class="sec-h"><span class="mono">§1 · Lab entries</span><h2 id="work-h">Selected Work</h2><span class="hand">each one measured, not just demoed</span></header>
+    <header class="sec-h">
+      <span class="mono">§1 · Lab entries</span><h2 id="work-h">Selected Work</h2><span class="hand">each one measured, not just demoed</span>
+      <p class="scope mono">01 AI execution · 02 Infra platforms · 03 Ops reliability</p>
+    </header>
     <ol class="labs">
-      <li class="lab">
-        <p class="lab__n"><span class="mono">Exp. 01 · live system · 2026</span><span class="mono">AWS</span></p>
-        <h3><a href="/work/quant/">Technical sheet № 01 — live trading <span class="ul" data-ink="0">execution</span></a></h3>
-        <dl>
-          <dt>Setup</dt><dd>Alpaca execution path on AWS</dd>
-          <dt>Safety</dt><dd>fill-dedupe · reconcile · brackets</dd>
-          <dt>Result</dt><dd>live dashboard on CloudFront</dd>
-        </dl>
-        <span class="lab__go">Read the sheet →</span>
+      <li class="lab lab--featured" data-ruled>
+        <div class="lab__main">
+          <p class="lab__n"><span class="mono">Exp. 01 · live system · 2026</span><span class="mono">AWS</span></p>
+          <h3><a href="/work/quant/">Technical sheet № 01 — live trading <span class="ul" data-ink="0">execution</span></a></h3>
+          <p class="lab__fact">One host, one writer — fill-dedupe keys, startup reconcile, bracket orders, an after-close watchdog. The sheet prints the order path and one measured regression, with its method.</p>
+          <span class="lab__go">Read the sheet →</span>
+        </div>
+        <figure class="lab__evidence" role="img" aria-label="Scan-batch p95 across three dates: about 2.4 seconds at baseline, a 9.2 second regression on 2026-10-08, and about 1.55 seconds after the fix">
+          <svg viewBox="0 0 260 140" aria-hidden="true">
+            <line class="spark-axis" x1="20" y1="118" x2="244" y2="118"/>
+            <path class="spark-line" d="M46 92.4 L58 84.4 L74 74.6 L88 59.8 L103 48.4 L116 36.6 L130 25.8 L148 49.4 L161 66.4 L178 80.2 L196 90.8 L214 98.2"/>
+            <circle class="spark-dot" cx="46" cy="92" r="2.8"/>
+            <circle class="spark-dot spark-dot--incident" cx="130" cy="26" r="3.1"/>
+            <circle class="spark-dot" cx="214" cy="98" r="2.8"/>
+          </svg>
+          <figcaption class="mono">scan batch p95 · ~2.4 s → ~9.2 s → ≈1.55 s<br />log reads, 10-08 → 10-12</figcaption>
+        </figure>
         <span class="pen-note pen-note--a" aria-hidden="true">start here</span>
       </li>
-      <li class="lab">
+      <li class="lab" data-ruled>
         <p class="lab__n"><span class="mono">Exp. 02 · WebGL film</span><span class="mono">Three.js · CI gates</span></p>
         <h3><a href="/beijing-loop/">Beijing — Endless <span class="ul" data-ink="1">Second Ring</span></a></h3>
-        <dl>
-          <dt>Duration</dt><dd><b>48 s</b> deterministic night drive</dd>
-          <dt>Gates</dt><dd><b>12</b> passages · performance gates</dd>
-        </dl>
+        <p class="lab__fact">48 s deterministic drive · 12 passages · performance gates</p>
         <span class="lab__go">Watch the film →</span>
         <span class="pen-note pen-note--b" aria-hidden="true">one take</span>
       </li>
-      <li class="lab">
+      <li class="lab" data-ruled>
         <p class="lab__n"><span class="mono">Exp. 03 · Cloudflare Workers</span><span class="mono">live demo</span></p>
         <h3><a href="https://open-ledger.brickerp.workers.dev"><span class="ul" data-ink="2">open-ledger</span></a></h3>
-        <dl>
-          <dt>Method</dt><dd>hash chain · append-only fills</dd>
-          <dt>Check</dt><dd>verify in the browser</dd>
-        </dl>
+        <p class="lab__fact">Every fill hash-chained into an append-only ledger · verify it in the browser</p>
         <span class="lab__go">Open the ledger ↗</span>
         <span class="pen-note pen-note--c" aria-hidden="true">verify it yourself</span>
       </li>
-      <li class="lab">
+      <li class="lab" data-ruled>
         <p class="lab__n"><span class="mono">Exp. 04 · public MCP / CLI</span><span class="mono">Cookiy AI</span></p>
         <h3><a href="https://www.npmjs.com/package/cookiy-cli">cookiy-cli · <span class="ul" data-ink="3">cookiy-mcp</span></a></h3>
-        <dl>
-          <dt>Surface</dt><dd>MCP tools · TypeScript CLI</dd>
-          <dt>Workflow</dt><dd>Studies · interviews · reports</dd>
-        </dl>
+        <p class="lab__fact">npx cookiy-cli · v1.22.1 on npm · studies, interviews, reports</p>
         <span class="lab__go">cookiy-cli on npm ↗</span>
         <span class="pen-note pen-note--d" aria-hidden="true">it's on npm</span>
       </li>
-      <li class="lab lab--private">
+      <li class="lab lab--private" data-ruled>
         <p class="lab__n"><span class="mono">Exp. 05 · private · Baidu MeDo</span><span class="mono">not public</span></p>
         <h3>Agent platform &amp; <span class="ul" data-ink="4">revenue backend</span></h3>
-        <dl>
-          <dt>Platform</dt><dd>Hosted backends · resource lifecycle</dd>
-          <dt>Billing</dt><dd>Service extraction · event correctness</dd>
-        </dl>
-        <span class="lab__go">Described in the resume</span>
+        <p class="lab__fact"><span class="redact" role="img" aria-label="6,750,000">▓,▓▓▓,▓▓▓</span> ledger entries reconciled in the overseas billing migration</p>
+        <a class="lab__go" href="/resume.pdf">Details in the resume →</a>
         <span class="pen-note pen-note--e" aria-hidden="true">ask me about this</span>
       </li>
     </ol>
@@ -419,7 +464,7 @@ html.paper-live body{background-image:none;background-color:transparent}
           <li><span>Based</span><span>Diamond Bar, California (PT) · US permanent resident</span></li>
         </ul>
       </div>
-      <aside class="deriv" aria-label="From physics to engineering">
+      <aside class="deriv" data-ruled aria-label="From physics to engineering">
         <p class="mono">Margin note · how the pieces connect</p>
         <ol>
           <li><span class="what">B.A. Physics · Ohio State</span><span class="eq">F = ma — model the system, then measure it</span></li>
@@ -433,14 +478,17 @@ html.paper-live body{background-image:none;background-color:transparent}
 
 <section id="contact" class="sec contact" aria-labelledby="contact-h">
   <div class="wrap">
-    <header class="sec-h"><span class="mono">§3 · Contact</span><h2 id="contact-h">Let's ship it</h2></header>
+    <header class="sec-h"><span class="mono">§3 · Contact</span><h2 id="contact-h">Exp. 06 — your project</h2></header>
     <p class="contact__sub">I work on agent tool use, streaming and real-time backends, billing systems, and the tests and operational checks that keep them reliable.</p>
-    <ul class="contact__list">
-      <li>Part-time / contract only · ~20 h/week · remote from Diamond Bar, California (PT)</li>
-      <li>US permanent resident · no sponsorship needed</li>
-      <li>Fixed-scope builds, retainers, architecture reviews</li>
-      <li>No work that overlaps my employer's product</li>
-    </ul>
+    <aside class="status-card" data-ruled aria-label="Status and terms">
+      <p class="mono">Status · 2026</p>
+      <dl class="status-card__rows">
+        <div><dt>Now</dt><dd>Software engineer · Baidu (MeDo)</dd></div>
+        <div><dt>Open to</dt><dd>Part-time &amp; contract · ~20 h/week — fixed-scope builds, retainers, architecture reviews</dd></div>
+        <div><dt>Based</dt><dd>Diamond Bar, California (PT) · remote · US permanent resident</dd></div>
+        <div><dt>Boundary</dt><dd>No work that overlaps my employer's product</dd></div>
+      </dl>
+    </aside>
     <p class="contact__mail"><a class="btn" href="mailto:yplmicro@gmail.com">Email me <span aria-hidden="true">→</span></a><span class="addr">yplmicro@gmail.com</span></p>
     <div class="contact__links">
       <a href="/resume.pdf">English · 2 pages</a>
@@ -457,7 +505,7 @@ html.paper-live body{background-image:none;background-color:transparent}
 
 <footer class="foot">
   <div class="wrap">
-    <p><a href="mailto:yplmicro@gmail.com">yplmicro@gmail.com</a><a href="/about/">Programme</a><a href="/work/quant/">Sheet № 01</a><a href="/beijing-loop/">Film</a></p>
+    <p><a href="mailto:yplmicro@gmail.com">yplmicro@gmail.com</a><a href="/about/">Programme</a><a href="/work/quant/">Sheet № 01</a></p>
     <p>© 2026 Yupeng Lu · AI agent &amp; backend engineer</p>
   </div>
 </footer>
