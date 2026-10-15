@@ -226,7 +226,7 @@ a.lab__go{text-decoration:none}
 a.lab__go:hover{color:var(--red)}
 .lab__links{display:flex;flex-wrap:wrap;gap:4px 28px;margin-top:auto;padding-top:14px}
 .lab__links .lab__go{margin-top:0;padding-top:0}
-.lab__go--live{position:relative;z-index:1;border-bottom:1px solid currentColor}
+.lab__go--alt{position:relative;z-index:1}
 .lab--private .lab__go{color:var(--soft)}
 .also{margin-top:28px;font-size:16px}
 .also a{display:inline-flex;align-items:center;min-height:44px}
@@ -438,11 +438,11 @@ a.lab__go:hover{color:var(--red)}
       <li class="lab lab--featured" data-ruled>
         <div class="lab__main">
           <p class="lab__n"><span class="mono">Exp. 01 · live system · 2026</span><span class="mono">AWS</span></p>
-          <h3><a href="/work/quant/">Technical sheet № 01 — live trading <span class="ul" data-ink="0">execution</span></a></h3>
-          <p class="lab__fact">One host, one writer — fill-dedupe keys, startup reconcile, bracket orders, an after-close watchdog. The sheet prints the order path and one measured regression, with its method.</p>
+          <h3><a href="https://d2c9pzwpavuktk.cloudfront.net/">Live trading <span class="ul" data-ink="0">execution</span></a></h3>
+          <p class="lab__fact">One host, one writer — fill-dedupe keys, startup reconcile, bracket orders, an after-close watchdog. The technical sheet prints the order path and one measured regression, with its method.</p>
           <div class="lab__links">
-            <span class="lab__go">Read the sheet →</span>
-            <a class="lab__go lab__go--live" href="https://d2c9pzwpavuktk.cloudfront.net/">Open the live dashboard ↗</a>
+            <span class="lab__go">Open the live dashboard ↗</span>
+            <a class="lab__go lab__go--alt" href="/work/quant/">Read technical sheet № 01 →</a>
           </div>
         </div>
         <figure class="lab__evidence" role="img" aria-label="Scan-batch p95 across three dates: about 2.4 seconds at baseline, a 9.2 second regression on 2026-10-08, and about 1.55 seconds after the fix">
@@ -472,10 +472,13 @@ a.lab__go:hover{color:var(--red)}
         <span class="pen-note pen-note--c" aria-hidden="true">verify it yourself</span>
       </li>
       <li class="lab" data-ruled>
-        <p class="lab__n"><span class="mono">Exp. 04 · public CLI · MIT</span><span class="mono">Cookiy AI</span></p>
-        <h3><a href="https://github.com/cookiy-ai/cookiy-cli"><span class="ul" data-ink="3">cookiy-cli</span></a></h3>
-        <p class="lab__fact">A TypeScript CLI for external agents — AI interviews, synthetic users and surveys from the terminal</p>
-        <span class="lab__go">cookiy-cli on GitHub ↗</span>
+        <p class="lab__n"><span class="mono">Exp. 04 · public skill · MIT</span><span class="mono">Cookiy AI</span></p>
+        <h3><a href="https://github.com/cookiy-ai/user-research-skill"><span class="ul" data-ink="3">user-research-skill</span></a></h3>
+        <p class="lab__fact">1.5k+ GitHub stars · the open-source skill that gives Claude, Codex, Cursor and OpenClaw end-to-end user research</p>
+        <div class="lab__links">
+          <span class="lab__go">user-research-skill on GitHub ↗</span>
+          <a class="lab__go lab__go--alt" href="https://github.com/cookiy-ai/cookiy-cli">cookiy-cli ↗</a>
+        </div>
         <span class="pen-note pen-note--d" aria-hidden="true">read the source</span>
       </li>
       <li class="lab lab--private" data-ruled>

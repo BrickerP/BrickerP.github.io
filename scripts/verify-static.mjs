@@ -602,23 +602,29 @@ assert.match(
   'index.html: Fig. 2 must name the floor it belongs to',
 );
 
-// Links keep their promises: a label that names a destination must open it,
-// the live system is one click from its card, the Cookiy entry opens its
-// public repository, and the homepage never links a page that only bounces
-// back to itself.
+// Links keep their promises: the live-system card opens the live dashboard
+// (the technical sheet stays one explicit click away), the Cookiy entry opens
+// the public repository with the reputation, a label that names a destination
+// opens it, and the homepage never links a page that only bounces back to itself.
+const DASHBOARD_URL = 'https://d2c9pzwpavuktk.cloudfront.net/';
 const featuredCard = rootHtml.match(/<li class="lab lab--featured"[\s\S]*?<\/li>/)?.[0] ?? '';
 assert.match(
   featuredCard,
-  /<a\b[^>]*href=["']https:\/\/d2c9pzwpavuktk\.cloudfront\.net\/["'][^>]*>[^<]*live dashboard/i,
-  'index.html: the live-system entry must open the live dashboard directly',
+  new RegExp(`<h3><a href="${escapeRegExp(DASHBOARD_URL)}">`),
+  'index.html: the live-system card must open the live dashboard, not a page on this site',
+);
+assert.match(
+  featuredCard,
+  /<a\b[^>]*href=["']\/work\/quant\/["']/,
+  'index.html: the live-system card must keep an explicit link to the technical sheet',
 );
 for (const [, href, label] of rootHtml.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
   const words = visibleText(label).trim();
   if (/dashboard/i.test(words)) {
-    assert.equal(href, 'https://d2c9pzwpavuktk.cloudfront.net/', `index.html: “${words}” names the dashboard but opens ${href}`);
+    assert.equal(href, DASHBOARD_URL, `index.html: “${words}” names the dashboard but opens ${href}`);
   }
 }
-assert.match(rootHtml, /href=["']https:\/\/github\.com\/cookiy-ai\/cookiy-cli["']/, 'index.html: the Cookiy entry must open its public repository');
+assert.match(rootHtml, /<h3><a href="https:\/\/github\.com\/cookiy-ai\/user-research-skill">/, 'index.html: the Cookiy entry must open user-research-skill, its most-starred public repository');
 assert.doesNotMatch(rootHtml, /npmjs\.com\/package\/cookiy/, 'index.html: the Cookiy entry must not stop at a package page');
 assert.doesNotMatch(rootHtml, /href=["']\/hire\/["']/, 'index.html: /hire/ only redirects back to #contact and must not be linked from the homepage');
 
