@@ -210,7 +210,7 @@ function boot(): void {
     if (!note) return;
     note.classList.add('show');
     window.clearTimeout(noteTimer);
-    noteTimer = window.setTimeout(() => note.classList.remove('show'), 4600);
+    noteTimer = window.setTimeout(() => note.classList.remove('show'), 5200);
   };
 
   const release = (
@@ -251,7 +251,7 @@ function boot(): void {
   const ambient = (delay: number): void => {
     window.setTimeout(() => {
       if (!mq.matches && !document.hidden && !burst && !drag) {
-        release(AMBIENT_COUNT, AMBIENT_SPREAD, AMBIENT_MS, 0.2, true);
+        release(AMBIENT_COUNT, AMBIENT_SPREAD, AMBIENT_MS, 0.24, true);
       }
       ambient(AMBIENT_GAP_MS + Math.random() * 9_000);
     }, delay);
@@ -582,7 +582,11 @@ function boot(): void {
 
   repeatBtn?.addEventListener('click', () => {
     if (mq.matches) return;
-    release(AMBIENT_COUNT, AMBIENT_SPREAD, AMBIENT_MS, 0.2, true);
+    // A true re-run: preempt whatever is in flight, go back to the marked
+    // release, and drop the whole twin experiment again from there.
+    if (burst) endBurst();
+    reseed(release1, release2);
+    release(AMBIENT_COUNT, AMBIENT_SPREAD, AMBIENT_MS, 0.24, true);
   });
 }
 
