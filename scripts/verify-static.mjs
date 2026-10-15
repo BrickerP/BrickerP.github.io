@@ -613,7 +613,7 @@ assert.match(
   'index.html: the live-system entry must open the live dashboard directly',
 );
 for (const [, href, label] of rootHtml.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
-  const words = label.replace(/<[^>]+>/g, '').trim();
+  const words = visibleText(label).trim();
   if (/dashboard/i.test(words)) {
     assert.equal(href, 'https://d2c9pzwpavuktk.cloudfront.net/', `index.html: “${words}” names the dashboard but opens ${href}`);
   }
