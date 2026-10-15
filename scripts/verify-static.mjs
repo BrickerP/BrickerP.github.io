@@ -584,6 +584,24 @@ assert.match(rootHtml, /class=["']status-card["']/, 'index.html: #contact must p
 assert.doesNotMatch(rootHtml, /class=["']contact__list["']/, 'index.html: the red checklist must be gone');
 assert.match(rootHtml, /Exp\. 06 — your project/, 'index.html: the contact title must keep the Exp. 06 story');
 
+// The page's spine: the three floors stated once at the top, and the two
+// exhibits that carry their own entry context.
+assert.match(
+  rootHtml,
+  /class=["']arc["'][^>]*>[\s\S]{0,220}?F = ma[\s\S]{0,220}?dS = μS dt \+ σS dW[\s\S]{0,220}?agent systems/i,
+  'index.html: the hero must state the physics → finance → agents arc',
+);
+assert.match(
+  rootHtml,
+  /class=["']plate__note["'][^>]*>my hometown, imagined/,
+  'index.html: the film plate must say where it comes from',
+);
+assert.match(
+  rootHtml,
+  /Fig\. 2 — the finance floor, made to move/,
+  'index.html: Fig. 2 must name the floor it belongs to',
+);
+
 // Fig. 2: a seeded random process with a stop rule, measured over 999
 // futures — canvases for the drawing, the numbers printed from the sim,
 // one Reseed control, and the plate waits for the viewport.

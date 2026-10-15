@@ -101,6 +101,9 @@ a:hover{color:var(--red)}
 .entry{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;margin-bottom:10px}
 .name{font-family:var(--serif);font-weight:600;color:var(--ink);font-size:clamp(40px,4.6vw,62px);line-height:1.04;letter-spacing:-.01em}
 .name-alt{margin-top:6px}
+.arc{margin-top:14px;display:flex;align-items:baseline;gap:6px 12px;flex-wrap:wrap}
+.arc i{font-family:var(--serif);font-style:italic;color:var(--ink);font-size:clamp(16px,1.4vw,19px);line-height:1.3}
+.arc .mono{color:var(--soft)}
 .pos{margin-top:16px;font-size:clamp(19px,1.65vw,23px);line-height:1.42;color:var(--ink);max-width:31em}
 .pos em{font-style:italic}
 .cta{display:flex;align-items:center;gap:14px 22px;flex-wrap:wrap;margin-top:22px}
@@ -145,6 +148,7 @@ a:hover{color:var(--red)}
 .plate__video{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#0b1520}
 .plate__cap{display:flex;justify-content:space-between;gap:10px 28px;align-items:baseline;flex-wrap:wrap;margin-top:14px}
 .plate__cap h2{font-family:var(--serif);font-weight:600;color:var(--ink);font-size:clamp(21px,2.1vw,29px);line-height:1.2;margin-top:4px}
+.plate__note{display:inline-block;font-family:var(--hand);color:var(--red);font-size:clamp(17px,1.6vw,21px);line-height:1;margin-left:14px;transform:rotate(-2deg) translateY(2px)}
 .plate__watch{display:inline-flex;align-items:center;gap:.35em;font-family:var(--mono);font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);text-decoration:none;border-bottom:1px solid var(--ink);min-height:44px}
 .plate__watch:hover{color:var(--red);border-bottom-color:var(--red)}
 
@@ -342,6 +346,7 @@ a.lab__go:hover{color:var(--red)}
       <p class="entry"><span class="mono">Notebook · p. <span id="notebook-page">1</span> · 2026</span><span class="hand">field notes, not a demo</span></p>
       <h1 id="hero-name" class="name">Yupeng Lu</h1>
       <p class="name-alt mono">Diamond Bar, California (PT)</p>
+      <p class="arc"><i>F = ma</i><span class="mono">→</span><i>dS = μS dt + σS dW</i><span class="mono">→</span><span class="mono">agent systems</span></p>
       <p class="pos">AI agent &amp; backend engineer — I build agent workflows and the backend systems that run them.</p>
       <div class="cta">
         <a class="btn" href="#contact">Contact <span aria-hidden="true">→</span></a>
@@ -411,7 +416,7 @@ a.lab__go:hover{color:var(--red)}
       </div>
       <figcaption class="plate__cap">
         <div>
-          <span class="mono">Plate № 01 · 48 s loop</span>
+          <p><span class="mono">Plate № 01 · 48 s loop</span><span class="plate__note">my hometown, imagined</span></p>
           <h2 id="film-h">Beijing — Endless Second Ring</h2>
         </div>
         <a class="plate__watch" href="/beijing-loop/">Watch the film <span aria-hidden="true">→</span></a>
@@ -505,7 +510,7 @@ a.lab__go:hover{color:var(--red)}
     <figure class="fig2" id="fig2" aria-labelledby="fig2-eq">
       <div class="fig2__head">
         <p class="fig2__eq" id="fig2-eq">dS = <i>μS</i> dt + <i>σS</i> dW</p>
-        <p class="mono">Fig. 2 — a price as a random process, with a rule on top</p>
+        <p class="mono">Fig. 2 — the finance floor, made to move</p>
       </div>
       <p class="fig2__terms mono"><i>μ</i> · drift, the slow tilt &nbsp;·&nbsp; <i>σ</i> · volatility, the size of the luck &nbsp;·&nbsp; dW · the dice, drawn fresh every step</p>
       <div class="fig2__rows">
