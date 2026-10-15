@@ -348,7 +348,7 @@ function boot(): void {
     ctx.fillStyle = RED;
     ctx.font = `13px ${HAND}`;
     ctx.textAlign = 'left';
-    ctx.fillText('the rule: −15%', padL + 2, ruleY - 8);
+    ctx.fillText('the rule: −15%', padL + 2, ruleY + 16);
     const exitMark = (x: number, y: number): void => {
       ctx.beginPath();
       ctx.moveTo(x, y + 4);
@@ -421,8 +421,8 @@ function boot(): void {
       ctx.lineTo(w - padR, strip.top + height);
       ctx.stroke();
       ctx.fillStyle = SOFT;
-      ctx.textAlign = 'left';
-      ctx.fillText(strip.label, padL + 2, strip.top + height + 12);
+      ctx.textAlign = 'right';
+      ctx.fillText(strip.label, w - padR - 2, strip.top + 10);
     }
     const ruleX = xAtValue(S0 * OUT_AT);
     ctx.strokeStyle = 'rgba(194,65,45,.5)';
@@ -434,15 +434,19 @@ function boot(): void {
     ctx.setLineDash([]);
     ctx.fillStyle = SOFT;
     ctx.font = `10px ${MONO}`;
-    ctx.textAlign = 'right';
+    ctx.textAlign = 'center';
     for (const mark of [75, 100, 125]) {
-      ctx.fillText(`$${mark}`, xAtValue(mark), h - 4);
+      ctx.fillText(`$${mark}`, xAtValue(mark), h - 3);
     }
     // The bottom strip's empty left flank is the story: the rule took the tail.
     ctx.fillStyle = 'rgba(194,65,45,.85)';
+    ctx.textAlign = 'right';
+    const note = ['the rule', 'took this', 'tail'];
+    const flankX = ruleX - 15;
     ctx.font = `13px ${HAND}`;
-    ctx.textAlign = 'left';
-    ctx.fillText('the rule took this tail', padL + 4, h - 26);
+    const widest = Math.max(...note.map((line) => ctx.measureText(line).width));
+    ctx.font = `${Math.max(9, Math.min(13, (13 * (flankX - padL)) / widest))}px ${HAND}`;
+    note.forEach((line, i) => ctx.fillText(line, flankX, strips[1]!.top + 18 + i * 13));
   }
 
   function render(steps: number, progress: number): void {
@@ -457,10 +461,13 @@ function boot(): void {
     const { worst, median, under } = statsData;
     const share = (value: number): string =>
       value * 100 >= 10 ? `${Math.round(value * 100)}%` : `${(value * 100).toFixed(1)}%`;
-    stats!.innerHTML =
-      `median <b>${percent(median[0])}</b> → <b>${percent(median[1])}</b>` +
-      `  ·  worst 5% <b>${percent(worst[0])}</b> → <b>${percent(worst[1])}</b>` +
-      `  ·  years under −20% <b>${share(under[0])}</b> → <b>${share(under[1])}</b>`;
+    const part = (label: string, before: string, after: string): string =>
+      `<span class="stat">${label} <b>${before}</b> → <b>${after}</b></span>`;
+    stats!.innerHTML = [
+      part('median', percent(median[0]), percent(median[1])),
+      part('worst 5%', percent(worst[0]), percent(worst[1])),
+      part('years under −20%', share(under[0]), share(under[1])),
+    ].join('&nbsp;· ');
     stats!.hidden = false;
   }
 

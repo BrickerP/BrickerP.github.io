@@ -224,6 +224,9 @@ html.paper-live body{background-image:none;background-color:transparent}
 .lab__go{margin-top:auto;padding-top:14px;font-family:var(--mono);font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink)}
 a.lab__go{text-decoration:none}
 a.lab__go:hover{color:var(--red)}
+.lab__links{display:flex;flex-wrap:wrap;gap:4px 28px;margin-top:auto;padding-top:14px}
+.lab__links .lab__go{margin-top:0;padding-top:0}
+.lab__go--live{position:relative;z-index:1;border-bottom:1px solid currentColor}
 .lab--private .lab__go{color:var(--soft)}
 .also{margin-top:28px;font-size:16px}
 .also a{display:inline-flex;align-items:center;min-height:44px}
@@ -250,21 +253,21 @@ a.lab__go:hover{color:var(--red)}
 .fig2__head{display:flex;align-items:baseline;justify-content:space-between;gap:10px 28px;flex-wrap:wrap;border-top:1px solid var(--rule);padding-top:18px}
 .fig2__eq{font-family:var(--serif);font-weight:600;font-style:italic;color:var(--ink);font-size:clamp(24px,2.4vw,34px);line-height:1.1}
 .fig2__terms{margin-top:8px;line-height:1.7}
-.fig2__rows{display:grid;gap:clamp(14px,1.8vw,24px);margin-top:clamp(20px,2.8vw,34px)}
-.fig2__row{display:flex;align-items:flex-start;gap:clamp(10px,1.6vw,22px);flex-wrap:wrap}
-.fig2__bridge{color:var(--soft);text-align:center;padding:6px 0}
+.fig2__terms i{font-family:var(--serif);font-size:1.3em;letter-spacing:0;text-transform:none;color:var(--ink)}
+.fig2__rows{display:grid;gap:clamp(24px,2.8vw,38px);margin-top:clamp(20px,2.8vw,32px)}
+.fig2__row{display:grid;align-items:start;column-gap:clamp(10px,1.4vw,18px)}
+.fig2__row--world{grid-template-columns:minmax(0,.78fr) auto minmax(0,1fr) auto minmax(0,1.5fr)}
+.fig2__row--rule{grid-template-columns:minmax(0,1.15fr) auto minmax(0,1fr)}
 .fig2__panel{min-width:0}
-.fig2__panel canvas{display:block;width:100%;height:auto}
-.fig2__panel--noise{flex:0 1 210px}
-.fig2__panel--walk{flex:0 1 340px}
-.fig2__panel--futures canvas{height:clamp(230px,24vw,330px)}
-.fig2__panel--policy canvas{height:clamp(210px,22vw,300px)}
-.fig2__panel--measured canvas{height:clamp(200px,20vw,280px)}
+.fig2__panel canvas{display:block;width:100%}
+.fig2__row--world canvas{height:clamp(150px,13vw,190px)}
+.fig2__row--rule canvas{height:clamp(190px,17vw,240px)}
 .fig2__cap{margin-top:6px;font-size:14px;line-height:1.5;color:var(--graphite);max-width:46em}
 .fig2__cap .mono{margin-right:6px}
-.fig2__arrow{flex:none;color:var(--soft);padding-top:56px}
+.fig2__arrow{color:var(--soft);font-size:18px;line-height:1;padding-top:clamp(64px,5.8vw,86px)}
 .fig2__stats{margin-top:6px;color:var(--ink);line-height:1.7}
 .fig2__stats b{color:var(--red);font-weight:400}
+.fig2__stats .stat{white-space:nowrap}
 .fig2__bar{display:flex;align-items:baseline;gap:14px 24px;flex-wrap:wrap;margin-top:clamp(18px,2.4vw,28px)}
 .fig2__bar button{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);background:none;border:0;border-bottom:1px solid var(--ink);padding:0;min-height:44px;cursor:pointer}
 .fig2__bar button:hover{color:var(--red);border-bottom-color:var(--red)}
@@ -301,10 +304,10 @@ a.lab__go:hover{color:var(--red)}
   .fig{justify-self:center}
   .labs{grid-template-columns:1fr}
   .lab--featured{grid-template-columns:1fr}
-  .fig2__row{flex-direction:column;align-items:stretch}
-  .fig2__panel{flex:1 1 auto}
-  .fig2__arrow{font-size:0;align-self:center;padding-top:0}
-  .fig2__arrow::after{content:"↓ becomes";font-size:12.5px;letter-spacing:.06em}
+  .fig2__row--world,.fig2__row--rule{grid-template-columns:minmax(0,1fr);row-gap:10px}
+  .fig2__row--world canvas,.fig2__row--rule canvas{height:clamp(170px,46vw,230px)}
+  .fig2__arrow{justify-self:center;padding-top:0;font-size:0}
+  .fig2__arrow::after{content:"↓";font-size:18px}
 }
 @media (max-width:600px){
   .ul{white-space:normal}
@@ -437,7 +440,10 @@ a.lab__go:hover{color:var(--red)}
           <p class="lab__n"><span class="mono">Exp. 01 · live system · 2026</span><span class="mono">AWS</span></p>
           <h3><a href="/work/quant/">Technical sheet № 01 — live trading <span class="ul" data-ink="0">execution</span></a></h3>
           <p class="lab__fact">One host, one writer — fill-dedupe keys, startup reconcile, bracket orders, an after-close watchdog. The sheet prints the order path and one measured regression, with its method.</p>
-          <span class="lab__go">Read the sheet →</span>
+          <div class="lab__links">
+            <span class="lab__go">Read the sheet →</span>
+            <a class="lab__go lab__go--live" href="https://d2c9pzwpavuktk.cloudfront.net/">Open the live dashboard ↗</a>
+          </div>
         </div>
         <figure class="lab__evidence" role="img" aria-label="Scan-batch p95 across three dates: about 2.4 seconds at baseline, a 9.2 second regression on 2026-10-08, and about 1.55 seconds after the fix">
           <svg viewBox="0 0 260 140" aria-hidden="true">
@@ -466,21 +472,21 @@ a.lab__go:hover{color:var(--red)}
         <span class="pen-note pen-note--c" aria-hidden="true">verify it yourself</span>
       </li>
       <li class="lab" data-ruled>
-        <p class="lab__n"><span class="mono">Exp. 04 · public MCP / CLI</span><span class="mono">Cookiy AI</span></p>
-        <h3><a href="https://www.npmjs.com/package/cookiy-cli">cookiy-cli · <span class="ul" data-ink="3">cookiy-mcp</span></a></h3>
-        <p class="lab__fact">npx cookiy-cli · v1.22.1 on npm · studies, interviews, reports</p>
-        <span class="lab__go">cookiy-cli on npm ↗</span>
-        <span class="pen-note pen-note--d" aria-hidden="true">it's on npm</span>
+        <p class="lab__n"><span class="mono">Exp. 04 · public CLI · MIT</span><span class="mono">Cookiy AI</span></p>
+        <h3><a href="https://github.com/cookiy-ai/cookiy-cli"><span class="ul" data-ink="3">cookiy-cli</span></a></h3>
+        <p class="lab__fact">A TypeScript CLI for external agents — AI interviews, synthetic users and surveys from the terminal</p>
+        <span class="lab__go">cookiy-cli on GitHub ↗</span>
+        <span class="pen-note pen-note--d" aria-hidden="true">read the source</span>
       </li>
       <li class="lab lab--private" data-ruled>
         <p class="lab__n"><span class="mono">Exp. 05 · private · Baidu MeDo</span><span class="mono">not public</span></p>
         <h3>Agent platform &amp; <span class="ul" data-ink="4">revenue backend</span></h3>
-        <p class="lab__fact"><span class="redact" role="img" aria-label="6,750,000">▓,▓▓▓,▓▓▓</span> ledger entries reconciled in the overseas billing migration</p>
+        <p class="lab__fact"><span class="redact" role="img" aria-label="6,750,000">█,███,███</span> ledger entries reconciled in the overseas billing migration</p>
         <a class="lab__go" href="/resume.pdf">Details in the resume →</a>
         <span class="pen-note pen-note--e" aria-hidden="true">ask me about this</span>
       </li>
     </ol>
-    <p class="also">Also: <a href="https://d2c9pzwpavuktk.cloudfront.net/">live trading dashboard ↗</a>&nbsp;· <a href="https://ledger-mcp.brickerp.workers.dev">ledger-mcp ↗</a>&nbsp;· <a href="/about/">full programme →</a>&nbsp;· <a href="/resume.pdf">resume (PDF)</a></p>
+    <p class="also">Also: <a href="https://ledger-mcp.brickerp.workers.dev">ledger-mcp ↗</a>&nbsp;· <a href="/about/">full programme →</a>&nbsp;· <a href="/resume.pdf">resume (PDF)</a></p>
   </div>
 </section>
 
@@ -512,34 +518,35 @@ a.lab__go:hover{color:var(--red)}
         <p class="fig2__eq" id="fig2-eq">dS = <i>μS</i> dt + <i>σS</i> dW</p>
         <p class="mono">Fig. 2 — the finance floor, made to move</p>
       </div>
-      <p class="fig2__terms mono"><i>μ</i> · drift, the slow tilt &nbsp;·&nbsp; <i>σ</i> · volatility, the size of the luck &nbsp;·&nbsp; dW · the dice, drawn fresh every step</p>
+      <p class="fig2__terms mono"><i>μ</i> · drift, the slow tilt &nbsp;·&nbsp; <i>σ</i> · volatility, the size of the luck &nbsp;·&nbsp; <i>dW</i> · the dice, drawn fresh every step</p>
       <div class="fig2__rows">
-        <div class="fig2__row">
+        <div class="fig2__row fig2__row--world">
           <div class="fig2__panel fig2__panel--noise">
             <canvas id="fig2-noise" width="220" height="150" aria-hidden="true"></canvas>
             <p class="fig2__cap"><span class="mono">① noise</span>every step, the bell hands each future its own draw</p>
           </div>
-          <span class="fig2__arrow mono" aria-hidden="true">→ becomes →</span>
+          <span class="fig2__arrow mono" aria-hidden="true">→</span>
           <div class="fig2__panel fig2__panel--walk">
             <canvas id="fig2-walk" width="330" height="150" aria-hidden="true"></canvas>
             <p class="fig2__cap"><span class="mono">② the price</span>takes that draw as one step — up or down</p>
           </div>
+          <span class="fig2__arrow mono" aria-hidden="true">→</span>
+          <div class="fig2__panel fig2__panel--futures">
+            <canvas id="fig2-futures" width="420" height="150" aria-hidden="true"></canvas>
+            <p class="fig2__cap"><span class="mono">③ nine futures</span>the red line is what the model expects, the band is how unsure it is</p>
+          </div>
         </div>
-        <p class="fig2__bridge mono">↓ nine futures, nine draws each</p>
-        <div class="fig2__panel fig2__panel--futures">
-          <canvas id="fig2-futures" width="420" height="150" aria-hidden="true"></canvas>
-          <p class="fig2__cap"><span class="mono">③ nine futures</span>the red line is what the model expects, the band is how unsure it is</p>
-        </div>
-        <p class="fig2__bridge mono">↓ the same nine, one rule on top</p>
-        <div class="fig2__panel fig2__panel--policy">
-          <canvas id="fig2-policy" width="600" height="170" aria-hidden="true"></canvas>
-          <p class="fig2__cap"><span class="mono">④ the same futures, one rule</span>out at −15%, and out for the year — the pale stretches are the days you sit out</p>
-        </div>
-        <p class="fig2__bridge mono">↓ measured across 999 more</p>
-        <div class="fig2__panel fig2__panel--measured">
-          <canvas id="fig2-measured" width="460" height="170" aria-hidden="true"></canvas>
-          <p class="fig2__cap"><span class="mono">⑤ the difference</span>999 futures, both ways through them</p>
-          <p class="fig2__stats mono" id="fig2-stats" hidden></p>
+        <div class="fig2__row fig2__row--rule">
+          <div class="fig2__panel fig2__panel--policy">
+            <canvas id="fig2-policy" width="600" height="170" aria-hidden="true"></canvas>
+            <p class="fig2__cap"><span class="mono">④ the same futures, one rule</span>out at −15%, and out for the year — the pale stretches are the days you sit out</p>
+          </div>
+          <span class="fig2__arrow mono" aria-hidden="true">→</span>
+          <div class="fig2__panel fig2__panel--measured">
+            <canvas id="fig2-measured" width="460" height="170" aria-hidden="true"></canvas>
+            <p class="fig2__cap"><span class="mono">⑤ the difference</span>999 futures, both ways through them</p>
+            <p class="fig2__stats mono" id="fig2-stats" hidden></p>
+          </div>
         </div>
       </div>
       <div class="fig2__bar">
@@ -570,8 +577,6 @@ a.lab__go:hover{color:var(--red)}
       <a href="/resume-zh.pdf">中文</a>
       <a href="https://github.com/BrickerP">GitHub</a>
       <a href="https://www.linkedin.com/in/yupeng-lu-845a0b411">LinkedIn</a>
-      <a href="/beijing-loop/">Beijing film</a>
-      <a href="/hire/">/hire → here</a>
     </div>
   </div>
 </section>
