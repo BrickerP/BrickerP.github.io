@@ -50,7 +50,9 @@ const homeChunkPath = path.join(DIST, homeScriptSrcs[0].replace(/^\//, '').repla
 const homeChunk = await readFile(homeChunkPath, 'utf8');
 assert.doesNotMatch(homeChunk, /WebGLRenderer|REVISION.*three/i, 'dist landing chunk must not be the Three.js film runtime');
 assert.match(homeChunk, /prefers-reduced-motion/, 'dist landing chunk must still honor reduced motion');
-assert.ok(homeChunk.length < 20_000, `dist landing pendulum chunk too large (${homeChunk.length} bytes)`);
+// The landing module is the pendulum plus the living-notebook pieces (paper, margins, pens): a few
+// tens of kilobytes at most. The film runtime is ~700 KB, so this still catches it leaking in.
+assert.ok(homeChunk.length < 32_000, `dist landing chunk too large (${homeChunk.length} bytes)`);
 assert.match(home, /<a\b[^>]*href=["']\/beijing-loop\/["']/i, 'dist landing must keep the film reachable');
 assert.match(home, /id=["']contact["']/i, 'dist landing must keep #contact');
 

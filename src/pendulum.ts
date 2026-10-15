@@ -7,8 +7,20 @@
  * Reset clears them and restores the marked initial conditions.
  * Classical RK4 on the Lagrangian equations (θ = 0 hangs down).
  * Reduced motion parks both arms near the vertical and drops the trails.
+ * Every so often the figure quietly re-runs the twin experiment: nine
+ * twins leave the same pose within ±0.008 rad, hold together as one thick
+ * arm, then visibly part into a fan. A run of rapid clicks releases fifty.
+ * The homepage also boots the paper ripple, the margin traces, the
+ * reader's pen, the hand-drawn rulings, the film plate and Fig. 2.
  * Homepage only; no Three.js.
  */
+
+import { bootPaper } from './paper';
+import { bootMargins } from './margins';
+import { bootPens } from './pens';
+import { bootRuling } from './ruling';
+import { bootPlate } from './plate';
+import { bootStochastic } from './stochastic';
 
 const G = 9.81;
 const M1 = 1;
@@ -23,6 +35,22 @@ const TRAIL_MS = 28_000;
 const TRAIL_BANDS = 4;
 const TRAIL_CAP = 720;
 const DEFAULT_DELTA = 0.015;
+/** The twin experiment: nine twins, ε = 0.008 rad, hold then bloom. */
+const AMBIENT_COUNT = 9;
+const AMBIENT_SPREAD = 0.016;
+const AMBIENT_MS = 15_000;
+const AMBIENT_GAP_MS = 36_000;
+/** The easter egg: rapid clicks on the figure release fifty twins. */
+const BURST_COUNT = 50;
+const BURST_MS = 7000;
+const CLICK_COUNT = 5;
+const CLICK_WINDOW_MS = 2600;
+const CLICK_COOLDOWN_MS = 9000;
+/** An almost-reunion of the outer bobs blooms a single red ring. */
+const PINCH_MS = 700;
+const PINCH_GAP_PX = 6;
+const PINCH_COOLDOWN_MS = 2400;
+const NS = 'http://www.w3.org/2000/svg';
 
 type State = [number, number, number, number];
 type Sample = { x: number; y: number; t: number };
@@ -149,6 +177,147 @@ function boot(): void {
   let raf = 0;
   let last = 0;
 
+  const repeatBtn = document.querySelector<HTMLButtonElement>('#pendulum-repeat');
+  const note = root.querySelector<SVGTextElement>('#pendulum-note');
+  const burstLayer = root.querySelector<SVGGElement>('#pendulum-burst');
+
+  // The twin experiment — nine twins leave the same pose with a ±ε of
+  // 0.008 rad, hold together as one thick arm, then part into a fan as
+  // the slower blades follow. The easter egg behind five quick clicks
+  // releases fifty at a wider spread.
+  let burst: State[] | null = null;
+  let burstBorn = 0;
+  let burstLife = 0;
+  let burstFade = 0;
+  let burstAlpha = 0;
+  let burstPaths: SVGPathElement[] = [];
+  let burstDots: SVGCircleElement[] = [];
+  let clicks: number[] = [];
+  let clicksLocked = 0;
+  let downWasDrag = false;
+  const burstOrigin = `M${ox.toFixed(1)} ${oy.toFixed(1)}`;
+
+  const endBurst = (): void => {
+    for (const path of burstPaths) path.remove();
+    for (const dot of burstDots) dot.remove();
+    burst = null;
+    burstPaths = [];
+    burstDots = [];
+    burstLayer?.setAttribute('opacity', '0');
+  };
+
+  let noteTimer = 0;
+  const showNote = (): void => {
+    if (!note) return;
+    note.classList.add('show');
+    window.clearTimeout(noteTimer);
+    noteTimer = window.setTimeout(() => note.classList.remove('show'), 5200);
+  };
+
+  const release = (
+    count: number,
+    spread: number,
+    life: number,
+    alpha: number,
+    caption: boolean,
+  ): void => {
+    if (mq.matches || burst || !burstLayer) return;
+    const next: State[] = [];
+    for (let i = 0; i < count; i += 1) {
+      const offset = count > 1 ? (i / (count - 1) - 0.5) * spread : 0;
+      next.push([state[0] + offset * 0.25, 0, state[2] + offset, 0]);
+    }
+    burst = next;
+    burstBorn = performance.now();
+    burstLife = life;
+    burstFade = Math.max(900, life * 0.18);
+    burstAlpha = alpha;
+    burstPaths = next.map(() => {
+      const path = document.createElementNS(NS, 'path');
+      path.setAttribute('class', 'burst');
+      burstLayer.appendChild(path);
+      return path;
+    });
+    burstDots = next.map(() => {
+      const dot = document.createElementNS(NS, 'circle');
+      dot.setAttribute('class', 'burst-dot');
+      dot.setAttribute('r', '1.8');
+      burstLayer.appendChild(dot);
+      return dot;
+    });
+    if (caption) showNote();
+    start();
+  };
+
+  const ambient = (delay: number): void => {
+    window.setTimeout(() => {
+      if (!mq.matches && !document.hidden && !burst && !drag) {
+        release(AMBIENT_COUNT, AMBIENT_SPREAD, AMBIENT_MS, 0.24, true);
+      }
+      ambient(AMBIENT_GAP_MS + Math.random() * 9_000);
+    }, delay);
+  };
+
+  const paintBurst = (now: number, wall: number): void => {
+    if (!burst) return;
+    const age = now - burstBorn;
+    if (age >= burstLife) {
+      endBurst();
+      return;
+    }
+    const fade = Math.min(1, (burstLife - age) / burstFade) * burstAlpha;
+    burstLayer?.setAttribute('opacity', fade.toFixed(3));
+    for (let i = 0; i < burst.length; i += 1) {
+      const pose = advance(burst[i]!, wall, l2);
+      burst[i] = pose;
+      const { x1, y1, x2, y2 } = joints(pose[0], pose[2]);
+      burstPaths[i]!.setAttribute(
+        'd',
+        `${burstOrigin}L${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`,
+      );
+      burstDots[i]!.setAttribute('cx', x2.toFixed(1));
+      burstDots[i]!.setAttribute('cy', y2.toFixed(1));
+    }
+  };
+
+  // The almost-reunion: when the two outer bobs pass within a breath of
+  // each other, a single red ring blooms between them for a moment —
+  // chaos lets them come close, never exact.
+  let pinch: SVGCircleElement | null = null;
+  let pinchBorn = 0;
+  let pinchLock = 0;
+
+  const paintPinch = (
+    now: number,
+    primary: { x: number; y: number },
+    pale: { x: number; y: number },
+  ): void => {
+    if (pinch) {
+      const age = (now - pinchBorn) / PINCH_MS;
+      if (age >= 1) {
+        pinch.remove();
+        pinch = null;
+      } else {
+        pinch.setAttribute('r', (2 + age * 7).toFixed(1));
+        pinch.setAttribute('opacity', (0.7 * (1 - age)).toFixed(3));
+      }
+    }
+    if (pinch || burst || drag || mq.matches || now < pinchLock) return;
+    const dx = primary.x - pale.x;
+    const dy = primary.y - pale.y;
+    if (Math.sqrt(dx * dx + dy * dy) > PINCH_GAP_PX) return;
+    const ring = document.createElementNS(NS, 'circle');
+    ring.setAttribute('class', 'pinch');
+    ring.setAttribute('cx', ((primary.x + pale.x) / 2).toFixed(1));
+    ring.setAttribute('cy', ((primary.y + pale.y) / 2).toFixed(1));
+    ring.setAttribute('r', '2');
+    ring.setAttribute('opacity', '0.7');
+    burstLayer?.appendChild(ring);
+    pinch = ring;
+    pinchBorn = now;
+    pinchLock = now + PINCH_COOLDOWN_MS;
+  };
+
   const showDelta = (): void => {
     if (deltaInput) deltaInput.value = delta.toFixed(3);
     if (deltaRead) deltaRead.textContent = delta.toFixed(3);
@@ -272,6 +441,8 @@ function boot(): void {
     remember(twinTrail, tips.twin.x, tips.twin.y, now);
     paintTrail(primaryBands, primaryTrail, now);
     paintTrail(twinBands, twinTrail, now);
+    paintBurst(now, wall);
+    paintPinch(now, tips.primary, tips.twin);
     raf = requestAnimationFrame(tick);
   };
 
@@ -303,6 +474,7 @@ function boot(): void {
     const toOuter = Math.hypot(point.x - x2, point.y - y2);
     if (Math.min(toInner, toOuter) > 56) return;
     drag = toInner <= toOuter ? 'inner' : 'outer';
+    downWasDrag = true;
     root.setPointerCapture(event.pointerId);
     stop();
     clearTrails();
@@ -332,7 +504,12 @@ function boot(): void {
   };
 
   const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const syncRepeat = (): void => {
+    if (repeatBtn) repeatBtn.disabled = mq.matches;
+  };
   showDelta();
+  syncRepeat();
+  ambient(9_000);
   if (prefersReducedMotion()) parkCalm();
   else reseed(release1, release2);
 
@@ -340,8 +517,11 @@ function boot(): void {
 
   mq.addEventListener('change', (event) => {
     drag = null;
+    downWasDrag = false;
+    syncRepeat();
     if (event.matches) {
       stop();
+      endBurst();
       parkCalm();
       return;
     }
@@ -363,6 +543,24 @@ function boot(): void {
   root.addEventListener('pointerup', onPointerUp);
   root.addEventListener('pointercancel', onPointerUp);
 
+  // Count quick tap-taps on the figure; a run of them releases the twins.
+  root.addEventListener('pointerup', (event) => {
+    if (downWasDrag) {
+      downWasDrag = false;
+      return;
+    }
+    if (event.button !== 0 || mq.matches) return;
+    const now = performance.now();
+    if (now < clicksLocked) return;
+    clicks = clicks.filter((t) => now - t < CLICK_WINDOW_MS);
+    clicks.push(now);
+    if (clicks.length >= CLICK_COUNT) {
+      clicks = [];
+      clicksLocked = now + CLICK_COOLDOWN_MS;
+      release(BURST_COUNT, 0.06, BURST_MS, 0.32, false);
+    }
+  });
+
   deltaInput?.addEventListener('input', () => {
     delta = clampDelta(Number(deltaInput.value));
     showDelta();
@@ -382,6 +580,15 @@ function boot(): void {
     reseed(release1, release2);
     start();
   });
+
+  repeatBtn?.addEventListener('click', () => {
+    if (mq.matches) return;
+    // A true re-run: preempt whatever is in flight, go back to the marked
+    // release, and drop the whole twin experiment again from there.
+    if (burst) endBurst();
+    reseed(release1, release2);
+    release(AMBIENT_COUNT, AMBIENT_SPREAD, AMBIENT_MS, 0.24, true);
+  });
 }
 
 function clampDelta(value: number): number {
@@ -390,3 +597,9 @@ function clampDelta(value: number): number {
 }
 
 boot();
+bootPaper();
+bootMargins();
+bootPens();
+bootRuling();
+bootPlate();
+bootStochastic();

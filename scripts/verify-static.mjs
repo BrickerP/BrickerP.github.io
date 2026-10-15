@@ -489,6 +489,169 @@ assert.match(pendulumSource, /pendulum-delta/, 'src/pendulum.ts: must read the �
 assert.match(pendulumSource, /pendulum-twin-outer/, 'src/pendulum.ts: must draw the twin');
 assert.doesNotMatch(filmHtml, /name=["']robots["']/i, 'beijing-loop: the film is an indexable page, not a redirect');
 
+// The living notebook: paper ripple, the twin experiment, margin traces,
+// and reviewer pen marks. Every living piece must stay dependency-free
+// and fold away under reduced motion.
+const paperSource = await text('src/paper.ts');
+const marginsSource = await text('src/margins.ts');
+assert.match(pendulumSource, /from\s+['"]\.\/paper['"]/, 'src/pendulum.ts: must boot the paper ripple');
+assert.match(pendulumSource, /from\s+['"]\.\/margins['"]/, 'src/pendulum.ts: must boot the margin traces');
+assert.match(paperSource, /prefers-reduced-motion/, 'src/paper.ts: the ripple must honor reduced motion');
+assert.match(paperSource, /paper-live/, 'src/paper.ts: waking must hand the paper over to the canvas');
+assert.doesNotMatch(paperSource, /\bthree\b/, 'src/paper.ts: the ripple stays dependency-free');
+assert.match(marginsSource, /prefers-reduced-motion/, 'src/margins.ts: the margin traces must honor reduced motion');
+assert.match(marginsSource, /notebook-page/, 'src/margins.ts: must count the notebook pages');
+assert.match(marginsSource, /America\/Los_Angeles/, 'src/margins.ts: the stamp keeps Pacific time');
+assert.match(marginsSource, /GUST_SHAPE/, 'src/margins.ts: the page corner must flutter in quantized steps');
+assert.doesNotMatch(pendulumSource, /onion/i, 'src/pendulum.ts: the onion skin is retired');
+assert.match(rootHtml, /id=["']pendulum-repeat["']/, 'index.html: the twin experiment needs its re-run control');
+assert.match(rootHtml, /id=["']pendulum-note["']/, 'index.html: the release annotation must exist');
+assert.match(rootHtml, /id=["']pendulum-burst["']/, 'index.html: the burst layer must exist');
+assert.match(rootHtml, /id=["']notebook-stamp["']/, 'index.html: the live stamp must exist');
+assert.match(rootHtml, /id=["']notebook-page["']/, 'index.html: the visit counter must exist');
+assert.match(pendulumSvg, /id=["']pendulum-burst["']/, 'index.html: the burst layer stays inside Fig. 1');
+// The reader's pen: one underlined key phrase per lab entry, five hands that
+// must not repeat, drawn in real pixels (never a stretched viewBox), and
+// the lab entry's whole-card link must stay whole.
+const pensSource = await text('src/pens.ts');
+assert.match(pendulumSource, /from\s+['"]\.\/pens['"]/, 'src/pendulum.ts: must boot the reader\'s pen');
+const inkSpans = [...rootHtml.matchAll(/class=["']ul["'][^>]*data-ink=["'](\d+)["']/g)].map((match) => match[1]);
+assert.deepEqual(inkSpans, ['0', '1', '2', '3', '4'], 'index.html: every lab entry needs its underlined phrase, in order');
+const inkSeeds = [...pensSource.matchAll(/seed:\s*(\d+)/g)].map((match) => match[1]);
+assert.equal(inkSeeds.length, 10, 'src/pens.ts: five hands, two strokes each');
+assert.equal(new Set(inkSeeds).size, 10, 'src/pens.ts: no two strokes may share a seed');
+assert.doesNotMatch(pensSource, /vector-effect|non-scaling-stroke/, 'src/pens.ts: pen strokes must not rely on non-scaling strokes');
+assert.match(
+  rootHtml,
+  /@media \(prefers-reduced-motion:reduce\)\{[\s\S]*?\.ink[\s\S]*?transition:none/,
+  'index.html: reduced motion must stop the ink from animating',
+);
+assert.doesNotMatch(
+  rootHtml,
+  /\.lab h3\{[^}]*position:\s*relative/,
+  'index.html: a positioned h3 would shrink the lab entry\'s whole-card link',
+);
+
+// The film plate: the fold carries a one-line hook, the second screen plays
+// the loop (muted, looping, poster-first, mp4 fallback), and the plate
+// pauses off screen and under reduced motion.
+assert.match(rootHtml, /id=["']film["']/, 'index.html: the film needs its own screen');
+assert.match(
+  rootHtml,
+  /<a\b(?=[^>]*\bclass=["']hook["'])(?=[^>]*\bhref=["']#film["'])[^>]*>/,
+  'index.html: the fold must carry the hook to the film screen',
+);
+assert.match(
+  rootHtml,
+  /<video\b(?=[^>]*\bclass=["']plate__video["'])(?=[^>]*\bmuted\b)(?=[^>]*\bloop\b)(?=[^>]*\bplaysinline\b)(?=[^>]*\bposter=["']\/film-poster\.jpg["'])[^>]*>/,
+  'index.html: the plate must be a muted looping video with its poster',
+);
+assert.match(
+  rootHtml,
+  /<source\b[^>]*src=["']\/film-loop\.webm["'][^>]*type=["']video\/webm["']/,
+  'index.html: the plate must offer the webm loop',
+);
+assert.match(
+  rootHtml,
+  /<source\b[^>]*src=["']\/film-loop\.mp4["'][^>]*type=["']video\/mp4["']/,
+  'index.html: the plate must offer an mp4 fallback',
+);
+const plateSource = await text('src/plate.ts');
+assert.match(pendulumSource, /from\s+['"]\.\/plate['"]/, 'src/pendulum.ts: must boot the film plate');
+assert.match(plateSource, /prefers-reduced-motion/, 'src/plate.ts: the plate must honor reduced motion');
+assert.match(plateSource, /IntersectionObserver/, 'src/plate.ts: the plate plays only on screen');
+
+// The hand-drawn rulings: three seeded frames that boil on a step-end loop,
+// swapped in while the straight CSS border steps aside.
+const rulingSource = await text('src/ruling.ts');
+assert.match(pendulumSource, /from\s+['"]\.\/ruling['"]/, 'src/pendulum.ts: must boot the hand-drawn rulings');
+assert.ok(
+  (rootHtml.match(/\bdata-ruled\b/g) ?? []).length >= 8,
+  'index.html: the plate, every lab entry, the margin note and the status card must carry data-ruled',
+);
+assert.match(rootHtml, /\.ruling__frame\{[^}]*animation:ruling-boil/, 'index.html: rulings must boil in stepped frames');
+assert.match(rulingSource, /wander/, 'src/ruling.ts: rulings drawn by the same wandering hand');
+
+// The click mark is retired; the paper answers a click with a dent only.
+assert.doesNotMatch(
+  paperSource,
+  /SPLASH_COUNT|splats|keydown/,
+  'src/paper.ts: the ink mark and the K splash are retired',
+);
+
+// Contact: the status card replaced the red checks, and Exp. 06 keeps the story.
+assert.match(rootHtml, /class=["']status-card["']/, 'index.html: #contact must print the status card');
+assert.doesNotMatch(rootHtml, /class=["']contact__list["']/, 'index.html: the red checklist must be gone');
+assert.match(rootHtml, /Exp\. 06 — your project/, 'index.html: the contact title must keep the Exp. 06 story');
+
+// The page's spine: the three floors stated once at the top, and the two
+// exhibits that carry their own entry context.
+assert.match(
+  rootHtml,
+  /class=["']arc["'][^>]*>[\s\S]{0,220}?F = ma[\s\S]{0,220}?dS = μS dt \+ σS dW[\s\S]{0,220}?agent systems/i,
+  'index.html: the hero must state the physics → finance → agents arc',
+);
+assert.match(
+  rootHtml,
+  /class=["']plate__note["'][^>]*>my hometown, imagined/,
+  'index.html: the film plate must say where it comes from',
+);
+assert.match(
+  rootHtml,
+  /Fig\. 2 — the finance floor, made to move/,
+  'index.html: Fig. 2 must name the floor it belongs to',
+);
+
+// Links keep their promises: the live-system card opens the live dashboard
+// (the technical sheet stays one explicit click away), the Cookiy entry opens
+// the public repository with the reputation, a label that names a destination
+// opens it, and the homepage never links a page that only bounces back to itself.
+const DASHBOARD_URL = 'https://d2c9pzwpavuktk.cloudfront.net/';
+const featuredCard = rootHtml.match(/<li class="lab lab--featured"[\s\S]*?<\/li>/)?.[0] ?? '';
+assert.match(
+  featuredCard,
+  new RegExp(`<h3><a href="${escapeRegExp(DASHBOARD_URL)}">`),
+  'index.html: the live-system card must open the live dashboard, not a page on this site',
+);
+assert.match(
+  featuredCard,
+  /<a\b[^>]*href=["']\/work\/quant\/["']/,
+  'index.html: the live-system card must keep an explicit link to the technical sheet',
+);
+for (const [, href, label] of rootHtml.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi)) {
+  const words = visibleText(label).trim();
+  if (/dashboard/i.test(words)) {
+    assert.equal(href, DASHBOARD_URL, `index.html: “${words}” names the dashboard but opens ${href}`);
+  }
+}
+assert.match(rootHtml, /<h3><a href="https:\/\/github\.com\/cookiy-ai\/user-research-skill">/, 'index.html: the Cookiy entry must open user-research-skill, its most-starred public repository');
+assert.doesNotMatch(rootHtml, /npmjs\.com\/package\/cookiy/, 'index.html: the Cookiy entry must not stop at a package page');
+assert.doesNotMatch(rootHtml, /href=["']\/hire\/["']/, 'index.html: /hire/ only redirects back to #contact and must not be linked from the homepage');
+
+// Fig. 2: a seeded random process with a stop rule, measured over 999
+// futures — canvases for the drawing, the numbers printed from the sim,
+// one Reseed control, and the plate waits for the viewport.
+const stochasticSource = await text('src/stochastic.ts');
+assert.match(pendulumSource, /from\s+['"]\.\/stochastic['"]/, 'src/pendulum.ts: must boot Fig. 2');
+assert.match(rootHtml, /id=["']fig2["']/, 'index.html: Fig. 2 needs its figure');
+for (const id of ['fig2-noise', 'fig2-walk', 'fig2-futures', 'fig2-policy', 'fig2-measured']) {
+  assert.match(rootHtml, new RegExp(`id=["']${id}["']`), `index.html: Fig. 2 is missing ${id}`);
+}
+assert.match(rootHtml, /id=["']fig2-reseed["']/, 'index.html: Fig. 2 needs its Reseed control');
+assert.match(rootHtml, /id=["']fig2-stats["']/, 'index.html: Fig. 2 prints its measured numbers');
+assert.match(
+  stochasticSource,
+  /prefers-reduced-motion/,
+  'src/stochastic.ts: Fig. 2 must draw the finished plate under reduced motion',
+);
+assert.match(stochasticSource, /IntersectionObserver/, 'src/stochastic.ts: Fig. 2 starts when it scrolls into view');
+assert.match(stochasticSource, /\brng\(/, 'src/stochastic.ts: every future comes from the seeded hand');
+assert.doesNotMatch(
+  stochasticSource,
+  /(?:from\s+['"]three['"]|require\(['"]three['"]\)|WebGLRenderer)/,
+  'src/stochastic.ts: Fig. 2 stays dependency-free',
+);
+
 // Technical sheet № 01: the programme must reach it, it must reach back, and every
 // number it prints must sit next to a method. No pending placeholder wording.
 assert.match(aboutHtml, /<a\b[^>]*href=["']\/work\/quant\/["']/i, 'about: primary navigation must link the technical sheet');
