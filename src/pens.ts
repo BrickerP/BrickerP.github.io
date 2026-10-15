@@ -57,7 +57,7 @@ const HANDS: ReadonlyArray<readonly [Hand, Hand]> = [
     { seed: 23, from: -2, to: 6, y: 5.6, tilt: 1.6, amp: 0.9, tremble: 0.2, w: 3.2, floor: 0.22, flick: 1.2 },
     { seed: 24, from: 10, to: -3, y: 12.6, tilt: -1.4, amp: 0.8, tremble: 0.3, w: 2.2, floor: 0.2 },
   ],
-  // 2 · open-ledger — wavy, and the second pass leaves with a curl
+  // 2 · Stack Index — wavy, and the second pass leaves with a curl
   [
     { seed: 35, from: -5, to: 4, y: 5.4, tilt: 0.4, amp: 1.5, tremble: 0.5, w: 2.8, floor: 0.3, hook: 0.8 },
     { seed: 36, from: 6, to: -8, y: 11.4, tilt: -0.6, amp: 1.1, tremble: 0.4, w: 2.0, floor: 0.28, loop: true },

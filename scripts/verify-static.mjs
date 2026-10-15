@@ -627,6 +627,13 @@ for (const [, href, label] of rootHtml.matchAll(/<a\b[^>]*href=["']([^"']+)["'][
 assert.match(rootHtml, /<h3><a href="https:\/\/github\.com\/cookiy-ai\/user-research-skill">/, 'index.html: the Cookiy entry must open user-research-skill, its most-starred public repository');
 assert.doesNotMatch(rootHtml, /npmjs\.com\/package\/cookiy/, 'index.html: the Cookiy entry must not stop at a package page');
 assert.doesNotMatch(rootHtml, /href=["']\/hire\/["']/, 'index.html: /hire/ only redirects back to #contact and must not be linked from the homepage');
+assert.doesNotMatch(rootHtml, /open-ledger|ledger-mcp/, 'index.html: the retired ledger Workers must not be linked from the homepage');
+assert.match(
+  rootHtml,
+  /<h3><a href="https:\/\/brickerp\.github\.io\/agent-stack-index\/">Agent <span class="ul" data-ink="2">Stack Index<\/span><\/a><\/h3>/,
+  'index.html: Exp. 03 must open the live Agent Stack Index report',
+);
+assert.match(rootHtml, /<a\b[^>]*href=["']https:\/\/github\.com\/BrickerP\/agent-stack-index["']/, 'index.html: Exp. 03 must link its open data and code');
 
 // Fig. 2: a seeded random process with a stop rule, measured over 999
 // futures — canvases for the drawing, the numbers printed from the sim,
