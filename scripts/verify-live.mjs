@@ -84,6 +84,9 @@ function expectedContentType(relative) {
   if (relative.endsWith('.css')) return /^text\/css\b/i;
   if (relative.endsWith('.js')) return /^(?:text|application)\/(?:javascript|ecmascript)\b/i;
   if (relative.endsWith('.png')) return /^image\/png\b/i;
+  if (relative.endsWith('.jpg')) return /^image\/jpeg\b/i;
+  if (relative.endsWith('.webm')) return /^video\/webm\b/i;
+  if (relative.endsWith('.mp4')) return /^video\/mp4\b/i;
   if (relative.endsWith('.svg')) return /^image\/svg\+xml\b/i;
   if (relative.endsWith('.pdf')) return /^application\/pdf\b/i;
   if (relative.endsWith('.txt')) return /^text\/plain\b/i;
