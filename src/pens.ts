@@ -3,8 +3,8 @@
  *
  * Each entry gets one key phrase underlined by two strokes, the way a
  * reader marks a textbook: a pressured centre line with tapered ends and
- * ragged edges, then a thinner second pass a beat later. The five hands
- * are deliberately unlike one another — confident, slipped, looped, lazy,
+ * ragged edges, then a thinner second pass a beat later. The four hands
+ * are deliberately unlike one another — confident, slipped, lazy,
  * hesitant. Strokes are filled shapes revealed in stepped frames (a few
  * chunks of ink at a time, stop-motion style) on hover or focus.
  * Decorative: aria-hidden, pointer-transparent, drawn in real pixels so
@@ -39,8 +39,6 @@ interface Hand {
   hook?: number;
   /** A flick as the pen lifts. */
   flick?: number;
-  /** A small curl as the pen leaves. */
-  loop?: boolean;
   /** Draw only the trailing share of the phrase. */
   frac?: number;
 }
@@ -57,17 +55,12 @@ const HANDS: ReadonlyArray<readonly [Hand, Hand]> = [
     { seed: 23, from: -2, to: 6, y: 5.6, tilt: 1.6, amp: 0.9, tremble: 0.2, w: 3.2, floor: 0.22, flick: 1.2 },
     { seed: 24, from: 10, to: -3, y: 12.6, tilt: -1.4, amp: 0.8, tremble: 0.3, w: 2.2, floor: 0.2 },
   ],
-  // 2 · open-ledger — wavy, and the second pass leaves with a curl
-  [
-    { seed: 35, from: -5, to: 4, y: 5.4, tilt: 0.4, amp: 1.5, tremble: 0.5, w: 2.8, floor: 0.3, hook: 0.8 },
-    { seed: 36, from: 6, to: -8, y: 11.4, tilt: -0.6, amp: 1.1, tremble: 0.4, w: 2.0, floor: 0.28, loop: true },
-  ],
-  // 3 · cookiy-mcp — one long stroke, then a lazy half of a second
+  // 2 · user-research-skill — one long stroke, then a lazy half of a second
   [
     { seed: 47, from: -3, to: 14, y: 5.0, tilt: -0.4, amp: 0.6, tremble: 0.2, w: 3.3, floor: 0.18 },
     { seed: 48, from: 0, to: -2, y: 11.0, tilt: 0.9, amp: 0.5, tremble: 0.35, w: 2.0, floor: 0.3, frac: 0.55 },
   ],
-  // 4 · revenue backend — private work, the least certain hand
+  // 3 · revenue backend — private work, the least certain hand
   [
     { seed: 59, from: -2, to: 2, y: 5.6, tilt: 0.8, amp: 1.7, tremble: 1.1, w: 2.4, floor: 0.45, hook: 1.2 },
     { seed: 60, from: 8, to: -4, y: 11.8, tilt: -0.8, amp: 1.4, tremble: 1.2, w: 1.8, floor: 0.4, frac: 0.4 },
@@ -94,13 +87,6 @@ function stroke(width: number, hand: Hand, start: number): string {
       y,
       hand.w * (hand.floor + (1 - hand.floor) * pressure) * (0.9 + 0.2 * random()),
     ]);
-  }
-  if (hand.loop) {
-    const [ex, ey] = pts[pts.length - 1]!;
-    for (let k = 1; k <= 14; k += 1) {
-      const t = (k / 14) * Math.PI * 2 * 0.92;
-      pts.push([ex + Math.sin(t) * 4.2 + k * 0.25, ey - (1 - Math.cos(t)) * 3.1, hand.w * 0.46]);
-    }
   }
   const top: Array<[number, number]> = [];
   const bottom: Array<[number, number]> = [];

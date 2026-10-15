@@ -172,7 +172,6 @@ html.paper-live body{background-image:none;background-color:transparent}
 .pen-note{position:absolute;right:16px;bottom:10px;font-family:var(--hand);font-size:20px;line-height:1.1;color:var(--red);opacity:0;transition:opacity .28s ease .3s;pointer-events:none;white-space:nowrap}
 .pen-note--a{transform:rotate(-1.6deg)}
 .pen-note--b{transform:rotate(-2.9deg)}
-.pen-note--c{transform:rotate(-3.4deg)}
 .pen-note--d{transform:rotate(-1.9deg)}
 .pen-note--e{transform:rotate(-0.5deg)}
 .lab:hover .pen-note,.lab:focus-within .pen-note{opacity:.92}
@@ -227,6 +226,7 @@ a.lab__go:hover{color:var(--red)}
 .lab__links{display:flex;flex-wrap:wrap;gap:4px 28px;margin-top:auto;padding-top:14px}
 .lab__links .lab__go{margin-top:0;padding-top:0}
 .lab__go--alt{position:relative;z-index:1}
+.lab--private{grid-column:1/-1}
 .lab--private .lab__go{color:var(--soft)}
 .also{margin-top:28px;font-size:16px}
 .also a{display:inline-flex;align-items:center;min-height:44px}
@@ -465,15 +465,8 @@ a.lab__go:hover{color:var(--red)}
         <span class="pen-note pen-note--b" aria-hidden="true">one take</span>
       </li>
       <li class="lab" data-ruled>
-        <p class="lab__n"><span class="mono">Exp. 03 · Cloudflare Workers</span><span class="mono">live demo</span></p>
-        <h3><a href="https://open-ledger.brickerp.workers.dev"><span class="ul" data-ink="2">open-ledger</span></a></h3>
-        <p class="lab__fact">Every fill hash-chained into an append-only ledger · verify it in the browser</p>
-        <span class="lab__go">Open the ledger ↗</span>
-        <span class="pen-note pen-note--c" aria-hidden="true">verify it yourself</span>
-      </li>
-      <li class="lab" data-ruled>
-        <p class="lab__n"><span class="mono">Exp. 04 · public skill · MIT</span><span class="mono">Cookiy AI</span></p>
-        <h3><a href="https://github.com/cookiy-ai/user-research-skill"><span class="ul" data-ink="3">user-research-skill</span></a></h3>
+        <p class="lab__n"><span class="mono">Exp. 03 · public skill · MIT</span><span class="mono">Cookiy AI</span></p>
+        <h3><a href="https://github.com/cookiy-ai/user-research-skill"><span class="ul" data-ink="2">user-research-skill</span></a></h3>
         <p class="lab__fact">1.5k+ GitHub stars · the open-source skill that gives Claude, Codex, Cursor and OpenClaw end-to-end user research</p>
         <div class="lab__links">
           <span class="lab__go">user-research-skill on GitHub ↗</span>
@@ -482,14 +475,14 @@ a.lab__go:hover{color:var(--red)}
         <span class="pen-note pen-note--d" aria-hidden="true">read the source</span>
       </li>
       <li class="lab lab--private" data-ruled>
-        <p class="lab__n"><span class="mono">Exp. 05 · private · Baidu MeDo</span><span class="mono">not public</span></p>
-        <h3>Agent platform &amp; <span class="ul" data-ink="4">revenue backend</span></h3>
+        <p class="lab__n"><span class="mono">Exp. 04 · private · Baidu MeDo</span><span class="mono">not public</span></p>
+        <h3>Agent platform &amp; <span class="ul" data-ink="3">revenue backend</span></h3>
         <p class="lab__fact"><span class="redact" role="img" aria-label="6,750,000">█,███,███</span> ledger entries reconciled in the overseas billing migration</p>
         <a class="lab__go" href="/resume.pdf">Details in the resume →</a>
         <span class="pen-note pen-note--e" aria-hidden="true">ask me about this</span>
       </li>
     </ol>
-    <p class="also">Also: <a href="https://ledger-mcp.brickerp.workers.dev">ledger-mcp ↗</a>&nbsp;· <a href="/about/">full programme →</a>&nbsp;· <a href="/resume.pdf">resume (PDF)</a></p>
+    <p class="also">Also: <a href="/about/">full programme →</a>&nbsp;· <a href="/resume.pdf">resume (PDF)</a></p>
   </div>
 </section>
 
@@ -562,7 +555,7 @@ a.lab__go:hover{color:var(--red)}
 
 <section id="contact" class="sec contact" aria-labelledby="contact-h">
   <div class="wrap">
-    <header class="sec-h"><span class="mono">§3 · Contact</span><h2 id="contact-h">Exp. 06 — your project</h2></header>
+    <header class="sec-h"><span class="mono">§3 · Contact</span><h2 id="contact-h">Exp. 05 — your project</h2></header>
     <p class="contact__sub">I work on agent tool use, streaming and real-time backends, billing systems, and the tests and operational checks that keep them reliable.</p>
     <aside class="status-card" data-ruled aria-label="Status and terms">
       <p class="mono">Status · 2026</p>

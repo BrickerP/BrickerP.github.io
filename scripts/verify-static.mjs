@@ -510,16 +510,16 @@ assert.match(rootHtml, /id=["']pendulum-burst["']/, 'index.html: the burst layer
 assert.match(rootHtml, /id=["']notebook-stamp["']/, 'index.html: the live stamp must exist');
 assert.match(rootHtml, /id=["']notebook-page["']/, 'index.html: the visit counter must exist');
 assert.match(pendulumSvg, /id=["']pendulum-burst["']/, 'index.html: the burst layer stays inside Fig. 1');
-// The reader's pen: one underlined key phrase per lab entry, five hands that
+// The reader's pen: one underlined key phrase per lab entry, four hands that
 // must not repeat, drawn in real pixels (never a stretched viewBox), and
 // the lab entry's whole-card link must stay whole.
 const pensSource = await text('src/pens.ts');
 assert.match(pendulumSource, /from\s+['"]\.\/pens['"]/, 'src/pendulum.ts: must boot the reader\'s pen');
 const inkSpans = [...rootHtml.matchAll(/class=["']ul["'][^>]*data-ink=["'](\d+)["']/g)].map((match) => match[1]);
-assert.deepEqual(inkSpans, ['0', '1', '2', '3', '4'], 'index.html: every lab entry needs its underlined phrase, in order');
+assert.deepEqual(inkSpans, ['0', '1', '2', '3'], 'index.html: every lab entry needs its underlined phrase, in order');
 const inkSeeds = [...pensSource.matchAll(/seed:\s*(\d+)/g)].map((match) => match[1]);
-assert.equal(inkSeeds.length, 10, 'src/pens.ts: five hands, two strokes each');
-assert.equal(new Set(inkSeeds).size, 10, 'src/pens.ts: no two strokes may share a seed');
+assert.equal(inkSeeds.length, 8, 'src/pens.ts: four hands, two strokes each');
+assert.equal(new Set(inkSeeds).size, 8, 'src/pens.ts: no two strokes may share a seed');
 assert.doesNotMatch(pensSource, /vector-effect|non-scaling-stroke/, 'src/pens.ts: pen strokes must not rely on non-scaling strokes');
 assert.match(
   rootHtml,
@@ -566,7 +566,7 @@ assert.match(plateSource, /IntersectionObserver/, 'src/plate.ts: the plate plays
 const rulingSource = await text('src/ruling.ts');
 assert.match(pendulumSource, /from\s+['"]\.\/ruling['"]/, 'src/pendulum.ts: must boot the hand-drawn rulings');
 assert.ok(
-  (rootHtml.match(/\bdata-ruled\b/g) ?? []).length >= 8,
+  (rootHtml.match(/\bdata-ruled\b/g) ?? []).length >= 7,
   'index.html: the plate, every lab entry, the margin note and the status card must carry data-ruled',
 );
 assert.match(rootHtml, /\.ruling__frame\{[^}]*animation:ruling-boil/, 'index.html: rulings must boil in stepped frames');
@@ -579,10 +579,10 @@ assert.doesNotMatch(
   'src/paper.ts: the ink mark and the K splash are retired',
 );
 
-// Contact: the status card replaced the red checks, and Exp. 06 keeps the story.
+// Contact: the status card replaced the red checks, and Exp. 05 keeps the story.
 assert.match(rootHtml, /class=["']status-card["']/, 'index.html: #contact must print the status card');
 assert.doesNotMatch(rootHtml, /class=["']contact__list["']/, 'index.html: the red checklist must be gone');
-assert.match(rootHtml, /Exp\. 06 — your project/, 'index.html: the contact title must keep the Exp. 06 story');
+assert.match(rootHtml, /Exp\. 05 — your project/, 'index.html: the contact title must keep the Exp. 05 story');
 
 // The page's spine: the three floors stated once at the top, and the two
 // exhibits that carry their own entry context.
@@ -627,6 +627,7 @@ for (const [, href, label] of rootHtml.matchAll(/<a\b[^>]*href=["']([^"']+)["'][
 assert.match(rootHtml, /<h3><a href="https:\/\/github\.com\/cookiy-ai\/user-research-skill">/, 'index.html: the Cookiy entry must open user-research-skill, its most-starred public repository');
 assert.doesNotMatch(rootHtml, /npmjs\.com\/package\/cookiy/, 'index.html: the Cookiy entry must not stop at a package page');
 assert.doesNotMatch(rootHtml, /href=["']\/hire\/["']/, 'index.html: /hire/ only redirects back to #contact and must not be linked from the homepage');
+assert.doesNotMatch(rootHtml, /open-ledger|ledger-mcp/, 'index.html: the retired ledger Workers must not be linked from the homepage');
 
 // Fig. 2: a seeded random process with a stop rule, measured over 999
 // futures — canvases for the drawing, the numbers printed from the sim,
