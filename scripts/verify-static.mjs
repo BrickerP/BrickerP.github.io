@@ -584,6 +584,30 @@ assert.match(rootHtml, /class=["']status-card["']/, 'index.html: #contact must p
 assert.doesNotMatch(rootHtml, /class=["']contact__list["']/, 'index.html: the red checklist must be gone');
 assert.match(rootHtml, /Exp\. 06 — your project/, 'index.html: the contact title must keep the Exp. 06 story');
 
+// Fig. 2: a seeded random process with a stop rule, measured over 999
+// futures — canvases for the drawing, the numbers printed from the sim,
+// one Reseed control, and the plate waits for the viewport.
+const stochasticSource = await text('src/stochastic.ts');
+assert.match(pendulumSource, /from\s+['"]\.\/stochastic['"]/, 'src/pendulum.ts: must boot Fig. 2');
+assert.match(rootHtml, /id=["']fig2["']/, 'index.html: Fig. 2 needs its figure');
+for (const id of ['fig2-noise', 'fig2-walk', 'fig2-futures', 'fig2-policy', 'fig2-measured']) {
+  assert.match(rootHtml, new RegExp(`id=["']${id}["']`), `index.html: Fig. 2 is missing ${id}`);
+}
+assert.match(rootHtml, /id=["']fig2-reseed["']/, 'index.html: Fig. 2 needs its Reseed control');
+assert.match(rootHtml, /id=["']fig2-stats["']/, 'index.html: Fig. 2 prints its measured numbers');
+assert.match(
+  stochasticSource,
+  /prefers-reduced-motion/,
+  'src/stochastic.ts: Fig. 2 must draw the finished plate under reduced motion',
+);
+assert.match(stochasticSource, /IntersectionObserver/, 'src/stochastic.ts: Fig. 2 starts when it scrolls into view');
+assert.match(stochasticSource, /\brng\(/, 'src/stochastic.ts: every future comes from the seeded hand');
+assert.doesNotMatch(
+  stochasticSource,
+  /(?:from\s+['"]three['"]|require\(['"]three['"]\)|WebGLRenderer)/,
+  'src/stochastic.ts: Fig. 2 stays dependency-free',
+);
+
 // Technical sheet № 01: the programme must reach it, it must reach back, and every
 // number it prints must sit next to a method. No pending placeholder wording.
 assert.match(aboutHtml, /<a\b[^>]*href=["']\/work\/quant\/["']/i, 'about: primary navigation must link the technical sheet');

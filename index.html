@@ -242,6 +242,30 @@ a.lab__go:hover{color:var(--red)}
 .deriv .hand{display:block;font-size:20px;margin-top:2px}
 .deriv svg{display:block;width:100%;height:auto;margin-top:6px}
 
+.fig2{margin-top:clamp(30px,4vw,54px)}
+.fig2__head{display:flex;align-items:baseline;justify-content:space-between;gap:10px 28px;flex-wrap:wrap;border-top:1px solid var(--rule);padding-top:18px}
+.fig2__eq{font-family:var(--serif);font-weight:600;font-style:italic;color:var(--ink);font-size:clamp(24px,2.4vw,34px);line-height:1.1}
+.fig2__terms{margin-top:8px;line-height:1.7}
+.fig2__rows{display:grid;gap:clamp(14px,1.8vw,24px);margin-top:clamp(20px,2.8vw,34px)}
+.fig2__row{display:flex;align-items:flex-start;gap:clamp(10px,1.6vw,22px);flex-wrap:wrap}
+.fig2__bridge{color:var(--soft);text-align:center;padding:6px 0}
+.fig2__panel{min-width:0}
+.fig2__panel canvas{display:block;width:100%;height:auto}
+.fig2__panel--noise{flex:0 1 210px}
+.fig2__panel--walk{flex:0 1 340px}
+.fig2__panel--futures canvas{height:clamp(230px,24vw,330px)}
+.fig2__panel--policy canvas{height:clamp(210px,22vw,300px)}
+.fig2__panel--measured canvas{height:clamp(200px,20vw,280px)}
+.fig2__cap{margin-top:6px;font-size:14px;line-height:1.5;color:var(--graphite);max-width:46em}
+.fig2__cap .mono{margin-right:6px}
+.fig2__arrow{flex:none;color:var(--soft);padding-top:56px}
+.fig2__stats{margin-top:6px;color:var(--ink);line-height:1.7}
+.fig2__stats b{color:var(--red);font-weight:400}
+.fig2__bar{display:flex;align-items:baseline;gap:14px 24px;flex-wrap:wrap;margin-top:clamp(18px,2.4vw,28px)}
+.fig2__bar button{font-family:var(--mono);font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);background:none;border:0;border-bottom:1px solid var(--ink);padding:0;min-height:44px;cursor:pointer}
+.fig2__bar button:hover{color:var(--red);border-bottom-color:var(--red)}
+.fig2__close{font-size:clamp(18px,1.7vw,22px);max-width:34em}
+
 .contact .wrap>*{max-width:860px}
 .contact__sub{font-size:clamp(18px,1.5vw,21px);color:var(--ink);max-width:36em}
 .status-card{position:relative;background:rgba(255,253,247,.86);border:1px solid var(--rule);padding:20px 22px;margin:24px 0 30px;max-width:640px}
@@ -273,6 +297,10 @@ a.lab__go:hover{color:var(--red)}
   .fig{justify-self:center}
   .labs{grid-template-columns:1fr}
   .lab--featured{grid-template-columns:1fr}
+  .fig2__row{flex-direction:column;align-items:stretch}
+  .fig2__panel{flex:1 1 auto}
+  .fig2__arrow{font-size:0;align-self:center;padding-top:0}
+  .fig2__arrow::after{content:"↓ becomes";font-size:12.5px;letter-spacing:.06em}
 }
 @media (max-width:600px){
   .ul{white-space:normal}
@@ -473,6 +501,47 @@ a.lab__go:hover{color:var(--red)}
         </ol>
       </aside>
     </div>
+
+    <figure class="fig2" id="fig2" aria-labelledby="fig2-eq">
+      <div class="fig2__head">
+        <p class="fig2__eq" id="fig2-eq">dS = <i>μS</i> dt + <i>σS</i> dW</p>
+        <p class="mono">Fig. 2 — a price as a random process, with a rule on top</p>
+      </div>
+      <p class="fig2__terms mono"><i>μ</i> · drift, the slow tilt &nbsp;·&nbsp; <i>σ</i> · volatility, the size of the luck &nbsp;·&nbsp; dW · the dice, drawn fresh every step</p>
+      <div class="fig2__rows">
+        <div class="fig2__row">
+          <div class="fig2__panel fig2__panel--noise">
+            <canvas id="fig2-noise" width="220" height="150" aria-hidden="true"></canvas>
+            <p class="fig2__cap"><span class="mono">① noise</span>every step, the bell hands each future its own draw</p>
+          </div>
+          <span class="fig2__arrow mono" aria-hidden="true">→ becomes →</span>
+          <div class="fig2__panel fig2__panel--walk">
+            <canvas id="fig2-walk" width="330" height="150" aria-hidden="true"></canvas>
+            <p class="fig2__cap"><span class="mono">② the price</span>takes that draw as one step — up or down</p>
+          </div>
+        </div>
+        <p class="fig2__bridge mono">↓ nine futures, nine draws each</p>
+        <div class="fig2__panel fig2__panel--futures">
+          <canvas id="fig2-futures" width="420" height="150" aria-hidden="true"></canvas>
+          <p class="fig2__cap"><span class="mono">③ nine futures</span>the red line is what the model expects, the band is how unsure it is</p>
+        </div>
+        <p class="fig2__bridge mono">↓ the same nine, one rule on top</p>
+        <div class="fig2__panel fig2__panel--policy">
+          <canvas id="fig2-policy" width="600" height="170" aria-hidden="true"></canvas>
+          <p class="fig2__cap"><span class="mono">④ the same futures, one rule</span>out at −15%, and out for the year — the pale stretches are the days you sit out</p>
+        </div>
+        <p class="fig2__bridge mono">↓ measured across 999 more</p>
+        <div class="fig2__panel fig2__panel--measured">
+          <canvas id="fig2-measured" width="460" height="170" aria-hidden="true"></canvas>
+          <p class="fig2__cap"><span class="mono">⑤ the difference</span>999 futures, both ways through them</p>
+          <p class="fig2__stats mono" id="fig2-stats" hidden></p>
+        </div>
+      </div>
+      <div class="fig2__bar">
+        <button type="button" id="fig2-reseed">Reseed</button>
+        <p class="fig2__close hand">the rule can’t predict tomorrow — it chooses how to live through it</p>
+      </div>
+    </figure>
   </div>
 </section>
 

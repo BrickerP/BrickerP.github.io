@@ -11,7 +11,7 @@
  * twins leave the same pose within ±0.008 rad, hold together as one thick
  * arm, then visibly part into a fan. A run of rapid clicks releases fifty.
  * The homepage also boots the paper ripple, the margin traces, the
- * reader's pen, the hand-drawn rulings and the film plate.
+ * reader's pen, the hand-drawn rulings, the film plate and Fig. 2.
  * Homepage only; no Three.js.
  */
 
@@ -20,6 +20,7 @@ import { bootMargins } from './margins';
 import { bootPens } from './pens';
 import { bootRuling } from './ruling';
 import { bootPlate } from './plate';
+import { bootStochastic } from './stochastic';
 
 const G = 9.81;
 const M1 = 1;
@@ -601,3 +602,4 @@ bootMargins();
 bootPens();
 bootRuling();
 bootPlate();
+bootStochastic();
