@@ -467,7 +467,7 @@ function boot(): void {
       part('median', percent(median[0]), percent(median[1])),
       part('worst 5%', percent(worst[0]), percent(worst[1])),
       part('years under −20%', share(under[0]), share(under[1])),
-    ].join('&nbsp;· ');
+    ].join(' ');
     stats!.hidden = false;
   }
 
