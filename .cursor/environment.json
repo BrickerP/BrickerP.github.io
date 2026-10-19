@@ -1,0 +1,8 @@
+{
+  "name": "BrickerP.github.io",
+  "install": "bash .cursor/install.sh",
+  "start": "bash .cursor/start.sh",
+  "ports": [
+    { "name": "vite", "port": 5173 }
+  ]
+}
