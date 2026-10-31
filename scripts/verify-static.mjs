@@ -510,16 +510,16 @@ assert.match(rootHtml, /id=["']pendulum-burst["']/, 'index.html: the burst layer
 assert.match(rootHtml, /id=["']notebook-stamp["']/, 'index.html: the live stamp must exist');
 assert.match(rootHtml, /id=["']notebook-page["']/, 'index.html: the visit counter must exist');
 assert.match(pendulumSvg, /id=["']pendulum-burst["']/, 'index.html: the burst layer stays inside Fig. 1');
-// The reader's pen: one underlined key phrase per lab entry, five hands that
+// The reader's pen: one underlined key phrase per lab entry, six hands that
 // must not repeat, drawn in real pixels (never a stretched viewBox), and
 // the lab entry's whole-card link must stay whole.
 const pensSource = await text('src/pens.ts');
 assert.match(pendulumSource, /from\s+['"]\.\/pens['"]/, 'src/pendulum.ts: must boot the reader\'s pen');
 const inkSpans = [...rootHtml.matchAll(/class=["']ul["'][^>]*data-ink=["'](\d+)["']/g)].map((match) => match[1]);
-assert.deepEqual(inkSpans, ['0', '1', '2', '3', '4'], 'index.html: every lab entry needs its underlined phrase, in order');
+assert.deepEqual(inkSpans, ['0', '1', '2', '3', '4', '5'], 'index.html: every lab entry needs its underlined phrase, in order');
 const inkSeeds = [...pensSource.matchAll(/seed:\s*(\d+)/g)].map((match) => match[1]);
-assert.equal(inkSeeds.length, 10, 'src/pens.ts: five hands, two strokes each');
-assert.equal(new Set(inkSeeds).size, 10, 'src/pens.ts: no two strokes may share a seed');
+assert.equal(inkSeeds.length, 12, 'src/pens.ts: six hands, two strokes each');
+assert.equal(new Set(inkSeeds).size, 12, 'src/pens.ts: no two strokes may share a seed');
 assert.doesNotMatch(pensSource, /vector-effect|non-scaling-stroke/, 'src/pens.ts: pen strokes must not rely on non-scaling strokes');
 assert.match(
   rootHtml,
@@ -579,10 +579,10 @@ assert.doesNotMatch(
   'src/paper.ts: the ink mark and the K splash are retired',
 );
 
-// Contact: the status card replaced the red checks, and Exp. 06 keeps the story.
+// Contact: the status card replaced the red checks, and Exp. 07 keeps the story.
 assert.match(rootHtml, /class=["']status-card["']/, 'index.html: #contact must print the status card');
 assert.doesNotMatch(rootHtml, /class=["']contact__list["']/, 'index.html: the red checklist must be gone');
-assert.match(rootHtml, /Exp\. 06 — your project/, 'index.html: the contact title must keep the Exp. 06 story');
+assert.match(rootHtml, /Exp\. 07 — your project/, 'index.html: the contact title must keep the Exp. 07 story');
 
 // The page's spine: the three floors stated once at the top, and the two
 // exhibits that carry their own entry context.
@@ -607,6 +607,8 @@ assert.match(
 // the public repository with the reputation, a label that names a destination
 // opens it, and the homepage never links a page that only bounces back to itself.
 const DASHBOARD_URL = 'https://d2c9pzwpavuktk.cloudfront.net/';
+const COMPUTE_LEDGER_URL = 'https://brickerp.github.io/ai-usage-report/';
+const COMPUTE_LEDGER_SOURCE = 'https://github.com/BrickerP/ai-usage-report';
 const featuredCard = rootHtml.match(/<li class="lab lab--featured"[\s\S]*?<\/li>/)?.[0] ?? '';
 assert.match(
   featuredCard,
@@ -634,6 +636,24 @@ assert.match(
   'index.html: Exp. 03 must open the live Agent Stack Index report',
 );
 assert.match(rootHtml, /<a\b[^>]*href=["']https:\/\/github\.com\/BrickerP\/agent-stack-index["']/, 'index.html: Exp. 03 must link its open data and code');
+const computeLedgerCard = [
+  ...rootHtml.matchAll(/<li class="lab"[^>]*>[\s\S]*?<\/li>/g),
+].map((match) => match[0]).find((card) => card.includes(COMPUTE_LEDGER_URL)) ?? '';
+assert.match(
+  computeLedgerCard,
+  /Exp\. 05 · AI usage yearbook[\s\S]*public data · auto-published/,
+  'index.html: Exp. 05 must identify The Compute Ledger as a public AI usage yearbook',
+);
+assert.match(
+  computeLedgerCard,
+  /Daily tokens, cache reuse, estimated costs, model history and source freshness/,
+  'index.html: The Compute Ledger card must explain its stable published evidence',
+);
+assert.match(
+  computeLedgerCard,
+  new RegExp(`href="${escapeRegExp(COMPUTE_LEDGER_SOURCE)}"`),
+  'index.html: The Compute Ledger card must link its source and methodology',
+);
 
 // Fig. 2: a seeded random process with a stop rule, measured over 999
 // futures — canvases for the drawing, the numbers printed from the sim,

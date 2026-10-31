@@ -3,9 +3,9 @@
  *
  * Each entry gets one key phrase underlined by two strokes, the way a
  * reader marks a textbook: a pressured centre line with tapered ends and
- * ragged edges, then a thinner second pass a beat later. The five hands
+ * ragged edges, then a thinner second pass a beat later. The six hands
  * are deliberately unlike one another — confident, slipped, looped, lazy,
- * hesitant. Strokes are filled shapes revealed in stepped frames (a few
+ * measured, hesitant. Strokes are filled shapes revealed in stepped frames (a few
  * chunks of ink at a time, stop-motion style) on hover or focus.
  * Decorative: aria-hidden, pointer-transparent, drawn in real pixels so
  * nothing is stretched, and redrawn whenever the phrase changes width.
@@ -67,7 +67,12 @@ const HANDS: ReadonlyArray<readonly [Hand, Hand]> = [
     { seed: 47, from: -3, to: 14, y: 5.0, tilt: -0.4, amp: 0.6, tremble: 0.2, w: 3.3, floor: 0.18 },
     { seed: 48, from: 0, to: -2, y: 11.0, tilt: 0.9, amp: 0.5, tremble: 0.35, w: 2.0, floor: 0.3, frac: 0.55 },
   ],
-  // 4 · revenue backend — private work, the least certain hand
+  // 4 · Compute Ledger — measured, slightly offset passes like a checked entry
+  [
+    { seed: 71, from: -5, to: 8, y: 5.1, tilt: 0.2, amp: 0.45, tremble: 0.18, w: 2.7, floor: 0.28, hook: 0.5 },
+    { seed: 72, from: 3, to: -7, y: 11.5, tilt: -0.3, amp: 0.4, tremble: 0.22, w: 1.9, floor: 0.3, flick: 0.5 },
+  ],
+  // 5 · revenue backend — private work, the least certain hand
   [
     { seed: 59, from: -2, to: 2, y: 5.6, tilt: 0.8, amp: 1.7, tremble: 1.1, w: 2.4, floor: 0.45, hook: 1.2 },
     { seed: 60, from: 8, to: -4, y: 11.8, tilt: -0.8, amp: 1.4, tremble: 1.2, w: 1.8, floor: 0.4, frac: 0.4 },
