@@ -54,6 +54,11 @@ assert.match(homeChunk, /prefers-reduced-motion/, 'dist landing chunk must still
 // tens of kilobytes at most. The film runtime is ~700 KB, so this still catches it leaking in.
 assert.ok(homeChunk.length < 32_000, `dist landing chunk too large (${homeChunk.length} bytes)`);
 assert.match(home, /<a\b[^>]*href=["']\/beijing-loop\/["']/i, 'dist landing must keep the film reachable');
+assert.match(
+  home,
+  /<h3><a href=["']https:\/\/brickerp\.github\.io\/ai-usage-report\/["']>The[\s\S]*?Compute Ledger[\s\S]*?<\/a><\/h3>/i,
+  'dist landing must expose The Compute Ledger at its canonical public URL',
+);
 assert.match(home, /id=["']contact["']/i, 'dist landing must keep #contact');
 
 const film = await read('beijing-loop/index.html');
