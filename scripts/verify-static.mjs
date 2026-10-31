@@ -638,7 +638,10 @@ assert.match(
 assert.match(rootHtml, /<a\b[^>]*href=["']https:\/\/github\.com\/BrickerP\/agent-stack-index["']/, 'index.html: Exp. 03 must link its open data and code');
 const computeLedgerCard = [
   ...rootHtml.matchAll(/<li class="lab"[^>]*>[\s\S]*?<\/li>/g),
-].map((match) => match[0]).find((card) => card.includes(COMPUTE_LEDGER_URL)) ?? '';
+].map((match) => match[0]).find((card) => {
+  const headingHref = card.match(/<h3>\s*<a\b[^>]*href=["']([^"']+)["']/i)?.[1];
+  return headingHref === COMPUTE_LEDGER_URL;
+}) ?? '';
 assert.match(
   computeLedgerCard,
   /Exp\. 05 · AI usage yearbook[\s\S]*public data · auto-published/,
